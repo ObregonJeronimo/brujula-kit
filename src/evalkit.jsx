@@ -77,11 +77,24 @@ export default function App(){
 }
 
 function Login({onOk}){
-  const[u,su]=useState(""),[p,sp]=useState(""),[ld,sl]=useState(false),[e,se]=useState("");
+  const[u,su]=useState(""),[p,sp]=useState(""),[ld,sl]=useState(false),[e,se]=useState(""),[seeding,setSeeding]=useState(false);
   const go=async ev=>{ev.preventDefault();sl(true);se("");
     try{
-      const users=await fbGetAll("usuarios");
+      let users=await fbGetAll("usuarios");
       console.log("Firebase usuarios encontrados:", users.length, JSON.stringify(users.map(x=>({u:x.usuario,c:x.contrasena}))));
+      if(users.length===0){
+        console.log("Colección vacía — creando admin por defecto...");
+        setSeeding(true);
+        await fbAdd("usuarios",{usuario:"CalaAdmin976",contrasena:"BrujulaKit2025!"});
+        users=await fbGetAll("usuarios");
+        console.log("Después de seed:", users.length, JSON.stringify(users.map(x=>({u:x.usuario}))));
+        setSeeding(false);
+        if(users.length===0){
+          se("Error crítico: No se pudo crear usuario en Firestore. Verifica reglas de seguridad de Firebase.");
+          sl(false);
+          return;
+        }
+      }
       const found=users.find(usr=>{
         const dbUser = (usr.usuario||"").trim();
         const dbPass = (usr.contrasena||"").trim();
@@ -103,6 +116,7 @@ function Login({onOk}){
         <div style={{marginBottom:14}}><label style={{fontSize:12,fontWeight:600,color:"#64748b",display:"block",marginBottom:5}}>{"Usuario"}</label><input value={u} onChange={e=>su(e.target.value)} style={I} placeholder="Ingrese su usuario" required/></div>
         <div style={{marginBottom:22}}><label style={{fontSize:12,fontWeight:600,color:"#64748b",display:"block",marginBottom:5}}>{"Contraseña"}</label><input type="password" value={p} onChange={e=>sp(e.target.value)} style={I} placeholder="Ingrese su contraseña" required/></div>
         {e&&<div style={{background:"#fef2f2",border:"1px solid #fecaca",color:"#dc2626",padding:"10px 12px",borderRadius:8,fontSize:12,marginBottom:14}}>{e}</div>}
+        {seeding&&<div style={{background:"#eff6ff",border:"1px solid #bfdbfe",color:"#2563eb",padding:"10px 12px",borderRadius:8,fontSize:12,marginBottom:14}}>{"Inicializando base de datos..."}</div>}
         <button type="submit" disabled={ld} style={{width:"100%",padding:"13px",background:"#0d9488",color:"#fff",border:"none",borderRadius:8,fontSize:15,fontWeight:600,cursor:ld?"wait":"pointer",opacity:ld?.7:1}}>{ld?"Verificando...":"Iniciar sesión"}</button>
       </form>
       <p style={{textAlign:"center",marginTop:20,fontSize:10,color:"#94a3b8"}}>{"Brújula KIT v3.0"}</p>
