@@ -77,23 +77,29 @@ export default function App(){
 }
 
 function Login({onOk}){
-  const[u,su]=useState(""),[p,sp]=useState(""),[ld,sl]=useState(false),[e,se]=useState(""),[seeding,setSeeding]=useState(false);
-  const go=async ev=>{ev.preventDefault();sl(true);se("");
+  const[u,su]=useState(""),[p,sp]=useState(""),[ld,sl]=useState(false),[e,se]=useState(""),[info,setInfo]=useState("");
+  const go=async ev=>{ev.preventDefault();sl(true);se("");setInfo("");
     try{
+      console.log("=== LOGIN DEBUG START ===");
+      console.log("1. Intentando leer colección 'usuarios'...");
       let users=await fbGetAll("usuarios");
-      console.log("Firebase usuarios encontrados:", users.length, JSON.stringify(users.map(x=>({u:x.usuario,c:x.contrasena}))));
+      console.log("2. Usuarios encontrados:", users.length, JSON.stringify(users));
       if(users.length===0){
-        console.log("Colección vacía — creando admin por defecto...");
-        setSeeding(true);
-        await fbAdd("usuarios",{usuario:"CalaAdmin976",contrasena:"BrujulaKit2025!"});
-        users=await fbGetAll("usuarios");
-        console.log("Después de seed:", users.length, JSON.stringify(users.map(x=>({u:x.usuario}))));
-        setSeeding(false);
-        if(users.length===0){
-          se("Error crítico: No se pudo crear usuario en Firestore. Verifica reglas de seguridad de Firebase.");
+        setInfo("BD vacía. Creando admin...");
+        console.log("3. Colección vacía — intentando addDoc...");
+        try{
+          const ref = await addDoc(collection(db, "usuarios"), {usuario:"CalaAdmin976",contrasena:"BrujulaKit2025!"});
+          console.log("4. addDoc exitoso! ID:", ref.id);
+        }catch(addErr){
+          console.error("4. ERROR en addDoc:", addErr.code, addErr.message, addErr);
+          se("Error creando usuario: " + addErr.code + " - " + addErr.message);
           sl(false);
           return;
         }
+        console.log("5. Re-leyendo usuarios...");
+        users=await fbGetAll("usuarios");
+        console.log("6. Usuarios después de seed:", users.length, JSON.stringify(users));
+        setInfo("");
       }
       const found=users.find(usr=>{
         const dbUser = (usr.usuario||"").trim();
@@ -103,9 +109,9 @@ function Login({onOk}){
         console.log("Comparando:", JSON.stringify(dbUser), "===", JSON.stringify(inUser), "->", dbUser===inUser, "| pass:", JSON.stringify(dbPass), "===", JSON.stringify(inPass), "->", dbPass===inPass);
         return dbUser===inUser && dbPass===inPass;
       });
-      if(found)onOk({un:u.trim(),adm:u.trim()==="CalaAdmin976"});
-      else se("Credenciales incorrectas. "+users.length+" usuarios en BD. Revisa consola (F12) para debug.");
-    }catch(err){console.error("Firebase login error:",err);se("Error Firebase: "+err.message)}
+      if(found){console.log("=== LOGIN OK ===");onOk({un:u.trim(),adm:u.trim()==="CalaAdmin976"});}
+      else{console.log("=== LOGIN FAIL ===");se("Credenciales incorrectas. "+users.length+" usuarios en BD.");}
+    }catch(err){console.error("Firebase login error:",err);se("Error Firebase: "+err.code+" - "+err.message)}
     sl(false);
   };
   const I={width:"100%",padding:"12px 14px",border:"1px solid #e2e8f0",borderRadius:8,fontSize:14,background:"#f8faf9"};
@@ -116,7 +122,7 @@ function Login({onOk}){
         <div style={{marginBottom:14}}><label style={{fontSize:12,fontWeight:600,color:"#64748b",display:"block",marginBottom:5}}>{"Usuario"}</label><input value={u} onChange={e=>su(e.target.value)} style={I} placeholder="Ingrese su usuario" required/></div>
         <div style={{marginBottom:22}}><label style={{fontSize:12,fontWeight:600,color:"#64748b",display:"block",marginBottom:5}}>{"Contraseña"}</label><input type="password" value={p} onChange={e=>sp(e.target.value)} style={I} placeholder="Ingrese su contraseña" required/></div>
         {e&&<div style={{background:"#fef2f2",border:"1px solid #fecaca",color:"#dc2626",padding:"10px 12px",borderRadius:8,fontSize:12,marginBottom:14}}>{e}</div>}
-        {seeding&&<div style={{background:"#eff6ff",border:"1px solid #bfdbfe",color:"#2563eb",padding:"10px 12px",borderRadius:8,fontSize:12,marginBottom:14}}>{"Inicializando base de datos..."}</div>}
+        {info&&<div style={{background:"#eff6ff",border:"1px solid #bfdbfe",color:"#2563eb",padding:"10px 12px",borderRadius:8,fontSize:12,marginBottom:14}}>{info}</div>}
         <button type="submit" disabled={ld} style={{width:"100%",padding:"13px",background:"#0d9488",color:"#fff",border:"none",borderRadius:8,fontSize:15,fontWeight:600,cursor:ld?"wait":"pointer",opacity:ld?.7:1}}>{ld?"Verificando...":"Iniciar sesión"}</button>
       </form>
       <p style={{textAlign:"center",marginTop:20,fontSize:10,color:"#94a3b8"}}>{"Brújula KIT v3.0"}</p>
