@@ -56,13 +56,13 @@ export default function App(){
   return(
     <div style={{display:"flex",height:"100vh",width:"100vw",fontFamily:"'DM Sans',system-ui,sans-serif",background:K.bg,color:"#1e293b",overflow:"hidden"}}>
       <aside style={{width:mobile?60:230,minWidth:mobile?60:230,background:K.sd,color:"#fff",display:"flex",flexDirection:"column",padding:"18px 0",flexShrink:0,height:"100vh"}}>
-        <div style={{padding:"0 14px",marginBottom:26,display:"flex",alignItems:"center",gap:9}}><span style={{fontSize:28}}>\ud83e\udded</span>{!mobile&&<div><div style={{fontSize:17,fontWeight:700}}>Br\u00fajula KIT</div><div style={{fontSize:9,color:"#5eead4",fontWeight:600,letterSpacing:"1px"}}>FONOAUDIOLOG\u00cdA</div></div>}</div>
+        <div style={{padding:"0 14px",marginBottom:26,display:"flex",alignItems:"center",gap:9}}><span style={{fontSize:28}}>{"🧭"}</span>{!mobile&&<div><div style={{fontSize:17,fontWeight:700}}>{"Brújula KIT"}</div><div style={{fontSize:9,color:"#5eead4",fontWeight:600,letterSpacing:"1px"}}>{"FONOAUDIOLOGÍA"}</div></div>}</div>
         <nav style={{flex:1}}>{nav.map(([id,ic,lb])=><button key={id} onClick={()=>{sV(id);sS(null)}} style={{display:"flex",alignItems:"center",gap:10,width:"100%",padding:mobile?"13px 0":"11px 18px",background:view===id?"rgba(94,234,212,.12)":"transparent",border:"none",color:view===id?"#5eead4":"rgba(255,255,255,.6)",cursor:"pointer",fontSize:14,fontWeight:view===id?600:400,borderLeft:view===id?"3px solid #5eead4":"3px solid transparent",textAlign:"left",justifyContent:mobile?"center":"flex-start"}}><span>{ic}</span>{!mobile&&<span>{lb}</span>}</button>)}</nav>
-        <div style={{padding:"0 14px",borderTop:"1px solid rgba(255,255,255,.1)",paddingTop:12}}>{!mobile&&<div style={{fontSize:10,color:"rgba(255,255,255,.45)",marginBottom:5}}>Sesi\u00f3n: <b style={{color:"#5eead4"}}>{user.un}</b>{user.adm&&<span style={{background:"#5eead4",color:K.sd,padding:"1px 5px",borderRadius:3,fontSize:8,marginLeft:6,fontWeight:700}}>ADMIN</span>}</div>}<button onClick={()=>{sU(null);sV("dash");sS(null)}} style={{background:"rgba(255,255,255,.08)",border:"none",color:"rgba(255,255,255,.6)",padding:"7px 12px",borderRadius:6,cursor:"pointer",fontSize:mobile?16:12,width:"100%"}}>{mobile?"\u21a9":"\u21a9 Cerrar sesi\u00f3n"}</button></div>
+        <div style={{padding:"0 14px",borderTop:"1px solid rgba(255,255,255,.1)",paddingTop:12}}>{!mobile&&<div style={{fontSize:10,color:"rgba(255,255,255,.45)",marginBottom:5}}>{"Sesión: "}<b style={{color:"#5eead4"}}>{user.un}</b>{user.adm&&<span style={{background:"#5eead4",color:K.sd,padding:"1px 5px",borderRadius:3,fontSize:8,marginLeft:6,fontWeight:700}}>ADMIN</span>}</div>}<button onClick={()=>{sU(null);sV("dash");sS(null)}} style={{background:"rgba(255,255,255,.08)",border:"none",color:"rgba(255,255,255,.6)",padding:"7px 12px",borderRadius:6,cursor:"pointer",fontSize:mobile?16:12,width:"100%"}}>{mobile?"\u21a9":"↩ Cerrar sesión"}</button></div>
       </aside>
       <main style={{flex:1,overflowY:"auto",overflowX:"hidden",padding:mobile?"16px":"28px 36px",height:"100vh"}}>
         {toast&&<div style={{position:"fixed",top:16,right:16,zIndex:999,background:toast.t==="ok"?"#059669":"#dc2626",color:"#fff",padding:"10px 18px",borderRadius:8,fontSize:13,fontWeight:500,boxShadow:"0 4px 16px rgba(0,0,0,.15)",animation:"fi .3s ease"}}>{toast.m}</div>}
-        {mobile&&<div style={{background:"#fef3c7",padding:"12px 16px",borderRadius:8,border:"1px solid #fde68a",fontSize:13,color:"#92400e",marginBottom:16}}>\ud83d\udcf1 Modo m\u00f3vil: solo lectura.</div>}
+        {mobile&&<div style={{background:"#fef3c7",padding:"12px 16px",borderRadius:8,border:"1px solid #fde68a",fontSize:13,color:"#92400e",marginBottom:16}}>{"📱 Modo móvil: solo lectura."}</div>}
         {view==="dash"&&!mobile&&<Dash es={evals} pe={peffEvals} onT={()=>sV("tools")} onV={e=>{sS(e);sV("rpt")}} onVP={e=>{sS(e);sV("rptP")}} ld={loading}/>}
         {view==="tools"&&!mobile&&<Tools onSel={t=>sV(t)}/>}
         {view==="newELDI"&&!mobile&&<NewELDI onS={saveEval} nfy={nfy}/>}
@@ -81,24 +81,31 @@ function Login({onOk}){
   const go=async ev=>{ev.preventDefault();sl(true);se("");
     try{
       const users=await fbGetAll("usuarios");
-      console.log("Firebase usuarios encontrados:", users.length, users.map(x=>x.usuario));
-      const found=users.find(usr=>usr.usuario?.trim()===u.trim()&&usr.contrasena?.trim()===p.trim());
+      console.log("Firebase usuarios encontrados:", users.length, JSON.stringify(users.map(x=>({u:x.usuario,c:x.contrasena}))));
+      const found=users.find(usr=>{
+        const dbUser = (usr.usuario||"").trim();
+        const dbPass = (usr.contrasena||"").trim();
+        const inUser = u.trim();
+        const inPass = p.trim();
+        console.log("Comparando:", JSON.stringify(dbUser), "===", JSON.stringify(inUser), "->", dbUser===inUser, "| pass:", JSON.stringify(dbPass), "===", JSON.stringify(inPass), "->", dbPass===inPass);
+        return dbUser===inUser && dbPass===inPass;
+      });
       if(found)onOk({un:u.trim(),adm:u.trim()==="CalaAdmin976"});
-      else se("Usuario o contrase\u00f1a incorrectos ("+users.length+" usuarios en BD)");
+      else se("Credenciales incorrectas. "+users.length+" usuarios en BD. Revisa consola (F12) para debug.");
     }catch(err){console.error("Firebase login error:",err);se("Error Firebase: "+err.message)}
     sl(false);
   };
   const I={width:"100%",padding:"12px 14px",border:"1px solid #e2e8f0",borderRadius:8,fontSize:14,background:"#f8faf9"};
   return(<div style={{width:"100vw",height:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"linear-gradient(145deg,#0a3d2f,#0d7363)",fontFamily:"'DM Sans',system-ui,sans-serif"}}>
     <div style={{background:"rgba(255,255,255,.97)",borderRadius:16,padding:"44px 36px",width:380,maxWidth:"90vw",boxShadow:"0 20px 50px rgba(0,0,0,.3)"}}>
-      <div style={{textAlign:"center",marginBottom:28}}><div style={{display:"inline-flex",alignItems:"center",gap:9,marginBottom:8}}><span style={{fontSize:32}}>\ud83e\udded</span><span style={{fontSize:26,fontWeight:700,color:"#0a3d2f"}}>Br\u00fajula KIT</span></div><p style={{color:"#64748b",fontSize:13}}>Sistema Integral de Evaluaci\u00f3n Fonaudiol\u00f3gica</p></div>
+      <div style={{textAlign:"center",marginBottom:28}}><div style={{display:"inline-flex",alignItems:"center",gap:9,marginBottom:8}}><span style={{fontSize:32}}>{"🧭"}</span><span style={{fontSize:26,fontWeight:700,color:"#0a3d2f"}}>{"Brújula KIT"}</span></div><p style={{color:"#64748b",fontSize:13}}>{"Sistema Integral de Evaluación Fonoaudiológica"}</p></div>
       <form onSubmit={go}>
-        <div style={{marginBottom:14}}><label style={{fontSize:12,fontWeight:600,color:"#64748b",display:"block",marginBottom:5}}>Usuario</label><input value={u} onChange={e=>su(e.target.value)} style={I} placeholder="Ingrese su usuario" required/></div>
-        <div style={{marginBottom:22}}><label style={{fontSize:12,fontWeight:600,color:"#64748b",display:"block",marginBottom:5}}>Contrase\u00f1a</label><input type="password" value={p} onChange={e=>sp(e.target.value)} style={I} placeholder="Ingrese su contrase\u00f1a" required/></div>
+        <div style={{marginBottom:14}}><label style={{fontSize:12,fontWeight:600,color:"#64748b",display:"block",marginBottom:5}}>{"Usuario"}</label><input value={u} onChange={e=>su(e.target.value)} style={I} placeholder="Ingrese su usuario" required/></div>
+        <div style={{marginBottom:22}}><label style={{fontSize:12,fontWeight:600,color:"#64748b",display:"block",marginBottom:5}}>{"Contraseña"}</label><input type="password" value={p} onChange={e=>sp(e.target.value)} style={I} placeholder="Ingrese su contraseña" required/></div>
         {e&&<div style={{background:"#fef2f2",border:"1px solid #fecaca",color:"#dc2626",padding:"10px 12px",borderRadius:8,fontSize:12,marginBottom:14}}>{e}</div>}
-        <button type="submit" disabled={ld} style={{width:"100%",padding:"13px",background:"#0d9488",color:"#fff",border:"none",borderRadius:8,fontSize:15,fontWeight:600,cursor:ld?"wait":"pointer",opacity:ld?.7:1}}>{ld?"Verificando...":"Iniciar sesi\u00f3n"}</button>
+        <button type="submit" disabled={ld} style={{width:"100%",padding:"13px",background:"#0d9488",color:"#fff",border:"none",borderRadius:8,fontSize:15,fontWeight:600,cursor:ld?"wait":"pointer",opacity:ld?.7:1}}>{ld?"Verificando...":"Iniciar sesión"}</button>
       </form>
-      <p style={{textAlign:"center",marginTop:20,fontSize:10,color:"#94a3b8"}}>Br\u00fajula KIT v3.0</p>
+      <p style={{textAlign:"center",marginTop:20,fontSize:10,color:"#94a3b8"}}>{"Brújula KIT v3.0"}</p>
     </div>
   </div>);
 }
@@ -106,29 +113,29 @@ function Login({onOk}){
 function Dash({es,pe,onT,onV,onVP,ld}){
   const all=[...es,...pe].sort((a,b)=>(b.fechaGuardado||"").localeCompare(a.fechaGuardado||""));const rc=all.slice(0,5);
   return(<div style={{animation:"fi .3s ease",width:"100%"}}>
-    <h1 style={{fontSize:22,fontWeight:700,marginBottom:6}}>\ud83e\udded Panel Principal</h1>
-    <p style={{color:K.mt,fontSize:14,marginBottom:24}}>Resumen{ld?" \u2014 cargando...":""}</p>
+    <h1 style={{fontSize:22,fontWeight:700,marginBottom:6}}>{"🧭 Panel Principal"}</h1>
+    <p style={{color:K.mt,fontSize:14,marginBottom:24}}>{"Resumen"}{ld?" — cargando...":""}</p>
     <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))",gap:16,marginBottom:28}}>
-      {[["\ud83d\udccb","ELDI",es.length],["\ud83d\udd0a","PEFF",pe.length],["\ud83d\udc76","Pacientes",new Set([...es.map(e=>e.paciente),...pe.map(e=>e.paciente)]).size]].map(([ic,lb,v],i)=><div key={i} style={{background:"#fff",borderRadius:12,padding:22,border:"1px solid #e2e8f0"}}><div style={{fontSize:28,marginBottom:6}}>{ic}</div><div style={{fontSize:28,fontWeight:700}}>{v}</div><div style={{fontSize:13,color:K.mt,marginTop:2}}>{lb}</div></div>)}
+      {[["📋","ELDI",es.length],["🔊","PEFF",pe.length],["👶","Pacientes",new Set([...es.map(e=>e.paciente),...pe.map(e=>e.paciente)]).size]].map(([ic,lb,v],i)=><div key={i} style={{background:"#fff",borderRadius:12,padding:22,border:"1px solid #e2e8f0"}}><div style={{fontSize:28,marginBottom:6}}>{ic}</div><div style={{fontSize:28,fontWeight:700}}>{v}</div><div style={{fontSize:13,color:K.mt,marginTop:2}}>{lb}</div></div>)}
     </div>
     <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20}}>
-      <button onClick={onT} style={{background:"linear-gradient(135deg,#0a3d2f,#0d9488)",color:"#fff",border:"none",borderRadius:14,padding:"28px 24px",cursor:"pointer",display:"flex",alignItems:"center",gap:16,textAlign:"left"}}><div style={{width:52,height:52,borderRadius:12,background:"rgba(255,255,255,.14)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,flexShrink:0}}>\ud83e\uddf0</div><div><div style={{fontSize:18,fontWeight:700}}>Herramientas</div><div style={{fontSize:13,opacity:.8,marginTop:4}}>Nueva evaluaci\u00f3n</div></div></button>
-      <div style={{background:"#fff",borderRadius:14,padding:22,border:"1px solid #e2e8f0"}}><h3 style={{fontSize:15,fontWeight:600,marginBottom:14}}>Recientes</h3>
-        {rc.length===0?<p style={{color:K.mt,fontSize:13}}>Sin evaluaciones.</p>:rc.map(ev=>{const isP=!!ev.seccionData;return(<div key={ev._fbId||ev.id} onClick={()=>isP?onVP(ev):onV(ev)} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 0",borderBottom:"1px solid #e2e8f0",cursor:"pointer"}}><div><div style={{fontWeight:600,fontSize:14}}>{ev.paciente}</div><div style={{fontSize:11,color:K.mt}}>{isP?"PEFF":"ELDI"} \u00b7 {new Date(ev.fechaGuardado).toLocaleDateString("es-CL")}</div></div><span style={{color:K.mt}}>\u2192</span></div>)})}
+      <button onClick={onT} style={{background:"linear-gradient(135deg,#0a3d2f,#0d9488)",color:"#fff",border:"none",borderRadius:14,padding:"28px 24px",cursor:"pointer",display:"flex",alignItems:"center",gap:16,textAlign:"left"}}><div style={{width:52,height:52,borderRadius:12,background:"rgba(255,255,255,.14)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,flexShrink:0}}>{"🧰"}</div><div><div style={{fontSize:18,fontWeight:700}}>{"Herramientas"}</div><div style={{fontSize:13,opacity:.8,marginTop:4}}>{"Nueva evaluación"}</div></div></button>
+      <div style={{background:"#fff",borderRadius:14,padding:22,border:"1px solid #e2e8f0"}}><h3 style={{fontSize:15,fontWeight:600,marginBottom:14}}>{"Recientes"}</h3>
+        {rc.length===0?<p style={{color:K.mt,fontSize:13}}>{"Sin evaluaciones."}</p>:rc.map(ev=>{const isP=!!ev.seccionData;return(<div key={ev._fbId||ev.id} onClick={()=>isP?onVP(ev):onV(ev)} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 0",borderBottom:"1px solid #e2e8f0",cursor:"pointer"}}><div><div style={{fontWeight:600,fontSize:14}}>{ev.paciente}</div><div style={{fontSize:11,color:K.mt}}>{isP?"PEFF":"ELDI"}{" · "}{new Date(ev.fechaGuardado).toLocaleDateString("es-CL")}</div></div><span style={{color:K.mt}}>{"→"}</span></div>)})}
       </div>
     </div>
   </div>);
 }
 
 function Tools({onSel}){
-  const tools=[{id:"newELDI",icon:"\ud83d\udccb",name:"ELDI",full:"Evaluaci\u00f3n del Lenguaje y Desarrollo Infantil",desc:"Comprensi\u00f3n auditiva y comunicaci\u00f3n expresiva (55+55 \u00edtems) de 0 a 7 a\u00f1os.",age:"0-7;11",time:"~30-45 min",color:"#0d9488"},{id:"newPEFF",icon:"\ud83d\udd0a",name:"PEFF",full:"Protocolo Fon\u00e9tico-Fonol\u00f3gico",desc:"OFA, diadococinesis, s\u00edlabas, discriminaci\u00f3n y reconocimiento fonol\u00f3gico.",age:"2;6-6;11",time:"~45-60 min",color:"#7c3aed"}];
+  const tools=[{id:"newELDI",icon:"📋",name:"ELDI",full:"Evaluación del Lenguaje y Desarrollo Infantil",desc:"Comprensión auditiva y comunicación expresiva (55+55 ítems) de 0 a 7 años.",age:"0-7;11",time:"~30-45 min",color:"#0d9488"},{id:"newPEFF",icon:"🔊",name:"PEFF",full:"Protocolo Fonético-Fonológico",desc:"OFA, diadococinesis, sílabas, discriminación y reconocimiento fonológico.",age:"2;6-6;11",time:"~45-60 min",color:"#7c3aed"}];
   return(<div style={{animation:"fi .3s ease",width:"100%"}}>
-    <h1 style={{fontSize:22,fontWeight:700,marginBottom:6}}>\ud83e\uddf0 Herramientas</h1>
-    <p style={{color:K.mt,fontSize:14,marginBottom:24}}>Seleccione evaluaci\u00f3n</p>
+    <h1 style={{fontSize:22,fontWeight:700,marginBottom:6}}>{"🧰 Herramientas"}</h1>
+    <p style={{color:K.mt,fontSize:14,marginBottom:24}}>{"Seleccione evaluación"}</p>
     <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20}}>
       {tools.map(t=><div key={t.id} onClick={()=>onSel(t.id)} style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",overflow:"hidden",cursor:"pointer"}}>
         <div style={{background:`linear-gradient(135deg,${t.color},${t.color}aa)`,padding:"24px 24px 20px",color:"#fff"}}><div style={{fontSize:36,marginBottom:8}}>{t.icon}</div><div style={{fontSize:22,fontWeight:700}}>{t.name}</div><div style={{fontSize:12,opacity:.85,marginTop:2}}>{t.full}</div></div>
-        <div style={{padding:"20px 24px"}}><p style={{fontSize:13,color:"#475569",lineHeight:1.6,marginBottom:16}}>{t.desc}</p><div style={{display:"flex",gap:16,fontSize:12,color:K.mt}}><span>\ud83d\udc76 {t.age}</span><span>\u23f1 {t.time}</span></div><button style={{marginTop:16,width:"100%",padding:"11px",background:t.color,color:"#fff",border:"none",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer"}}>Iniciar \u2192</button></div>
+        <div style={{padding:"20px 24px"}}><p style={{fontSize:13,color:"#475569",lineHeight:1.6,marginBottom:16}}>{t.desc}</p><div style={{display:"flex",gap:16,fontSize:12,color:K.mt}}><span>{"👶 "}{t.age}</span><span>{"⏱ "}{t.time}</span></div><button style={{marginTop:16,width:"100%",padding:"11px",background:t.color,color:"#fff",border:"none",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer"}}>{"Iniciar →"}</button></div>
       </div>)}
     </div>
   </div>);
