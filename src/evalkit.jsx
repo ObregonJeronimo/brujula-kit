@@ -6,7 +6,7 @@ const isMobile = () => window.innerWidth < 768 || /Android|iPhone|iPad|iPod/i.te
 const K = { sd: "#0a3d2f", ac: "#0d9488", al: "#ccfbf1", mt: "#64748b", bd: "#e2e8f0", bg: "#f0f5f3" };
 
 // Firebase helpers
-async function fbGetAll(c) { try { const s = await getDocs(collection(db, c)); return s.docs.map(d => ({ _fbId: d.id, ...d.data() })); } catch(e) { console.error(e); return []; } }
+async function fbGetAll(c) { const s = await getDocs(collection(db, c)); return s.docs.map(d => ({ _fbId: d.id, ...d.data() })); }
 async function fbAdd(c, data) { try { const r = await addDoc(collection(db, c), data); return { success:true, id:r.id }; } catch(e) { return { success:false, error:e.message }; } }
 async function fbDelete(c, id) { try { await deleteDoc(doc(db, c, id)); return { success:true }; } catch(e) { return { success:false, error:e.message }; } }
 
@@ -304,8 +304,18 @@ export default function App(){
 function Login({onOk}){
   const[u,su]=useState(""),[p,sp]=useState(""),[ld,sl]=useState(false),[e,se]=useState("");
   const go=async ev=>{ev.preventDefault();sl(true);se("");
-    try{const users=await fbGetAll("usuarios");const found=users.find(usr=>usr.usuario===u&&usr.contrasena===p);
-    if(found)onOk({un:u,adm:u==="CalaAdmin976"});else se("Usuario o contraseña incorrectos")}catch{se("Error de conexión con Firebase")}sl(false)};
+    try{
+      const users=await fbGetAll("usuarios");
+      console.log("Firebase usuarios encontrados:", users.length, users.map(x=>x.usuario));
+      const found=users.find(usr=>usr.usuario?.trim()===u.trim()&&usr.contrasena?.trim()===p.trim());
+      if(found)onOk({un:u.trim(),adm:u.trim()==="CalaAdmin976"});
+      else se("Usuario o contraseña incorrectos ("+users.length+" usuarios en BD)");
+    }catch(err){
+      console.error("Firebase login error:", err);
+      se("Error Firebase: "+err.message);
+    }
+    sl(false);
+  };
   const I={width:"100%",padding:"12px 14px",border:"1px solid #e2e8f0",borderRadius:8,fontSize:14,background:"#f8faf9"};
   return(<div style={{width:"100vw",height:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"linear-gradient(145deg,#0a3d2f,#0d7363)",fontFamily:"'DM Sans',system-ui,sans-serif"}}>
     <div style={{background:"rgba(255,255,255,.97)",borderRadius:16,padding:"44px 36px",width:380,maxWidth:"90vw",boxShadow:"0 20px 50px rgba(0,0,0,.3)"}}>
@@ -463,126 +473,4 @@ function NewPEFF({onS,nfy}){
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:14,marginBottom:20}}>{[["Sílabas",`${r.silOk}/${r.silTotal}`,`${r.silPct}%`],["Discriminación",`${r.discOk}/${r.discTotal}`,""],["Reconocimiento",`${r.recOk}/${r.recTotal}`,""]].map(([l,v,v2],i)=><div key={i} style={{background:"#f8faf9",borderRadius:10,padding:20,border:"1px solid #e2e8f0",textAlign:"center"}}><div style={{fontSize:11,color:K.mt,marginBottom:4}}>{l}</div><div style={{fontSize:32,fontWeight:700,color:"#7c3aed"}}>{v}</div>{v2&&<div style={{fontSize:14,color:K.mt}}>{v2}</div>}</div>)}</div>
         <div style={{background:"linear-gradient(135deg,#5b21b6,#7c3aed)",borderRadius:10,padding:24,color:"#fff",marginBottom:24}}><div style={{fontSize:13,opacity:.8,marginBottom:8}}>Severidad Fonética</div><div style={{fontSize:36,fontWeight:700}}>{r.severity}</div></div>
         <div style={{marginBottom:20}}><label style={{fontSize:13,fontWeight:600,color:K.mt,display:"block",marginBottom:6}}>Observaciones</label><textarea value={pd.obs} onChange={e=>sPd(p=>({...p,obs:e.target.value}))} rows={4} style={{width:"100%",padding:"12px 14px",border:"1px solid #e2e8f0",borderRadius:8,fontSize:14,resize:"vertical",background:"#f8faf9"}}/></div>
-        <div style={{display:"flex",justifyContent:"space-between"}}><button onClick={()=>sS2(step-1)} style={{background:"#f1f5f9",border:"none",padding:"10px 22px",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer"}}>← Atrás</button><button onClick={()=>onS({paciente:pd.pN,fechaNacimiento:pd.birth,fechaEvaluacion:pd.eD,establecimiento:pd.sch,derivadoPor:pd.ref,edadMeses:a,observaciones:pd.obs,seccionData:data,resultados:r})} style={{background:"#7c3aed",color:"#fff",border:"none",padding:"12px 28px",borderRadius:8,fontSize:15,fontWeight:700,cursor:"pointer"}}>💾 Guardar</button></div>
-      </div>})()}
-      {step>=1&&step<=PEFF_SECTIONS.length&&<div style={{display:"flex",justifyContent:"space-between",marginTop:20,paddingTop:14,borderTop:"1px solid #e2e8f0"}}><button onClick={()=>sS2(step-1)} style={{background:"#f1f5f9",border:"none",padding:"10px 22px",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer"}}>← Atrás</button><button onClick={()=>sS2(step+1)} style={{background:"#7c3aed",color:"#fff",border:"none",padding:"10px 22px",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer"}}>Siguiente →</button></div>}
-    </div>
-  </div>);
-}
-
-// ══ HISTORIAL ══
-function Hist({es,pe,onV,onVP,isA,onD}){
-  const[q,sQ]=useState(""),[tab,sTab]=useState("all"),[cf,sC]=useState(null);
-  const all=[...es.map(e=>({...e,_t:"eldi"})),...pe.map(e=>({...e,_t:"peff"}))].sort((a,b)=>(b.fechaGuardado||"").localeCompare(a.fechaGuardado||""));
-  const f=all.filter(e=>{if(q&&!(e.paciente||"").toLowerCase().includes(q.toLowerCase()))return false;if(tab==="eldi"&&e._t!=="eldi")return false;if(tab==="peff"&&e._t!=="peff")return false;return true});
-  return(<div style={{width:"100%",animation:"fi .3s ease"}}>
-    <h1 style={{fontSize:22,fontWeight:700,marginBottom:6}}>Historial</h1><p style={{color:K.mt,fontSize:14,marginBottom:14}}>{all.length} evaluaciones</p>
-    <div style={{display:"flex",gap:8,marginBottom:14}}>{[["all","Todas"],["eldi","📋 ELDI"],["peff","🔊 PEFF"]].map(([id,lb])=><button key={id} onClick={()=>sTab(id)} style={{padding:"6px 14px",borderRadius:6,border:tab===id?"2px solid #0d9488":"1px solid #e2e8f0",background:tab===id?"#ccfbf1":"#fff",color:tab===id?"#0d9488":"#64748b",fontSize:13,fontWeight:600,cursor:"pointer"}}>{lb}</button>)}</div>
-    <input value={q} onChange={e=>sQ(e.target.value)} placeholder="Buscar paciente..." style={{width:"100%",maxWidth:400,padding:"10px 14px",border:"1px solid #e2e8f0",borderRadius:8,fontSize:14,marginBottom:18,background:"#fff"}}/>
-    {f.length===0?<div style={{background:"#fff",borderRadius:12,padding:40,textAlign:"center",border:"1px solid #e2e8f0",color:K.mt}}>Sin resultados.</div>:
-    <div style={{display:"flex",flexDirection:"column",gap:6}}>{f.map(ev=>{const isP=ev._t==="peff";const bg=isP?{b:"#ede9fe",c:"#7c3aed",l:"PEFF"}:{b:"#ccfbf1",c:"#0d9488",l:"ELDI"};
-      return(<div key={ev._fbId||ev.id} style={{background:"#fff",borderRadius:10,padding:"14px 20px",border:"1px solid #e2e8f0",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-        <div onClick={()=>isP?onVP(ev):onV(ev)} style={{cursor:"pointer",flex:1}}>
-          <div style={{display:"flex",alignItems:"center",gap:8}}><span style={{padding:"2px 8px",borderRadius:4,background:bg.b,color:bg.c,fontSize:10,fontWeight:700}}>{bg.l}</span><span style={{fontWeight:600,fontSize:15}}>{ev.paciente}</span></div>
-          <div style={{fontSize:12,color:K.mt,marginTop:2}}>{new Date(ev.fechaGuardado).toLocaleDateString("es-CL")} · {fa(ev.edadMeses)}{ev.evaluador?` · ${ev.evaluador}`:""}</div>
-        </div>
-        <div style={{display:"flex",alignItems:"center",gap:10}}>
-          {!isP&&ev.ssTotal&&<span style={{padding:"3px 10px",borderRadius:14,background:itp(ev.ssTotal).c+"15",color:itp(ev.ssTotal).c,fontSize:12,fontWeight:600}}>PE:{ev.ssTotal}</span>}
-          {isP&&ev.resultados&&<span style={{padding:"3px 10px",borderRadius:14,background:"#ede9fe",color:"#7c3aed",fontSize:12,fontWeight:600}}>{ev.resultados.severity}</span>}
-          {isA&&(cf===(ev._fbId||ev.id)?<div style={{display:"flex",gap:4}}><button onClick={()=>{onD(ev._fbId,isP?"peff_evaluaciones":"evaluaciones");sC(null)}} style={{background:"#dc2626",color:"#fff",border:"none",padding:"5px 10px",borderRadius:5,fontSize:11,cursor:"pointer",fontWeight:600}}>Sí</button><button onClick={()=>sC(null)} style={{background:"#f1f5f9",border:"none",padding:"5px 10px",borderRadius:5,fontSize:11,cursor:"pointer"}}>No</button></div>:<button onClick={()=>sC(ev._fbId||ev.id)} style={{background:"#fef2f2",color:"#dc2626",border:"1px solid #fecaca",padding:"5px 10px",borderRadius:6,cursor:"pointer",fontSize:11}}>🗑</button>)}
-          <span onClick={()=>isP?onVP(ev):onV(ev)} style={{color:"#94a3b8",cursor:"pointer"}}>→</span>
-        </div>
-      </div>)})}</div>}
-  </div>);
-}
-
-// ══ INFORME ELDI ══
-function RptELDI({ev,isA,onD}){
-  const ri=itp(ev.ssReceptivo),ei=itp(ev.ssExpresivo),ti=itp(ev.ssTotal);
-  const[cd,sCD]=useState(false);
-  const pdf=()=>{const w=window.open("","_blank");if(!w)return;w.document.write(`<!DOCTYPE html><html><head><title>ELDI ${ev.paciente}</title><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Segoe UI',Arial,sans-serif;color:#1e293b;padding:24px 36px;max-width:800px;margin:0 auto;line-height:1.5}h1{font-size:22px;color:#0a3d2f;border-bottom:3px solid #0d9488;padding-bottom:8px;margin-bottom:18px}h2{font-size:14px;color:#0a3d2f;margin:12px 0 6px;text-transform:uppercase;letter-spacing:.5px}.g{display:grid;grid-template-columns:1fr 1fr;gap:6px 24px}.f{font-size:13px;padding:6px 0;border-bottom:1px solid #f1f5f9}.f strong{color:#475569}table{width:100%;border-collapse:collapse;margin:12px 0}th,td{border:1px solid #e2e8f0;padding:10px 14px;text-align:center;font-size:13px}th{background:#0a3d2f;color:white}.ip{padding:8px 12px;border-radius:6px;font-size:13px;font-weight:600;margin:10px 0}.ob{background:#f8faf9;padding:10px;border-radius:6px;border:1px solid #e2e8f0;font-size:13px;min-height:50px;margin:8px 0}.ft{margin-top:20px;border-top:1px solid #e2e8f0;padding-top:20px;display:flex;justify-content:space-between}.sg{text-align:center;width:44%}.sg .ln{border-top:1px solid #1e293b;margin-top:30px;padding-top:4px;font-size:12px}</style></head><body><div style="text-align:center;margin-bottom:28px"><h1 style="border:none;font-size:24px">INFORME ELDI</h1><p style="color:#64748b;font-size:13px">Evaluación del Lenguaje y Desarrollo Infantil — Brújula KIT</p></div><h2>1. Identificación</h2><div class="g"><div class="f"><strong>Nombre:</strong> ${ev.paciente}</div><div class="f"><strong>Edad:</strong> ${fa(ev.edadMeses)}</div><div class="f"><strong>F.nac:</strong> ${ev.fechaNacimiento}</div><div class="f"><strong>F.eval:</strong> ${ev.fechaEvaluacion}</div><div class="f"><strong>Establ:</strong> ${ev.establecimiento||"—"}</div><div class="f"><strong>Derivado:</strong> ${ev.derivadoPor||"—"}</div></div><h2>2. Resultados</h2><table><tr><th>Escala</th><th>Bruto</th><th>Estándar</th><th>Pctil</th><th>Nivel</th><th>Interp.</th></tr><tr><td>Comp. Auditiva</td><td>${ev.brutoReceptivo}</td><td>${ev.ssReceptivo}</td><td>${ev.pcReceptivo}%</td><td>${ev.aeReceptivo}</td><td style="color:${ri.c};font-weight:600">${ri.t}</td></tr><tr><td>Com. Expresiva</td><td>${ev.brutoExpresivo}</td><td>${ev.ssExpresivo}</td><td>${ev.pcExpresivo}%</td><td>${ev.aeExpresivo}</td><td style="color:${ei.c};font-weight:600">${ei.t}</td></tr><tr style="font-weight:700"><td>Total</td><td>${ev.brutoReceptivo+ev.brutoExpresivo}</td><td>${ev.ssTotal}</td><td>${ev.pcTotal}%</td><td>—</td><td style="color:${ti.c}">${ti.t}</td></tr></table><h2>3. Interpretación</h2><div class="ip" style="background:${ti.c}15;color:${ti.c};border-left:4px solid ${ti.c}">${ti.t} (PE=${ev.ssTotal}, Pctil ${ev.pcTotal}%)</div><h2>4. Observaciones</h2><div class="ob">${ev.observaciones||"Sin observaciones."}</div><h2>5. Recomendaciones</h2><div class="ob">${ev.ssTotal>=86?"Rendimiento esperado. Seguimiento sugerido.":"Se sugiere intervención fonoaudiológica. Reevaluación en 6 meses."}</div><div class="ft"><div class="sg"><div class="ln">Firma Profesional</div><p style="font-size:11px;color:#64748b">Fonoaudiólogo/a</p></div><div class="sg"><div class="ln">Fecha</div><p style="font-size:11px;color:#64748b">${new Date(ev.fechaGuardado).toLocaleDateString("es-CL")}</p></div></div></body></html>`);w.document.close();setTimeout(()=>w.print(),500)};
-  return(<div style={{width:"100%",maxWidth:900,animation:"fi .3s ease"}}>
-    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:24,flexWrap:"wrap",gap:12}}>
-      <div><h1 style={{fontSize:24,fontWeight:700}}>Informe ELDI</h1><p style={{color:K.mt,fontSize:15,marginTop:2}}>{ev.paciente} — {fa(ev.edadMeses)}</p></div>
-      <div style={{display:"flex",gap:8}}>
-        {isA&&(cd?<div style={{display:"flex",gap:4,alignItems:"center"}}><button onClick={()=>{onD(ev._fbId,"evaluaciones");sCD(false)}} style={{background:"#dc2626",color:"#fff",border:"none",padding:"8px 16px",borderRadius:6,fontSize:12,fontWeight:600,cursor:"pointer"}}>Sí, eliminar</button><button onClick={()=>sCD(false)} style={{background:"#f1f5f9",border:"none",padding:"8px 16px",borderRadius:6,fontSize:12,cursor:"pointer"}}>No</button></div>:<button onClick={()=>sCD(true)} style={{background:"#fef2f2",color:"#dc2626",border:"1px solid #fecaca",padding:"8px 16px",borderRadius:8,fontSize:13,cursor:"pointer"}}>🗑 Eliminar</button>)}
-        <button onClick={pdf} style={{background:"#dc2626",color:"#fff",border:"none",padding:"11px 22px",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer"}}>📄 Exportar PDF</button>
-      </div>
-    </div>
-    <div style={{background:"#fff",borderRadius:14,padding:32,border:"1px solid #e2e8f0"}}>
-      <h3 style={{fontSize:16,fontWeight:700,color:"#0a3d2f",marginBottom:14,paddingBottom:8,borderBottom:"2px solid #ccfbf1"}}>Datos del Paciente</h3>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"8px 32px",marginBottom:28}}>{[["Nombre",ev.paciente],["Edad",fa(ev.edadMeses)],["F. nacimiento",ev.fechaNacimiento],["F. evaluación",ev.fechaEvaluacion],["Establecimiento",ev.establecimiento||"—"],["Derivado por",ev.derivadoPor||"—"]].map(([l,v],i)=><div key={i} style={{padding:"8px 0",borderBottom:"1px solid #f1f5f9"}}><div style={{fontSize:11,color:K.mt,marginBottom:3,textTransform:"uppercase"}}>{l}</div><div style={{fontSize:15,fontWeight:600}}>{v}</div></div>)}</div>
-      <h3 style={{fontSize:16,fontWeight:700,color:"#0a3d2f",marginBottom:14,paddingBottom:8,borderBottom:"2px solid #ccfbf1"}}>Resultados</h3>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:14}}>{[["🔊 Comp. Auditiva",ev.brutoReceptivo,ev.ssReceptivo,ev.pcReceptivo,ri],["🗣️ Com. Expresiva",ev.brutoExpresivo,ev.ssExpresivo,ev.pcExpresivo,ei]].map(([lb,raw,ss,pc,ip],i)=><div key={i} style={{background:"#f8faf9",borderRadius:10,padding:20,border:"1px solid #e2e8f0"}}><div style={{fontWeight:700,fontSize:14,marginBottom:14}}>{lb}</div><div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10}}>{[["Bruto",raw],["Estándar",ss],["Pctil",pc+"%"],["Nivel",i===0?ev.aeReceptivo:ev.aeExpresivo]].map(([l,v],j)=><div key={j}><div style={{fontSize:10,color:K.mt,marginBottom:3}}>{l}</div><div style={{fontSize:20,fontWeight:700}}>{v}</div></div>)}</div><div style={{marginTop:12,display:"inline-flex",alignItems:"center",gap:6,padding:"4px 12px",borderRadius:14,background:ip.c+"15",color:ip.c,fontSize:12,fontWeight:600}}><span style={{width:7,height:7,borderRadius:"50%",background:ip.c}}/>{ip.t}</div></div>)}</div>
-      <div style={{background:"linear-gradient(135deg,#0a3d2f,#0d9488)",borderRadius:10,padding:24,color:"#fff",marginBottom:28}}><div style={{fontSize:13,opacity:.8,marginBottom:8}}>Total</div><div style={{display:"flex",alignItems:"baseline",gap:16}}><span style={{fontSize:48,fontWeight:700}}>{ev.ssTotal}</span><div><div style={{fontSize:15}}>Percentil: {ev.pcTotal}%</div><div style={{marginTop:4,display:"inline-flex",padding:"4px 14px",borderRadius:14,background:"rgba(255,255,255,.18)",fontSize:14,fontWeight:600}}>● {ti.t}</div></div></div></div>
-      <h3 style={{fontSize:16,fontWeight:700,color:"#0a3d2f",marginBottom:10,paddingBottom:8,borderBottom:"2px solid #ccfbf1"}}>Observaciones</h3>
-      <div style={{background:"#f8faf9",padding:18,borderRadius:10,fontSize:14,border:"1px solid #e2e8f0",lineHeight:1.7,minHeight:60}}>{ev.observaciones||"Sin observaciones."}</div>
-    </div>
-  </div>);
-}
-
-// ══ INFORME PEFF ══
-function RptPEFF({ev,isA,onD}){
-  const[cd,sCD]=useState(false);const r=ev.resultados||{};
-  const pdf=()=>{const w=window.open("","_blank");if(!w)return;const d=ev.seccionData||{};
-    const ofaFields=[["Labios postura",d.lab_postura],["Labios simetría",d.lab_simetria],["Tonicidad",d.lab_tonicidad],["ATM postura",d.atm_postura],["ATM apertura",d.atm_apertura],["Lengua postura",d.len_postura],["Lengua tamaño",d.len_tamano],["Frenillo",d.len_frenillo],["Dentición",d.die_denticion],["Angle Der.",d.die_angle_der],["Angle Izq.",d.die_angle_izq],["Mordida",d.die_mordida],["Paladar",d.pal_altura],["Integridad",d.pal_integridad],["Velo",d.vel_simetria],["Úvula",d.vel_uvula],["Escape nasal",d.vel_escape]].filter(([,v])=>v);
-    const ofaHTML=ofaFields.map(([l,v])=>`<tr><td style="text-align:left;font-weight:600">${l}</td><td>${v}</td></tr>`).join("");
-    w.document.write(`<!DOCTYPE html><html><head><title>PEFF ${ev.paciente}</title><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:sans-serif;color:#1e293b;padding:24px 36px;max-width:800px;margin:0 auto;line-height:1.5}h1{font-size:22px;color:#5b21b6;border-bottom:3px solid #7c3aed;padding-bottom:8px;margin-bottom:18px}h2{font-size:14px;color:#5b21b6;margin:16px 0 8px;text-transform:uppercase}table{width:100%;border-collapse:collapse;margin:8px 0}th,td{border:1px solid #e2e8f0;padding:8px 12px;font-size:13px}th{background:#5b21b6;color:white}.res{background:#ede9fe;padding:12px;border-radius:8px;margin:8px 0}.ob{background:#f8faf9;padding:10px;border-radius:6px;border:1px solid #e2e8f0;font-size:13px;min-height:40px;margin:8px 0}.ft{margin-top:20px;border-top:1px solid #e2e8f0;padding-top:20px;display:flex;justify-content:space-between}.sg{text-align:center;width:44%}.sg .ln{border-top:1px solid #1e293b;margin-top:30px;padding-top:4px;font-size:12px}</style></head><body><div style="text-align:center;margin-bottom:28px"><h1 style="border:none;font-size:24px">INFORME PEFF</h1><p style="color:#64748b;font-size:13px">Brújula KIT</p></div><h2>Identificación</h2><table><tr><th>Nombre</th><td>${ev.paciente}</td><th>Edad</th><td>${fa(ev.edadMeses)}</td></tr><tr><th>F.nac</th><td>${ev.fechaNacimiento}</td><th>F.eval</th><td>${ev.fechaEvaluacion}</td></tr></table><h2>Examen OFA</h2><table><tr><th>Estructura</th><th>Hallazgo</th></tr>${ofaHTML||"<tr><td colspan=2>—</td></tr>"}</table><h2>Resultados</h2><div class="res"><strong>Sílabas:</strong> ${r.silOk||0}/${r.silTotal||0} (${r.silPct||0}%)<br><strong>Discriminación:</strong> ${r.discOk||0}/${r.discTotal||0}<br><strong>Reconocimiento:</strong> ${r.recOk||0}/${r.recTotal||0}</div><h2>Severidad</h2><div class="res" style="font-size:18px;font-weight:700;color:#5b21b6">${r.severity||"—"}</div><h2>Observaciones</h2><div class="ob">${ev.observaciones||"Sin observaciones."}</div><div class="ft"><div class="sg"><div class="ln">Firma Profesional</div></div><div class="sg"><div class="ln">Fecha</div><p style="font-size:11px">${new Date(ev.fechaGuardado).toLocaleDateString("es-CL")}</p></div></div></body></html>`);
-    w.document.close();setTimeout(()=>w.print(),500)};
-  return(<div style={{width:"100%",maxWidth:900,animation:"fi .3s ease"}}>
-    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:24,flexWrap:"wrap",gap:12}}>
-      <div><h1 style={{fontSize:24,fontWeight:700,color:"#7c3aed"}}>Informe PEFF</h1><p style={{color:K.mt,fontSize:15,marginTop:2}}>{ev.paciente} — {fa(ev.edadMeses)}</p></div>
-      <div style={{display:"flex",gap:8}}>
-        {isA&&(cd?<div style={{display:"flex",gap:4}}><button onClick={()=>{onD(ev._fbId,"peff_evaluaciones");sCD(false)}} style={{background:"#dc2626",color:"#fff",border:"none",padding:"8px 16px",borderRadius:6,fontSize:12,fontWeight:600,cursor:"pointer"}}>Sí</button><button onClick={()=>sCD(false)} style={{background:"#f1f5f9",border:"none",padding:"8px 16px",borderRadius:6,fontSize:12,cursor:"pointer"}}>No</button></div>:<button onClick={()=>sCD(true)} style={{background:"#fef2f2",color:"#dc2626",border:"1px solid #fecaca",padding:"8px 16px",borderRadius:8,fontSize:13,cursor:"pointer"}}>🗑</button>)}
-        <button onClick={pdf} style={{background:"#7c3aed",color:"#fff",border:"none",padding:"11px 22px",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer"}}>📄 PDF</button>
-      </div>
-    </div>
-    <div style={{background:"#fff",borderRadius:14,padding:32,border:"1px solid #e2e8f0"}}>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:14,marginBottom:20}}>{[["Sílabas",`${r.silOk||0}/${r.silTotal||0}`,`${r.silPct||0}%`],["Discriminación",`${r.discOk||0}/${r.discTotal||0}`,""],["Reconocimiento",`${r.recOk||0}/${r.recTotal||0}`,""]].map(([l,v,v2],i)=><div key={i} style={{background:"#f8faf9",borderRadius:10,padding:20,border:"1px solid #e2e8f0",textAlign:"center"}}><div style={{fontSize:11,color:K.mt,marginBottom:4}}>{l}</div><div style={{fontSize:28,fontWeight:700,color:"#7c3aed"}}>{v}</div>{v2&&<div style={{fontSize:13,color:K.mt}}>{v2}</div>}</div>)}</div>
-      <div style={{background:"linear-gradient(135deg,#5b21b6,#7c3aed)",borderRadius:10,padding:24,color:"#fff",marginBottom:28}}><div style={{fontSize:13,opacity:.8,marginBottom:8}}>Severidad</div><div style={{fontSize:36,fontWeight:700}}>{r.severity||"—"}</div></div>
-      <h3 style={{fontSize:16,fontWeight:700,color:"#5b21b6",marginBottom:10}}>Observaciones</h3>
-      <div style={{background:"#f8faf9",padding:18,borderRadius:10,fontSize:14,border:"1px solid #e2e8f0",lineHeight:1.7,minHeight:60}}>{ev.observaciones||"Sin observaciones."}</div>
-    </div>
-  </div>);
-}
-
-// ══ ADMIN ══
-function Admin({nfy}){
-  const[us,sUs]=useState([]),[ld,sLd]=useState(true),[nu,sNu]=useState(""),[np,sNp]=useState(""),[busy,sBusy]=useState(false);
-  const load=async()=>{sLd(true);try{const users=await fbGetAll("usuarios");sUs(users)}catch{nfy("Error cargando","er")}sLd(false)};
-  useEffect(()=>{load()},[]);
-  const add=async()=>{
-    if(!nu||!np){nfy("Complete ambos campos","er");return}
-    if(us.some(u=>u.usuario===nu)){nfy("Usuario ya existe","er");return}
-    sBusy(true);
-    const res=await fbAdd("usuarios",{usuario:nu,contrasena:np});
-    if(res.success){nfy(`"${nu}" agregado`,"ok");sNu("");sNp("");await load()}else nfy(res.error,"er");
-    sBusy(false);
-  };
-  const del=async(u)=>{
-    if(u.usuario==="CalaAdmin976"){nfy("No se puede eliminar admin","er");return}
-    sBusy(true);
-    const res=await fbDelete("usuarios",u._fbId);
-    if(res.success){nfy(`"${u.usuario}" eliminado`,"ok");await load()}else nfy(res.error,"er");
-    sBusy(false);
-  };
-  return(<div style={{width:"100%",maxWidth:700,animation:"fi .3s ease"}}>
-    <h1 style={{fontSize:22,fontWeight:700,marginBottom:6}}>Administrar Usuarios</h1>
-    <p style={{color:K.mt,fontSize:14,marginBottom:22}}>Gestión de accesos — Firebase Firestore</p>
-    <div style={{background:"#fff",borderRadius:12,padding:22,border:"1px solid #e2e8f0",marginBottom:16}}>
-      <h3 style={{fontSize:15,fontWeight:600,marginBottom:14}}>Agregar usuario</h3>
-      <div style={{display:"flex",gap:10,alignItems:"flex-end",flexWrap:"wrap"}}>
-        <div style={{flex:1,minWidth:160}}><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>Usuario</label><input value={nu} onChange={e=>sNu(e.target.value)} style={{width:"100%",padding:"10px 14px",border:"1px solid #e2e8f0",borderRadius:8,fontSize:14}} placeholder="Nombre de usuario"/></div>
-        <div style={{flex:1,minWidth:160}}><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>Contraseña</label><input value={np} onChange={e=>sNp(e.target.value)} type="password" style={{width:"100%",padding:"10px 14px",border:"1px solid #e2e8f0",borderRadius:8,fontSize:14}} placeholder="Contraseña"/></div>
-        <button onClick={add} disabled={busy} style={{background:"#0d9488",color:"#fff",border:"none",padding:"10px 20px",borderRadius:8,fontSize:14,fontWeight:600,cursor:busy?"wait":"pointer",opacity:busy?.7:1}}>＋ Agregar</button>
-      </div>
-    </div>
-    <div style={{background:"#fff",borderRadius:12,padding:22,border:"1px solid #e2e8f0"}}>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}><h3 style={{fontSize:15,fontWeight:600}}>Usuarios ({us.length})</h3><button onClick={load} style={{background:"#f1f5f9",border:"none",padding:"6px 12px",borderRadius:6,fontSize:12,cursor:"pointer"}}>🔄</button></div>
-      {ld?<p style={{color:K.mt}}>Cargando...</p>:us.map(u=><div key={u._fbId} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 0",borderBottom:"1px solid #e2e8f0"}}>
-        <div><span style={{fontWeight:600,fontSize:14}}>{u.usuario}</span>{u.usuario==="CalaAdmin976"&&<span style={{fontSize:10,background:"#ccfbf1",color:"#0d9488",padding:"2px 6px",borderRadius:4,marginLeft:8,fontWeight:700}}>ADMIN</span>}</div>
-        {u.usuario!=="CalaAdmin976"&&<button onClick={()=>del(u)} disabled={busy} style={{background:"#fef2f2",color:"#dc2626",border:"1px solid #fecaca",padding:"6px 12px",borderRadius:6,cursor:"pointer",fontSize:12}}>🗑</button>}
-      </div>)}
-    </div>
-  </div>);
-}
+        <div style={{display:"flex",justifyContent:"space-between"}}><button onClick={()=>sS2(step-1)} style={{background:"#f1f5f9",border:"none
