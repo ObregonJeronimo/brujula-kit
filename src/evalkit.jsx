@@ -7,7 +7,7 @@ import Admin from "./components/Admin.jsx";
 import NewELDI from "./components/NewELDI.jsx";
 import NewPEFF from "./components/NewPEFF.jsx";
 
-const isMobile = () => window.innerWidth < 768 || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+const isMobile = () => /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) && window.innerWidth < 900;
 const K = { sd: "#0a3d2f", ac: "#0d9488", al: "#ccfbf1", mt: "#64748b", bd: "#e2e8f0", bg: "#f0f5f3" };
 
 async function fbGetAll(c) { const s = await getDocs(collection(db, c)); return s.docs.map(d => ({ _fbId: d.id, ...d.data() })); }
@@ -58,8 +58,8 @@ export default function App(){
     if(res.success){nfy("Eliminada","ok");await loadEvals()}else nfy("Error: "+res.error,"er");sS(null);sV("hist");
   };
   if(!user)return<Login onOk={u=>{sU(u);nfy("Bienvenido/a, "+u.un,"ok")}}/>;
-  const nav=mobile?[["hist","\u23f1","Historial"]]:[["dash","\u229e","Panel"],["tools","\ud83e\uddf0","Herramientas"],["hist","\u23f1","Historial"]];
-  if(user.adm&&!mobile)nav.push(["adm","\u2699","Usuarios"]);
+  const nav=[["dash","\u229e","Panel"],["tools","\ud83e\uddf0","Herramientas"],["hist","\u23f1","Historial"]];
+  if(user.adm)nav.push(["adm","\u2699","Usuarios"]);
   return(
     <div style={{display:"flex",height:"100vh",width:"100vw",fontFamily:"'DM Sans',system-ui,sans-serif",background:K.bg,color:"#1e293b",overflow:"hidden"}}>
       <aside style={{width:mobile?60:230,minWidth:mobile?60:230,background:K.sd,color:"#fff",display:"flex",flexDirection:"column",padding:"18px 0",flexShrink:0,height:"100vh"}}>
@@ -69,15 +69,14 @@ export default function App(){
       </aside>
       <main style={{flex:1,overflowY:"auto",overflowX:"hidden",padding:mobile?"16px":"28px 36px",height:"100vh"}}>
         {toast&&<div style={{position:"fixed",top:16,right:16,zIndex:999,background:toast.t==="ok"?"#059669":"#dc2626",color:"#fff",padding:"10px 18px",borderRadius:8,fontSize:13,fontWeight:500,boxShadow:"0 4px 16px rgba(0,0,0,.15)",animation:"fi .3s ease"}}>{toast.m}</div>}
-        {mobile&&<div style={{background:"#fef3c7",padding:"12px 16px",borderRadius:8,border:"1px solid #fde68a",fontSize:13,color:"#92400e",marginBottom:16}}>{"📱 Modo móvil: solo lectura."}</div>}
-        {view==="dash"&&!mobile&&<Dash es={evals} pe={peffEvals} onT={()=>sV("tools")} onV={e=>{sS(e);sV("rpt")}} onVP={e=>{sS(e);sV("rptP")}} ld={loading}/>}
-        {view==="tools"&&!mobile&&<Tools onSel={t=>sV(t)}/>}
-        {view==="newELDI"&&!mobile&&<NewELDI onS={saveEval} nfy={nfy}/>}
-        {view==="newPEFF"&&!mobile&&<NewPEFF onS={savePeff} nfy={nfy}/>}
+        {view==="dash"&&<Dash es={evals} pe={peffEvals} onT={()=>sV("tools")} onV={e=>{sS(e);sV("rpt")}} onVP={e=>{sS(e);sV("rptP")}} ld={loading}/>}
+        {view==="tools"&&<Tools onSel={t=>sV(t)}/>}
+        {view==="newELDI"&&<NewELDI onS={saveEval} nfy={nfy}/>}
+        {view==="newPEFF"&&<NewPEFF onS={savePeff} nfy={nfy}/>}
         {view==="hist"&&<Hist es={evals} pe={peffEvals} onV={e=>{sS(e);sV("rpt")}} onVP={e=>{sS(e);sV("rptP")}} isA={user.adm} onD={deleteEval}/>}
         {view==="rpt"&&sel&&<RptELDI ev={sel} isA={user.adm} onD={deleteEval}/>}
         {view==="rptP"&&sel&&<RptPEFF ev={sel} isA={user.adm} onD={deleteEval}/>}
-        {view==="adm"&&user.adm&&!mobile&&<Admin nfy={nfy}/>}
+        {view==="adm"&&user.adm&&<Admin nfy={nfy}/>}
       </main>
     </div>
   );
@@ -87,85 +86,26 @@ function Login({onOk}){
   const[u,su]=useState(""),[p,sp]=useState(""),[ld,sl]=useState(false),[e,se]=useState(""),[info,setInfo]=useState("");
   const go=async ev=>{ev.preventDefault();sl(true);se("");setInfo("");
     try{
-      console.log("=== LOGIN DEBUG v3 ===");
-      console.log("STEP 1: db object exists?", !!db);
-      console.log("STEP 1b: db type:", typeof db);
-      console.log("STEP 1c: db._databaseId:", db?._databaseId);
-      console.log("STEP 1d: db.app?.options?.projectId:", db?.app?.options?.projectId);
-
-      setInfo("Conectando a Firebase...");
-      console.log("STEP 2: Creando referencia a colección 'usuarios'...");
-      const colRef = collection(db, "usuarios");
-      console.log("STEP 2b: colRef creado:", !!colRef, "path:", colRef?.path);
-
-      console.log("STEP 3: Ejecutando getDocs...");
-      const t0 = Date.now();
-      let snapshot;
-      try {
-        snapshot = await withTimeout(getDocs(colRef), 10000, "getDocs('usuarios')");
-      } catch(timeErr) {
-        console.error("STEP 3 TIMEOUT:", timeErr.message);
-        se("getDocs timeout: Firebase no responde. Verificar config y conectividad.");
-        sl(false);
-        return;
-      }
-      console.log("STEP 3b: getDocs completado en", Date.now()-t0, "ms");
-      console.log("STEP 3c: snapshot.size:", snapshot.size, "empty:", snapshot.empty);
-
-      let users = snapshot.docs.map(d => ({ _fbId: d.id, ...d.data() }));
-      console.log("STEP 4: Usuarios mapeados:", users.length, JSON.stringify(users));
-
+      let users=await fbGetAll("usuarios");
       if(users.length===0){
-        setInfo("BD vacía. Creando admin (timeout 10s)...");
-        console.log("STEP 5: No hay usuarios. Intentando addDoc...");
-        console.log("STEP 5b: collection ref para write:", colRef?.path);
-        const t1 = Date.now();
+        setInfo("BD vacía. Creando admin...");
         try{
-          const writeRef = await withTimeout(
-            addDoc(colRef, {usuario:"CalaAdmin976", contrasena:"BrujulaKit2025!"}),
-            10000,
-            "addDoc('usuarios')"
-          );
-          console.log("STEP 5c: addDoc EXITOSO en", Date.now()-t1, "ms. ID:", writeRef.id);
+          await withTimeout(addDoc(collection(db, "usuarios"), {usuario:"CalaAdmin976",contrasena:"BrujulaKit2025!"}), 10000, "addDoc");
         }catch(addErr){
-          console.error("STEP 5 ERROR:", addErr.message, addErr.code, addErr);
-          if(addErr.message.includes("TIMEOUT")) {
-            se("addDoc timeout: Firebase acepta lectura pero no escritura. Esto indica que las reglas de Firestore bloquean escritura, o el projectId es incorrecto. ProjectId actual: " + (db?.app?.options?.projectId || "VACÍO"));
-          } else {
-            se("Error escribiendo: " + (addErr.code||"") + " " + addErr.message);
-          }
-          sl(false);
-          return;
+          se("Error creando usuario: " + addErr.message);
+          sl(false);return;
         }
-
-        console.log("STEP 6: Re-leyendo usuarios después de seed...");
-        const snap2 = await getDocs(colRef);
-        users = snap2.docs.map(d => ({ _fbId: d.id, ...d.data() }));
-        console.log("STEP 6b: Usuarios ahora:", users.length, JSON.stringify(users));
+        users=await fbGetAll("usuarios");
         setInfo("");
       }
-
-      console.log("STEP 7: Buscando match para login...");
       const found=users.find(usr=>{
         const dbUser = (usr.usuario||"").trim();
         const dbPass = (usr.contrasena||"").trim();
-        const inUser = u.trim();
-        const inPass = p.trim();
-        console.log("  Comparando:", JSON.stringify(dbUser), "vs", JSON.stringify(inUser), "->", dbUser===inUser, "| pass:", JSON.stringify(dbPass), "vs", JSON.stringify(inPass), "->", dbPass===inPass);
-        return dbUser===inUser && dbPass===inPass;
+        return dbUser===u.trim() && dbPass===p.trim();
       });
-
-      if(found){
-        console.log("STEP 8: ✅ LOGIN EXITOSO");
-        onOk({un:u.trim(),adm:u.trim()==="CalaAdmin976"});
-      } else {
-        console.log("STEP 8: ❌ LOGIN FALLIDO - no hay match");
-        se("Credenciales incorrectas. "+users.length+" usuarios en BD.");
-      }
-    }catch(err){
-      console.error("CATCH GENERAL:", err);
-      se("Error: "+(err.code||"")+" "+err.message);
-    }
+      if(found)onOk({un:u.trim(),adm:u.trim()==="CalaAdmin976"});
+      else se("Credenciales incorrectas. "+users.length+" usuarios en BD.");
+    }catch(err){se("Error: "+err.message)}
     sl(false);
   };
   const I={width:"100%",padding:"12px 14px",border:"1px solid #e2e8f0",borderRadius:8,fontSize:14,background:"#f8faf9"};
@@ -175,11 +115,11 @@ function Login({onOk}){
       <form onSubmit={go}>
         <div style={{marginBottom:14}}><label style={{fontSize:12,fontWeight:600,color:"#64748b",display:"block",marginBottom:5}}>{"Usuario"}</label><input value={u} onChange={e=>su(e.target.value)} style={I} placeholder="Ingrese su usuario" required/></div>
         <div style={{marginBottom:22}}><label style={{fontSize:12,fontWeight:600,color:"#64748b",display:"block",marginBottom:5}}>{"Contraseña"}</label><input type="password" value={p} onChange={e=>sp(e.target.value)} style={I} placeholder="Ingrese su contraseña" required/></div>
-        {e&&<div style={{background:"#fef2f2",border:"1px solid #fecaca",color:"#dc2626",padding:"10px 12px",borderRadius:8,fontSize:12,marginBottom:14,wordBreak:"break-word"}}>{e}</div>}
+        {e&&<div style={{background:"#fef2f2",border:"1px solid #fecaca",color:"#dc2626",padding:"10px 12px",borderRadius:8,fontSize:12,marginBottom:14}}>{e}</div>}
         {info&&<div style={{background:"#eff6ff",border:"1px solid #bfdbfe",color:"#2563eb",padding:"10px 12px",borderRadius:8,fontSize:12,marginBottom:14}}>{info}</div>}
         <button type="submit" disabled={ld} style={{width:"100%",padding:"13px",background:"#0d9488",color:"#fff",border:"none",borderRadius:8,fontSize:15,fontWeight:600,cursor:ld?"wait":"pointer",opacity:ld?.7:1}}>{ld?"Verificando...":"Iniciar sesión"}</button>
       </form>
-      <p style={{textAlign:"center",marginTop:20,fontSize:10,color:"#94a3b8"}}>{"Brújula KIT v3.0 debug"}</p>
+      <p style={{textAlign:"center",marginTop:20,fontSize:10,color:"#94a3b8"}}>{"Brújula KIT v3.0"}</p>
     </div>
   </div>);
 }
