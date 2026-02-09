@@ -14,6 +14,13 @@ async function fbGetAll(c) { const s = await getDocs(collection(db, c)); return 
 async function fbAdd(c, data) { try { const r = await addDoc(collection(db, c), data); return { success:true, id:r.id }; } catch(e) { return { success:false, error:e.message }; } }
 async function fbDelete(c, id) { try { await deleteDoc(doc(db, c, id)); return { success:true }; } catch(e) { return { success:false, error:e.message }; } }
 
+function withTimeout(promise, ms, label) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error(`TIMEOUT después de ${ms}ms en: ${label}`)), ms))
+  ]);
+}
+
 function normalCDF(x){const a1=.254829592,a2=-.284496736,a3=1.421413741,a4=-1.453152027,a5=1.061405429,p=.3275911;const s=x<0?-1:1;x=Math.abs(x)/Math.sqrt(2);const t=1/(1+p*x);const y=1-(((((a5*t+a4)*t)+a3)*t+a2)*t+a1)*t*Math.exp(-x*x);return .5*(1+s*y);}
 function ssToPercentile(ss){return Math.round(normalCDF((ss-100)/15)*1000)/10;}
 const NM={"0-5":[{n:0,x:1,s:55},{n:2,x:3,s:70},{n:4,x:5,s:85},{n:6,x:7,s:100},{n:8,x:9,s:115},{n:10,x:99,s:130}],"6-11":[{n:0,x:2,s:55},{n:3,x:5,s:70},{n:6,x:8,s:85},{n:9,x:12,s:100},{n:13,x:16,s:115},{n:17,x:99,s:130}],"12-17":[{n:0,x:4,s:55},{n:5,x:8,s:70},{n:9,x:12,s:85},{n:13,x:17,s:100},{n:18,x:22,s:115},{n:23,x:99,s:130}],"18-23":[{n:0,x:6,s:55},{n:7,x:10,s:70},{n:11,x:15,s:85},{n:16,x:22,s:100},{n:23,x:28,s:115},{n:29,x:99,s:130}],"24-29":[{n:0,x:8,s:55},{n:9,x:13,s:70},{n:14,x:18,s:85},{n:19,x:26,s:100},{n:27,x:33,s:115},{n:34,x:99,s:130}],"30-35":[{n:0,x:10,s:55},{n:11,x:16,s:70},{n:17,x:22,s:85},{n:23,x:30,s:100},{n:31,x:37,s:115},{n:38,x:99,s:130}],"36-41":[{n:0,x:12,s:55},{n:13,x:18,s:70},{n:19,x:25,s:85},{n:26,x:34,s:100},{n:35,x:41,s:115},{n:42,x:99,s:130}],"42-47":[{n:0,x:14,s:55},{n:15,x:20,s:70},{n:21,x:28,s:85},{n:29,x:38,s:100},{n:39,x:45,s:115},{n:46,x:99,s:130}],"48-59":[{n:0,x:16,s:55},{n:17,x:24,s:70},{n:25,x:32,s:85},{n:33,x:42,s:100},{n:43,x:49,s:115},{n:50,x:99,s:130}],"60-71":[{n:0,x:20,s:55},{n:21,x:28,s:70},{n:29,x:36,s:85},{n:37,x:46,s:100},{n:47,x:52,s:115},{n:53,x:99,s:130}],"72-95":[{n:0,x:24,s:55},{n:25,x:32,s:70},{n:33,x:40,s:85},{n:41,x:49,s:100},{n:50,x:53,s:115},{n:54,x:99,s:130}]};
@@ -80,38 +87,85 @@ function Login({onOk}){
   const[u,su]=useState(""),[p,sp]=useState(""),[ld,sl]=useState(false),[e,se]=useState(""),[info,setInfo]=useState("");
   const go=async ev=>{ev.preventDefault();sl(true);se("");setInfo("");
     try{
-      console.log("=== LOGIN DEBUG START ===");
-      console.log("1. Intentando leer colección 'usuarios'...");
-      let users=await fbGetAll("usuarios");
-      console.log("2. Usuarios encontrados:", users.length, JSON.stringify(users));
+      console.log("=== LOGIN DEBUG v3 ===");
+      console.log("STEP 1: db object exists?", !!db);
+      console.log("STEP 1b: db type:", typeof db);
+      console.log("STEP 1c: db._databaseId:", db?._databaseId);
+      console.log("STEP 1d: db.app?.options?.projectId:", db?.app?.options?.projectId);
+
+      setInfo("Conectando a Firebase...");
+      console.log("STEP 2: Creando referencia a colección 'usuarios'...");
+      const colRef = collection(db, "usuarios");
+      console.log("STEP 2b: colRef creado:", !!colRef, "path:", colRef?.path);
+
+      console.log("STEP 3: Ejecutando getDocs...");
+      const t0 = Date.now();
+      let snapshot;
+      try {
+        snapshot = await withTimeout(getDocs(colRef), 10000, "getDocs('usuarios')");
+      } catch(timeErr) {
+        console.error("STEP 3 TIMEOUT:", timeErr.message);
+        se("getDocs timeout: Firebase no responde. Verificar config y conectividad.");
+        sl(false);
+        return;
+      }
+      console.log("STEP 3b: getDocs completado en", Date.now()-t0, "ms");
+      console.log("STEP 3c: snapshot.size:", snapshot.size, "empty:", snapshot.empty);
+
+      let users = snapshot.docs.map(d => ({ _fbId: d.id, ...d.data() }));
+      console.log("STEP 4: Usuarios mapeados:", users.length, JSON.stringify(users));
+
       if(users.length===0){
-        setInfo("BD vacía. Creando admin...");
-        console.log("3. Colección vacía — intentando addDoc...");
+        setInfo("BD vacía. Creando admin (timeout 10s)...");
+        console.log("STEP 5: No hay usuarios. Intentando addDoc...");
+        console.log("STEP 5b: collection ref para write:", colRef?.path);
+        const t1 = Date.now();
         try{
-          const ref = await addDoc(collection(db, "usuarios"), {usuario:"CalaAdmin976",contrasena:"BrujulaKit2025!"});
-          console.log("4. addDoc exitoso! ID:", ref.id);
+          const writeRef = await withTimeout(
+            addDoc(colRef, {usuario:"CalaAdmin976", contrasena:"BrujulaKit2025!"}),
+            10000,
+            "addDoc('usuarios')"
+          );
+          console.log("STEP 5c: addDoc EXITOSO en", Date.now()-t1, "ms. ID:", writeRef.id);
         }catch(addErr){
-          console.error("4. ERROR en addDoc:", addErr.code, addErr.message, addErr);
-          se("Error creando usuario: " + addErr.code + " - " + addErr.message);
+          console.error("STEP 5 ERROR:", addErr.message, addErr.code, addErr);
+          if(addErr.message.includes("TIMEOUT")) {
+            se("addDoc timeout: Firebase acepta lectura pero no escritura. Esto indica que las reglas de Firestore bloquean escritura, o el projectId es incorrecto. ProjectId actual: " + (db?.app?.options?.projectId || "VACÍO"));
+          } else {
+            se("Error escribiendo: " + (addErr.code||"") + " " + addErr.message);
+          }
           sl(false);
           return;
         }
-        console.log("5. Re-leyendo usuarios...");
-        users=await fbGetAll("usuarios");
-        console.log("6. Usuarios después de seed:", users.length, JSON.stringify(users));
+
+        console.log("STEP 6: Re-leyendo usuarios después de seed...");
+        const snap2 = await getDocs(colRef);
+        users = snap2.docs.map(d => ({ _fbId: d.id, ...d.data() }));
+        console.log("STEP 6b: Usuarios ahora:", users.length, JSON.stringify(users));
         setInfo("");
       }
+
+      console.log("STEP 7: Buscando match para login...");
       const found=users.find(usr=>{
         const dbUser = (usr.usuario||"").trim();
         const dbPass = (usr.contrasena||"").trim();
         const inUser = u.trim();
         const inPass = p.trim();
-        console.log("Comparando:", JSON.stringify(dbUser), "===", JSON.stringify(inUser), "->", dbUser===inUser, "| pass:", JSON.stringify(dbPass), "===", JSON.stringify(inPass), "->", dbPass===inPass);
+        console.log("  Comparando:", JSON.stringify(dbUser), "vs", JSON.stringify(inUser), "->", dbUser===inUser, "| pass:", JSON.stringify(dbPass), "vs", JSON.stringify(inPass), "->", dbPass===inPass);
         return dbUser===inUser && dbPass===inPass;
       });
-      if(found){console.log("=== LOGIN OK ===");onOk({un:u.trim(),adm:u.trim()==="CalaAdmin976"});}
-      else{console.log("=== LOGIN FAIL ===");se("Credenciales incorrectas. "+users.length+" usuarios en BD.");}
-    }catch(err){console.error("Firebase login error:",err);se("Error Firebase: "+err.code+" - "+err.message)}
+
+      if(found){
+        console.log("STEP 8: ✅ LOGIN EXITOSO");
+        onOk({un:u.trim(),adm:u.trim()==="CalaAdmin976"});
+      } else {
+        console.log("STEP 8: ❌ LOGIN FALLIDO - no hay match");
+        se("Credenciales incorrectas. "+users.length+" usuarios en BD.");
+      }
+    }catch(err){
+      console.error("CATCH GENERAL:", err);
+      se("Error: "+(err.code||"")+" "+err.message);
+    }
     sl(false);
   };
   const I={width:"100%",padding:"12px 14px",border:"1px solid #e2e8f0",borderRadius:8,fontSize:14,background:"#f8faf9"};
@@ -121,11 +175,11 @@ function Login({onOk}){
       <form onSubmit={go}>
         <div style={{marginBottom:14}}><label style={{fontSize:12,fontWeight:600,color:"#64748b",display:"block",marginBottom:5}}>{"Usuario"}</label><input value={u} onChange={e=>su(e.target.value)} style={I} placeholder="Ingrese su usuario" required/></div>
         <div style={{marginBottom:22}}><label style={{fontSize:12,fontWeight:600,color:"#64748b",display:"block",marginBottom:5}}>{"Contraseña"}</label><input type="password" value={p} onChange={e=>sp(e.target.value)} style={I} placeholder="Ingrese su contraseña" required/></div>
-        {e&&<div style={{background:"#fef2f2",border:"1px solid #fecaca",color:"#dc2626",padding:"10px 12px",borderRadius:8,fontSize:12,marginBottom:14}}>{e}</div>}
+        {e&&<div style={{background:"#fef2f2",border:"1px solid #fecaca",color:"#dc2626",padding:"10px 12px",borderRadius:8,fontSize:12,marginBottom:14,wordBreak:"break-word"}}>{e}</div>}
         {info&&<div style={{background:"#eff6ff",border:"1px solid #bfdbfe",color:"#2563eb",padding:"10px 12px",borderRadius:8,fontSize:12,marginBottom:14}}>{info}</div>}
         <button type="submit" disabled={ld} style={{width:"100%",padding:"13px",background:"#0d9488",color:"#fff",border:"none",borderRadius:8,fontSize:15,fontWeight:600,cursor:ld?"wait":"pointer",opacity:ld?.7:1}}>{ld?"Verificando...":"Iniciar sesión"}</button>
       </form>
-      <p style={{textAlign:"center",marginTop:20,fontSize:10,color:"#94a3b8"}}>{"Brújula KIT v3.0"}</p>
+      <p style={{textAlign:"center",marginTop:20,fontSize:10,color:"#94a3b8"}}>{"Brújula KIT v3.0 debug"}</p>
     </div>
   </div>);
 }
