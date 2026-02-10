@@ -1,41 +1,61 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { PEFF_SECTIONS } from "../data/peffSections.js";
 import { PF_CATEGORIES, ALL_PROCESSES } from "../data/peffProcesos.js";
-import { PEFF_IMAGES, OFA_OPTION_IMAGES } from "../data/peffImages.js";
 const K={mt:"#64748b"};
 const gm=(b,e)=>{const B=new Date(b),E=new Date(e);let m=(E.getFullYear()-B.getFullYear())*12+E.getMonth()-B.getMonth();if(E.getDate()<B.getDate())m--;return Math.max(0,m)};
-const fa=m=>`${Math.floor(m/12)} años, ${m%12} meses`;
+const fa=m=>`${Math.floor(m/12)} a\u00f1os, ${m%12} meses`;
 
 const sevDesc={
-  "Adecuado":"El niño/a produce correctamente todos o casi todos los fonemas esperados para su edad. No se observan dificultades articulatorias significativas.",
+  "Adecuado":"El ni\u00f1o/a produce correctamente todos o casi todos los fonemas esperados para su edad. No se observan dificultades articulatorias significativas.",
   "Leve":"Se observan errores articulatorios aislados que no comprometen significativamente la inteligibilidad del habla. Puede requerir seguimiento.",
-  "Moderado":"Se observan múltiples errores articulatorios que afectan parcialmente la inteligibilidad. Se recomienda intervención fonoaudiológica.",
-  "Moderado-Severo":"Se observan errores articulatorios frecuentes que comprometen la inteligibilidad del habla en contextos comunicativos. Se requiere intervención fonoaudiológica.",
-  "Severo":"Se observan errores articulatorios generalizados que comprometen severamente la inteligibilidad. Se requiere intervención fonoaudiológica intensiva."
+  "Moderado":"Se observan m\u00faltiples errores articulatorios que afectan parcialmente la inteligibilidad. Se recomienda intervenci\u00f3n fonoaudiol\u00f3gica.",
+  "Moderado-Severo":"Se observan errores articulatorios frecuentes que comprometen la inteligibilidad del habla en contextos comunicativos. Se requiere intervenci\u00f3n fonoaudiol\u00f3gica.",
+  "Severo":"Se observan errores articulatorios generalizados que comprometen severamente la inteligibilidad. Se requiere intervenci\u00f3n fonoaudiol\u00f3gica intensiva."
 };
 const sevColor={"Adecuado":"#059669","Leve":"#f59e0b","Moderado":"#ea580c","Moderado-Severo":"#dc2626","Severo":"#dc2626"};
 
+/* TTS: improved voice selection - prefer female Spanish voices for clarity */
 const speak=(text)=>{
   if(!window.speechSynthesis)return;
   window.speechSynthesis.cancel();
   const u=new SpeechSynthesisUtterance(text);
-  u.lang="es-AR";u.rate=0.85;u.pitch=1;
+  u.lang="es-AR";u.rate=0.75;u.pitch=1.05;u.volume=1;
   const voices=window.speechSynthesis.getVoices();
-  const esVoice=voices.find(v=>v.lang.startsWith("es"));
-  if(esVoice)u.voice=esVoice;
+  /* Priority: 1) es-AR female, 2) es-MX female, 3) es-ES female, 4) any es female, 5) any es */
+  const pick=voices.find(v=>v.lang==="es-AR"&&v.name.toLowerCase().includes("female"))
+    ||voices.find(v=>v.lang==="es-AR")
+    ||voices.find(v=>v.lang==="es-MX")
+    ||voices.find(v=>v.lang==="es-ES"&&v.name.toLowerCase().includes("female"))
+    ||voices.find(v=>v.lang==="es-ES")
+    ||voices.find(v=>v.lang.startsWith("es"));
+  if(pick)u.voice=pick;
   window.speechSynthesis.speak(u);
 };
 
+/* Scroll to top of main area */
+const scrollTop=()=>{
+  const el=document.getElementById("main-scroll");
+  if(el)el.scrollTo({top:0,behavior:"smooth"});
+  else window.scrollTo({top:0,behavior:"smooth"});
+};
+
 export default function NewPEFF({onS,nfy}){
-  const[step,sS2]=useState(0),[pd,sPd]=useState({pN:"",birth:"",eD:new Date().toISOString().split("T")[0],sch:"",ref:"",obs:""}),[data,setD]=useState({}),[procData,setProcData]=useState({});
+  const[step,setStep]=useState(0),[pd,sPd]=useState({pN:"",birth:"",eD:new Date().toISOString().split("T")[0],sch:"",ref:"",obs:""}),[data,setD]=useState({}),[procData,setProcData]=useState({});
   const[playingId,setPlayingId]=useState(null);
-  const[showImg,setShowImg]=useState(null);
   const a=pd.birth&&pd.eD?gm(pd.birth,pd.eD):0;
   const I={width:"100%",padding:"10px 14px",border:"1px solid #e2e8f0",borderRadius:8,fontSize:14,background:"#f8faf9"};
   const sf=(id,v)=>setD(p=>({...p,[id]:v}));
   const spf=(itemId,field,v)=>setProcData(p=>({...p,[itemId]:{...(p[itemId]||{}), [field]:v}}));
 
-  /* OFA fields with image support */
+  /* Scroll to top on step change */
+  useEffect(()=>{scrollTop()},[step]);
+
+  /* Load voices on mount (some browsers need this) */
+  useEffect(()=>{if(window.speechSynthesis){window.speechSynthesis.getVoices();window.speechSynthesis.onvoiceschanged=()=>window.speechSynthesis.getVoices()}},[]);
+
+  const goStep=(s)=>{setStep(s)};
+
+  /* OFA fields - clean buttons, no SVG images */
   const rField=f=>{
     if(f.type==="text") return <div key={f.id} style={{marginBottom:14}}>
       <label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>{f.label}</label>
@@ -45,30 +65,22 @@ export default function NewPEFF({onS,nfy}){
     return <div key={f.id} style={{marginBottom:14}}>
       <label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:6}}>{f.label}</label>
       <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-        {f.options.map(o=>{const imgKey=OFA_OPTION_IMAGES[o];const hasSvg=imgKey&&PEFF_IMAGES[imgKey];
-          return<div key={o} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
-            <button onClick={()=>sf(f.id,cur===o?"":o)}
-              style={{padding:"8px 14px",borderRadius:8,border:cur===o?"2px solid #7c3aed":"1px solid #e2e8f0",
-                background:cur===o?"#ede9fe":"#fff",color:cur===o?"#5b21b6":"#475569",
-                fontSize:13,fontWeight:cur===o?700:400,cursor:"pointer",transition:"all .15s"}}>
-              {cur===o&&"✓ "}{o}
-            </button>
-            {hasSvg&&<button onClick={()=>setShowImg(showImg===imgKey?null:imgKey)}
-              style={{background:"none",border:"none",color:"#7c3aed",fontSize:10,cursor:"pointer",textDecoration:"underline",padding:0}}>
-              {showImg===imgKey?"▲ ocultar":"🖼 ver"}
-            </button>}
-            {showImg===imgKey&&hasSvg&&<div style={{width:160,border:"1px solid #c4b5fd",borderRadius:8,overflow:"hidden",background:"#fff"}}
-              dangerouslySetInnerHTML={{__html:PEFF_IMAGES[imgKey]}}/>}
-          </div>})}
+        {f.options.map(o=>
+          <button key={o} onClick={()=>sf(f.id,cur===o?"":o)}
+            style={{padding:"8px 14px",borderRadius:8,border:cur===o?"2px solid #7c3aed":"1px solid #e2e8f0",
+              background:cur===o?"#ede9fe":"#fff",color:cur===o?"#5b21b6":"#475569",
+              fontSize:13,fontWeight:cur===o?700:400,cursor:"pointer",transition:"all .15s"}}>
+            {cur===o&&"\u2713 "}{o}
+          </button>)}
       </div>
     </div>;
   };
 
   const legendItems=[
-    {v:"✓",bg:"#059669",t:"Correcto",d:"Producción adecuada del fonema"},
-    {v:"D",bg:"#f59e0b",t:"Distorsión",d:"Sonido alterado pero reconocible"},
-    {v:"O",bg:"#dc2626",t:"Omisión",d:"No produce el fonema"},
-    {v:"S",bg:"#7c3aed",t:"Sustitución",d:"Reemplaza por otro fonema"}
+    {v:"\u2713",bg:"#059669",t:"Correcto",d:"Producci\u00f3n adecuada del fonema"},
+    {v:"D",bg:"#f59e0b",t:"Distorsi\u00f3n",d:"Sonido alterado pero reconocible"},
+    {v:"O",bg:"#dc2626",t:"Omisi\u00f3n",d:"No produce el fonema"},
+    {v:"S",bg:"#7c3aed",t:"Sustituci\u00f3n",d:"Reemplaza por otro fonema"}
   ];
 
   const legendBox=<div style={{background:"#ede9fe",border:"1px solid #c4b5fd",borderRadius:10,padding:14}}>
@@ -76,11 +88,11 @@ export default function NewPEFF({onS,nfy}){
     <div style={{display:"flex",flexDirection:"column",gap:6}}>
       {legendItems.map(o=><div key={o.v} style={{display:"flex",alignItems:"center",gap:6}}>
         <div style={{width:24,height:24,borderRadius:6,background:o.bg,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700,flexShrink:0}}>{o.v}</div>
-        <span style={{fontSize:12}}><b>{o.t}</b> — {o.d}</span>
+        <span style={{fontSize:12}}><b>{o.t}</b> \u2014 {o.d}</span>
       </div>)}
     </div>
     <div style={{marginTop:10,fontSize:11,color:"#7c3aed",fontStyle:"italic"}}>
-      {"ℹ️ Si no se selecciona ninguna opción, el ítem se considera no evaluado."}
+      {"Si no se selecciona ninguna opci\u00f3n, el \u00edtem se considera no evaluado."}
     </div>
   </div>;
 
@@ -90,7 +102,7 @@ export default function NewPEFF({onS,nfy}){
         <span style={{fontWeight:700,fontSize:16,minWidth:50,color:"#7c3aed"}}>{item.word}</span>
         <span style={{fontSize:12,color:K.mt,flex:1}}>{item.target}</span>
         <div style={{display:"flex",gap:4}}>
-          {[{v:"ok",l:"✓",bg:"#059669"},{v:"D",l:"D",bg:"#f59e0b"},{v:"O",l:"O",bg:"#dc2626"},{v:"S",l:"S",bg:"#7c3aed"}].map(o=>
+          {[{v:"ok",l:"\u2713",bg:"#059669"},{v:"D",l:"D",bg:"#f59e0b"},{v:"O",l:"O",bg:"#dc2626"},{v:"S",l:"S",bg:"#7c3aed"}].map(o=>
             <button key={o.v} onClick={()=>{sf(item.id,v===o.v?"":o.v);if(o.v==="ok")setProcData(p=>{const n={...p};delete n[item.id];return n})}}
               style={{width:30,height:30,borderRadius:6,border:v===o.v?`2px solid ${o.bg}`:"1px solid #e2e8f0",background:v===o.v?o.bg:"#fff",color:v===o.v?"#fff":"#64748b",fontSize:12,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>{o.l}</button>)}
         </div>
@@ -98,11 +110,11 @@ export default function NewPEFF({onS,nfy}){
       {isError&&<div style={{background:"#fff5f5",border:"1px solid #fecaca",borderTop:"none",borderRadius:"0 0 8px 8px",padding:"10px 14px"}}>
         <div style={{display:"flex",gap:8,marginBottom:6,flexWrap:"wrap"}}>
           <div style={{flex:1,minWidth:180}}>
-            <label style={{fontSize:10,fontWeight:700,color:"#dc2626",display:"block",marginBottom:3}}>Producción del niño</label>
-            <input value={pd2.produccion||""} onChange={e=>spf(item.id,"produccion",e.target.value)} style={{...I,fontSize:13,padding:"6px 10px",background:"#fff"}} placeholder={`¿Qué dijo en vez de "${item.word}"?`}/>
+            <label style={{fontSize:10,fontWeight:700,color:"#dc2626",display:"block",marginBottom:3}}>Producci\u00f3n del ni\u00f1o</label>
+            <input value={pd2.produccion||""} onChange={e=>spf(item.id,"produccion",e.target.value)} style={{...I,fontSize:13,padding:"6px 10px",background:"#fff"}} placeholder={`\u00bfQu\u00e9 dijo en vez de "${item.word}"?`}/>
           </div>
           <div style={{flex:2,minWidth:220}}>
-            <label style={{fontSize:10,fontWeight:700,color:"#dc2626",display:"block",marginBottom:3}}>Proceso fonológico</label>
+            <label style={{fontSize:10,fontWeight:700,color:"#dc2626",display:"block",marginBottom:3}}>Proceso fonol\u00f3gico</label>
             <select value={pd2.proceso||""} onChange={e=>spf(item.id,"proceso",e.target.value)} style={{...I,fontSize:13,padding:"6px 10px",background:"#fff",cursor:"pointer"}}>
               <option value="">-- Clasificar proceso --</option>
               {PF_CATEGORIES.map(cat=><optgroup key={cat.id} label={cat.title}>{cat.processes.map(pr=><option key={pr.id} value={pr.id}>{pr.name}</option>)}</optgroup>)}
@@ -120,7 +132,7 @@ export default function NewPEFF({onS,nfy}){
       <div style={{display:"flex",gap:4}}>
         {["correcto","incorrecto"].map(o=><button key={o} onClick={()=>sf(item.id,v===o?"":o)}
           style={{padding:"5px 10px",borderRadius:6,border:v===o?`2px solid ${o==="correcto"?"#059669":"#dc2626"}`:"1px solid #e2e8f0",background:v===o?(o==="correcto"?"#059669":"#dc2626"):"#fff",color:v===o?"#fff":"#64748b",fontSize:12,fontWeight:600,cursor:"pointer"}}>
-          {o==="correcto"?"✔":"✘"}</button>)}
+          {o==="correcto"?"\u2714":"\u2718"}</button>)}
       </div>
     </div>};
 
@@ -138,7 +150,7 @@ export default function NewPEFF({onS,nfy}){
       <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:v?4:0}}>
         <button onClick={handleSpeak}
           style={{background:isPlaying?"#7c3aed":"#ede9fe",color:isPlaying?"#fff":"#7c3aed",border:"1px solid #c4b5fd",borderRadius:8,padding:"8px 14px",fontSize:13,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",gap:6,flexShrink:0,transition:"all .2s"}}>
-          {isPlaying?"🔊 ...":"🔊 Escuchar"}
+          {isPlaying?"\ud83d\udd0a ...":"\ud83d\udd0a Escuchar"}
         </button>
         <span style={{fontSize:11,color:K.mt,flex:1}}>{item.contrast}</span>
         <div style={{display:"flex",gap:6}}>
@@ -155,10 +167,10 @@ export default function NewPEFF({onS,nfy}){
             </button>})}
         </div>
         {v&&<button onClick={()=>{const n={...data};delete n[item.id];setD(n)}}
-          style={{background:"none",border:"none",color:"#94a3b8",fontSize:16,cursor:"pointer",padding:4}} title="Limpiar">{"×"}</button>}
+          style={{background:"none",border:"none",color:"#94a3b8",fontSize:16,cursor:"pointer",padding:4}} title="Limpiar">{"\u00d7"}</button>}
       </div>
       {v&&<div style={{fontSize:11,marginTop:4,paddingLeft:4,color:v==="reconoce"?"#059669":"#dc2626",fontWeight:600}}>
-        {v==="reconoce"?"✓ Reconoce correctamente":"✗ No reconoce — eligió la opción incorrecta"}
+        {v==="reconoce"?"\u2713 Reconoce correctamente":"\u2717 No reconoce \u2014 eligi\u00f3 la opci\u00f3n incorrecta"}
       </div>}
     </div>};
 
@@ -171,7 +183,7 @@ export default function NewPEFF({onS,nfy}){
       <h2 style={{fontSize:18,fontWeight:700,marginBottom:4,color:"#7c3aed"}}>{sec.title}</h2>
       {sec.description&&<p style={{color:K.mt,fontSize:13,marginBottom:16}}>{sec.description}</p>}
       {isRecFon&&<div style={{background:"#f0f9ff",border:"1px solid #bae6fd",borderRadius:8,padding:12,marginBottom:16,fontSize:12,color:"#0369a1",lineHeight:1.6}}>
-        <strong>{"🎧 Instrucciones:"}</strong>{" Presione \"Escuchar\" para reproducir la palabra objetivo. El niño/a debe señalar cuál de las dos opciones corresponde. Seleccione la opción que el niño/a eligió."}
+        <strong>{"\ud83c\udfa7 Instrucciones:"}</strong>{" Presione \"Escuchar\" para reproducir la palabra objetivo. El ni\u00f1o/a debe se\u00f1alar cu\u00e1l de las dos opciones corresponde. Seleccione la opci\u00f3n que el ni\u00f1o/a eligi\u00f3."}
       </div>}
       {sec.subsections.map(sub=><div key={sub.id} style={{marginBottom:20}}>
         <h3 style={{fontSize:15,fontWeight:600,marginBottom:10,color:"#0a3d2f",paddingBottom:6,borderBottom:"2px solid #ede9fe"}}>{sub.title}</h3>
@@ -231,13 +243,13 @@ export default function NewPEFF({onS,nfy}){
   const renderProcResults=(r)=>{
     const pa=r.procAnalysis;
     if(!pa||pa.total===0)return<div style={{background:"#f0fdf4",border:"1px solid #bbf7d0",borderRadius:10,padding:20,marginBottom:20}}>
-      <div style={{fontSize:14,fontWeight:600,color:"#059669"}}>{"✓ No se registraron procesos fonológicos"}</div>
+      <div style={{fontSize:14,fontWeight:600,color:"#059669"}}>{"\u2713 No se registraron procesos fonol\u00f3gicos"}</div>
     </div>;
-    const catNames2={sust:"Sustituciones",asim:"Asimilaciones",estr:"Estructuración silábica"};
+    const catNames2={sust:"Sustituciones",asim:"Asimilaciones",estr:"Estructuraci\u00f3n sil\u00e1bica"};
     const catColors2={sust:"#f59e0b",asim:"#7c3aed",estr:"#dc2626"};
     const ageExpected=pa.errors.filter(e=>a>0&&e.expectedAge<a);
     return<div style={{marginBottom:20}}>
-      <h3 style={{fontSize:16,fontWeight:700,color:"#7c3aed",marginBottom:12}}>{"Procesos Fonológicos ("}{pa.total}{")"}</h3>
+      <h3 style={{fontSize:16,fontWeight:700,color:"#7c3aed",marginBottom:12}}>{"Procesos Fonol\u00f3gicos ("}{pa.total}{")"}</h3>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10,marginBottom:16}}>
         {Object.entries(catNames2).map(([id,name])=>{const c=pa.byCategory[id]||0;
           return<div key={id} style={{background:"#f8faf9",borderRadius:10,padding:16,border:`2px solid ${c>0?catColors2[id]:"#e2e8f0"}`,textAlign:"center"}}>
@@ -247,18 +259,18 @@ export default function NewPEFF({onS,nfy}){
       </div>
       <div style={{background:"#fff",border:"1px solid #e2e8f0",borderRadius:10,overflow:"hidden",marginBottom:16}}>
         <div style={{background:"#f8faf9",padding:"10px 16px",fontSize:12,fontWeight:700,color:K.mt,display:"grid",gridTemplateColumns:"60px 80px 80px 1fr 1fr",gap:8}}>
-          <span>Sílaba</span><span>Producc.</span><span>Tipo</span><span>Proceso</span><span>Cat.</span>
+          <span>S\u00edlaba</span><span>Producc.</span><span>Tipo</span><span>Proceso</span><span>Cat.</span>
         </div>
         {pa.errors.map((e,i)=><div key={i} style={{padding:"8px 16px",fontSize:13,display:"grid",gridTemplateColumns:"60px 80px 80px 1fr 1fr",gap:8,borderTop:"1px solid #f1f5f9",alignItems:"center",background:a>0&&e.expectedAge<a?"#fef2f2":"#fff"}}>
           <span style={{fontWeight:700,color:"#7c3aed"}}>{e.word}</span>
-          <span style={{color:"#dc2626",fontWeight:600}}>{e.produccion||"—"}</span>
+          <span style={{color:"#dc2626",fontWeight:600}}>{e.produccion||"\u2014"}</span>
           <span style={{fontSize:11}}>{data[e.itemId]||""}</span>
           <span style={{fontSize:12}}>{e.procesoName}</span>
           <span style={{fontSize:11,color:catColors2[e.category],fontWeight:600}}>{e.categoryTitle}</span>
         </div>)}
       </div>
       {ageExpected.length>0&&<div style={{background:"#fef3c7",border:"1px solid #fde68a",borderRadius:10,padding:16,marginBottom:16}}>
-        <div style={{fontSize:13,fontWeight:700,color:"#92400e",marginBottom:6}}>{"⚠ No esperados ("}{fa(a)}{")"}</div>
+        <div style={{fontSize:13,fontWeight:700,color:"#92400e",marginBottom:6}}>{"No esperados para "}{fa(a)}</div>
         <div style={{fontSize:12,color:"#78350f"}}>{ageExpected.map(e=>`${e.procesoName} (esperable hasta ${fa(e.expectedAge)})`).filter((v,i,a)=>a.indexOf(v)===i).join("; ")}</div>
       </div>}
       {(()=>{const sorted=Object.entries(pa.byProcess).sort((a,b)=>b[1]-a[1]);if(sorted.length===0)return null;const top=sorted.slice(0,3).map(([id,count])=>{const p=ALL_PROCESSES.find(x=>x.id===id);return`${p?.name||id} (${count})`});
@@ -289,18 +301,18 @@ export default function NewPEFF({onS,nfy}){
     <div style={{background:"#fff",borderRadius:12,padding:28,border:"1px solid #e2e8f0"}}>
 
       {step===0&&<div>
-        <h2 style={{fontSize:18,fontWeight:700,marginBottom:4,color:"#7c3aed"}}>{"PEFF — Datos del Paciente"}</h2>
-        <p style={{color:K.mt,fontSize:13,marginBottom:16}}>{"Protocolo de Evaluación Fonético-Fonológica"}</p>
+        <h2 style={{fontSize:18,fontWeight:700,marginBottom:4,color:"#7c3aed"}}>{"PEFF \u2014 Datos del Paciente"}</h2>
+        <p style={{color:K.mt,fontSize:13,marginBottom:16}}>{"Protocolo de Evaluaci\u00f3n Fon\u00e9tico-Fonol\u00f3gica"}</p>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
           <div style={{gridColumn:"1/-1"}}><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>{"Nombre completo"}</label><input value={pd.pN} onChange={e=>sPd(p=>({...p,pN:e.target.value}))} style={I} placeholder="Nombre y apellido"/></div>
           <div><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>{"Fecha nacimiento"}</label><input type="date" value={pd.birth} onChange={e=>sPd(p=>({...p,birth:e.target.value}))} style={I}/></div>
-          <div><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>{"Fecha evaluación"}</label><input type="date" value={pd.eD} onChange={e=>sPd(p=>({...p,eD:e.target.value}))} style={I}/></div>
+          <div><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>{"Fecha evaluaci\u00f3n"}</label><input type="date" value={pd.eD} onChange={e=>sPd(p=>({...p,eD:e.target.value}))} style={I}/></div>
           <div><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>{"Establecimiento"}</label><input value={pd.sch} onChange={e=>sPd(p=>({...p,sch:e.target.value}))} style={I}/></div>
           <div><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>{"Derivado por"}</label><input value={pd.ref} onChange={e=>sPd(p=>({...p,ref:e.target.value}))} style={I}/></div>
         </div>
         {a>0&&<div style={{marginTop:14,padding:"10px 16px",background:"#ede9fe",borderRadius:8,fontSize:14}}><strong>{"Edad:"}</strong>{" "}{fa(a)}</div>}
         <div style={{display:"flex",justifyContent:"flex-end",marginTop:20}}>
-          <button onClick={()=>{if(!pd.pN||!pd.birth){nfy("Complete datos","er");return}sS2(1)}} style={{background:"#7c3aed",color:"#fff",border:"none",padding:"10px 22px",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer"}}>{"Siguiente →"}</button>
+          <button onClick={()=>{if(!pd.pN||!pd.birth){nfy("Complete datos","er");return}goStep(1)}} style={{background:"#7c3aed",color:"#fff",border:"none",padding:"10px 22px",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer"}}>{"Siguiente \u2192"}</button>
         </div>
       </div>}
 
@@ -310,56 +322,56 @@ export default function NewPEFF({onS,nfy}){
         const r=calc();
         const sc=sevColor[r.severity]||"#7c3aed";
         return<div>
-          <h2 style={{fontSize:20,fontWeight:700,marginBottom:6,color:"#7c3aed"}}>{"Resultados PEFF — "}{pd.pN}</h2>
-          <p style={{fontSize:12,color:K.mt,marginBottom:20}}>{"Edad: "}{fa(a)}{" · Evaluación: "}{pd.eD}</p>
+          <h2 style={{fontSize:20,fontWeight:700,marginBottom:6,color:"#7c3aed"}}>{"Resultados PEFF \u2014 "}{pd.pN}</h2>
+          <p style={{fontSize:12,color:K.mt,marginBottom:20}}>{"Edad: "}{fa(a)}{" \u00b7 Evaluaci\u00f3n: "}{pd.eD}</p>
 
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:14,marginBottom:20}}>
-            <ResultCard title="Producción de Sílabas" desc="Cantidad de sílabas producidas correctamente por el niño/a al repetir los estímulos fonéticos presentados." ok={r.silOk} total={r.silTotal} evaluated={r.silEval} pct={r.silPctEval} color={r.silPctEval>=85?"#059669":r.silPctEval>=50?"#f59e0b":"#dc2626"}/>
-            <ResultCard title="Discriminación Auditiva" desc="Capacidad del niño/a para diferenciar si dos palabras suenan igual o diferente (percepción auditiva fonológica)." ok={r.discOk} total={r.discTotal} evaluated={r.discEval} pct={r.discPct} color={r.discPct>=85?"#059669":r.discPct>=50?"#f59e0b":"#dc2626"}/>
-            <ResultCard title="Reconocimiento Fonológico" desc="Capacidad del niño/a para identificar la palabra correcta entre dos opciones cuando se le dice una palabra objetivo." ok={r.recOk} total={r.recTotal} evaluated={r.recEval} pct={r.recPct} color={r.recPct>=85?"#059669":r.recPct>=50?"#f59e0b":"#dc2626"}/>
+            <ResultCard title="Producci\u00f3n de S\u00edlabas" desc="Cantidad de s\u00edlabas producidas correctamente por el ni\u00f1o/a al repetir los est\u00edmulos fon\u00e9ticos presentados." ok={r.silOk} total={r.silTotal} evaluated={r.silEval} pct={r.silPctEval} color={r.silPctEval>=85?"#059669":r.silPctEval>=50?"#f59e0b":"#dc2626"}/>
+            <ResultCard title="Discriminaci\u00f3n Auditiva" desc="Capacidad del ni\u00f1o/a para diferenciar si dos palabras suenan igual o diferente (percepci\u00f3n auditiva fonol\u00f3gica)." ok={r.discOk} total={r.discTotal} evaluated={r.discEval} pct={r.discPct} color={r.discPct>=85?"#059669":r.discPct>=50?"#f59e0b":"#dc2626"}/>
+            <ResultCard title="Reconocimiento Fonol\u00f3gico" desc="Capacidad del ni\u00f1o/a para identificar la palabra correcta entre dos opciones cuando se le dice una palabra objetivo." ok={r.recOk} total={r.recTotal} evaluated={r.recEval} pct={r.recPct} color={r.recPct>=85?"#059669":r.recPct>=50?"#f59e0b":"#dc2626"}/>
           </div>
 
           <div style={{background:`linear-gradient(135deg,${sc}dd,${sc})`,borderRadius:12,padding:24,color:"#fff",marginBottom:20}}>
-            <div style={{fontSize:13,opacity:.8,marginBottom:4}}>{"Severidad del trastorno fonético-fonológico"}</div>
+            <div style={{fontSize:13,opacity:.8,marginBottom:4}}>{"Severidad del trastorno fon\u00e9tico-fonol\u00f3gico"}</div>
             <div style={{fontSize:36,fontWeight:700,marginBottom:8}}>{r.severity}</div>
             <div style={{fontSize:13,opacity:.9,lineHeight:1.6}}>{sevDesc[r.severity]}</div>
           </div>
 
           <div style={{background:"#f0f9ff",border:"1px solid #bae6fd",borderRadius:10,padding:16,marginBottom:20,fontSize:12,color:"#0369a1",lineHeight:1.6}}>
-            <strong>{"ℹ️ Criterios de clasificación:"}</strong><br/>
-            {"• Adecuado: ≥98% de sílabas correctas"}<br/>
-            {"• Leve: 85-97% correctas — errores aislados"}<br/>
-            {"• Moderado: 65-84% correctas — múltiples errores"}<br/>
-            {"• Moderado-Severo: 50-64% correctas — errores frecuentes"}<br/>
-            {"• Severo: <50% correctas — errores generalizados"}<br/>
-            <span style={{fontStyle:"italic",marginTop:6,display:"block"}}>{"La severidad se calcula sobre el total de sílabas del protocolo."}</span>
+            <strong>{"Criterios de clasificaci\u00f3n:"}</strong><br/>
+            {"Adecuado: \u226598% de s\u00edlabas correctas"}<br/>
+            {"Leve: 85-97% correctas \u2014 errores aislados"}<br/>
+            {"Moderado: 65-84% correctas \u2014 m\u00faltiples errores"}<br/>
+            {"Moderado-Severo: 50-64% correctas \u2014 errores frecuentes"}<br/>
+            {"Severo: <50% correctas \u2014 errores generalizados"}<br/>
+            <span style={{fontStyle:"italic",marginTop:6,display:"block"}}>{"La severidad se calcula sobre el total de s\u00edlabas del protocolo."}</span>
           </div>
 
           {r.unevalTotal>0&&<div style={{background:"#fffbeb",border:"1px solid #fde68a",borderRadius:10,padding:16,marginBottom:20}}>
-            <div style={{fontSize:13,fontWeight:700,color:"#92400e",marginBottom:8}}>{"⚠ Ítems sin evaluar ("}{r.unevalTotal}{")"}</div>
+            <div style={{fontSize:13,fontWeight:700,color:"#92400e",marginBottom:8}}>{"Items sin evaluar ("}{r.unevalTotal}{")"}</div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,fontSize:12,color:"#78350f"}}>
-              {r.unevalSelects>0&&<div>{"Examen Clínico OFA / Coordinación: "}<b>{r.unevalSelects}</b></div>}
-              {r.unevalPhon>0&&<div>{"Producción de Sílabas: "}<b>{r.unevalPhon}</b></div>}
-              {r.unevalDisc>0&&<div>{"Discriminación Auditiva: "}<b>{r.unevalDisc}</b></div>}
-              {r.unevalRec>0&&<div>{"Reconocimiento Fonológico: "}<b>{r.unevalRec}</b></div>}
+              {r.unevalSelects>0&&<div>{"Examen Cl\u00ednico OFA / Coordinaci\u00f3n: "}<b>{r.unevalSelects}</b></div>}
+              {r.unevalPhon>0&&<div>{"Producci\u00f3n de S\u00edlabas: "}<b>{r.unevalPhon}</b></div>}
+              {r.unevalDisc>0&&<div>{"Discriminaci\u00f3n Auditiva: "}<b>{r.unevalDisc}</b></div>}
+              {r.unevalRec>0&&<div>{"Reconocimiento Fonol\u00f3gico: "}<b>{r.unevalRec}</b></div>}
             </div>
           </div>}
 
           {renderProcResults(r)}
 
           <div style={{marginBottom:20}}>
-            <label style={{fontSize:13,fontWeight:600,color:K.mt,display:"block",marginBottom:6}}>{"Observaciones clínicas"}</label>
-            <textarea value={pd.obs} onChange={e=>sPd(p=>({...p,obs:e.target.value}))} rows={4} style={{width:"100%",padding:"12px 14px",border:"1px solid #e2e8f0",borderRadius:8,fontSize:14,resize:"vertical",background:"#f8faf9"}} placeholder="Interpretación profesional..."/>
+            <label style={{fontSize:13,fontWeight:600,color:K.mt,display:"block",marginBottom:6}}>{"Observaciones cl\u00ednicas"}</label>
+            <textarea value={pd.obs} onChange={e=>sPd(p=>({...p,obs:e.target.value}))} rows={4} style={{width:"100%",padding:"12px 14px",border:"1px solid #e2e8f0",borderRadius:8,fontSize:14,resize:"vertical",background:"#f8faf9"}} placeholder="Interpretaci\u00f3n profesional..."/>
           </div>
           <div style={{display:"flex",justifyContent:"space-between"}}>
-            <button onClick={()=>sS2(step-1)} style={{background:"#f1f5f9",border:"none",padding:"10px 22px",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer"}}>{"← Atrás"}</button>
-            <button onClick={()=>onS({paciente:pd.pN,fechaNacimiento:pd.birth,fechaEvaluacion:pd.eD,establecimiento:pd.sch,derivadoPor:pd.ref,edadMeses:a,observaciones:pd.obs,seccionData:data,procesosData:procData,resultados:r})} style={{background:"#7c3aed",color:"#fff",border:"none",padding:"12px 28px",borderRadius:8,fontSize:15,fontWeight:700,cursor:"pointer"}}>{"💾 Guardar"}</button>
+            <button onClick={()=>goStep(step-1)} style={{background:"#f1f5f9",border:"none",padding:"10px 22px",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer"}}>{"\u2190 Atr\u00e1s"}</button>
+            <button onClick={()=>onS({paciente:pd.pN,fechaNacimiento:pd.birth,fechaEvaluacion:pd.eD,establecimiento:pd.sch,derivadoPor:pd.ref,edadMeses:a,observaciones:pd.obs,seccionData:data,procesosData:procData,resultados:r})} style={{background:"#7c3aed",color:"#fff",border:"none",padding:"12px 28px",borderRadius:8,fontSize:15,fontWeight:700,cursor:"pointer"}}>{"Guardar"}</button>
           </div>
         </div>})()}
 
       {step>=1&&step<=PEFF_SECTIONS.length&&<div style={{display:"flex",justifyContent:"space-between",marginTop:20,paddingTop:14,borderTop:"1px solid #e2e8f0"}}>
-        <button onClick={()=>sS2(step-1)} style={{background:"#f1f5f9",border:"none",padding:"10px 22px",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer"}}>{"← Atrás"}</button>
-        <button onClick={()=>sS2(step+1)} style={{background:"#7c3aed",color:"#fff",border:"none",padding:"10px 22px",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer"}}>{"Siguiente →"}</button>
+        <button onClick={()=>goStep(step-1)} style={{background:"#f1f5f9",border:"none",padding:"10px 22px",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer"}}>{"\u2190 Atr\u00e1s"}</button>
+        <button onClick={()=>goStep(step+1)} style={{background:"#7c3aed",color:"#fff",border:"none",padding:"10px 22px",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer"}}>{"Siguiente \u2192"}</button>
       </div>}
     </div>
   </div>;
