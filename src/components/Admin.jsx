@@ -1,87 +1,128 @@
-import { useState, useEffect } from "react";
-import { db, collection, getDocs, doc, updateDoc, deleteDoc, increment } from "../firebase.js";
-const K = { mt: "#64748b" };
-async function fbGetAll(c) { const s = await getDocs(collection(db, c)); return s.docs.map(d => ({ _fbId: d.id, ...d.data() })); }
+import { useState } from "react";
+import { db, collection, getDocs, query, where, updateDoc, doc, increment } from "../firebase.js";
+
+const K = { mt: "#64748b", ac: "#0d9488" };
 
 export default function Admin({ nfy }) {
-  const [us, sUs] = useState([]);
-  const [ld, sLd] = useState(true);
-  const [busy, sBusy] = useState(false);
-  const [creditAmounts, setCreditAmounts] = useState({});
+  const [search, setSearch] = useState("");
+  const [foundUser, setFoundUser] = useState(null);
+  const [searching, setSearching] = useState(false);
+  const [notFound, setNotFound] = useState(false);
+  const [amount, setAmount] = useState(5);
 
-  const load = async () => {
-    sLd(true);
-    try { const users = await fbGetAll("usuarios"); sUs(users.sort((a, b) => (a.username || "").localeCompare(b.username || ""))); }
-    catch { nfy("Error cargando", "er"); }
-    sLd(false);
-  };
-
-  useEffect(() => { load(); }, []);
-
-  const modCredits = async (user, amount) => {
-    if (!amount || isNaN(amount)) { nfy("Ingrese un número válido", "er"); return; }
-    sBusy(true);
+  const doSearch = async () => {
+    if (!search.trim()) return;
+    setSearching(true);
+    setFoundUser(null);
+    setNotFound(false);
     try {
-      await updateDoc(doc(db, "usuarios", user._fbId), { creditos: increment(Number(amount)) });
-      nfy((amount > 0 ? "+" : "") + amount + " créditos a " + user.username, "ok");
-      setCreditAmounts(p => ({ ...p, [user._fbId]: "" }));
-      await load();
-    } catch (e) { nfy("Error: " + e.message, "er"); }
-    sBusy(false);
+      const q = query(collection(db, "usuarios"), where("username", "==", search.trim().toLowerCase()));
+      const snap = await getDocs(q);
+      if (snap.empty) {
+        setNotFound(true);
+      } else {
+        const d = snap.docs[0];
+        setFoundUser({ _fbId: d.id, ...d.data() });
+      }
+    } catch (e) {
+      nfy("Error: " + e.message, "er");
+    }
+    setSearching(false);
   };
 
-  const delUser = async (user) => {
-    if (user.role === "admin") { nfy("No se puede eliminar al admin", "er"); return; }
-    if (!window.confirm("Eliminar a " + user.username + "? Sus evaluaciones se mantendrán.")) return;
-    sBusy(true);
+  const addCredits = async () => {
+    if (!foundUser) return;
+    const qty = Math.min(Math.max(1, parseInt(amount) || 0), 20);
+    if (qty < 1) { nfy("Cantidad inv\u00e1lida", "er"); return; }
     try {
-      await deleteDoc(doc(db, "usuarios", user._fbId));
-      nfy(user.username + " eliminado", "ok");
-      await load();
-    } catch (e) { nfy("Error: " + e.message, "er"); }
-    sBusy(false);
+      await updateDoc(doc(db, "usuarios", foundUser._fbId), { creditos: increment(qty) });
+      setFoundUser(p => ({ ...p, creditos: (p.creditos || 0) + qty }));
+      nfy("+" + qty + " cr\u00e9ditos agregados a " + foundUser.username, "ok");
+    } catch (e) {
+      nfy("Error: " + e.message, "er");
+    }
   };
+
+  const I = { padding: "10px 14px", border: "1px solid #e2e8f0", borderRadius: 8, fontSize: 14, background: "#f8faf9" };
 
   return (
-    <div style={{ width: "100%", maxWidth: 800, animation: "fi .3s ease" }}>
-      <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 6 }}>Administrar Usuarios</h1>
-      <p style={{ color: K.mt, fontSize: 14, marginBottom: 22 }}>Gestión de accesos y créditos</p>
-      <div style={{ background: "#fff", borderRadius: 12, padding: 22, border: "1px solid #e2e8f0" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-          <h3 style={{ fontSize: 15, fontWeight: 600 }}>Usuarios ({us.length})</h3>
-          <button onClick={load} disabled={ld} style={{ background: "#f1f5f9", border: "none", padding: "6px 12px", borderRadius: 6, fontSize: 12, cursor: "pointer" }}>🔄 Actualizar</button>
+    <div style={{ animation: "fi .3s ease", width: "100%", maxWidth: 600 }}>
+      <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 6 }}>{"\u2699\ufe0f Administraci\u00f3n de Usuarios"}</h1>
+      <p style={{ color: K.mt, fontSize: 14, marginBottom: 24 }}>{"Busque un usuario por su nombre de usuario para gestionar cr\u00e9ditos."}</p>
+
+      <div style={{ background: "#fff", borderRadius: 12, padding: 24, border: "1px solid #e2e8f0", marginBottom: 20 }}>
+        <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 12 }}>{"\ud83d\udd0d Buscar usuario"}</div>
+        <div style={{ display: "flex", gap: 10 }}>
+          <input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            onKeyDown={e => { if (e.key === "Enter") doSearch(); }}
+            style={{ ...I, flex: 1 }}
+            placeholder="Nombre de usuario (ej: jobregon)"
+          />
+          <button onClick={doSearch} disabled={searching} style={{ background: K.ac, color: "#fff", border: "none", padding: "10px 20px", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: searching ? "wait" : "pointer" }}>
+            {searching ? "Buscando..." : "Buscar"}
+          </button>
         </div>
-        {ld ? <p style={{ color: K.mt }}>Cargando...</p> :
-          us.map(u => (
-            <div key={u._fbId} style={{ padding: "14px 0", borderBottom: "1px solid #e2e8f0" }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+
+        {notFound && (
+          <div style={{ marginTop: 14, padding: 14, background: "#fef3c7", border: "1px solid #fde68a", borderRadius: 8, fontSize: 13, color: "#92400e" }}>
+            {"\u26a0 No se encontr\u00f3 ning\u00fan usuario con ese nombre de usuario."}
+          </div>
+        )}
+
+        {foundUser && (
+          <div style={{ marginTop: 18 }}>
+            <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 10, padding: 18, marginBottom: 16 }}>
+              <div style={{ fontSize: 16, fontWeight: 700, color: "#0a3d2f", marginBottom: 10 }}>
+                {foundUser.username}
+                {foundUser.role === "admin" && <span style={{ background: "#0d9488", color: "#fff", padding: "2px 8px", borderRadius: 4, fontSize: 10, marginLeft: 8, fontWeight: 700 }}>ADMIN</span>}
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, fontSize: 13, color: "#475569" }}>
+                <div><span style={{ color: K.mt }}>Nombre: </span><strong>{foundUser.nombre} {foundUser.apellido}</strong></div>
+                <div><span style={{ color: K.mt }}>Email: </span>{foundUser.email}</div>
+                <div><span style={{ color: K.mt }}>DNI: </span>{foundUser.dni}</div>
                 <div>
-                  <span style={{ fontWeight: 600, fontSize: 15 }}>{u.username || u.email}</span>
-                  {u.role === "admin" && <span style={{ fontSize: 10, background: "#ccfbf1", color: "#0d9488", padding: "2px 6px", borderRadius: 4, marginLeft: 8, fontWeight: 700 }}>ADMIN</span>}
-                  <div style={{ fontSize: 12, color: K.mt, marginTop: 2 }}>
-                    {u.nombre && (u.nombre + " " + u.apellido + " · ")}{u.email}{u.dni ? (" · DNI: " + u.dni) : ""}
-                  </div>
-                </div>
-                <div style={{ textAlign: "right" }}>
-                  <div style={{ fontSize: 24, fontWeight: 700, color: u.role === "admin" ? "#0d9488" : (u.creditos || 0) > 0 ? "#059669" : "#dc2626" }}>
-                    {u.role === "admin" ? "∞" : (u.creditos || 0)}
-                  </div>
-                  <div style={{ fontSize: 10, color: K.mt }}>créditos</div>
+                  <span style={{ color: K.mt }}>{"Cr\u00e9ditos: "}</span>
+                  <strong style={{ color: foundUser.role === "admin" ? K.ac : (foundUser.creditos || 0) > 0 ? "#059669" : "#dc2626", fontSize: 16 }}>
+                    {foundUser.role === "admin" ? "\u221e" : (foundUser.creditos || 0)}
+                  </strong>
                 </div>
               </div>
-              {u.role !== "admin" && (
-                <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
-                  <input type="number" value={creditAmounts[u._fbId] || ""} placeholder="Cant." onChange={e => setCreditAmounts(p => ({ ...p, [u._fbId]: e.target.value }))} style={{ width: 70, padding: "6px 10px", border: "1px solid #e2e8f0", borderRadius: 6, fontSize: 13, textAlign: "center" }} />
-                  <button onClick={() => modCredits(u, creditAmounts[u._fbId] || 0)} disabled={busy} style={{ background: "#059669", color: "#fff", border: "none", padding: "6px 12px", borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>+ Agregar</button>
-                  <button onClick={() => modCredits(u, -(creditAmounts[u._fbId] || 0))} disabled={busy} style={{ background: "#f59e0b", color: "#fff", border: "none", padding: "6px 12px", borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>- Quitar</button>
-                  <button onClick={() => delUser(u)} disabled={busy} style={{ background: "#fef2f2", color: "#dc2626", border: "1px solid #fecaca", padding: "6px 12px", borderRadius: 6, fontSize: 12, cursor: "pointer", marginLeft: "auto" }}>🗑 Eliminar</button>
-                </div>
-              )}
             </div>
-          ))}
+
+            {foundUser.role !== "admin" && (
+              <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 10, padding: 18 }}>
+                <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 12 }}>{"\ud83d\udcb3 Agregar cr\u00e9ditos"}</div>
+                <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                  <input
+                    type="number"
+                    min={1}
+                    max={20}
+                    value={amount}
+                    onChange={e => setAmount(e.target.value)}
+                    style={{ ...I, width: 100, textAlign: "center" }}
+                  />
+                  <span style={{ fontSize: 12, color: K.mt }}>{"(m\u00e1ximo 20)"}</span>
+                  <button onClick={addCredits} style={{ background: "#059669", color: "#fff", border: "none", padding: "10px 20px", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
+                    {"+ Agregar cr\u00e9ditos"}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {foundUser.role === "admin" && (
+              <div style={{ background: "#f0f9ff", border: "1px solid #bae6fd", borderRadius: 8, padding: 14, fontSize: 13, color: "#0369a1" }}>
+                {"Los administradores tienen cr\u00e9ditos ilimitados."}
+              </div>
+            )}
+          </div>
+        )}
       </div>
-      <div style={{ background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 10, padding: 16, marginTop: 20, fontSize: 13, color: "#1e40af" }}>
-        <strong>🔒 Seguridad:</strong> Los créditos se validan en las reglas de Firestore. Los usuarios no pueden modificar sus propios créditos.
+
+      <div style={{ background: "#f8faf9", borderRadius: 10, padding: 16, border: "1px solid #e2e8f0", fontSize: 12, color: K.mt }}>
+        <div style={{ fontWeight: 600, marginBottom: 6 }}>{"\ud83d\udd12 Seguridad"}</div>
+        <p>{"Las reglas de Firestore impiden que usuarios no administradores modifiquen cr\u00e9ditos o roles. La seguridad real est\u00e1 en el servidor, no en el c\u00f3digo del navegador."}</p>
       </div>
     </div>
   );
