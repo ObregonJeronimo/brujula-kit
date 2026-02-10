@@ -6,6 +6,7 @@ import RptPEFF from "./components/RptPEFF.jsx";
 import Admin from "./components/Admin.jsx";
 import NewELDI from "./components/NewELDI.jsx";
 import NewPEFF from "./components/NewPEFF.jsx";
+import CalendarPage from "./components/CalendarPage.jsx";
 
 const isMobile = () => /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) && window.innerWidth < 900;
 const K = { sd: "#0a3d2f", ac: "#0d9488", al: "#ccfbf1", mt: "#64748b", bd: "#e2e8f0", bg: "#f0f5f3" };
@@ -35,7 +36,6 @@ async function generateUsername(nombre, apellido) {
   return candidate;
 }
 
-/* Session lock: only 1 user at a time (except admin) */
 async function acquireSessionLock(uid, isAdmin) {
   if (isAdmin) return true;
   const lockRef = doc(db, "system", "active_session");
@@ -75,7 +75,6 @@ function useSessionHeartbeat(uid, isAdmin) {
   }, [uid, isAdmin]);
 }
 
-/* No Credits Modal */
 function NoCreditsModal({ onClose, onUpgrade }) {
   return (
     <div style={{position:"fixed",inset:0,zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,.5)",backdropFilter:"blur(4px)",animation:"fi .25s ease"}}>
@@ -92,29 +91,19 @@ function NoCreditsModal({ onClose, onUpgrade }) {
   );
 }
 
-/* Profile Page */
 function ProfilePage({ profile, authUser, nfy }) {
   const [resetSending, setResetSending] = useState(false);
   const [resetSent, setResetSent] = useState(false);
-
   const handlePasswordReset = async () => {
     setResetSending(true);
-    try {
-      await sendPasswordResetEmail(auth, authUser.email);
-      setResetSent(true);
-      nfy("Email de recuperación enviado", "ok");
-    } catch (e) {
-      nfy("Error al enviar email: " + e.message, "er");
-    }
+    try { await sendPasswordResetEmail(auth, authUser.email); setResetSent(true); nfy("Email de recuperación enviado", "ok"); } catch (e) { nfy("Error al enviar email: " + e.message, "er"); }
     setResetSending(false);
   };
-
   const isAdm = profile?.role === "admin";
   const credits = isAdm ? "∞" : (profile?.creditos || 0);
   const plan = isAdm ? "Administrador" : (profile?.plan || "Plan Demo");
   const planColor = isAdm ? "#0d9488" : "#f59e0b";
   const planBg = isAdm ? "#ccfbf1" : "#fef3c7";
-
   const InfoRow = ({ label, value, icon }) => (
     <div style={{display:"flex",alignItems:"center",gap:14,padding:"16px 0",borderBottom:"1px solid #f1f5f9"}}>
       <div style={{width:40,height:40,borderRadius:10,background:"#f0f5f3",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>{icon}</div>
@@ -124,46 +113,29 @@ function ProfilePage({ profile, authUser, nfy }) {
       </div>
     </div>
   );
-
   return (
     <div style={{animation:"fi .3s ease",width:"100%",maxWidth:600}}>
       <h1 style={{fontSize:22,fontWeight:700,marginBottom:6}}>👤 Mi Perfil</h1>
       <p style={{color:K.mt,fontSize:14,marginBottom:24}}>Información de tu cuenta</p>
-
       <div style={{background:"linear-gradient(135deg,#0a3d2f,#0d9488)",borderRadius:16,padding:"24px 28px",color:"#fff",marginBottom:24,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:16}}>
-        <div>
-          <div style={{fontSize:12,opacity:.7,marginBottom:4}}>Plan actual</div>
-          <div style={{display:"flex",alignItems:"center",gap:10}}>
-            <span style={{fontSize:22,fontWeight:700}}>{plan}</span>
-            <span style={{background:planBg,color:planColor,padding:"3px 10px",borderRadius:20,fontSize:11,fontWeight:700}}>{isAdm?"ADMIN":"DEMO"}</span>
-          </div>
-        </div>
-        <div style={{textAlign:"right"}}>
-          <div style={{fontSize:12,opacity:.7,marginBottom:4}}>Créditos disponibles</div>
-          <div style={{fontSize:32,fontWeight:700}}>{credits}</div>
-        </div>
+        <div><div style={{fontSize:12,opacity:.7,marginBottom:4}}>Plan actual</div><div style={{display:"flex",alignItems:"center",gap:10}}><span style={{fontSize:22,fontWeight:700}}>{plan}</span><span style={{background:planBg,color:planColor,padding:"3px 10px",borderRadius:20,fontSize:11,fontWeight:700}}>{isAdm?"ADMIN":"DEMO"}</span></div></div>
+        <div style={{textAlign:"right"}}><div style={{fontSize:12,opacity:.7,marginBottom:4}}>Créditos disponibles</div><div style={{fontSize:32,fontWeight:700}}>{credits}</div></div>
       </div>
-
       <div style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",padding:"8px 24px",marginBottom:20}}>
         <InfoRow icon="📧" label="Email" value={profile?.email || authUser?.email || "—"} />
         <InfoRow icon="👤" label="Nombre de usuario" value={profile?.username || "—"} />
-        <InfoRow icon="🪪" label="DNI" value={profile?.dni || "—"} />
+        <InfoRow icon="🪣" label="DNI" value={profile?.dni || "—"} />
         <InfoRow icon="📝" label="Nombre completo" value={profile?.nombre && profile?.apellido ? `${profile.nombre} ${profile.apellido}` : "—"} />
         <InfoRow icon="💳" label="Créditos restantes" value={isAdm ? "Ilimitados" : `${profile?.creditos || 0} evaluaciones`} />
         <div style={{display:"flex",alignItems:"center",gap:14,padding:"16px 0"}}>
           <div style={{width:40,height:40,borderRadius:10,background:"#f0f5f3",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>📅</div>
-          <div style={{flex:1}}>
-            <div style={{fontSize:11,fontWeight:600,color:"#94a3b8",textTransform:"uppercase",letterSpacing:".5px",marginBottom:2}}>Miembro desde</div>
-            <div style={{fontSize:15,fontWeight:500,color:"#1e293b"}}>{profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString("es-AR",{year:"numeric",month:"long",day:"numeric"}) : "—"}</div>
-          </div>
+          <div style={{flex:1}}><div style={{fontSize:11,fontWeight:600,color:"#94a3b8",textTransform:"uppercase",letterSpacing:".5px",marginBottom:2}}>Miembro desde</div><div style={{fontSize:15,fontWeight:500,color:"#1e293b"}}>{profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString("es-AR",{year:"numeric",month:"long",day:"numeric"}) : "—"}</div></div>
         </div>
       </div>
-
       <div style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",padding:"20px 24px"}}>
         <div style={{fontSize:14,fontWeight:600,color:"#1e293b",marginBottom:4}}>Seguridad</div>
         <p style={{fontSize:13,color:"#94a3b8",marginBottom:14}}>Se enviará un enlace a tu email para establecer una nueva contraseña.</p>
-        <button onClick={handlePasswordReset} disabled={resetSending||resetSent}
-          style={{padding:"10px 20px",background:resetSent?"#ecfdf5":"#f8faf9",border:resetSent?"1px solid #a7f3d0":"1px solid #e2e8f0",borderRadius:10,fontSize:13,fontWeight:600,cursor:resetSending?"wait":resetSent?"default":"pointer",color:resetSent?"#059669":"#1e293b",display:"flex",alignItems:"center",gap:8,transition:"all .2s"}}>
+        <button onClick={handlePasswordReset} disabled={resetSending||resetSent} style={{padding:"10px 20px",background:resetSent?"#ecfdf5":"#f8faf9",border:resetSent?"1px solid #a7f3d0":"1px solid #e2e8f0",borderRadius:10,fontSize:13,fontWeight:600,cursor:resetSending?"wait":resetSent?"default":"pointer",color:resetSent?"#059669":"#1e293b",display:"flex",alignItems:"center",gap:8,transition:"all .2s"}}>
           {resetSent?"✓ Email enviado":(resetSending?"Enviando...":"🔒 Cambiar contraseña")}
         </button>
       </div>
@@ -171,47 +143,35 @@ function ProfilePage({ profile, authUser, nfy }) {
   );
 }
 
-/* Premium / Payment Page */
 function PremiumPage({ profile, nfy, onBack }) {
   return (
     <div style={{animation:"fi .3s ease",width:"100%",maxWidth:600}}>
       <h1 style={{fontSize:22,fontWeight:700,marginBottom:6}}>✨ Plan Premium</h1>
       <p style={{color:K.mt,fontSize:14,marginBottom:24}}>Actualizá tu plan para seguir evaluando</p>
-
       <div style={{background:"linear-gradient(135deg,#0a3d2f,#0d9488)",borderRadius:16,padding:"32px 28px",color:"#fff",marginBottom:24,textAlign:"center"}}>
         <div style={{fontSize:48,marginBottom:12}}>🚀</div>
         <div style={{fontSize:28,fontWeight:700,marginBottom:4}}>30 Créditos</div>
         <div style={{fontSize:36,fontWeight:800,marginBottom:8}}>$49.500</div>
         <div style={{fontSize:13,opacity:.8}}>Pago único · Sin suscripción · 30 evaluaciones</div>
       </div>
-
       <div style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",padding:"24px",marginBottom:20}}>
         <div style={{fontSize:15,fontWeight:700,color:"#0a3d2f",marginBottom:16}}>Medios de pago</div>
-
         <div style={{background:"#f0f9ff",border:"1px solid #bae6fd",borderRadius:10,padding:16,marginBottom:16}}>
           <div style={{fontSize:14,fontWeight:600,color:"#0369a1",marginBottom:8}}>📱 Transferencia bancaria / Ualá / MercadoPago</div>
           <div style={{fontSize:13,color:"#475569",lineHeight:1.7}}>
             Realizá una transferencia por <b>$49.500</b> al siguiente CBU/Alias:
-            <div style={{background:"#e0f2fe",borderRadius:8,padding:"12px 16px",margin:"10px 0",fontFamily:"monospace",fontSize:14,fontWeight:600,color:"#0c4a6e",letterSpacing:".5px",textAlign:"center",userSelect:"all"}}>
-              brujula.kit.fono
-            </div>
+            <div style={{background:"#e0f2fe",borderRadius:8,padding:"12px 16px",margin:"10px 0",fontFamily:"monospace",fontSize:14,fontWeight:600,color:"#0c4a6e",letterSpacing:".5px",textAlign:"center",userSelect:"all"}}>brujula.kit.fono</div>
             Luego enviá el comprobante por WhatsApp o email para activar tus créditos.
           </div>
         </div>
-
         <div style={{background:"#f8faf9",border:"1px solid #e2e8f0",borderRadius:10,padding:16}}>
           <div style={{fontSize:14,fontWeight:600,color:"#1e293b",marginBottom:8}}>📧 Contacto para activación</div>
-          <div style={{fontSize:13,color:"#475569",lineHeight:1.7}}>
-            Email: <b>valkyriumsolutions@gmail.com</b><br/>
-            Indicá tu email de cuenta y adjuntá el comprobante de pago.
-          </div>
+          <div style={{fontSize:13,color:"#475569",lineHeight:1.7}}>Email: <b>valkyriumsolutions@gmail.com</b><br/>Indicá tu email de cuenta y adjuntá el comprobante de pago.</div>
         </div>
       </div>
-
       <div style={{background:"#fffbeb",border:"1px solid #fde68a",borderRadius:10,padding:16,marginBottom:20,fontSize:12,color:"#92400e",lineHeight:1.6}}>
         <b>⚠ Nota:</b> La activación de créditos es manual y puede demorar hasta 24 horas hábiles. Estamos trabajando en un sistema de pago automático.
       </div>
-
       <button onClick={onBack} style={{background:"#f1f5f9",border:"none",padding:"12px 24px",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer",color:"#64748b"}}>← Volver al panel</button>
     </div>
   );
@@ -230,7 +190,6 @@ export default function App() {
   const [sessionBlocked, setSessionBlocked] = useState(false);
   const [showNoCredits, setShowNoCredits] = useState(false);
   const nfy = useCallback((m, t) => { sT({ m, t }); setTimeout(() => sT(null), 3500); }, []);
-
   const isAdmin = profile?.role === "admin";
   useSessionHeartbeat(authUser?.uid, isAdmin);
 
@@ -242,8 +201,7 @@ export default function App() {
           if (prof && prof.profileComplete) {
             const canLogin = await acquireSessionLock(u.uid, prof.role === "admin");
             if (!canLogin) { setSessionBlocked(true); setAuthUser(u); setProfile(prof); return; }
-            setSessionBlocked(false);
-            setProfile(prof);
+            setSessionBlocked(false); setProfile(prof);
           } else setProfile(null);
         }
         setAuthUser(u);
@@ -269,7 +227,7 @@ export default function App() {
 
   const navTo = (v) => {
     if ((view === "newELDI" || view === "newPEFF") && v !== view) {
-      if (!window.confirm("¿Salir de la evaluación?\n\nEl crédito ya fue descontado, por lo tanto no se recuperará el crédito gastado en esta evaluación.")) return;
+      if (!window.confirm("¿Salir de la evaluación?\n\nSi ya viste los resultados, el crédito fue descontado y no se recuperará.")) return;
     }
     sV(v); sS(null); window.scrollTo({top:0,behavior:"smooth"});
   };
@@ -320,7 +278,6 @@ export default function App() {
   };
 
   if (authUser === undefined) return <div style={{width:"100vw",height:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#0a3d2f",color:"#fff",fontFamily:"'DM Sans',system-ui,sans-serif"}}><div style={{textAlign:"center"}}><div style={{fontSize:48,marginBottom:16}}>🧭</div><div style={{fontSize:20,fontWeight:700}}>Cargando...</div></div></div>;
-
   if (!authUser) return <AuthScreen onDone={(u, p) => { setAuthUser(u); setProfile(p); }} />;
   if (authUser && !authUser.emailVerified) return <VerifyEmailScreen user={authUser} onLogout={handleLogout} />;
   if (authUser && authUser.emailVerified && !profile) return <CompleteProfileScreen uid={authUser.uid} email={authUser.email} onDone={p => setProfile(p)} />;
@@ -340,7 +297,7 @@ export default function App() {
     </div>
   );
 
-  const nav = [["dash", "⊞", "Panel"], ["tools", "🧰", "Herramientas"], ["hist", "⏱", "Historial"], ["profile", "👤", "Perfil"]];
+  const nav = [["dash", "⊞", "Panel"], ["tools", "🧰", "Herramientas"], ["hist", "⏱", "Historial"], ["calendario", "📅", "Calendario"], ["profile", "👤", "Perfil"]];
   if (isAdmin) nav.push(["adm", "⚙", "Usuarios"]);
 
   return (
@@ -368,6 +325,7 @@ export default function App() {
         {view==="rpt"&&sel&&<RptELDI ev={sel} isA={isAdmin} onD={deleteEval}/>}
         {view==="rptP"&&sel&&<RptPEFF ev={sel} isA={isAdmin} onD={deleteEval}/>}
         {view==="profile"&&<ProfilePage profile={profile} authUser={authUser} nfy={nfy}/>}
+        {view==="calendario"&&<CalendarPage userId={authUser?.uid} nfy={nfy}/>}
         {view==="premium"&&<PremiumPage profile={profile} nfy={nfy} onBack={()=>sV("dash")}/>}
         {view==="adm"&&isAdmin&&<Admin nfy={nfy}/>}
       </main>
@@ -383,7 +341,6 @@ function AuthScreen({ onDone }) {
   const [err, setErr] = useState("");
   const [info, setInfo] = useState("");
   const I = { width: "100%", padding: "12px 14px", border: "1px solid #e2e8f0", borderRadius: 8, fontSize: 14, background: "#f8faf9" };
-
   const handleLogin = async (ev) => {
     ev.preventDefault(); setLd(true); setErr(""); setInfo("");
     try {
@@ -404,7 +361,6 @@ function AuthScreen({ onDone }) {
     }
     setLd(false);
   };
-
   const handleRegister = async (ev) => {
     ev.preventDefault(); setLd(true); setErr(""); setInfo("");
     if (pass.length < 6) { setErr("La contraseña debe tener al menos 6 caracteres."); setLd(false); return; }
@@ -419,7 +375,6 @@ function AuthScreen({ onDone }) {
     }
     setLd(false);
   };
-
   return (
     <div style={{width:"100vw",height:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"linear-gradient(145deg,#0a3d2f,#0d7363)",fontFamily:"'DM Sans',system-ui,sans-serif"}}>
       <div style={{background:"rgba(255,255,255,.97)",borderRadius:16,padding:"44px 36px",width:400,maxWidth:"92vw",boxShadow:"0 20px 50px rgba(0,0,0,.3)"}}>
@@ -433,21 +388,15 @@ function AuthScreen({ onDone }) {
           ))}
         </div>
         <form onSubmit={mode==="login"?handleLogin:handleRegister}>
-          <div style={{marginBottom:14}}>
-            <label style={{fontSize:12,fontWeight:600,color:"#64748b",display:"block",marginBottom:5}}>Email</label>
-            <input type="email" value={email} onChange={e=>setEmail(e.target.value)} style={I} placeholder="correo@ejemplo.com" required/>
-          </div>
-          <div style={{marginBottom:22}}>
-            <label style={{fontSize:12,fontWeight:600,color:"#64748b",display:"block",marginBottom:5}}>Contraseña</label>
-            <input type="password" value={pass} onChange={e=>setPass(e.target.value)} style={I} placeholder={mode==="register"?"Mínimo 6 caracteres":"Su contraseña"} required/>
-          </div>
+          <div style={{marginBottom:14}}><label style={{fontSize:12,fontWeight:600,color:"#64748b",display:"block",marginBottom:5}}>Email</label><input type="email" value={email} onChange={e=>setEmail(e.target.value)} style={I} placeholder="correo@ejemplo.com" required/></div>
+          <div style={{marginBottom:22}}><label style={{fontSize:12,fontWeight:600,color:"#64748b",display:"block",marginBottom:5}}>Contraseña</label><input type="password" value={pass} onChange={e=>setPass(e.target.value)} style={I} placeholder={mode==="register"?"Mínimo 6 caracteres":"Su contraseña"} required/></div>
           {err&&<div style={{background:"#fef2f2",border:"1px solid #fecaca",color:"#dc2626",padding:"10px 12px",borderRadius:8,fontSize:12,marginBottom:14}}>{err}</div>}
           {info&&<div style={{background:"#f0fdf4",border:"1px solid #bbf7d0",color:"#059669",padding:"10px 12px",borderRadius:8,fontSize:12,marginBottom:14}}>{info}</div>}
           <button type="submit" disabled={ld} style={{width:"100%",padding:"13px",background:"#0d9488",color:"#fff",border:"none",borderRadius:8,fontSize:15,fontWeight:600,cursor:ld?"wait":"pointer",opacity:ld?.7:1}}>
             {ld?"Procesando...":mode==="login"?"Iniciar sesión":"Crear cuenta"}
           </button>
         </form>
-        <p style={{textAlign:"center",marginTop:20,fontSize:10,color:"#94a3b8"}}>Brújula KIT v5.4</p>
+        <p style={{textAlign:"center",marginTop:20,fontSize:10,color:"#94a3b8"}}>Brújula KIT v5.5</p>
       </div>
     </div>
   );
@@ -482,9 +431,7 @@ function CompleteProfileScreen({ uid, email, onDone }) {
   const [err, setErr] = useState("");
   const [genUser, setGenUser] = useState("");
   const I = { width: "100%", padding: "12px 14px", border: "1px solid #e2e8f0", borderRadius: 8, fontSize: 14, background: "#f8faf9" };
-
   useEffect(() => { (async () => { const existing = await getUserProfile(uid); if (existing && existing.profileComplete) onDone(existing); })(); }, [uid]);
-
   const handleSubmit = async (ev) => {
     ev.preventDefault(); setLd(true); setErr("");
     if (!nombre.trim() || !apellido.trim() || !dni.trim()) { setErr("Complete todos los campos."); setLd(false); return; }
@@ -498,7 +445,6 @@ function CompleteProfileScreen({ uid, email, onDone }) {
     } catch (e) { setErr("Error: " + e.message); }
     setLd(false);
   };
-
   if (genUser) return (
     <div style={{width:"100vw",height:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"linear-gradient(145deg,#0a3d2f,#0d7363)",fontFamily:"'DM Sans',system-ui,sans-serif"}}>
       <div style={{background:"rgba(255,255,255,.97)",borderRadius:16,padding:"44px 36px",width:420,maxWidth:"92vw",textAlign:"center",boxShadow:"0 20px 50px rgba(0,0,0,.3)"}}>
@@ -510,7 +456,6 @@ function CompleteProfileScreen({ uid, email, onDone }) {
       </div>
     </div>
   );
-
   return (
     <div style={{width:"100vw",height:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"linear-gradient(145deg,#0a3d2f,#0d7363)",fontFamily:"'DM Sans',system-ui,sans-serif"}}>
       <div style={{background:"rgba(255,255,255,.97)",borderRadius:16,padding:"44px 36px",width:420,maxWidth:"92vw",boxShadow:"0 20px 50px rgba(0,0,0,.3)"}}>
@@ -537,7 +482,7 @@ function Dash({ es, pe, onT, onV, onVP, ld, profile, isAdmin }) {
   return (
     <div style={{animation:"fi .3s ease",width:"100%"}}>
       <h1 style={{fontSize:22,fontWeight:700,marginBottom:6}}>🧭 Panel Principal</h1>
-      <p style={{color:K.mt,fontSize:14,marginBottom:24}}>{"Bienvenido/a, "}{profile?.nombre || profile?.username}{ld?" — cargando...":""}</p>
+      <p style={{color:K.mt,fontSize:14,marginBottom:24}}>Bienvenido/a, {profile?.nombre || profile?.username}{ld?" — cargando...":""}</p>
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))",gap:16,marginBottom:28}}>
         {[["📋","ELDI",es.length],["🔊","PEFF",pe.length],["👶","Pacientes",new Set([...es.map(e=>e.paciente),...pe.map(e=>e.paciente)]).size],["💳","Créditos",isAdmin?"∞":(profile?.creditos||0)]].map(([ic,lb,v],i)=>
           <div key={i} style={{background:"#fff",borderRadius:12,padding:22,border:"1px solid #e2e8f0"}}>
@@ -555,7 +500,7 @@ function Dash({ es, pe, onT, onV, onVP, ld, profile, isAdmin }) {
           <h3 style={{fontSize:15,fontWeight:600,marginBottom:14}}>Recientes</h3>
           {rc.length===0?<p style={{color:K.mt,fontSize:13}}>Sin evaluaciones aún.</p>:rc.map(ev=>{const isP=!!ev.seccionData;return(
             <div key={ev._fbId||ev.id} onClick={()=>isP?onVP(ev):onV(ev)} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 0",borderBottom:"1px solid #e2e8f0",cursor:"pointer"}}>
-              <div><div style={{fontWeight:600,fontSize:14}}>{ev.paciente}</div><div style={{fontSize:11,color:K.mt}}>{isP?"PEFF":"ELDI"}{" · "}{new Date(ev.fechaGuardado).toLocaleDateString("es-CL")}</div></div>
+              <div><div style={{fontWeight:600,fontSize:14}}>{ev.paciente}</div><div style={{fontSize:11,color:K.mt}}>{isP?"PEFF":"ELDI"} · {new Date(ev.fechaGuardado).toLocaleDateString("es-CL")}</div></div>
               <span style={{color:K.mt}}>→</span>
             </div>)})}
         </div>
