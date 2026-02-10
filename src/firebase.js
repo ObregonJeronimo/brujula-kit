@@ -1,5 +1,6 @@
 import { initializeApp } from "firebase/app";
-import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, query, where, updateDoc, enableNetwork, disableNetwork } from "firebase/firestore";
+import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, query, where, updateDoc, getDoc, setDoc, increment, orderBy, limit } from "firebase/firestore";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, onAuthStateChanged, signOut } from "firebase/auth";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -10,15 +11,8 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
-console.log("=== FIREBASE CONFIG DEBUG ===");
-console.log("projectId:", firebaseConfig.projectId || "❌ VACÍO");
-console.log("apiKey:", firebaseConfig.apiKey ? firebaseConfig.apiKey.substring(0,10)+"..." : "❌ VACÍO");
-console.log("authDomain:", firebaseConfig.authDomain || "❌ VACÍO");
-console.log("appId:", firebaseConfig.appId ? firebaseConfig.appId.substring(0,10)+"..." : "❌ VACÍO");
-console.log("All env keys:", Object.keys(import.meta.env).filter(k=>k.startsWith("VITE_")).join(", ") || "❌ NINGUNA");
-console.log("=== END CONFIG DEBUG ===");
-
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const auth = getAuth(app);
 
-export { db, collection, addDoc, getDocs, deleteDoc, doc, query, where, updateDoc };
+export { db, auth, collection, addDoc, getDocs, deleteDoc, doc, query, where, updateDoc, getDoc, setDoc, increment, orderBy, limit, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, onAuthStateChanged, signOut };
