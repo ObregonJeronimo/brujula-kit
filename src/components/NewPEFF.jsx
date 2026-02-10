@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { PEFF_SECTIONS } from "../data/peffSections.js";
 import { PF_CATEGORIES, ALL_PROCESSES } from "../data/peffProcesos.js";
 import { HelpTip, renderGroupedCoord } from "./NewPEFF_helpers.jsx";
@@ -34,9 +34,12 @@ const speak=(text)=>{
 
 const scrollTop=()=>{const el=document.getElementById("main-scroll");if(el)el.scrollTo({top:0,behavior:"smooth"});else window.scrollTo({top:0,behavior:"smooth"});};
 
-export default function NewPEFF({onS,nfy}){
+const RESULT_STEP=PEFF_SECTIONS.length+1;
+
+export default function NewPEFF({onS,nfy,deductCredit,isAdmin}){
   const[step,setStep]=useState(0),[pd,sPd]=useState({pN:"",birth:"",eD:new Date().toISOString().split("T")[0],sch:"",ref:"",obs:""}),[data,setD]=useState({}),[procData,setProcData]=useState({});
   const[playingId,setPlayingId]=useState(null);
+  const creditDeducted=useRef(false);
   const a=pd.birth&&pd.eD?gm(pd.birth,pd.eD):0;
   const I={width:"100%",padding:"10px 14px",border:"1px solid #e2e8f0",borderRadius:8,fontSize:14,background:"#f8faf9"};
   const sf=(id,v)=>setD(p=>({...p,[id]:v}));
@@ -44,6 +47,14 @@ export default function NewPEFF({onS,nfy}){
 
   useEffect(()=>{scrollTop()},[step]);
   useEffect(()=>{if(window.speechSynthesis){window.speechSynthesis.getVoices();window.speechSynthesis.onvoiceschanged=()=>window.speechSynthesis.getVoices()}},[]);
+
+  /* Deduct credit when reaching results */
+  useEffect(()=>{
+    if(step===RESULT_STEP&&!creditDeducted.current&&deductCredit&&!isAdmin){
+      creditDeducted.current=true;
+      deductCredit();
+    }
+  },[step]);
 
   const goStep=(s)=>{setStep(s)};
 
@@ -82,7 +93,7 @@ export default function NewPEFF({onS,nfy}){
     <div style={{display:"flex",flexDirection:"column",gap:6}}>
       {legendItems.map(o=><div key={o.v} style={{display:"flex",alignItems:"center",gap:6}}>
         <div style={{width:24,height:24,borderRadius:6,background:o.bg,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700,flexShrink:0}}>{o.v}</div>
-        <span style={{fontSize:12}}><b>{o.t}</b> \u2014 {o.d}</span>
+        <span style={{fontSize:12}}><b>{o.t}</b> {"\u2014"} {o.d}</span>
       </div>)}
     </div>
     <div style={{marginTop:10,fontSize:11,color:"#7c3aed",fontStyle:"italic"}}>
@@ -311,7 +322,7 @@ export default function NewPEFF({onS,nfy}){
 
       {step>=1&&step<=PEFF_SECTIONS.length&&rSec(PEFF_SECTIONS[step-1])}
 
-      {step===PEFF_SECTIONS.length+1&&(()=>{
+      {step===RESULT_STEP&&(()=>{
         const r=calc();
         const sc=sevColor[r.severity]||"#7c3aed";
         return<div>
