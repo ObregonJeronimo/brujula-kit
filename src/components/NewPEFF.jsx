@@ -1,11 +1,10 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { PEFF_SECTIONS } from "../data/peffSections.js";
 import { PF_CATEGORIES, ALL_PROCESSES } from "../data/peffProcesos.js";
 const K={mt:"#64748b"};
 const gm=(b,e)=>{const B=new Date(b),E=new Date(e);let m=(E.getFullYear()-B.getFullYear())*12+E.getMonth()-B.getMonth();if(E.getDate()<B.getDate())m--;return Math.max(0,m)};
 const fa=m=>`${Math.floor(m/12)} años, ${m%12} meses`;
 
-/* Severity description helper */
 const sevDesc={
   "Adecuado":"El niño/a produce correctamente todos o casi todos los fonemas esperados para su edad. No se observan dificultades articulatorias significativas.",
   "Leve":"Se observan errores articulatorios aislados que no comprometen significativamente la inteligibilidad del habla. Puede requerir seguimiento.",
@@ -15,20 +14,31 @@ const sevDesc={
 };
 const sevColor={"Adecuado":"#059669","Leve":"#f59e0b","Moderado":"#ea580c","Moderado-Severo":"#dc2626","Severo":"#dc2626"};
 
+/* TTS helper */
+const speak=(text)=>{
+  if(!window.speechSynthesis)return;
+  window.speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(text);
+  u.lang="es-AR";u.rate=0.85;u.pitch=1;
+  const voices=window.speechSynthesis.getVoices();
+  const esVoice=voices.find(v=>v.lang.startsWith("es"));
+  if(esVoice)u.voice=esVoice;
+  window.speechSynthesis.speak(u);
+};
+
 export default function NewPEFF({onS,nfy}){
   const[step,sS2]=useState(0),[pd,sPd]=useState({pN:"",birth:"",eD:new Date().toISOString().split("T")[0],sch:"",ref:"",obs:""}),[data,setD]=useState({}),[procData,setProcData]=useState({});
+  const[playingId,setPlayingId]=useState(null);
   const a=pd.birth&&pd.eD?gm(pd.birth,pd.eD):0;
   const I={width:"100%",padding:"10px 14px",border:"1px solid #e2e8f0",borderRadius:8,fontSize:14,background:"#f8faf9"};
   const sf=(id,v)=>setD(p=>({...p,[id]:v}));
   const spf=(itemId,field,v)=>setProcData(p=>({...p,[itemId]:{...(p[itemId]||{}), [field]:v}}));
 
-  /* OFA: render options as visible cards instead of dropdowns */
   const rField=f=>{
     if(f.type==="text") return <div key={f.id} style={{marginBottom:14}}>
       <label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>{f.label}</label>
       <input value={data[f.id]||""} onChange={e=>sf(f.id,e.target.value)} style={I}/>
     </div>;
-    /* Select → visible option cards */
     const cur=data[f.id]||"";
     return <div key={f.id} style={{marginBottom:14}}>
       <label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:6}}>{f.label}</label>
@@ -43,7 +53,6 @@ export default function NewPEFF({onS,nfy}){
     </div>;
   };
 
-  /* Leyenda as a column item for sticky sidebar */
   const legendItems=[
     {v:"✓",bg:"#059669",t:"Correcto",d:"Producción adecuada del fonema"},
     {v:"D",bg:"#f59e0b",t:"Distorsión",d:"Sonido alterado pero reconocible"},
@@ -104,24 +113,80 @@ export default function NewPEFF({onS,nfy}){
       </div>
     </div>};
 
-  const rRec=item=>{const v=data[item.id]||"";
-    return<div key={item.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",background:v==="reconoce"?"#f0fdf4":v==="no"?"#fef2f2":"#fff",borderRadius:8,border:`1px solid ${v==="reconoce"?"#bbf7d0":v==="no"?"#fecaca":"#e2e8f0"}`,marginBottom:4}}>
-      <span style={{fontWeight:600,fontSize:14,flex:1}}>{item.target}</span>
-      <span style={{fontSize:11,color:K.mt}}>{item.contrast}</span>
-      <div style={{display:"flex",gap:4}}>
-        {["reconoce","no"].map(o=><button key={o} onClick={()=>sf(item.id,v===o?"":o)}
-          style={{padding:"5px 10px",borderRadius:6,border:v===o?`2px solid ${o==="reconoce"?"#059669":"#dc2626"}`:"1px solid #e2e8f0",background:v===o?(o==="reconoce"?"#059669":"#dc2626"):"#fff",color:v===o?"#fff":"#64748b",fontSize:12,fontWeight:600,cursor:"pointer"}}>
-          {o==="reconoce"?"✔":"✘"}</button>)}
+  /* ── NEW: Interactive recognition with audio & word selection ── */
+  const rRec=item=>{
+    const v=data[item.id]||"";
+    const parts=item.target.split("/");
+    const word1=(parts[0]||"").trim();
+    const word2=(parts[1]||"").trim();
+    /* First word is always the correct answer (the one spoken aloud) */
+    const correctWord=word1;
+    const isPlaying=playingId===item.id;
+
+    const handleSpeak=()=>{
+      setPlayingId(item.id);
+      speak(correctWord);
+      setTimeout(()=>setPlayingId(null),1500);
+    };
+
+    const handleSelect=(selectedWord)=>{
+      if(selectedWord===correctWord){
+        sf(item.id,"reconoce");
+      }else{
+        sf(item.id,"no");
+      }
+    };
+
+    /* Shuffle options so correct answer isn't always first */
+    const options=item.id.charCodeAt(item.id.length-1)%2===0?[word1,word2]:[word2,word1];
+
+    return<div key={item.id} style={{padding:"12px 16px",background:v==="reconoce"?"#f0fdf4":v==="no"?"#fef2f2":"#fff",borderRadius:10,border:`1px solid ${v==="reconoce"?"#bbf7d0":v==="no"?"#fecaca":"#e2e8f0"}`,marginBottom:6}}>
+      <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:v?4:0}}>
+        {/* Audio button */}
+        <button onClick={handleSpeak}
+          style={{background:isPlaying?"#7c3aed":"#ede9fe",color:isPlaying?"#fff":"#7c3aed",border:"1px solid #c4b5fd",borderRadius:8,padding:"8px 14px",fontSize:13,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",gap:6,flexShrink:0,transition:"all .2s"}}>
+          {isPlaying?"🔊 ...":"🔊 Escuchar"}
+        </button>
+
+        {/* Contrast info */}
+        <span style={{fontSize:11,color:K.mt,flex:1}}>{item.contrast}</span>
+
+        {/* Word selection buttons */}
+        <div style={{display:"flex",gap:6}}>
+          {options.map(w=>{
+            const isSelected=(v==="reconoce"&&w===correctWord)||(v==="no"&&w!==correctWord);
+            const isCorrectChoice=v&&w===correctWord;
+            const isWrongChoice=v==="no"&&w!==correctWord;
+            return<button key={w} onClick={()=>handleSelect(w)}
+              style={{padding:"8px 18px",borderRadius:8,fontSize:14,fontWeight:700,cursor:"pointer",transition:"all .15s",
+                border:isSelected?`2px solid ${isCorrectChoice?"#059669":"#dc2626"}`:"2px solid #e2e8f0",
+                background:isSelected?(isCorrectChoice?"#059669":"#dc2626"):"#fff",
+                color:isSelected?"#fff":"#1e293b",
+                opacity:v&&!isSelected?0.5:1}}>
+              {w}
+            </button>})}
+        </div>
+
+        {/* Reset */}
+        {v&&<button onClick={()=>{const n={...data};delete n[item.id];setD(n)}}
+          style={{background:"none",border:"none",color:"#94a3b8",fontSize:16,cursor:"pointer",padding:4}} title="Limpiar">{"×"}</button>}
       </div>
+      {v&&<div style={{fontSize:11,marginTop:4,paddingLeft:4,color:v==="reconoce"?"#059669":"#dc2626",fontWeight:600}}>
+        {v==="reconoce"?"✓ Reconoce correctamente":"✗ No reconoce — eligió la opción incorrecta"}
+      </div>}
     </div>};
 
   const isFonSection=(sec)=>sec.id==="fon";
 
   const rSec=sec=>{
     const isFon=isFonSection(sec);
+    const isRecFon=sec.id==="recfon";
     const mainContent=<div style={isFon?{flex:1,minWidth:0}:{}}>
       <h2 style={{fontSize:18,fontWeight:700,marginBottom:4,color:"#7c3aed"}}>{sec.title}</h2>
       {sec.description&&<p style={{color:K.mt,fontSize:13,marginBottom:16}}>{sec.description}</p>}
+      {isRecFon&&<div style={{background:"#f0f9ff",border:"1px solid #bae6fd",borderRadius:8,padding:12,marginBottom:16,fontSize:12,color:"#0369a1",lineHeight:1.6}}>
+        <strong>{"🎧 Instrucciones:"}</strong>{" Presione \"Escuchar\" para reproducir la palabra objetivo. El niño/a debe señalar cuál de las dos opciones corresponde. Seleccione la opción que el niño/a eligió."}
+      </div>}
       {sec.subsections.map(sub=><div key={sub.id} style={{marginBottom:20}}>
         <h3 style={{fontSize:15,fontWeight:600,marginBottom:10,color:"#0a3d2f",paddingBottom:6,borderBottom:"2px solid #ede9fe"}}>{sub.title}</h3>
         {sub.fields&&sub.fields.map(f=>rField(f))}
@@ -133,7 +198,6 @@ export default function NewPEFF({onS,nfy}){
 
     if(!isFon) return mainContent;
 
-    /* Fonética: layout with sticky legend sidebar */
     return <div style={{display:"flex",gap:16,alignItems:"flex-start"}}>
       {mainContent}
       <div style={{width:260,flexShrink:0,position:"sticky",top:16,alignSelf:"flex-start"}}>
@@ -141,8 +205,6 @@ export default function NewPEFF({onS,nfy}){
       </div>
     </div>;
   };
-
-  /* Coordinación neuromotora: also use option cards via rField (already handled above) */
 
   const countUnevalSelects=()=>{let c=0;PEFF_SECTIONS.forEach(sec=>{sec.subsections.forEach(sub=>{if(sub.fields)sub.fields.forEach(f=>{if(f.type==="select"&&!data[f.id])c++})})});return c};
   const countUnevalPhon=()=>{let c=0;const s=PEFF_SECTIONS.find(s=>s.id==="fon");if(s)s.subsections.forEach(sub=>{if(sub.items)sub.items.forEach(i=>{if(!data[i.id])c++})});return c};
@@ -189,15 +251,15 @@ export default function NewPEFF({onS,nfy}){
     if(!pa||pa.total===0)return<div style={{background:"#f0fdf4",border:"1px solid #bbf7d0",borderRadius:10,padding:20,marginBottom:20}}>
       <div style={{fontSize:14,fontWeight:600,color:"#059669"}}>{"✓ No se registraron procesos fonológicos"}</div>
     </div>;
-    const catNames={sust:"Sustituciones",asim:"Asimilaciones",estr:"Estructuración silábica"};
-    const catColors={sust:"#f59e0b",asim:"#7c3aed",estr:"#dc2626"};
+    const catNames2={sust:"Sustituciones",asim:"Asimilaciones",estr:"Estructuración silábica"};
+    const catColors2={sust:"#f59e0b",asim:"#7c3aed",estr:"#dc2626"};
     const ageExpected=pa.errors.filter(e=>a>0&&e.expectedAge<a);
     return<div style={{marginBottom:20}}>
       <h3 style={{fontSize:16,fontWeight:700,color:"#7c3aed",marginBottom:12}}>{"Procesos Fonológicos ("}{pa.total}{")"}</h3>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10,marginBottom:16}}>
-        {Object.entries(catNames).map(([id,name])=>{const c=pa.byCategory[id]||0;
-          return<div key={id} style={{background:"#f8faf9",borderRadius:10,padding:16,border:`2px solid ${c>0?catColors[id]:"#e2e8f0"}`,textAlign:"center"}}>
-            <div style={{fontSize:28,fontWeight:700,color:c>0?catColors[id]:"#cbd5e1"}}>{c}</div>
+        {Object.entries(catNames2).map(([id,name])=>{const c=pa.byCategory[id]||0;
+          return<div key={id} style={{background:"#f8faf9",borderRadius:10,padding:16,border:`2px solid ${c>0?catColors2[id]:"#e2e8f0"}`,textAlign:"center"}}>
+            <div style={{fontSize:28,fontWeight:700,color:c>0?catColors2[id]:"#cbd5e1"}}>{c}</div>
             <div style={{fontSize:11,color:K.mt,marginTop:2}}>{name}</div>
           </div>})}
       </div>
@@ -210,7 +272,7 @@ export default function NewPEFF({onS,nfy}){
           <span style={{color:"#dc2626",fontWeight:600}}>{e.produccion||"—"}</span>
           <span style={{fontSize:11}}>{data[e.itemId]||""}</span>
           <span style={{fontSize:12}}>{e.procesoName}</span>
-          <span style={{fontSize:11,color:catColors[e.category],fontWeight:600}}>{e.categoryTitle}</span>
+          <span style={{fontSize:11,color:catColors2[e.category],fontWeight:600}}>{e.categoryTitle}</span>
         </div>)}
       </div>
       {ageExpected.length>0&&<div style={{background:"#fef3c7",border:"1px solid #fde68a",borderRadius:10,padding:16,marginBottom:16}}>
@@ -225,7 +287,6 @@ export default function NewPEFF({onS,nfy}){
     </div>;
   };
 
-  /* ── Result card component ── */
   const ResultCard=({title,desc,ok,total,evaluated,pct,color})=>
     <div style={{background:"#f8faf9",borderRadius:12,padding:20,border:"1px solid #e2e8f0"}}>
       <div style={{fontSize:14,fontWeight:700,color:"#1e293b",marginBottom:4}}>{title}</div>
@@ -270,33 +331,18 @@ export default function NewPEFF({onS,nfy}){
           <h2 style={{fontSize:20,fontWeight:700,marginBottom:6,color:"#7c3aed"}}>{"Resultados PEFF — "}{pd.pN}</h2>
           <p style={{fontSize:12,color:K.mt,marginBottom:20}}>{"Edad: "}{fa(a)}{" · Evaluación: "}{pd.eD}</p>
 
-          {/* ── Main scores ── */}
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:14,marginBottom:20}}>
-            <ResultCard
-              title="Producción de Sílabas"
-              desc="Cantidad de sílabas producidas correctamente por el niño/a al repetir los estímulos fonéticos presentados."
-              ok={r.silOk} total={r.silTotal} evaluated={r.silEval}
-              pct={r.silPctEval} color={r.silPctEval>=85?"#059669":r.silPctEval>=50?"#f59e0b":"#dc2626"}/>
-            <ResultCard
-              title="Discriminación Auditiva"
-              desc="Capacidad del niño/a para diferenciar si dos palabras suenan igual o diferente (percepción auditiva fonológica)."
-              ok={r.discOk} total={r.discTotal} evaluated={r.discEval}
-              pct={r.discPct} color={r.discPct>=85?"#059669":r.discPct>=50?"#f59e0b":"#dc2626"}/>
-            <ResultCard
-              title="Reconocimiento Fonológico"
-              desc="Capacidad del niño/a para identificar la palabra correcta entre dos opciones cuando se le dice una palabra objetivo."
-              ok={r.recOk} total={r.recTotal} evaluated={r.recEval}
-              pct={r.recPct} color={r.recPct>=85?"#059669":r.recPct>=50?"#f59e0b":"#dc2626"}/>
+            <ResultCard title="Producción de Sílabas" desc="Cantidad de sílabas producidas correctamente por el niño/a al repetir los estímulos fonéticos presentados." ok={r.silOk} total={r.silTotal} evaluated={r.silEval} pct={r.silPctEval} color={r.silPctEval>=85?"#059669":r.silPctEval>=50?"#f59e0b":"#dc2626"}/>
+            <ResultCard title="Discriminación Auditiva" desc="Capacidad del niño/a para diferenciar si dos palabras suenan igual o diferente (percepción auditiva fonológica)." ok={r.discOk} total={r.discTotal} evaluated={r.discEval} pct={r.discPct} color={r.discPct>=85?"#059669":r.discPct>=50?"#f59e0b":"#dc2626"}/>
+            <ResultCard title="Reconocimiento Fonológico" desc="Capacidad del niño/a para identificar la palabra correcta entre dos opciones cuando se le dice una palabra objetivo." ok={r.recOk} total={r.recTotal} evaluated={r.recEval} pct={r.recPct} color={r.recPct>=85?"#059669":r.recPct>=50?"#f59e0b":"#dc2626"}/>
           </div>
 
-          {/* ── Severity ── */}
           <div style={{background:`linear-gradient(135deg,${sc}dd,${sc})`,borderRadius:12,padding:24,color:"#fff",marginBottom:20}}>
             <div style={{fontSize:13,opacity:.8,marginBottom:4}}>{"Severidad del trastorno fonético-fonológico"}</div>
             <div style={{fontSize:36,fontWeight:700,marginBottom:8}}>{r.severity}</div>
             <div style={{fontSize:13,opacity:.9,lineHeight:1.6}}>{sevDesc[r.severity]}</div>
           </div>
 
-          {/* ── Scoring criteria explanation ── */}
           <div style={{background:"#f0f9ff",border:"1px solid #bae6fd",borderRadius:10,padding:16,marginBottom:20,fontSize:12,color:"#0369a1",lineHeight:1.6}}>
             <strong>{"ℹ️ Criterios de clasificación:"}</strong><br/>
             {"• Adecuado: ≥98% de sílabas correctas"}<br/>
@@ -304,10 +350,9 @@ export default function NewPEFF({onS,nfy}){
             {"• Moderado: 65-84% correctas — múltiples errores"}<br/>
             {"• Moderado-Severo: 50-64% correctas — errores frecuentes"}<br/>
             {"• Severo: <50% correctas — errores generalizados"}<br/>
-            <span style={{fontStyle:"italic",marginTop:6,display:"block"}}>{"La severidad se calcula sobre el total de sílabas del protocolo. Los ítems no evaluados se consideran como no logrados."}</span>
+            <span style={{fontStyle:"italic",marginTop:6,display:"block"}}>{"La severidad se calcula sobre el total de sílabas del protocolo."}</span>
           </div>
 
-          {/* ── Unevaluated ── */}
           {r.unevalTotal>0&&<div style={{background:"#fffbeb",border:"1px solid #fde68a",borderRadius:10,padding:16,marginBottom:20}}>
             <div style={{fontSize:13,fontWeight:700,color:"#92400e",marginBottom:8}}>{"⚠ Ítems sin evaluar ("}{r.unevalTotal}{")"}</div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,fontSize:12,color:"#78350f"}}>
