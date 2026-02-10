@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { db, auth, collection, addDoc, getDocs, deleteDoc, doc, query, where, updateDoc, getDoc, setDoc, increment, orderBy, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, onAuthStateChanged, signOut } from "./firebase.js";
+import { db, auth, collection, addDoc, getDocs, deleteDoc, doc, query, where, updateDoc, getDoc, setDoc, increment, orderBy, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, sendPasswordResetEmail, onAuthStateChanged, signOut } from "./firebase.js";
 import Hist from "./components/Hist.jsx";
 import RptELDI from "./components/RptELDI.jsx";
 import RptPEFF from "./components/RptPEFF.jsx";
@@ -43,18 +43,15 @@ async function acquireSessionLock(uid, isAdmin) {
     const snap = await getDoc(lockRef);
     if (snap.exists()) {
       const data = snap.data();
-      // If another non-admin user has the lock and it's recent (< 2 hours)
       if (data.uid && data.uid !== uid) {
         const lockTime = data.timestamp?.toDate ? data.timestamp.toDate() : new Date(data.timestamp);
         const diff = Date.now() - lockTime.getTime();
-        if (diff < 2 * 60 * 60 * 1000) { // 2 hours
-          return false;
-        }
+        if (diff < 2 * 60 * 60 * 1000) return false;
       }
     }
     await setDoc(lockRef, { uid, timestamp: new Date().toISOString() });
     return true;
-  } catch (e) { console.error("Session lock error:", e); return true; /* fail open */ }
+  } catch (e) { console.error("Session lock error:", e); return true; }
 }
 
 async function releaseSessionLock(uid) {
@@ -67,7 +64,6 @@ async function releaseSessionLock(uid) {
   } catch (e) { console.error("Session release error:", e); }
 }
 
-/* Keep session alive every 60s */
 function useSessionHeartbeat(uid, isAdmin) {
   useEffect(() => {
     if (!uid || isAdmin) return;
@@ -77,6 +73,105 @@ function useSessionHeartbeat(uid, isAdmin) {
     }, 60000);
     return () => clearInterval(interval);
   }, [uid, isAdmin]);
+}
+
+/* ── No Credits Modal ── */
+function NoCreditsModal({ onClose, onUpgrade }) {
+  return (
+    <div style={{position:"fixed",inset:0,zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,.5)",backdropFilter:"blur(4px)",animation:"fi .25s ease"}}>
+      <div style={{background:"#fff",borderRadius:20,padding:"40px 36px",width:440,maxWidth:"92vw",boxShadow:"0 25px 60px rgba(0,0,0,.25)",textAlign:"center",position:"relative"}}>
+        <button onClick={onClose} style={{position:"absolute",top:16,right:16,background:"none",border:"none",fontSize:20,color:"#94a3b8",cursor:"pointer",lineHeight:1}}>{"\u00d7"}</button>
+        <div style={{width:72,height:72,borderRadius:"50%",background:"linear-gradient(135deg,#fef3c7,#fde68a)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 20px",fontSize:36}}>{"\ud83d\udcb3"}</div>
+        <h2 style={{fontSize:22,fontWeight:700,color:"#0a3d2f",marginBottom:8}}>Cr\u00e9ditos agotados</h2>
+        <p style={{color:"#64748b",fontSize:14,lineHeight:1.7,marginBottom:8}}>Has utilizado todas las evaluaciones disponibles en tu <b style={{color:"#0d9488"}}>Plan Demo</b>.</p>
+        <p style={{color:"#94a3b8",fontSize:13,lineHeight:1.6,marginBottom:28}}>Para continuar realizando evaluaciones profesionales con Br\u00fajula KIT, actualiz\u00e1 tu plan y accede a funcionalidades ilimitadas.</p>
+        <button onClick={onUpgrade} style={{width:"100%",padding:"14px 24px",background:"linear-gradient(135deg,#0a3d2f,#0d9488)",color:"#fff",border:"none",borderRadius:12,fontSize:16,fontWeight:700,cursor:"pointer",marginBottom:12,boxShadow:"0 4px 16px rgba(13,148,136,.3)",transition:"transform .15s",letterSpacing:".3px"}}>{"\u2728 Actualizar a Premium"}</button>
+        <button onClick={onClose} style={{background:"none",border:"none",color:"#94a3b8",fontSize:13,cursor:"pointer",padding:8}}>Volver al panel</button>
+      </div>
+    </div>
+  );
+}
+
+/* ── Profile Page ── */
+function ProfilePage({ profile, authUser, onUpdateProfile, nfy }) {
+  const [resetSending, setResetSending] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
+
+  const handlePasswordReset = async () => {
+    setResetSending(true);
+    try {
+      await sendPasswordResetEmail(auth, authUser.email);
+      setResetSent(true);
+      nfy("Email de recuperaci\u00f3n enviado", "ok");
+    } catch (e) {
+      nfy("Error al enviar email: " + e.message, "er");
+    }
+    setResetSending(false);
+  };
+
+  const isAdmin = profile?.role === "admin";
+  const credits = isAdmin ? "\u221e" : (profile?.creditos || 0);
+  const plan = isAdmin ? "Administrador" : (profile?.plan || "Plan Demo");
+  const planColor = isAdmin ? "#0d9488" : "#f59e0b";
+  const planBg = isAdmin ? "#ccfbf1" : "#fef3c7";
+
+  const InfoRow = ({ label, value, icon }) => (
+    <div style={{display:"flex",alignItems:"center",gap:14,padding:"16px 0",borderBottom:"1px solid #f1f5f9"}}>
+      <div style={{width:40,height:40,borderRadius:10,background:"#f0f5f3",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>{icon}</div>
+      <div style={{flex:1}}>
+        <div style={{fontSize:11,fontWeight:600,color:"#94a3b8",textTransform:"uppercase",letterSpacing:".5px",marginBottom:2}}>{label}</div>
+        <div style={{fontSize:15,fontWeight:500,color:"#1e293b"}}>{value}</div>
+      </div>
+    </div>
+  );
+
+  return (
+    <div style={{animation:"fi .3s ease",width:"100%",maxWidth:600}}>
+      <h1 style={{fontSize:22,fontWeight:700,marginBottom:6}}>{"\ud83d\udc64 Mi Perfil"}</h1>
+      <p style={{color:K.mt,fontSize:14,marginBottom:24}}>Informaci\u00f3n de tu cuenta</p>
+
+      {/* Plan badge */}
+      <div style={{background:"linear-gradient(135deg,#0a3d2f,#0d9488)",borderRadius:16,padding:"24px 28px",color:"#fff",marginBottom:24,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:16}}>
+        <div>
+          <div style={{fontSize:12,opacity:.7,marginBottom:4}}>Plan actual</div>
+          <div style={{display:"flex",alignItems:"center",gap:10}}>
+            <span style={{fontSize:22,fontWeight:700}}>{plan}</span>
+            <span style={{background:planBg,color:planColor,padding:"3px 10px",borderRadius:20,fontSize:11,fontWeight:700}}>{isAdmin?"ADMIN":"DEMO"}</span>
+          </div>
+        </div>
+        <div style={{textAlign:"right"}}>
+          <div style={{fontSize:12,opacity:.7,marginBottom:4}}>Cr\u00e9ditos disponibles</div>
+          <div style={{fontSize:32,fontWeight:700}}>{credits}</div>
+        </div>
+      </div>
+
+      {/* Info card */}
+      <div style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",padding:"8px 24px",marginBottom:20}}>
+        <InfoRow icon="\ud83d\udce7" label="Email" value={profile?.email || authUser?.email || "\u2014"} />
+        <InfoRow icon="\ud83d\udc64" label="Nombre de usuario" value={profile?.username || "\u2014"} />
+        <InfoRow icon="\ud83d\udcdb" label="DNI" value={profile?.dni || "\u2014"} />
+        <InfoRow icon="\ud83d\udcdd" label="Nombre completo" value={profile?.nombre && profile?.apellido ? `${profile.nombre} ${profile.apellido}` : "\u2014"} />
+        <InfoRow icon="\ud83d\udcb3" label="Cr\u00e9ditos restantes" value={isAdmin ? "Ilimitados" : `${profile?.creditos || 0} evaluaciones`} />
+        <div style={{display:"flex",alignItems:"center",gap:14,padding:"16px 0"}}>
+          <div style={{width:40,height:40,borderRadius:10,background:"#f0f5f3",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>{"\ud83d\udcc5"}</div>
+          <div style={{flex:1}}>
+            <div style={{fontSize:11,fontWeight:600,color:"#94a3b8",textTransform:"uppercase",letterSpacing:".5px",marginBottom:2}}>Miembro desde</div>
+            <div style={{fontSize:15,fontWeight:500,color:"#1e293b"}}>{profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString("es-AR",{year:"numeric",month:"long",day:"numeric"}) : "\u2014"}</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Password reset */}
+      <div style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",padding:"20px 24px"}}>
+        <div style={{fontSize:14,fontWeight:600,color:"#1e293b",marginBottom:4}}>Seguridad</div>
+        <p style={{fontSize:13,color:"#94a3b8",marginBottom:14}}>Se enviar\u00e1 un enlace a tu email para establecer una nueva contrase\u00f1a.</p>
+        <button onClick={handlePasswordReset} disabled={resetSending||resetSent}
+          style={{padding:"10px 20px",background:resetSent?"#ecfdf5":"#f8faf9",border:resetSent?"1px solid #a7f3d0":"1px solid #e2e8f0",borderRadius:10,fontSize:13,fontWeight:600,cursor:resetSending?"wait":resetSent?"default":"pointer",color:resetSent?"#059669":"#1e293b",display:"flex",alignItems:"center",gap:8,transition:"all .2s"}}>
+          {resetSent?"\u2713 Email enviado":(resetSending?"Enviando...":"\ud83d\udd12 Cambiar contrase\u00f1a")}
+        </button>
+      </div>
+    </div>
+  );
 }
 
 export default function App() {
@@ -90,6 +185,7 @@ export default function App() {
   const [loading, sL] = useState(false);
   const [mobile] = useState(isMobile());
   const [sessionBlocked, setSessionBlocked] = useState(false);
+  const [showNoCredits, setShowNoCredits] = useState(false);
   const nfy = useCallback((m, t) => { sT({ m, t }); setTimeout(() => sT(null), 3500); }, []);
 
   const isAdmin = profile?.role === "admin";
@@ -138,7 +234,10 @@ export default function App() {
   const checkCredits = () => {
     if (!profile) return false;
     if (profile.role === "admin") return true;
-    if ((profile.creditos || 0) < 1) { nfy("Sin cr\u00e9ditos. Contacte al administrador.", "er"); return false; }
+    if ((profile.creditos || 0) < 1) {
+      setShowNoCredits(true);
+      return false;
+    }
     return true;
   };
 
@@ -147,7 +246,6 @@ export default function App() {
     try {
       const userRef = doc(db, "usuarios", authUser.uid);
       await updateDoc(userRef, { creditos: increment(-1) });
-      // Re-read to get accurate value
       const fresh = await getDoc(userRef);
       if (fresh.exists()) {
         setProfile(p => ({ ...p, creditos: fresh.data().creditos }));
@@ -160,13 +258,13 @@ export default function App() {
     if (ev.rsp) { Object.entries(ev.rsp).forEach(([k, v]) => { if (v === true) rspClean[k] = true; else if (v === false) rspClean[k] = false; }); }
     const newEv = { id: Date.now() + "", userId: authUser.uid, paciente: ev.pN, fechaNacimiento: ev.birth, fechaEvaluacion: ev.eD, establecimiento: ev.sch, derivadoPor: ev.ref, edadMeses: ev.a, evalRec: ev.evalRec || false, evalExp: ev.evalExp || false, brutoReceptivo: ev.rR, brutoExpresivo: ev.rE, recRes: ev.recRes || null, expRes: ev.expRes || null, allNoEval: ev.allNoEval || [], observaciones: ev.obs || "", evaluador: profile?.nombre ? (profile.nombre + " " + profile.apellido) : profile?.username || "", fechaGuardado: new Date().toISOString(), respuestas: rspClean };
     const res = await fbAdd("evaluaciones", newEv);
-    if (res.success) { await deductCredit(); nfy("ELDI guardada", "ok"); await loadEvals(); } else nfy("Error: " + res.error, "er");
+    if (res.success) { nfy("ELDI guardada", "ok"); await loadEvals(); } else nfy("Error: " + res.error, "er");
     sV("dash");
   };
 
   const savePeff = async (data) => {
     const res = await fbAdd("peff_evaluaciones", { id: Date.now() + "", userId: authUser.uid, evaluador: profile?.nombre ? (profile.nombre + " " + profile.apellido) : profile?.username || "", fechaGuardado: new Date().toISOString(), ...data });
-    if (res.success) { await deductCredit(); nfy("PEFF guardada", "ok"); await loadEvals(); } else nfy("Error: " + res.error, "er");
+    if (res.success) { nfy("PEFF guardada", "ok"); await loadEvals(); } else nfy("Error: " + res.error, "er");
     sV("dash");
   };
 
@@ -189,11 +287,10 @@ export default function App() {
   if (authUser && !authUser.emailVerified) return <VerifyEmailScreen user={authUser} onLogout={handleLogout} />;
   if (authUser && authUser.emailVerified && !profile) return <CompleteProfileScreen uid={authUser.uid} email={authUser.email} onDone={p => setProfile(p)} />;
 
-  /* ── Session blocked screen ── */
   if (sessionBlocked) return (
     <div style={{width:"100vw",height:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"linear-gradient(145deg,#0a3d2f,#0d7363)",fontFamily:"'DM Sans',system-ui,sans-serif"}}>
       <div style={{background:"rgba(255,255,255,.97)",borderRadius:16,padding:"44px 36px",width:440,maxWidth:"92vw",boxShadow:"0 20px 50px rgba(0,0,0,.3)",textAlign:"center"}}>
-        <div style={{fontSize:48,marginBottom:16}}>{"🔒"}</div>
+        <div style={{fontSize:48,marginBottom:16}}>{"\ud83d\udd12"}</div>
         <h2 style={{fontSize:20,fontWeight:700,color:"#0a3d2f",marginBottom:12}}>Sesi\u00f3n ocupada</h2>
         <p style={{color:"#64748b",fontSize:14,lineHeight:1.7,marginBottom:20}}>Otro usuario ya est\u00e1 conectado en este momento. Solo una persona puede usar la aplicaci\u00f3n a la vez.</p>
         <p style={{color:"#94a3b8",fontSize:12,marginBottom:24}}>Si cree que es un error, espere unos minutos e intente nuevamente. La sesi\u00f3n se libera autom\u00e1ticamente despu\u00e9s de 2 horas de inactividad.</p>
@@ -205,11 +302,12 @@ export default function App() {
     </div>
   );
 
-  const nav = [["dash", "\u229e", "Panel"], ["tools", "\ud83e\uddf0", "Herramientas"], ["hist", "\u23f1", "Historial"]];
+  const nav = [["dash", "\u229e", "Panel"], ["tools", "\ud83e\uddf0", "Herramientas"], ["hist", "\u23f1", "Historial"], ["profile", "\ud83d\udc64", "Perfil"]];
   if (isAdmin) nav.push(["adm", "\u2699", "Usuarios"]);
 
   return (
     <div style={{display:"flex",height:"100vh",width:"100vw",fontFamily:"'DM Sans',system-ui,sans-serif",background:K.bg,color:"#1e293b",overflow:"hidden"}}>
+      {showNoCredits && <NoCreditsModal onClose={()=>{setShowNoCredits(false);sV("dash")}} onUpgrade={()=>{setShowNoCredits(false);nfy("Pr\u00f3ximamente disponible. Contacte al administrador.","ok")}} />}
       <aside style={{width:mobile?60:230,minWidth:mobile?60:230,background:K.sd,color:"#fff",display:"flex",flexDirection:"column",padding:"18px 0",flexShrink:0,height:"100vh"}}>
         <div style={{padding:"0 14px",marginBottom:26,display:"flex",alignItems:"center",gap:9}}>
           <span style={{fontSize:28}}>{"\ud83e\udded"}</span>
@@ -226,11 +324,12 @@ export default function App() {
         {toast&&<div style={{position:"fixed",top:16,right:16,zIndex:999,background:toast.t==="ok"?"#059669":"#dc2626",color:"#fff",padding:"10px 18px",borderRadius:8,fontSize:13,fontWeight:500,boxShadow:"0 4px 16px rgba(0,0,0,.15)",animation:"fi .3s ease"}}>{toast.m}</div>}
         {view==="dash"&&<Dash es={evals} pe={peffEvals} onT={()=>navTo("tools")} onV={e=>{sS(e);sV("rpt")}} onVP={e=>{sS(e);sV("rptP")}} ld={loading} profile={profile} isAdmin={isAdmin}/>}
         {view==="tools"&&<Tools onSel={t=>{if(checkCredits())sV(t)}} credits={isAdmin?999:(profile.creditos||0)}/>}
-        {view==="newELDI"&&<NewELDI onS={saveEval} nfy={nfy}/>}
-        {view==="newPEFF"&&<NewPEFF onS={savePeff} nfy={nfy}/>}
+        {view==="newELDI"&&<NewELDI onS={saveEval} nfy={nfy} deductCredit={deductCredit} isAdmin={isAdmin}/>}
+        {view==="newPEFF"&&<NewPEFF onS={savePeff} nfy={nfy} deductCredit={deductCredit} isAdmin={isAdmin}/>}
         {view==="hist"&&<Hist es={evals} pe={peffEvals} onV={e=>{sS(e);sV("rpt")}} onVP={e=>{sS(e);sV("rptP")}} isA={isAdmin} onD={deleteEval}/>}
         {view==="rpt"&&sel&&<RptELDI ev={sel} isA={isAdmin} onD={deleteEval}/>}
         {view==="rptP"&&sel&&<RptPEFF ev={sel} isA={isAdmin} onD={deleteEval}/>}
+        {view==="profile"&&<ProfilePage profile={profile} authUser={authUser} nfy={nfy}/>}
         {view==="adm"&&isAdmin&&<Admin nfy={nfy}/>}
       </main>
     </div>
@@ -353,7 +452,7 @@ function CompleteProfileScreen({ uid, email, onDone }) {
     try {
       const isAdminUser = email === ADMIN_EMAIL;
       let username = isAdminUser ? "CalaAdmin976" : await generateUsername(nombre.trim(), apellido.trim());
-      const profileData = { uid, email, nombre: nombre.trim(), apellido: apellido.trim(), dni: dni.trim(), username, creditos: 5, role: isAdminUser ? "admin" : "user", profileComplete: true, createdAt: new Date().toISOString() };
+      const profileData = { uid, email, nombre: nombre.trim(), apellido: apellido.trim(), dni: dni.trim(), username, creditos: 5, plan: "Plan Demo", role: isAdminUser ? "admin" : "user", profileComplete: true, createdAt: new Date().toISOString() };
       await setDoc(doc(db, "usuarios", uid), profileData);
       setGenUser(username);
       setTimeout(() => onDone(profileData), 2500);
@@ -368,7 +467,7 @@ function CompleteProfileScreen({ uid, email, onDone }) {
         <h2 style={{fontSize:20,fontWeight:700,color:"#0a3d2f",marginBottom:10}}>Cuenta creada</h2>
         <p style={{color:"#64748b",fontSize:14,marginBottom:20}}>Su nombre de usuario es:</p>
         <div style={{background:"#ccfbf1",borderRadius:10,padding:"16px 24px",fontSize:24,fontWeight:700,color:"#0d9488",marginBottom:16}}>{genUser}</div>
-        <p style={{color:"#94a3b8",fontSize:12}}>{"Tiene 5 cr\u00e9ditos de prueba. Ingresando..."}</p>
+        <p style={{color:"#94a3b8",fontSize:12}}>{"Tiene 5 cr\u00e9ditos de prueba (Plan Demo). Ingresando..."}</p>
       </div>
     </div>
   );
@@ -435,7 +534,7 @@ function Tools({ onSel, credits }) {
     <div style={{animation:"fi .3s ease",width:"100%"}}>
       <h1 style={{fontSize:22,fontWeight:700,marginBottom:6}}>{"\ud83e\uddf0 Herramientas"}</h1>
       <p style={{color:K.mt,fontSize:14,marginBottom:8}}>{"Seleccione evaluaci\u00f3n"}</p>
-      {credits<1&&<div style={{background:"#fef3c7",border:"1px solid #fde68a",borderRadius:10,padding:14,marginBottom:16,fontSize:13,color:"#92400e",fontWeight:600}}>{"\u26a0 Sin cr\u00e9ditos disponibles. Contacte al administrador."}</div>}
+      {credits<1&&<div style={{background:"#fef3c7",border:"1px solid #fde68a",borderRadius:10,padding:14,marginBottom:16,fontSize:13,color:"#92400e",fontWeight:600}}>{"\u26a0 Sin cr\u00e9ditos disponibles. Actualice su plan para continuar."}</div>}
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20}}>
         {tools.map(t=><div key={t.id} onClick={()=>onSel(t.id)} style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",overflow:"hidden",cursor:credits<1?"not-allowed":"pointer",opacity:credits<1?0.5:1}}>
           <div style={{background:`linear-gradient(135deg,${t.color},${t.color}aa)`,padding:"24px 24px 20px",color:"#fff"}}>
