@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { PEFF_SECTIONS } from "../data/peffSections.js";
 import { PF_CATEGORIES, ALL_PROCESSES } from "../data/peffProcesos.js";
+import { PEFF_IMAGES, OFA_OPTION_IMAGES } from "../data/peffImages.js";
 const K={mt:"#64748b"};
 const gm=(b,e)=>{const B=new Date(b),E=new Date(e);let m=(E.getFullYear()-B.getFullYear())*12+E.getMonth()-B.getMonth();if(E.getDate()<B.getDate())m--;return Math.max(0,m)};
 const fa=m=>`${Math.floor(m/12)} años, ${m%12} meses`;
@@ -14,7 +15,6 @@ const sevDesc={
 };
 const sevColor={"Adecuado":"#059669","Leve":"#f59e0b","Moderado":"#ea580c","Moderado-Severo":"#dc2626","Severo":"#dc2626"};
 
-/* TTS helper */
 const speak=(text)=>{
   if(!window.speechSynthesis)return;
   window.speechSynthesis.cancel();
@@ -29,11 +29,13 @@ const speak=(text)=>{
 export default function NewPEFF({onS,nfy}){
   const[step,sS2]=useState(0),[pd,sPd]=useState({pN:"",birth:"",eD:new Date().toISOString().split("T")[0],sch:"",ref:"",obs:""}),[data,setD]=useState({}),[procData,setProcData]=useState({});
   const[playingId,setPlayingId]=useState(null);
+  const[showImg,setShowImg]=useState(null);
   const a=pd.birth&&pd.eD?gm(pd.birth,pd.eD):0;
   const I={width:"100%",padding:"10px 14px",border:"1px solid #e2e8f0",borderRadius:8,fontSize:14,background:"#f8faf9"};
   const sf=(id,v)=>setD(p=>({...p,[id]:v}));
   const spf=(itemId,field,v)=>setProcData(p=>({...p,[itemId]:{...(p[itemId]||{}), [field]:v}}));
 
+  /* OFA fields with image support */
   const rField=f=>{
     if(f.type==="text") return <div key={f.id} style={{marginBottom:14}}>
       <label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>{f.label}</label>
@@ -42,13 +44,22 @@ export default function NewPEFF({onS,nfy}){
     const cur=data[f.id]||"";
     return <div key={f.id} style={{marginBottom:14}}>
       <label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:6}}>{f.label}</label>
-      <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-        {f.options.map(o=><button key={o} onClick={()=>sf(f.id,cur===o?"":o)}
-          style={{padding:"8px 14px",borderRadius:8,border:cur===o?"2px solid #7c3aed":"1px solid #e2e8f0",
-            background:cur===o?"#ede9fe":"#fff",color:cur===o?"#5b21b6":"#475569",
-            fontSize:13,fontWeight:cur===o?700:400,cursor:"pointer",transition:"all .15s"}}>
-          {cur===o&&"✓ "}{o}
-        </button>)}
+      <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+        {f.options.map(o=>{const imgKey=OFA_OPTION_IMAGES[o];const hasSvg=imgKey&&PEFF_IMAGES[imgKey];
+          return<div key={o} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
+            <button onClick={()=>sf(f.id,cur===o?"":o)}
+              style={{padding:"8px 14px",borderRadius:8,border:cur===o?"2px solid #7c3aed":"1px solid #e2e8f0",
+                background:cur===o?"#ede9fe":"#fff",color:cur===o?"#5b21b6":"#475569",
+                fontSize:13,fontWeight:cur===o?700:400,cursor:"pointer",transition:"all .15s"}}>
+              {cur===o&&"✓ "}{o}
+            </button>
+            {hasSvg&&<button onClick={()=>setShowImg(showImg===imgKey?null:imgKey)}
+              style={{background:"none",border:"none",color:"#7c3aed",fontSize:10,cursor:"pointer",textDecoration:"underline",padding:0}}>
+              {showImg===imgKey?"▲ ocultar":"🖼 ver"}
+            </button>}
+            {showImg===imgKey&&hasSvg&&<div style={{width:160,border:"1px solid #c4b5fd",borderRadius:8,overflow:"hidden",background:"#fff"}}
+              dangerouslySetInnerHTML={{__html:PEFF_IMAGES[imgKey]}}/>}
+          </div>})}
       </div>
     </div>;
   };
@@ -113,50 +124,27 @@ export default function NewPEFF({onS,nfy}){
       </div>
     </div>};
 
-  /* ── NEW: Interactive recognition with audio & word selection ── */
   const rRec=item=>{
     const v=data[item.id]||"";
     const parts=item.target.split("/");
     const word1=(parts[0]||"").trim();
     const word2=(parts[1]||"").trim();
-    /* First word is always the correct answer (the one spoken aloud) */
     const correctWord=word1;
     const isPlaying=playingId===item.id;
-
-    const handleSpeak=()=>{
-      setPlayingId(item.id);
-      speak(correctWord);
-      setTimeout(()=>setPlayingId(null),1500);
-    };
-
-    const handleSelect=(selectedWord)=>{
-      if(selectedWord===correctWord){
-        sf(item.id,"reconoce");
-      }else{
-        sf(item.id,"no");
-      }
-    };
-
-    /* Shuffle options so correct answer isn't always first */
+    const handleSpeak=()=>{setPlayingId(item.id);speak(correctWord);setTimeout(()=>setPlayingId(null),1500)};
+    const handleSelect=(selectedWord)=>{sf(item.id,selectedWord===correctWord?"reconoce":"no")};
     const options=item.id.charCodeAt(item.id.length-1)%2===0?[word1,word2]:[word2,word1];
-
     return<div key={item.id} style={{padding:"12px 16px",background:v==="reconoce"?"#f0fdf4":v==="no"?"#fef2f2":"#fff",borderRadius:10,border:`1px solid ${v==="reconoce"?"#bbf7d0":v==="no"?"#fecaca":"#e2e8f0"}`,marginBottom:6}}>
       <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:v?4:0}}>
-        {/* Audio button */}
         <button onClick={handleSpeak}
           style={{background:isPlaying?"#7c3aed":"#ede9fe",color:isPlaying?"#fff":"#7c3aed",border:"1px solid #c4b5fd",borderRadius:8,padding:"8px 14px",fontSize:13,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",gap:6,flexShrink:0,transition:"all .2s"}}>
           {isPlaying?"🔊 ...":"🔊 Escuchar"}
         </button>
-
-        {/* Contrast info */}
         <span style={{fontSize:11,color:K.mt,flex:1}}>{item.contrast}</span>
-
-        {/* Word selection buttons */}
         <div style={{display:"flex",gap:6}}>
           {options.map(w=>{
             const isSelected=(v==="reconoce"&&w===correctWord)||(v==="no"&&w!==correctWord);
             const isCorrectChoice=v&&w===correctWord;
-            const isWrongChoice=v==="no"&&w!==correctWord;
             return<button key={w} onClick={()=>handleSelect(w)}
               style={{padding:"8px 18px",borderRadius:8,fontSize:14,fontWeight:700,cursor:"pointer",transition:"all .15s",
                 border:isSelected?`2px solid ${isCorrectChoice?"#059669":"#dc2626"}`:"2px solid #e2e8f0",
@@ -166,8 +154,6 @@ export default function NewPEFF({onS,nfy}){
               {w}
             </button>})}
         </div>
-
-        {/* Reset */}
         {v&&<button onClick={()=>{const n={...data};delete n[item.id];setD(n)}}
           style={{background:"none",border:"none",color:"#94a3b8",fontSize:16,cursor:"pointer",padding:4}} title="Limpiar">{"×"}</button>}
       </div>
@@ -195,14 +181,10 @@ export default function NewPEFF({onS,nfy}){
         {sub.recItems&&sub.recItems.map(i=>rRec(i))}
       </div>)}
     </div>;
-
     if(!isFon) return mainContent;
-
     return <div style={{display:"flex",gap:16,alignItems:"flex-start"}}>
       {mainContent}
-      <div style={{width:260,flexShrink:0,position:"sticky",top:16,alignSelf:"flex-start"}}>
-        {legendBox}
-      </div>
+      <div style={{width:260,flexShrink:0,position:"sticky",top:16,alignSelf:"flex-start"}}>{legendBox}</div>
     </div>;
   };
 
