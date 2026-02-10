@@ -9,7 +9,7 @@ import NewPEFF from "./components/NewPEFF.jsx";
 
 const isMobile = () => /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) && window.innerWidth < 900;
 const K = { sd: "#0a3d2f", ac: "#0d9488", al: "#ccfbf1", mt: "#64748b", bd: "#e2e8f0", bg: "#f0f5f3" };
-const ADMIN_EMAIL = "calaadmin976@brujulakit.com";
+const ADMIN_EMAIL = "valkyriumsolutions@gmail.com";
 
 async function fbGetFiltered(c, userId) {
   const q2 = query(collection(db, c), where("userId", "==", userId));
@@ -114,28 +114,28 @@ export default function App() {
 
   const handleLogout = async () => { await signOut(auth); setAuthUser(null); setProfile(null); sV("dash"); sS(null); };
 
-  if (authUser === undefined) return <div style={{width:"100vw",height:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#0a3d2f",color:"#fff",fontFamily:"'DM Sans',system-ui,sans-serif"}}><div style={{textAlign:"center"}}><div style={{fontSize:48,marginBottom:16}}>{"\uD83E\uDDED"}</div><div style={{fontSize:20,fontWeight:700}}>Cargando...</div></div></div>;
+  if (authUser === undefined) return <div style={{width:"100vw",height:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#0a3d2f",color:"#fff",fontFamily:"'DM Sans',system-ui,sans-serif"}}><div style={{textAlign:"center"}}><div style={{fontSize:48,marginBottom:16}}>{"\ud83e\udded"}</div><div style={{fontSize:20,fontWeight:700}}>Cargando...</div></div></div>;
 
   if (!authUser) return <AuthScreen onDone={(u, p) => { setAuthUser(u); setProfile(p); }} />;
   if (authUser && !authUser.emailVerified) return <VerifyEmailScreen user={authUser} onLogout={handleLogout} />;
   if (authUser && authUser.emailVerified && !profile) return <CompleteProfileScreen uid={authUser.uid} email={authUser.email} onDone={p => setProfile(p)} />;
 
   const isAdmin = profile?.role === "admin";
-  const nav = [["dash", "\u229E", "Panel"], ["tools", "\uD83E\uDDF0", "Herramientas"], ["hist", "\u23F1", "Historial"]];
+  const nav = [["dash", "\u229e", "Panel"], ["tools", "\ud83e\uddf0", "Herramientas"], ["hist", "\u23f1", "Historial"]];
   if (isAdmin) nav.push(["adm", "\u2699", "Usuarios"]);
 
   return (
     <div style={{display:"flex",height:"100vh",width:"100vw",fontFamily:"'DM Sans',system-ui,sans-serif",background:K.bg,color:"#1e293b",overflow:"hidden"}}>
       <aside style={{width:mobile?60:230,minWidth:mobile?60:230,background:K.sd,color:"#fff",display:"flex",flexDirection:"column",padding:"18px 0",flexShrink:0,height:"100vh"}}>
         <div style={{padding:"0 14px",marginBottom:26,display:"flex",alignItems:"center",gap:9}}>
-          <span style={{fontSize:28}}>{"\uD83E\uDDED"}</span>
-          {!mobile&&<div><div style={{fontSize:17,fontWeight:700}}>{"Br\u00FAjula KIT"}</div><div style={{fontSize:9,color:"#5eead4",fontWeight:600,letterSpacing:"1px"}}>{"FONOAUDIOLOG\u00CDA"}</div></div>}
+          <span style={{fontSize:28}}>{"\ud83e\udded"}</span>
+          {!mobile&&<div><div style={{fontSize:17,fontWeight:700}}>{"Br\u00fajula KIT"}</div><div style={{fontSize:9,color:"#5eead4",fontWeight:600,letterSpacing:"1px"}}>{"FONOAUDIOLOG\u00cdA"}</div></div>}
         </div>
         <nav style={{flex:1}}>{nav.map(([id,ic,lb])=><button key={id} onClick={()=>navTo(id)} style={{display:"flex",alignItems:"center",gap:10,width:"100%",padding:mobile?"13px 0":"11px 18px",background:view===id?"rgba(94,234,212,.12)":"transparent",border:"none",color:view===id?"#5eead4":"rgba(255,255,255,.6)",cursor:"pointer",fontSize:14,fontWeight:view===id?600:400,borderLeft:view===id?"3px solid #5eead4":"3px solid transparent",textAlign:"left",justifyContent:mobile?"center":"flex-start"}}><span>{ic}</span>{!mobile&&<span>{lb}</span>}</button>)}</nav>
         <div style={{padding:"0 14px",borderTop:"1px solid rgba(255,255,255,.1)",paddingTop:12}}>
-          {!mobile&&<div style={{fontSize:10,color:"rgba(255,255,255,.45)",marginBottom:3}}>{"Sesi\u00F3n: "}<b style={{color:"#5eead4"}}>{profile.username}</b>{isAdmin&&<span style={{background:"#5eead4",color:K.sd,padding:"1px 5px",borderRadius:3,fontSize:8,marginLeft:6,fontWeight:700}}>ADMIN</span>}</div>}
-          {!mobile&&<div style={{fontSize:10,color:"rgba(255,255,255,.35)",marginBottom:8}}>{"Cr\u00E9ditos: "}<b style={{color:profile.creditos>0?"#5eead4":"#f87171"}}>{isAdmin?"\u221E":(profile.creditos||0)}</b></div>}
-          <button onClick={handleLogout} style={{background:"rgba(255,255,255,.08)",border:"none",color:"rgba(255,255,255,.6)",padding:"7px 12px",borderRadius:6,cursor:"pointer",fontSize:mobile?16:12,width:"100%"}}>{mobile?"\u21A9":"\u21A9 Cerrar sesi\u00F3n"}</button>
+          {!mobile&&<div style={{fontSize:10,color:"rgba(255,255,255,.45)",marginBottom:3}}>{"Sesi\u00f3n: "}<b style={{color:"#5eead4"}}>{profile.username}</b>{isAdmin&&<span style={{background:"#5eead4",color:K.sd,padding:"1px 5px",borderRadius:3,fontSize:8,marginLeft:6,fontWeight:700}}>ADMIN</span>}</div>}
+          {!mobile&&<div style={{fontSize:10,color:"rgba(255,255,255,.35)",marginBottom:8}}>{"Cr\u00e9ditos: "}<b style={{color:profile.creditos>0?"#5eead4":"#f87171"}}>{isAdmin?"\u221e":(profile.creditos||0)}</b></div>}
+          <button onClick={handleLogout} style={{background:"rgba(255,255,255,.08)",border:"none",color:"rgba(255,255,255,.6)",padding:"7px 12px",borderRadius:6,cursor:"pointer",fontSize:mobile?16:12,width:"100%"}}>{mobile?"\u21a9":"\u21a9 Cerrar sesi\u00f3n"}</button>
         </div>
       </aside>
       <main style={{flex:1,overflowY:"auto",overflowX:"hidden",padding:mobile?"16px":"28px 36px",height:"100vh"}}>
@@ -171,8 +171,8 @@ function AuthScreen({ onDone }) {
       const prof = await getUserProfile(u.uid);
       if (prof && prof.profileComplete) onDone(u, prof);
     } catch (e) {
-      if (e.code === "auth/user-not-found" || e.code === "auth/invalid-credential") setErr("Email o contrase\u00F1a incorrectos.");
-      else if (e.code === "auth/wrong-password") setErr("Contrase\u00F1a incorrecta.");
+      if (e.code === "auth/user-not-found" || e.code === "auth/invalid-credential") setErr("Email o contrase\u00f1a incorrectos.");
+      else if (e.code === "auth/wrong-password") setErr("Contrase\u00f1a incorrecta.");
       else if (e.code === "auth/too-many-requests") setErr("Demasiados intentos. Espere unos minutos.");
       else setErr("Error: " + e.message);
     }
@@ -181,14 +181,14 @@ function AuthScreen({ onDone }) {
 
   const handleRegister = async (ev) => {
     ev.preventDefault(); setLd(true); setErr(""); setInfo("");
-    if (pass.length < 6) { setErr("La contrase\u00F1a debe tener al menos 6 caracteres."); setLd(false); return; }
+    if (pass.length < 6) { setErr("La contrase\u00f1a debe tener al menos 6 caracteres."); setLd(false); return; }
     try {
       const cred = await createUserWithEmailAndPassword(auth, email.trim(), pass);
       await sendEmailVerification(cred.user);
-      setInfo("Se envi\u00F3 un email de verificaci\u00F3n a " + email.trim() + ". Revise su bandeja (y spam).");
+      setInfo("Se envi\u00f3 un email de verificaci\u00f3n a " + email.trim() + ". Revise su bandeja (y spam).");
     } catch (e) {
       if (e.code === "auth/email-already-in-use") setErr("Ya existe una cuenta con ese email.");
-      else if (e.code === "auth/invalid-email") setErr("Email inv\u00E1lido.");
+      else if (e.code === "auth/invalid-email") setErr("Email inv\u00e1lido.");
       else setErr("Error: " + e.message);
     }
     setLd(false);
@@ -198,11 +198,11 @@ function AuthScreen({ onDone }) {
     <div style={{width:"100vw",height:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"linear-gradient(145deg,#0a3d2f,#0d7363)",fontFamily:"'DM Sans',system-ui,sans-serif"}}>
       <div style={{background:"rgba(255,255,255,.97)",borderRadius:16,padding:"44px 36px",width:400,maxWidth:"92vw",boxShadow:"0 20px 50px rgba(0,0,0,.3)"}}>
         <div style={{textAlign:"center",marginBottom:28}}>
-          <div style={{display:"inline-flex",alignItems:"center",gap:9,marginBottom:8}}><span style={{fontSize:32}}>{"\uD83E\uDDED"}</span><span style={{fontSize:26,fontWeight:700,color:"#0a3d2f"}}>{"Br\u00FAjula KIT"}</span></div>
-          <p style={{color:"#64748b",fontSize:13}}>{"Sistema Integral de Evaluaci\u00F3n Fonoaudiol\u00F3gica"}</p>
+          <div style={{display:"inline-flex",alignItems:"center",gap:9,marginBottom:8}}><span style={{fontSize:32}}>{"\ud83e\udded"}</span><span style={{fontSize:26,fontWeight:700,color:"#0a3d2f"}}>{"Br\u00fajula KIT"}</span></div>
+          <p style={{color:"#64748b",fontSize:13}}>{"Sistema Integral de Evaluaci\u00f3n Fonoaudiol\u00f3gica"}</p>
         </div>
         <div style={{display:"flex",marginBottom:22,borderRadius:8,overflow:"hidden",border:"1px solid #e2e8f0"}}>
-          {[["login","Iniciar sesi\u00F3n"],["register","Crear cuenta"]].map(([id,lb])=>(
+          {[["login","Iniciar sesi\u00f3n"],["register","Crear cuenta"]].map(([id,lb])=>(
             <button key={id} onClick={()=>{setMode(id);setErr("");setInfo("")}} style={{flex:1,padding:"10px",border:"none",background:mode===id?"#0d9488":"#f8faf9",color:mode===id?"#fff":"#64748b",fontSize:13,fontWeight:600,cursor:"pointer"}}>{lb}</button>
           ))}
         </div>
@@ -212,16 +212,16 @@ function AuthScreen({ onDone }) {
             <input type="email" value={email} onChange={e=>setEmail(e.target.value)} style={I} placeholder="correo@ejemplo.com" required/>
           </div>
           <div style={{marginBottom:22}}>
-            <label style={{fontSize:12,fontWeight:600,color:"#64748b",display:"block",marginBottom:5}}>{"Contrase\u00F1a"}</label>
-            <input type="password" value={pass} onChange={e=>setPass(e.target.value)} style={I} placeholder={mode==="register"?"M\u00EDnimo 6 caracteres":"Su contrase\u00F1a"} required/>
+            <label style={{fontSize:12,fontWeight:600,color:"#64748b",display:"block",marginBottom:5}}>{"Contrase\u00f1a"}</label>
+            <input type="password" value={pass} onChange={e=>setPass(e.target.value)} style={I} placeholder={mode==="register"?"M\u00ednimo 6 caracteres":"Su contrase\u00f1a"} required/>
           </div>
           {err&&<div style={{background:"#fef2f2",border:"1px solid #fecaca",color:"#dc2626",padding:"10px 12px",borderRadius:8,fontSize:12,marginBottom:14}}>{err}</div>}
           {info&&<div style={{background:"#f0fdf4",border:"1px solid #bbf7d0",color:"#059669",padding:"10px 12px",borderRadius:8,fontSize:12,marginBottom:14}}>{info}</div>}
           <button type="submit" disabled={ld} style={{width:"100%",padding:"13px",background:"#0d9488",color:"#fff",border:"none",borderRadius:8,fontSize:15,fontWeight:600,cursor:ld?"wait":"pointer",opacity:ld?.7:1}}>
-            {ld?"Procesando...":mode==="login"?"Iniciar sesi\u00F3n":"Crear cuenta"}
+            {ld?"Procesando...":mode==="login"?"Iniciar sesi\u00f3n":"Crear cuenta"}
           </button>
         </form>
-        <p style={{textAlign:"center",marginTop:20,fontSize:10,color:"#94a3b8"}}>{"Br\u00FAjula KIT v5.0"}</p>
+        <p style={{textAlign:"center",marginTop:20,fontSize:10,color:"#94a3b8"}}>{"Br\u00fajula KIT v5.1"}</p>
       </div>
     </div>
   );
@@ -234,15 +234,15 @@ function VerifyEmailScreen({ user, onLogout }) {
   return (
     <div style={{width:"100vw",height:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"linear-gradient(145deg,#0a3d2f,#0d7363)",fontFamily:"'DM Sans',system-ui,sans-serif"}}>
       <div style={{background:"rgba(255,255,255,.97)",borderRadius:16,padding:"44px 36px",width:420,maxWidth:"92vw",boxShadow:"0 20px 50px rgba(0,0,0,.3)",textAlign:"center"}}>
-        <div style={{fontSize:48,marginBottom:16}}>{"\uD83D\uDCE7"}</div>
+        <div style={{fontSize:48,marginBottom:16}}>{"\ud83d\udce7"}</div>
         <h2 style={{fontSize:20,fontWeight:700,color:"#0a3d2f",marginBottom:10}}>Verifique su email</h2>
-        <p style={{color:"#64748b",fontSize:14,lineHeight:1.6,marginBottom:20}}>{"Enviamos un enlace de verificaci\u00F3n a "}<b style={{color:"#0d9488"}}>{user.email}</b>{". Haga clic en el enlace y vuelva aqu\u00ED."}</p>
-        <p style={{color:"#94a3b8",fontSize:12,marginBottom:20}}>{"Revise tambi\u00E9n su carpeta de spam."}</p>
+        <p style={{color:"#64748b",fontSize:14,lineHeight:1.6,marginBottom:20}}>{"Enviamos un enlace de verificaci\u00f3n a "}<b style={{color:"#0d9488"}}>{user.email}</b>{". Haga clic en el enlace y vuelva aqu\u00ed."}</p>
+        <p style={{color:"#94a3b8",fontSize:12,marginBottom:20}}>{"Revise tambi\u00e9n su carpeta de spam."}</p>
         <div style={{display:"flex",gap:10,justifyContent:"center",flexWrap:"wrap"}}>
-          <button onClick={()=>window.location.reload()} style={{background:"#0d9488",color:"#fff",border:"none",padding:"12px 24px",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer"}}>{"Ya verifiqu\u00E9 \u2192"}</button>
+          <button onClick={()=>window.location.reload()} style={{background:"#0d9488",color:"#fff",border:"none",padding:"12px 24px",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer"}}>{"Ya verifiqu\u00e9 \u2192"}</button>
           <button onClick={resend} disabled={sending||sent} style={{background:"#f1f5f9",border:"none",padding:"12px 24px",borderRadius:8,fontSize:14,cursor:sending?"wait":"pointer",color:"#64748b"}}>{sent?"\u2713 Reenviado":sending?"Enviando...":"Reenviar email"}</button>
         </div>
-        <button onClick={onLogout} style={{marginTop:20,background:"none",border:"none",color:"#94a3b8",fontSize:12,cursor:"pointer",textDecoration:"underline"}}>{"Cerrar sesi\u00F3n"}</button>
+        <button onClick={onLogout} style={{marginTop:20,background:"none",border:"none",color:"#94a3b8",fontSize:12,cursor:"pointer",textDecoration:"underline"}}>{"Cerrar sesi\u00f3n"}</button>
       </div>
     </div>
   );
@@ -263,8 +263,8 @@ function CompleteProfileScreen({ uid, email, onDone }) {
     ev.preventDefault(); setLd(true); setErr("");
     if (!nombre.trim() || !apellido.trim() || !dni.trim()) { setErr("Complete todos los campos."); setLd(false); return; }
     try {
-      const username = await generateUsername(nombre.trim(), apellido.trim());
       const isAdminUser = email === ADMIN_EMAIL;
+      let username = isAdminUser ? "CalaAdmin976" : await generateUsername(nombre.trim(), apellido.trim());
       const profileData = { uid, email, nombre: nombre.trim(), apellido: apellido.trim(), dni: dni.trim(), username, creditos: 5, role: isAdminUser ? "admin" : "user", profileComplete: true, createdAt: new Date().toISOString() };
       await setDoc(doc(db, "usuarios", uid), profileData);
       setGenUser(username);
@@ -280,7 +280,7 @@ function CompleteProfileScreen({ uid, email, onDone }) {
         <h2 style={{fontSize:20,fontWeight:700,color:"#0a3d2f",marginBottom:10}}>Cuenta creada</h2>
         <p style={{color:"#64748b",fontSize:14,marginBottom:20}}>Su nombre de usuario es:</p>
         <div style={{background:"#ccfbf1",borderRadius:10,padding:"16px 24px",fontSize:24,fontWeight:700,color:"#0d9488",marginBottom:16}}>{genUser}</div>
-        <p style={{color:"#94a3b8",fontSize:12}}>{"Tiene 5 cr\u00E9ditos de prueba. Ingresando..."}</p>
+        <p style={{color:"#94a3b8",fontSize:12}}>{"Tiene 5 cr\u00e9ditos de prueba. Ingresando..."}</p>
       </div>
     </div>
   );
@@ -289,14 +289,14 @@ function CompleteProfileScreen({ uid, email, onDone }) {
     <div style={{width:"100vw",height:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"linear-gradient(145deg,#0a3d2f,#0d7363)",fontFamily:"'DM Sans',system-ui,sans-serif"}}>
       <div style={{background:"rgba(255,255,255,.97)",borderRadius:16,padding:"44px 36px",width:420,maxWidth:"92vw",boxShadow:"0 20px 50px rgba(0,0,0,.3)"}}>
         <div style={{textAlign:"center",marginBottom:24}}>
-          <div style={{fontSize:40,marginBottom:8}}>{"\uD83D\uDCDD"}</div>
+          <div style={{fontSize:40,marginBottom:8}}>{"\ud83d\udcdd"}</div>
           <h2 style={{fontSize:20,fontWeight:700,color:"#0a3d2f"}}>Complete su perfil</h2>
           <p style={{color:"#64748b",fontSize:13,marginTop:4}}>{email}</p>
         </div>
         <form onSubmit={handleSubmit}>
           <div style={{marginBottom:14}}><label style={{fontSize:12,fontWeight:600,color:"#64748b",display:"block",marginBottom:5}}>Nombre</label><input value={nombre} onChange={e=>setNombre(e.target.value)} style={I} placeholder="Nombre del profesional" required/></div>
           <div style={{marginBottom:14}}><label style={{fontSize:12,fontWeight:600,color:"#64748b",display:"block",marginBottom:5}}>Apellido</label><input value={apellido} onChange={e=>setApellido(e.target.value)} style={I} placeholder="Apellido" required/></div>
-          <div style={{marginBottom:22}}><label style={{fontSize:12,fontWeight:600,color:"#64748b",display:"block",marginBottom:5}}>DNI</label><input value={dni} onChange={e=>setDni(e.target.value)} style={I} placeholder={"N\u00FAmero de documento"} required/></div>
+          <div style={{marginBottom:22}}><label style={{fontSize:12,fontWeight:600,color:"#64748b",display:"block",marginBottom:5}}>DNI</label><input value={dni} onChange={e=>setDni(e.target.value)} style={I} placeholder={"N\u00famero de documento"} required/></div>
           {err&&<div style={{background:"#fef2f2",border:"1px solid #fecaca",color:"#dc2626",padding:"10px 12px",borderRadius:8,fontSize:12,marginBottom:14}}>{err}</div>}
           <button type="submit" disabled={ld} style={{width:"100%",padding:"13px",background:"#0d9488",color:"#fff",border:"none",borderRadius:8,fontSize:15,fontWeight:600,cursor:ld?"wait":"pointer",opacity:ld?.7:1}}>{ld?"Creando perfil...":"Completar registro"}</button>
         </form>
@@ -310,10 +310,10 @@ function Dash({ es, pe, onT, onV, onVP, ld, profile, isAdmin }) {
   const rc = all.slice(0, 5);
   return (
     <div style={{animation:"fi .3s ease",width:"100%"}}>
-      <h1 style={{fontSize:22,fontWeight:700,marginBottom:6}}>{"\uD83E\uDDED Panel Principal"}</h1>
+      <h1 style={{fontSize:22,fontWeight:700,marginBottom:6}}>{"\ud83e\udded Panel Principal"}</h1>
       <p style={{color:K.mt,fontSize:14,marginBottom:24}}>{"Bienvenido/a, "}{profile?.nombre || profile?.username}{ld?" \u2014 cargando...":""}</p>
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))",gap:16,marginBottom:28}}>
-        {[["\uD83D\uDCCB","ELDI",es.length],["\uD83D\uDD0A","PEFF",pe.length],["\uD83D\uDC76","Pacientes",new Set([...es.map(e=>e.paciente),...pe.map(e=>e.paciente)]).size],["\uD83D\uDCB3","Cr\u00E9ditos",isAdmin?"\u221E":(profile?.creditos||0)]].map(([ic,lb,v],i)=>
+        {[["\ud83d\udccb","ELDI",es.length],["\ud83d\udd0a","PEFF",pe.length],["\ud83d\udc76","Pacientes",new Set([...es.map(e=>e.paciente),...pe.map(e=>e.paciente)]).size],["\ud83d\udcb3","Cr\u00e9ditos",isAdmin?"\u221e":(profile?.creditos||0)]].map(([ic,lb,v],i)=>
           <div key={i} style={{background:"#fff",borderRadius:12,padding:22,border:"1px solid #e2e8f0"}}>
             <div style={{fontSize:28,marginBottom:6}}>{ic}</div>
             <div style={{fontSize:28,fontWeight:700}}>{v}</div>
@@ -322,14 +322,14 @@ function Dash({ es, pe, onT, onV, onVP, ld, profile, isAdmin }) {
       </div>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20}}>
         <button onClick={onT} style={{background:"linear-gradient(135deg,#0a3d2f,#0d9488)",color:"#fff",border:"none",borderRadius:14,padding:"28px 24px",cursor:"pointer",display:"flex",alignItems:"center",gap:16,textAlign:"left"}}>
-          <div style={{width:52,height:52,borderRadius:12,background:"rgba(255,255,255,.14)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,flexShrink:0}}>{"\uD83E\uDDF0"}</div>
-          <div><div style={{fontSize:18,fontWeight:700}}>Herramientas</div><div style={{fontSize:13,opacity:.8,marginTop:4}}>{"Nueva evaluaci\u00F3n"}</div></div>
+          <div style={{width:52,height:52,borderRadius:12,background:"rgba(255,255,255,.14)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,flexShrink:0}}>{"\ud83e\uddf0"}</div>
+          <div><div style={{fontSize:18,fontWeight:700}}>Herramientas</div><div style={{fontSize:13,opacity:.8,marginTop:4}}>{"Nueva evaluaci\u00f3n"}</div></div>
         </button>
         <div style={{background:"#fff",borderRadius:14,padding:22,border:"1px solid #e2e8f0"}}>
           <h3 style={{fontSize:15,fontWeight:600,marginBottom:14}}>Recientes</h3>
-          {rc.length===0?<p style={{color:K.mt,fontSize:13}}>{"Sin evaluaciones a\u00FAn."}</p>:rc.map(ev=>{const isP=!!ev.seccionData;return(
+          {rc.length===0?<p style={{color:K.mt,fontSize:13}}>{"Sin evaluaciones a\u00fan."}</p>:rc.map(ev=>{const isP=!!ev.seccionData;return(
             <div key={ev._fbId||ev.id} onClick={()=>isP?onVP(ev):onV(ev)} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 0",borderBottom:"1px solid #e2e8f0",cursor:"pointer"}}>
-              <div><div style={{fontWeight:600,fontSize:14}}>{ev.paciente}</div><div style={{fontSize:11,color:K.mt}}>{isP?"PEFF":"ELDI"}{" \u00B7 "}{new Date(ev.fechaGuardado).toLocaleDateString("es-CL")}</div></div>
+              <div><div style={{fontWeight:600,fontSize:14}}>{ev.paciente}</div><div style={{fontSize:11,color:K.mt}}>{isP?"PEFF":"ELDI"}{" \u00b7 "}{new Date(ev.fechaGuardado).toLocaleDateString("es-CL")}</div></div>
               <span style={{color:K.mt}}>{"\u2192"}</span>
             </div>)})}
         </div>
@@ -340,14 +340,14 @@ function Dash({ es, pe, onT, onV, onVP, ld, profile, isAdmin }) {
 
 function Tools({ onSel, credits }) {
   const tools = [
-    { id: "newELDI", icon: "\uD83D\uDCCB", name: "ELDI", full: "Evaluaci\u00F3n del Lenguaje y Desarrollo Infantil", desc: "Comprensi\u00F3n auditiva y comunicaci\u00F3n expresiva (55+55 \u00EDtems) de 0 a 7 a\u00F1os.", age: "0-7;11", time: "~30-45 min", color: "#0d9488" },
-    { id: "newPEFF", icon: "\uD83D\uDD0A", name: "PEFF", full: "Protocolo Fon\u00E9tico-Fonol\u00F3gico", desc: "OFA, diadococinesis, s\u00EDlabas, discriminaci\u00F3n y reconocimiento fonol\u00F3gico.", age: "2;6-6;11", time: "~45-60 min", color: "#7c3aed" }
+    { id: "newELDI", icon: "\ud83d\udccb", name: "ELDI", full: "Evaluaci\u00f3n del Lenguaje y Desarrollo Infantil", desc: "Comprensi\u00f3n auditiva y comunicaci\u00f3n expresiva (55+55 \u00edtems) de 0 a 7 a\u00f1os.", age: "0-7;11", time: "~30-45 min", color: "#0d9488" },
+    { id: "newPEFF", icon: "\ud83d\udd0a", name: "PEFF", full: "Protocolo Fon\u00e9tico-Fonol\u00f3gico", desc: "OFA, diadococinesis, s\u00edlabas, discriminaci\u00f3n y reconocimiento fonol\u00f3gico.", age: "2;6-6;11", time: "~45-60 min", color: "#7c3aed" }
   ];
   return (
     <div style={{animation:"fi .3s ease",width:"100%"}}>
-      <h1 style={{fontSize:22,fontWeight:700,marginBottom:6}}>{"\uD83E\uDDF0 Herramientas"}</h1>
-      <p style={{color:K.mt,fontSize:14,marginBottom:8}}>{"Seleccione evaluaci\u00F3n"}</p>
-      {credits<1&&<div style={{background:"#fef3c7",border:"1px solid #fde68a",borderRadius:10,padding:14,marginBottom:16,fontSize:13,color:"#92400e",fontWeight:600}}>{"\u26A0 Sin cr\u00E9ditos disponibles. Contacte al administrador."}</div>}
+      <h1 style={{fontSize:22,fontWeight:700,marginBottom:6}}>{"\ud83e\uddf0 Herramientas"}</h1>
+      <p style={{color:K.mt,fontSize:14,marginBottom:8}}>{"Seleccione evaluaci\u00f3n"}</p>
+      {credits<1&&<div style={{background:"#fef3c7",border:"1px solid #fde68a",borderRadius:10,padding:14,marginBottom:16,fontSize:13,color:"#92400e",fontWeight:600}}>{"\u26a0 Sin cr\u00e9ditos disponibles. Contacte al administrador."}</div>}
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20}}>
         {tools.map(t=><div key={t.id} onClick={()=>onSel(t.id)} style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",overflow:"hidden",cursor:credits<1?"not-allowed":"pointer",opacity:credits<1?0.5:1}}>
           <div style={{background:`linear-gradient(135deg,${t.color},${t.color}aa)`,padding:"24px 24px 20px",color:"#fff"}}>
@@ -356,7 +356,7 @@ function Tools({ onSel, credits }) {
           </div>
           <div style={{padding:"20px 24px"}}>
             <p style={{fontSize:13,color:"#475569",lineHeight:1.6,marginBottom:16}}>{t.desc}</p>
-            <div style={{display:"flex",gap:16,fontSize:12,color:K.mt}}><span>{"\uD83D\uDC76 "}{t.age}</span><span>{"\u23F1 "}{t.time}</span></div>
+            <div style={{display:"flex",gap:16,fontSize:12,color:K.mt}}><span>{"\ud83d\udc76 "}{t.age}</span><span>{"\u23f1 "}{t.time}</span></div>
             <button style={{marginTop:16,width:"100%",padding:"11px",background:t.color,color:"#fff",border:"none",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer"}}>{"Iniciar \u2192"}</button>
           </div>
         </div>)}
