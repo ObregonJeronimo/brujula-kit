@@ -6,3 +6,15 @@ body { font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: an
 ::-webkit-scrollbar-track { background: transparent; }
 select { appearance: auto; }
 input:focus, select:focus, textarea:focus { outline: 2px solid #0d9488; outline-offset: -1px; }
+
+/* Responsive: hide sticky legend sidebar on small screens */
+@media (max-width: 768px) {
+  .peff-legend-sidebar { display: none !important; }
+  .peff-fon-layout { flex-direction: column !important; }
+}
+
+/* Print styles */
+@media print {
+  body { font-size: 12px; }
+  button { display: none !important; }
+}
