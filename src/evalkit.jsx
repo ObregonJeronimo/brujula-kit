@@ -35,6 +35,50 @@ async function generateUsername(nombre, apellido) {
   return candidate;
 }
 
+/* ── Session lock: only 1 user at a time (except admin) ── */
+async function acquireSessionLock(uid, isAdmin) {
+  if (isAdmin) return true;
+  const lockRef = doc(db, "system", "active_session");
+  try {
+    const snap = await getDoc(lockRef);
+    if (snap.exists()) {
+      const data = snap.data();
+      // If another non-admin user has the lock and it's recent (< 2 hours)
+      if (data.uid && data.uid !== uid) {
+        const lockTime = data.timestamp?.toDate ? data.timestamp.toDate() : new Date(data.timestamp);
+        const diff = Date.now() - lockTime.getTime();
+        if (diff < 2 * 60 * 60 * 1000) { // 2 hours
+          return false;
+        }
+      }
+    }
+    await setDoc(lockRef, { uid, timestamp: new Date().toISOString() });
+    return true;
+  } catch (e) { console.error("Session lock error:", e); return true; /* fail open */ }
+}
+
+async function releaseSessionLock(uid) {
+  const lockRef = doc(db, "system", "active_session");
+  try {
+    const snap = await getDoc(lockRef);
+    if (snap.exists() && snap.data().uid === uid) {
+      await setDoc(lockRef, { uid: null, timestamp: null });
+    }
+  } catch (e) { console.error("Session release error:", e); }
+}
+
+/* Keep session alive every 60s */
+function useSessionHeartbeat(uid, isAdmin) {
+  useEffect(() => {
+    if (!uid || isAdmin) return;
+    const interval = setInterval(async () => {
+      const lockRef = doc(db, "system", "active_session");
+      try { await setDoc(lockRef, { uid, timestamp: new Date().toISOString() }); } catch(e){}
+    }, 60000);
+    return () => clearInterval(interval);
+  }, [uid, isAdmin]);
+}
+
 export default function App() {
   const [authUser, setAuthUser] = useState(undefined);
   const [profile, setProfile] = useState(null);
@@ -45,15 +89,28 @@ export default function App() {
   const [toast, sT] = useState(null);
   const [loading, sL] = useState(false);
   const [mobile] = useState(isMobile());
+  const [sessionBlocked, setSessionBlocked] = useState(false);
   const nfy = useCallback((m, t) => { sT({ m, t }); setTimeout(() => sT(null), 3500); }, []);
+
+  const isAdmin = profile?.role === "admin";
+  useSessionHeartbeat(authUser?.uid, isAdmin);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
       if (u) {
         if (u.emailVerified) {
           const prof = await getUserProfile(u.uid);
-          if (prof && prof.profileComplete) setProfile(prof);
-          else setProfile(null);
+          if (prof && prof.profileComplete) {
+            const canLogin = await acquireSessionLock(u.uid, prof.role === "admin");
+            if (!canLogin) {
+              setSessionBlocked(true);
+              setAuthUser(u);
+              setProfile(prof);
+              return;
+            }
+            setSessionBlocked(false);
+            setProfile(prof);
+          } else setProfile(null);
         }
         setAuthUser(u);
       } else { setAuthUser(null); setProfile(null); }
@@ -74,9 +131,9 @@ export default function App() {
     sL(false);
   }, [profile, authUser]);
 
-  useEffect(() => { if (profile) loadEvals(); }, [profile, loadEvals]);
+  useEffect(() => { if (profile && !sessionBlocked) loadEvals(); }, [profile, loadEvals, sessionBlocked]);
 
-  const navTo = (v) => { if ((view === "newELDI" || view === "newPEFF") && v !== view) { if (!window.confirm("Salir sin guardar?")) return; } sV(v); sS(null); };
+  const navTo = (v) => { if ((view === "newELDI" || view === "newPEFF") && v !== view) { if (!window.confirm("Salir sin guardar?")) return; } sV(v); sS(null); window.scrollTo({top:0,behavior:"smooth"}); };
 
   const checkCredits = () => {
     if (!profile) return false;
@@ -86,8 +143,16 @@ export default function App() {
   };
 
   const deductCredit = async () => {
-    if (profile.role === "admin") return;
-    try { await updateDoc(doc(db, "usuarios", authUser.uid), { creditos: increment(-1) }); setProfile(p => ({ ...p, creditos: (p.creditos || 0) - 1 })); } catch (e) { console.error(e); }
+    if (!profile || profile.role === "admin") return;
+    try {
+      const userRef = doc(db, "usuarios", authUser.uid);
+      await updateDoc(userRef, { creditos: increment(-1) });
+      // Re-read to get accurate value
+      const fresh = await getDoc(userRef);
+      if (fresh.exists()) {
+        setProfile(p => ({ ...p, creditos: fresh.data().creditos }));
+      }
+    } catch (e) { console.error("deductCredit error:", e); }
   };
 
   const saveEval = async (ev) => {
@@ -112,7 +177,11 @@ export default function App() {
     sS(null); sV("hist");
   };
 
-  const handleLogout = async () => { await signOut(auth); setAuthUser(null); setProfile(null); sV("dash"); sS(null); };
+  const handleLogout = async () => {
+    if (authUser?.uid) await releaseSessionLock(authUser.uid);
+    await signOut(auth);
+    setAuthUser(null); setProfile(null); setSessionBlocked(false); sV("dash"); sS(null);
+  };
 
   if (authUser === undefined) return <div style={{width:"100vw",height:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#0a3d2f",color:"#fff",fontFamily:"'DM Sans',system-ui,sans-serif"}}><div style={{textAlign:"center"}}><div style={{fontSize:48,marginBottom:16}}>{"\ud83e\udded"}</div><div style={{fontSize:20,fontWeight:700}}>Cargando...</div></div></div>;
 
@@ -120,7 +189,22 @@ export default function App() {
   if (authUser && !authUser.emailVerified) return <VerifyEmailScreen user={authUser} onLogout={handleLogout} />;
   if (authUser && authUser.emailVerified && !profile) return <CompleteProfileScreen uid={authUser.uid} email={authUser.email} onDone={p => setProfile(p)} />;
 
-  const isAdmin = profile?.role === "admin";
+  /* ── Session blocked screen ── */
+  if (sessionBlocked) return (
+    <div style={{width:"100vw",height:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"linear-gradient(145deg,#0a3d2f,#0d7363)",fontFamily:"'DM Sans',system-ui,sans-serif"}}>
+      <div style={{background:"rgba(255,255,255,.97)",borderRadius:16,padding:"44px 36px",width:440,maxWidth:"92vw",boxShadow:"0 20px 50px rgba(0,0,0,.3)",textAlign:"center"}}>
+        <div style={{fontSize:48,marginBottom:16}}>{"🔒"}</div>
+        <h2 style={{fontSize:20,fontWeight:700,color:"#0a3d2f",marginBottom:12}}>Sesi\u00f3n ocupada</h2>
+        <p style={{color:"#64748b",fontSize:14,lineHeight:1.7,marginBottom:20}}>Otro usuario ya est\u00e1 conectado en este momento. Solo una persona puede usar la aplicaci\u00f3n a la vez.</p>
+        <p style={{color:"#94a3b8",fontSize:12,marginBottom:24}}>Si cree que es un error, espere unos minutos e intente nuevamente. La sesi\u00f3n se libera autom\u00e1ticamente despu\u00e9s de 2 horas de inactividad.</p>
+        <div style={{display:"flex",gap:10,justifyContent:"center",flexWrap:"wrap"}}>
+          <button onClick={async()=>{const canLogin=await acquireSessionLock(authUser.uid,false);if(canLogin){setSessionBlocked(false);window.location.reload()}else{nfy("La sesi\u00f3n sigue ocupada","er")}}} style={{background:"#0d9488",color:"#fff",border:"none",padding:"12px 24px",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer"}}>Reintentar</button>
+          <button onClick={handleLogout} style={{background:"#f1f5f9",border:"none",padding:"12px 24px",borderRadius:8,fontSize:14,cursor:"pointer",color:"#64748b"}}>Cerrar sesi\u00f3n</button>
+        </div>
+      </div>
+    </div>
+  );
+
   const nav = [["dash", "\u229e", "Panel"], ["tools", "\ud83e\uddf0", "Herramientas"], ["hist", "\u23f1", "Historial"]];
   if (isAdmin) nav.push(["adm", "\u2699", "Usuarios"]);
 
@@ -138,7 +222,7 @@ export default function App() {
           <button onClick={handleLogout} style={{background:"rgba(255,255,255,.08)",border:"none",color:"rgba(255,255,255,.6)",padding:"7px 12px",borderRadius:6,cursor:"pointer",fontSize:mobile?16:12,width:"100%"}}>{mobile?"\u21a9":"\u21a9 Cerrar sesi\u00f3n"}</button>
         </div>
       </aside>
-      <main style={{flex:1,overflowY:"auto",overflowX:"hidden",padding:mobile?"16px":"28px 36px",height:"100vh"}}>
+      <main id="main-scroll" style={{flex:1,overflowY:"auto",overflowX:"hidden",padding:mobile?"16px":"28px 36px",height:"100vh"}}>
         {toast&&<div style={{position:"fixed",top:16,right:16,zIndex:999,background:toast.t==="ok"?"#059669":"#dc2626",color:"#fff",padding:"10px 18px",borderRadius:8,fontSize:13,fontWeight:500,boxShadow:"0 4px 16px rgba(0,0,0,.15)",animation:"fi .3s ease"}}>{toast.m}</div>}
         {view==="dash"&&<Dash es={evals} pe={peffEvals} onT={()=>navTo("tools")} onV={e=>{sS(e);sV("rpt")}} onVP={e=>{sS(e);sV("rptP")}} ld={loading} profile={profile} isAdmin={isAdmin}/>}
         {view==="tools"&&<Tools onSel={t=>{if(checkCredits())sV(t)}} credits={isAdmin?999:(profile.creditos||0)}/>}
@@ -169,7 +253,11 @@ function AuthScreen({ onDone }) {
       const u = cred.user;
       if (!u.emailVerified) { setLd(false); return; }
       const prof = await getUserProfile(u.uid);
-      if (prof && prof.profileComplete) onDone(u, prof);
+      if (prof && prof.profileComplete) {
+        const canLogin = await acquireSessionLock(u.uid, prof.role === "admin");
+        if (!canLogin) { setErr("Otro usuario ya est\u00e1 conectado. Solo una persona puede usar la app a la vez."); setLd(false); return; }
+        onDone(u, prof);
+      }
     } catch (e) {
       if (e.code === "auth/user-not-found" || e.code === "auth/invalid-credential") setErr("Email o contrase\u00f1a incorrectos.");
       else if (e.code === "auth/wrong-password") setErr("Contrase\u00f1a incorrecta.");
@@ -221,7 +309,7 @@ function AuthScreen({ onDone }) {
             {ld?"Procesando...":mode==="login"?"Iniciar sesi\u00f3n":"Crear cuenta"}
           </button>
         </form>
-        <p style={{textAlign:"center",marginTop:20,fontSize:10,color:"#94a3b8"}}>{"Br\u00fajula KIT v5.1"}</p>
+        <p style={{textAlign:"center",marginTop:20,fontSize:10,color:"#94a3b8"}}>{"Br\u00fajula KIT v5.3"}</p>
       </div>
     </div>
   );
