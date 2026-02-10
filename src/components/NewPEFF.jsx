@@ -6,13 +6,13 @@ const gm=(b,e)=>{const B=new Date(b),E=new Date(e);let m=(E.getFullYear()-B.getF
 const fa=m=>`${Math.floor(m/12)} a\u00f1os, ${m%12} meses`;
 
 const sevDesc={
-  "Adecuado":"El ni\u00f1o/a produce correctamente todos o casi todos los fonemas esperados para su edad. No se observan dificultades articulatorias significativas.",
-  "Leve":"Se observan errores articulatorios aislados que no comprometen significativamente la inteligibilidad del habla. Puede requerir seguimiento.",
-  "Moderado":"Se observan m\u00faltiples errores articulatorios que afectan parcialmente la inteligibilidad. Se recomienda intervenci\u00f3n fonoaudiol\u00f3gica.",
-  "Moderado-Severo":"Se observan errores articulatorios frecuentes que comprometen la inteligibilidad del habla en contextos comunicativos. Se requiere intervenci\u00f3n fonoaudiol\u00f3gica.",
-  "Severo":"Se observan errores articulatorios generalizados que comprometen severamente la inteligibilidad. Se requiere intervenci\u00f3n fonoaudiol\u00f3gica intensiva."
+  "Adecuado":"PCC = 100%: El ni\u00f1o/a produce correctamente todos los fonemas evaluados. No se observan dificultades articulatorias.",
+  "Leve":"PCC 85\u201399%: Se observan errores articulatorios aislados que no comprometen significativamente la inteligibilidad del habla. Puede requerir seguimiento.",
+  "Leve-Moderado":"PCC 65\u201384%: Se observan errores articulatorios m\u00faltiples que afectan parcialmente la inteligibilidad. Se recomienda evaluaci\u00f3n e intervenci\u00f3n fonoaudiol\u00f3gica.",
+  "Moderado-Severo":"PCC 50\u201364%: Se observan errores articulatorios frecuentes que comprometen la inteligibilidad del habla. Se requiere intervenci\u00f3n fonoaudiol\u00f3gica.",
+  "Severo":"PCC <50%: Se observan errores articulatorios generalizados que comprometen severamente la inteligibilidad. Se requiere intervenci\u00f3n fonoaudiol\u00f3gica intensiva."
 };
-const sevColor={"Adecuado":"#059669","Leve":"#f59e0b","Moderado":"#ea580c","Moderado-Severo":"#dc2626","Severo":"#dc2626"};
+const sevColor={"Adecuado":"#059669","Leve":"#84cc16","Leve-Moderado":"#f59e0b","Moderado-Severo":"#ea580c","Severo":"#dc2626"};
 
 /* TTS: improved voice selection - prefer female Spanish voices for clarity */
 const speak=(text)=>{
@@ -21,7 +21,6 @@ const speak=(text)=>{
   const u=new SpeechSynthesisUtterance(text);
   u.lang="es-AR";u.rate=0.75;u.pitch=1.05;u.volume=1;
   const voices=window.speechSynthesis.getVoices();
-  /* Priority: 1) es-AR female, 2) es-MX female, 3) es-ES female, 4) any es female, 5) any es */
   const pick=voices.find(v=>v.lang==="es-AR"&&v.name.toLowerCase().includes("female"))
     ||voices.find(v=>v.lang==="es-AR")
     ||voices.find(v=>v.lang==="es-MX")
@@ -32,7 +31,6 @@ const speak=(text)=>{
   window.speechSynthesis.speak(u);
 };
 
-/* Scroll to top of main area */
 const scrollTop=()=>{
   const el=document.getElementById("main-scroll");
   if(el)el.scrollTo({top:0,behavior:"smooth"});
@@ -47,15 +45,12 @@ export default function NewPEFF({onS,nfy}){
   const sf=(id,v)=>setD(p=>({...p,[id]:v}));
   const spf=(itemId,field,v)=>setProcData(p=>({...p,[itemId]:{...(p[itemId]||{}), [field]:v}}));
 
-  /* Scroll to top on step change */
   useEffect(()=>{scrollTop()},[step]);
-
-  /* Load voices on mount (some browsers need this) */
   useEffect(()=>{if(window.speechSynthesis){window.speechSynthesis.getVoices();window.speechSynthesis.onvoiceschanged=()=>window.speechSynthesis.getVoices()}},[]);
 
   const goStep=(s)=>{setStep(s)};
 
-  /* OFA fields - clean buttons, no SVG images */
+  /* OFA fields - clean buttons with desc support */
   const rField=f=>{
     if(f.type==="text") return <div key={f.id} style={{marginBottom:14}}>
       <label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>{f.label}</label>
@@ -64,12 +59,13 @@ export default function NewPEFF({onS,nfy}){
     const cur=data[f.id]||"";
     return <div key={f.id} style={{marginBottom:14}}>
       <label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:6}}>{f.label}</label>
+      {f.desc&&<div style={{fontSize:11,color:"#7c3aed",marginBottom:6,fontStyle:"italic"}}>{f.desc}</div>}
       <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
         {f.options.map(o=>
           <button key={o} onClick={()=>sf(f.id,cur===o?"":o)}
             style={{padding:"8px 14px",borderRadius:8,border:cur===o?"2px solid #7c3aed":"1px solid #e2e8f0",
               background:cur===o?"#ede9fe":"#fff",color:cur===o?"#5b21b6":"#475569",
-              fontSize:13,fontWeight:cur===o?700:400,cursor:"pointer",transition:"all .15s"}}>
+              fontSize:13,fontWeight:cur===o?700:400,cursor:"pointer",transition:"all .15s",textAlign:"left"}}>
             {cur===o&&"\u2713 "}{o}
           </button>)}
       </div>
@@ -159,7 +155,7 @@ export default function NewPEFF({onS,nfy}){
             const isCorrectChoice=v&&w===correctWord;
             return<button key={w} onClick={()=>handleSelect(w)}
               style={{padding:"8px 18px",borderRadius:8,fontSize:14,fontWeight:700,cursor:"pointer",transition:"all .15s",
-                border:isSelected?`2px solid ${isCorrectChoice?"#059669":"#dc2626"}`:"2px solid #e2e8f0",
+                border:isSelected?`2px solid ${isCorrectChoice?"#059669":"#dc2626"}`:`2px solid #e2e8f0`,
                 background:isSelected?(isCorrectChoice?"#059669":"#dc2626"):"#fff",
                 color:isSelected?"#fff":"#1e293b",
                 opacity:v&&!isSelected?0.5:1}}>
@@ -219,8 +215,9 @@ export default function NewPEFF({onS,nfy}){
     const rOk=rI.filter(i=>data[i.id]==="reconoce").length;
     const rEval=rI.filter(i=>!!data[i.id]).length;
     const rPct=rEval>0?Math.round(rOk/rEval*100):0;
+    /* PCC severity classification (Shriberg & Kwiatkowski, 1982) */
     let sev="Adecuado";
-    if(sPct<50)sev="Severo";else if(sPct<65)sev="Moderado-Severo";else if(sPct<85)sev="Moderado";else if(sPct<98)sev="Leve";
+    if(sPctEval<50)sev="Severo";else if(sPctEval<65)sev="Moderado-Severo";else if(sPctEval<85)sev="Leve-Moderado";else if(sPctEval<100)sev="Leve";
     const procAnalysis={byCategory:{},byProcess:{},errors:[],total:0};
     Object.entries(procData).forEach(([itemId,pd2])=>{
       if(!pd2.proceso)return;
@@ -236,7 +233,7 @@ export default function NewPEFF({onS,nfy}){
     return{silOk:sOk,silTotal:sI.length,silPct:sPct,silEval:sEvaluated,silPctEval:sPctEval,
       discOk:dOk,discTotal:dI.length,discEval:dEval,discPct:dPct,
       recOk:rOk,recTotal:rI.length,recEval:rEval,recPct:rPct,
-      severity:sev,procAnalysis,
+      severity:sev,procAnalysis,pcc:sPctEval,
       unevalSelects:us,unevalPhon:up,unevalDisc:ud,unevalRec:ur,unevalTotal:us+up+ud+ur};
   };
 
@@ -332,19 +329,22 @@ export default function NewPEFF({onS,nfy}){
           </div>
 
           <div style={{background:`linear-gradient(135deg,${sc}dd,${sc})`,borderRadius:12,padding:24,color:"#fff",marginBottom:20}}>
-            <div style={{fontSize:13,opacity:.8,marginBottom:4}}>{"Severidad del trastorno fon\u00e9tico-fonol\u00f3gico"}</div>
-            <div style={{fontSize:36,fontWeight:700,marginBottom:8}}>{r.severity}</div>
+            <div style={{fontSize:13,opacity:.8,marginBottom:4}}>{"Severidad \u2014 PCC (Percentage of Consonants Correct)"}</div>
+            <div style={{display:"flex",alignItems:"baseline",gap:12,marginBottom:8}}>
+              <div style={{fontSize:36,fontWeight:700}}>{r.severity}</div>
+              <div style={{fontSize:22,fontWeight:600,opacity:.9}}>{"PCC: "}{r.pcc}{"%"}</div>
+            </div>
             <div style={{fontSize:13,opacity:.9,lineHeight:1.6}}>{sevDesc[r.severity]}</div>
           </div>
 
           <div style={{background:"#f0f9ff",border:"1px solid #bae6fd",borderRadius:10,padding:16,marginBottom:20,fontSize:12,color:"#0369a1",lineHeight:1.6}}>
-            <strong>{"Criterios de clasificaci\u00f3n:"}</strong><br/>
-            {"Adecuado: \u226598% de s\u00edlabas correctas"}<br/>
-            {"Leve: 85-97% correctas \u2014 errores aislados"}<br/>
-            {"Moderado: 65-84% correctas \u2014 m\u00faltiples errores"}<br/>
-            {"Moderado-Severo: 50-64% correctas \u2014 errores frecuentes"}<br/>
-            {"Severo: <50% correctas \u2014 errores generalizados"}<br/>
-            <span style={{fontStyle:"italic",marginTop:6,display:"block"}}>{"La severidad se calcula sobre el total de s\u00edlabas del protocolo."}</span>
+            <strong>{"Clasificaci\u00f3n basada en PCC (Shriberg & Kwiatkowski, 1982):"}</strong><br/>
+            {"Adecuado: PCC = 100% \u2014 producci\u00f3n correcta de todos los fonemas evaluados"}<br/>
+            {"Leve: PCC 85\u201399% \u2014 errores aislados, inteligibilidad conservada"}<br/>
+            {"Leve-Moderado: PCC 65\u201384% \u2014 m\u00faltiples errores, inteligibilidad parcialmente afectada"}<br/>
+            {"Moderado-Severo: PCC 50\u201364% \u2014 errores frecuentes, inteligibilidad comprometida"}<br/>
+            {"Severo: PCC <50% \u2014 errores generalizados, inteligibilidad severamente afectada"}<br/>
+            <span style={{fontStyle:"italic",marginTop:6,display:"block"}}>{"El PCC (Percentage of Consonants Correct) es el \u00edndice est\u00e1ndar internacional para cuantificar la severidad de los trastornos de los sonidos del habla (Shriberg & Kwiatkowski, 1982). Se calcula como el porcentaje de fonemas producidos correctamente sobre el total evaluado."}</span>
           </div>
 
           {r.unevalTotal>0&&<div style={{background:"#fffbeb",border:"1px solid #fde68a",borderRadius:10,padding:16,marginBottom:20}}>
