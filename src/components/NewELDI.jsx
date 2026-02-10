@@ -235,6 +235,14 @@ export default function NewELDI({onS,nfy,deductCredit,isAdmin}){
   const getStepContent=()=>{const label=steps[step-1];if(label==="Paciente")return"patient";if(label==="Receptivo")return"rec";if(label==="Expresivo")return"exp";return"result";};
   const content=getStepContent();
 
+  /* Deduct credit when reaching results screen */
+  useEffect(()=>{
+    if(content==="result"&&!creditDeducted.current&&deductCredit&&!isAdmin){
+      creditDeducted.current=true;
+      deductCredit();
+    }
+  },[content]);
+
   const renderNoEval=(noEvalIds,items)=>{
     if(noEvalIds.length===0)return null;
     const groups={};
@@ -294,7 +302,7 @@ export default function NewELDI({onS,nfy,deductCredit,isAdmin}){
           </div>
           {!evalRec&&!evalExp&&<div style={{marginTop:8,color:"#dc2626",fontSize:12,fontWeight:600}}>Debe seleccionar al menos un área</div>}
         </div>
-        <div style={{display:"flex",justifyContent:"flex-end",marginTop:20}}><Bt pr onClick={()=>{if(!pd.pN||!pd.birth){nfy("Complete nombre y fecha","er");return}if(!evalRec&&!evalExp){nfy("Seleccione al menos un área","er");return}if(!creditDeducted.current&&deductCredit&&!isAdmin){creditDeducted.current=true;deductCredit()}setDirty(true);sS(2)}}>Siguiente →</Bt></div>
+        <div style={{display:"flex",justifyContent:"flex-end",marginTop:20}}><Bt pr onClick={()=>{if(!pd.pN||!pd.birth){nfy("Complete nombre y fecha","er");return}if(!evalRec&&!evalExp){nfy("Seleccione al menos un área","er");return}setDirty(true);sS(2)}}>Siguiente →</Bt></div>
       </div>}
 
       {content==="rec"&&<div>{RI(REC,"AC")}<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:14,paddingTop:14,borderTop:"1px solid #e2e8f0"}}><span style={{fontSize:13,color:K.mt}}>Logrados: <b style={{color:"#0d9488"}}>{rR.logrado}</b>/55 · Sin evaluar: <b style={{color:"#f59e0b"}}>{rR.noEvaluado.length}</b></span><div style={{display:"flex",gap:8}}><Bt onClick={()=>sS(step-1)}>← Atrás</Bt><Bt pr onClick={()=>sS(step+1)}>Siguiente →</Bt></div></div></div>}
@@ -314,7 +322,7 @@ export default function NewELDI({onS,nfy,deductCredit,isAdmin}){
           {evalExp&&rE.evaluados>0&&renderClassification(rE,"Comunicación Expresiva")}
 
           <div style={{background:"#f0f9ff",border:"1px solid #bae6fd",borderRadius:10,padding:14,marginBottom:20,fontSize:12,color:"#0369a1"}}>
-            <strong>Nota:</strong> La clasificación se basa en un análisis criterial (comparación con hitos esperados por edad), no en baremos normativos. Cortes: ≥90% = Normal, 75-89% = En Riesgo, 50-74% = Retraso Moderado, &lt;50% = Retraso Significativo.
+            <strong>Nota:</strong> La clasificación se basa en un análisis criterial (comparación con hitos esperados por edad), no en baremos normativos. Cortes: >=90% = Normal, 75-89% = En Riesgo, 50-74% = Retraso Moderado, menos de 50% = Retraso Significativo.
           </div>
 
           {[recRes,expRes].map((area,i)=>{
