@@ -7,6 +7,7 @@ import Admin from "./components/Admin.jsx";
 import NewELDI from "./components/NewELDI.jsx";
 import NewPEFF from "./components/NewPEFF.jsx";
 import CalendarPage from "./components/CalendarPage.jsx";
+import AdminStats from "./components/AdminStats.jsx";
 
 const isMobile = () => /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) && window.innerWidth < 900;
 const K = { sd: "#0a3d2f", ac: "#0d9488", al: "#ccfbf1", mt: "#64748b", bd: "#e2e8f0", bg: "#f0f5f3" };
@@ -308,7 +309,7 @@ export default function App() {
   );
 
   const nav = [["dash", "\u229e", "Panel"], ["tools", "\ud83e\uddf0", "Herramientas"], ["hist", "\u23f1", "Historial"], ["calendario", "\ud83d\udcc5", "Calendario"], ["profile", "\ud83d\udc64", "Perfil"]];
-  if (isAdmin) nav.push(["adm", "\u2699", "Usuarios"]);
+  if (isAdmin) { nav.push(["stats", "\ud83d\udcca", "Estad\u00edsticas"]); nav.push(["adm", "\u2699", "Usuarios"]); }
 
   return (
     <div style={{display:"flex",height:"100vh",width:"100vw",fontFamily:"'DM Sans',system-ui,sans-serif",background:K.bg,color:"#1e293b",overflow:"hidden"}}>
@@ -338,6 +339,7 @@ export default function App() {
         {view==="calendario"&&<CalendarPage userId={authUser?.uid} nfy={nfy}/>}
         {view==="premium"&&<PremiumPage profile={profile} nfy={nfy} onBack={()=>sV("dash")}/>}
         {view==="adm"&&isAdmin&&<Admin nfy={nfy}/>}
+        {view==="stats"&&isAdmin&&<AdminStats nfy={nfy}/>}
       </main>
     </div>
   );
@@ -406,7 +408,7 @@ function AuthScreen({ onDone }) {
             {ld?"Procesando...":mode==="login"?"Iniciar sesi\u00f3n":"Crear cuenta"}
           </button>
         </form>
-        <p style={{textAlign:"center",marginTop:20,fontSize:10,color:"#94a3b8"}}>{"Br\u00fajula KIT v5.5"}</p>
+        <p style={{textAlign:"center",marginTop:20,fontSize:10,color:"#94a3b8"}}>{"Br\u00fajula KIT v6.0"}</p>
       </div>
     </div>
   );
@@ -445,6 +447,9 @@ function CompleteProfileScreen({ uid, email, onDone }) {
   const handleSubmit = async (ev) => {
     ev.preventDefault(); setLd(true); setErr("");
     if (!nombre.trim() || !apellido.trim() || !dni.trim()) { setErr("Complete todos los campos."); setLd(false); return; }
+    const allUsers = await fbGetAll("usuarios");
+    const dniDup = allUsers.find(u => u.dni === dni.trim());
+    if (dniDup) { setErr("Ya existe una cuenta registrada con ese DNI. Si es tu cuenta, inici\u00e1 sesi\u00f3n con tu email."); setLd(false); return; }
     try {
       const isAdminUser = email === ADMIN_EMAIL;
       let username = isAdminUser ? "CalaAdmin976" : await generateUsername(nombre.trim(), apellido.trim());
