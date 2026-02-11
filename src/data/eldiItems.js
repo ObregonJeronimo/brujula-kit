@@ -1,5 +1,6 @@
 // ELDI Receptivo items
 // img: URL de imagen para "ver imagen" (null = sin imagen)
+// imgUrl: URL externa para mostrar con <img> en lugar de SVG interno
 // game: "sequence"|"shapes" para minijuegos interactivos
 // story: texto de historia para AC53
 export const REC=[
@@ -14,7 +15,8 @@ export const REC=[
 {id:"AC9",l:"Entiende gestos simples",a:"0;6\u20130;11",ej:"Extiende brazos cuando le hacen gesto de ven"},
 {id:"AC10",l:"Identifica objeto al nombrarlo",a:"0;6\u20130;11",ej:"Mu\u00e9strele la imagen y diga: \u00bfD\u00f3nde est\u00e1 la pelota? El ni\u00f1o debe se\u00f1alarla.",img:"ball"},
 {id:"AC11",l:"Sigue instrucciones de un paso",a:"1;0\u20131;5",ej:"Dame la pelota y la entrega"},
-{id:"AC12",l:"Identifica 3 partes del cuerpo",a:"1;0\u20131;5",ej:"Muestre la cara y pregunte: \u00bfD\u00f3nde est\u00e1n los ojos? \u00bfD\u00f3nde est\u00e1 la nariz? \u00bfD\u00f3nde est\u00e1 la boca?",img:"body"},
+// AC12: Imagen externa de Pixabay - cara para identificar partes del cuerpo (ojos, nariz, boca)
+{id:"AC12",l:"Identifica 3 partes del cuerpo",a:"1;0\u20131;5",ej:"Muestre la cara y pregunte: \u00bfD\u00f3nde est\u00e1n los ojos? \u00bfD\u00f3nde est\u00e1 la nariz? \u00bfD\u00f3nde est\u00e1 la boca?",img:"body",imgUrl:"https://pixabay.com/get/gdab69fe0bd9548108deaaf1e2644997f2da784779708373ff40cab290e4378cab5e27c945a91a186f27e358acd5d9e26f08bc7dacacd205cbd7a85457dd1fba5_1280.jpg"},
 {id:"AC13",l:"Se\u00f1ala objetos al nombrarlos",a:"1;0\u20131;5",ej:"\u00bfCu\u00e1l es la pelota? \u00bfCu\u00e1l es el cuaderno? \u00bfCu\u00e1l es la bicicleta?",img:"3objects"},
 {id:"AC14",l:"Comprende \u00bfd\u00f3nde?",a:"1;0\u20131;5",ej:"Busca con la mirada cuando preguntan \u00bfd\u00f3nde est\u00e1?"},
 {id:"AC15",l:"Identifica im\u00e1genes comunes",a:"1;0\u20131;5",ej:"Pregunte: \u00bfQu\u00e9 es esto? mostrando cada imagen. El ni\u00f1o debe nombrar o se\u00f1alar correctamente.",img:"animals"},
@@ -119,5 +121,6 @@ export const EXP=[
 ];
 
 // Image keys map to SVG components rendered in NewELDI.jsx
+// imgUrl keys: external URLs rendered with <img> tag (e.g. AC12 uses Pixabay)
 // game keys: "sequence" = drag-and-drop 3 images, "shapes" = match shapes
 // story: text shown in expandable story panel
