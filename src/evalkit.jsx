@@ -1,182 +1,31 @@
 import { useState, useEffect, useCallback } from "react";
-import { db, auth, collection, addDoc, getDocs, deleteDoc, doc, query, where, updateDoc, getDoc, setDoc, increment, orderBy, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, sendPasswordResetEmail, onAuthStateChanged, signOut } from "./firebase.js";
+import { db, auth, doc, updateDoc, getDoc, increment, onAuthStateChanged, signOut } from "./firebase.js";
+import { fbGetAll, fbGetFiltered, fbAdd, fbDelete, getUserProfile, K } from "./lib/fb.js";
+import { acquireSessionLock, releaseSessionLock, useSessionHeartbeat } from "./lib/sessionLock.js";
+
+/* ── Auth flow screens ── */
+import AuthScreen from "./components/AuthScreen.jsx";
+import VerifyEmailScreen from "./components/VerifyEmail.jsx";
+import CompleteProfileScreen from "./components/CompleteProfile.jsx";
+
+/* ── Main app screens ── */
+import Dashboard from "./components/Dashboard.jsx";
+import Tools from "./components/Tools.jsx";
+import ProfilePage from "./components/ProfilePage.jsx";
+import PremiumPage from "./components/PremiumPage.jsx";
+import NoCreditsModal from "./components/NoCreditsModal.jsx";
+
+/* ── Feature components ── */
 import Hist from "./components/Hist.jsx";
 import RptELDI from "./components/RptELDI.jsx";
 import RptPEFF from "./components/RptPEFF.jsx";
 import Admin from "./components/Admin.jsx";
+import AdminStats from "./components/AdminStats.jsx";
 import NewELDI from "./components/NewELDI.jsx";
 import NewPEFF from "./components/NewPEFF.jsx";
 import CalendarPage from "./components/CalendarPage.jsx";
-import AdminStats from "./components/AdminStats.jsx";
 
 const isMobile = () => /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) && window.innerWidth < 900;
-const K = { sd: "#0a3d2f", ac: "#0d9488", al: "#ccfbf1", mt: "#64748b", bd: "#e2e8f0", bg: "#f0f5f3" };
-const ADMIN_EMAIL = "valkyriumsolutions@gmail.com";
-
-async function fbGetFiltered(c, userId) {
-  const q2 = query(collection(db, c), where("userId", "==", userId));
-  const s = await getDocs(q2);
-  return s.docs.map(d => ({ _fbId: d.id, ...d.data() }));
-}
-async function fbGetAll(c) { const s = await getDocs(collection(db, c)); return s.docs.map(d => ({ _fbId: d.id, ...d.data() })); }
-async function fbAdd(c, data) { try { const r = await addDoc(collection(db, c), data); return { success: true, id: r.id }; } catch (e) { return { success: false, error: e.message }; } }
-async function fbDelete(c, id) { try { await deleteDoc(doc(db, c, id)); return { success: true }; } catch (e) { return { success: false, error: e.message }; } }
-
-async function getUserProfile(uid) {
-  const d = await getDoc(doc(db, "usuarios", uid));
-  return d.exists() ? { _fbId: d.id, ...d.data() } : null;
-}
-
-async function generateUsername(nombre, apellido) {
-  const base = (nombre.charAt(0) + apellido).toLowerCase().replace(/[^a-z0-9]/g, "").substring(0, 12);
-  const existing = await fbGetAll("usuarios");
-  const usernames = existing.map(u => u.username || "");
-  let candidate = base;
-  let n = 1;
-  while (usernames.includes(candidate)) { candidate = base + n; n++; }
-  return candidate;
-}
-
-async function acquireSessionLock(uid, isAdmin) {
-  if (isAdmin) return true;
-  const lockRef = doc(db, "system", "active_session");
-  try {
-    const snap = await getDoc(lockRef);
-    if (snap.exists()) {
-      const data = snap.data();
-      if (data.uid && data.uid !== uid) {
-        const lockTime = data.timestamp?.toDate ? data.timestamp.toDate() : new Date(data.timestamp);
-        const diff = Date.now() - lockTime.getTime();
-        if (diff < 2 * 60 * 60 * 1000) return false;
-      }
-    }
-    await setDoc(lockRef, { uid, timestamp: new Date().toISOString() });
-    return true;
-  } catch (e) { console.error("Session lock error:", e); return true; }
-}
-
-async function releaseSessionLock(uid) {
-  const lockRef = doc(db, "system", "active_session");
-  try {
-    const snap = await getDoc(lockRef);
-    if (snap.exists() && snap.data().uid === uid) {
-      await setDoc(lockRef, { uid: null, timestamp: null });
-    }
-  } catch (e) { console.error("Session release error:", e); }
-}
-
-function useSessionHeartbeat(uid, isAdmin) {
-  useEffect(() => {
-    if (!uid || isAdmin) return;
-    const interval = setInterval(async () => {
-      const lockRef = doc(db, "system", "active_session");
-      try { await setDoc(lockRef, { uid, timestamp: new Date().toISOString() }); } catch(e){}
-    }, 60000);
-    return () => clearInterval(interval);
-  }, [uid, isAdmin]);
-}
-
-function NoCreditsModal({ onClose, onUpgrade }) {
-  return (
-    <div style={{position:"fixed",inset:0,zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,.5)",backdropFilter:"blur(4px)",animation:"fi .25s ease"}}>
-      <div style={{background:"#fff",borderRadius:20,padding:"40px 36px",width:440,maxWidth:"92vw",boxShadow:"0 25px 60px rgba(0,0,0,.25)",textAlign:"center",position:"relative"}}>
-        <button onClick={onClose} style={{position:"absolute",top:16,right:16,background:"none",border:"none",fontSize:20,color:"#94a3b8",cursor:"pointer",lineHeight:1}}>{"\u00d7"}</button>
-        <div style={{width:72,height:72,borderRadius:"50%",background:"linear-gradient(135deg,#fef3c7,#fde68a)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 20px",fontSize:36}}>{"\ud83d\udcb3"}</div>
-        <h2 style={{fontSize:22,fontWeight:700,color:"#0a3d2f",marginBottom:8}}>{"Cr\u00e9ditos agotados"}</h2>
-        <p style={{color:"#64748b",fontSize:14,lineHeight:1.7,marginBottom:8}}>Has utilizado todas las evaluaciones disponibles en tu <b style={{color:"#0d9488"}}>Plan Demo</b>.</p>
-        <p style={{color:"#94a3b8",fontSize:13,lineHeight:1.6,marginBottom:28}}>{"Para continuar realizando evaluaciones profesionales con Br\u00fajula KIT, actualiz\u00e1 tu plan y acced\u00e9 a m\u00e1s cr\u00e9ditos."}</p>
-        <button onClick={onUpgrade} style={{width:"100%",padding:"14px 24px",background:"linear-gradient(135deg,#0a3d2f,#0d9488)",color:"#fff",border:"none",borderRadius:12,fontSize:16,fontWeight:700,cursor:"pointer",marginBottom:12,boxShadow:"0 4px 16px rgba(13,148,136,.3)",letterSpacing:".3px"}}>{"\u2728 Actualizar a Premium"}</button>
-        <button onClick={onClose} style={{background:"none",border:"none",color:"#94a3b8",fontSize:13,cursor:"pointer",padding:8}}>Volver al panel</button>
-      </div>
-    </div>
-  );
-}
-
-function ProfilePage({ profile, authUser, nfy }) {
-  const [resetSending, setResetSending] = useState(false);
-  const [resetSent, setResetSent] = useState(false);
-  const handlePasswordReset = async () => {
-    setResetSending(true);
-    try { await sendPasswordResetEmail(auth, authUser.email); setResetSent(true); nfy("Email de recuperaci\u00f3n enviado", "ok"); } catch (e) { nfy("Error al enviar email: " + e.message, "er"); }
-    setResetSending(false);
-  };
-  const isAdm = profile?.role === "admin";
-  const credits = isAdm ? "\u221e" : (profile?.creditos || 0);
-  const plan = isAdm ? "Administrador" : (profile?.plan || "Plan Demo");
-  const planColor = isAdm ? "#0d9488" : "#f59e0b";
-  const planBg = isAdm ? "#ccfbf1" : "#fef3c7";
-  const InfoRow = ({ label, value, icon }) => (
-    <div style={{display:"flex",alignItems:"center",gap:14,padding:"16px 0",borderBottom:"1px solid #f1f5f9"}}>
-      <div style={{width:40,height:40,borderRadius:10,background:"#f0f5f3",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>{icon}</div>
-      <div style={{flex:1}}>
-        <div style={{fontSize:11,fontWeight:600,color:"#94a3b8",textTransform:"uppercase",letterSpacing:".5px",marginBottom:2}}>{label}</div>
-        <div style={{fontSize:15,fontWeight:500,color:"#1e293b"}}>{value}</div>
-      </div>
-    </div>
-  );
-  return (
-    <div style={{animation:"fi .3s ease",width:"100%",maxWidth:600}}>
-      <h1 style={{fontSize:22,fontWeight:700,marginBottom:6}}>{"\ud83d\udc64 Mi Perfil"}</h1>
-      <p style={{color:K.mt,fontSize:14,marginBottom:24}}>{"Informaci\u00f3n de tu cuenta"}</p>
-      <div style={{background:"linear-gradient(135deg,#0a3d2f,#0d9488)",borderRadius:16,padding:"24px 28px",color:"#fff",marginBottom:24,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:16}}>
-        <div><div style={{fontSize:12,opacity:.7,marginBottom:4}}>Plan actual</div><div style={{display:"flex",alignItems:"center",gap:10}}><span style={{fontSize:22,fontWeight:700}}>{plan}</span><span style={{background:planBg,color:planColor,padding:"3px 10px",borderRadius:20,fontSize:11,fontWeight:700}}>{isAdm?"ADMIN":"DEMO"}</span></div></div>
-        <div style={{textAlign:"right"}}><div style={{fontSize:12,opacity:.7,marginBottom:4}}>{"Cr\u00e9ditos disponibles"}</div><div style={{fontSize:32,fontWeight:700}}>{credits}</div></div>
-      </div>
-      <div style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",padding:"8px 24px",marginBottom:20}}>
-        <InfoRow icon={"\ud83d\udce7"} label="Email" value={profile?.email || authUser?.email || "\u2014"} />
-        <InfoRow icon={"\ud83d\udc64"} label="Nombre de usuario" value={profile?.username || "\u2014"} />
-        <InfoRow icon={"\ud83e\udea3"} label="DNI" value={profile?.dni || "\u2014"} />
-        <InfoRow icon={"\ud83d\udcdd"} label="Nombre completo" value={profile?.nombre && profile?.apellido ? `${profile.nombre} ${profile.apellido}` : "\u2014"} />
-        <InfoRow icon={"\ud83d\udcb3"} label={"Cr\u00e9ditos restantes"} value={isAdm ? "Ilimitados" : `${profile?.creditos || 0} evaluaciones`} />
-        <div style={{display:"flex",alignItems:"center",gap:14,padding:"16px 0"}}>
-          <div style={{width:40,height:40,borderRadius:10,background:"#f0f5f3",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>{"\ud83d\udcc5"}</div>
-          <div style={{flex:1}}><div style={{fontSize:11,fontWeight:600,color:"#94a3b8",textTransform:"uppercase",letterSpacing:".5px",marginBottom:2}}>Miembro desde</div><div style={{fontSize:15,fontWeight:500,color:"#1e293b"}}>{profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString("es-AR",{year:"numeric",month:"long",day:"numeric"}) : "\u2014"}</div></div>
-        </div>
-      </div>
-      <div style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",padding:"20px 24px"}}>
-        <div style={{fontSize:14,fontWeight:600,color:"#1e293b",marginBottom:4}}>Seguridad</div>
-        <p style={{fontSize:13,color:"#94a3b8",marginBottom:14}}>{"Se enviar\u00e1 un enlace a tu email para establecer una nueva contrase\u00f1a."}</p>
-        <button onClick={handlePasswordReset} disabled={resetSending||resetSent} style={{padding:"10px 20px",background:resetSent?"#ecfdf5":"#f8faf9",border:resetSent?"1px solid #a7f3d0":"1px solid #e2e8f0",borderRadius:10,fontSize:13,fontWeight:600,cursor:resetSending?"wait":resetSent?"default":"pointer",color:resetSent?"#059669":"#1e293b",display:"flex",alignItems:"center",gap:8,transition:"all .2s"}}>
-          {resetSent?"\u2713 Email enviado":(resetSending?"Enviando...":"\ud83d\udd12 Cambiar contrase\u00f1a")}
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function PremiumPage({ profile, nfy, onBack }) {
-  return (
-    <div style={{animation:"fi .3s ease",width:"100%",maxWidth:600}}>
-      <h1 style={{fontSize:22,fontWeight:700,marginBottom:6}}>{"\u2728 Plan Premium"}</h1>
-      <p style={{color:K.mt,fontSize:14,marginBottom:24}}>{"Actualiz\u00e1 tu plan para seguir evaluando"}</p>
-      <div style={{background:"linear-gradient(135deg,#0a3d2f,#0d9488)",borderRadius:16,padding:"32px 28px",color:"#fff",marginBottom:24,textAlign:"center"}}>
-        <div style={{fontSize:48,marginBottom:12}}>{"\ud83d\ude80"}</div>
-        <div style={{fontSize:28,fontWeight:700,marginBottom:4}}>{"30 Cr\u00e9ditos"}</div>
-        <div style={{fontSize:36,fontWeight:800,marginBottom:8}}>$49.500</div>
-        <div style={{fontSize:13,opacity:.8}}>{"Pago \u00fanico \u00b7 Sin suscripci\u00f3n \u00b7 30 evaluaciones"}</div>
-      </div>
-      <div style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",padding:"24px",marginBottom:20}}>
-        <div style={{fontSize:15,fontWeight:700,color:"#0a3d2f",marginBottom:16}}>Medios de pago</div>
-        <div style={{background:"#f0f9ff",border:"1px solid #bae6fd",borderRadius:10,padding:16,marginBottom:16}}>
-          <div style={{fontSize:14,fontWeight:600,color:"#0369a1",marginBottom:8}}>{"\ud83d\udcf1 Transferencia bancaria / Ual\u00e1 / MercadoPago"}</div>
-          <div style={{fontSize:13,color:"#475569",lineHeight:1.7}}>
-            {"Realiz\u00e1 una transferencia por "}<b>$49.500</b>{" al siguiente CBU/Alias:"}
-            <div style={{background:"#e0f2fe",borderRadius:8,padding:"12px 16px",margin:"10px 0",fontFamily:"monospace",fontSize:14,fontWeight:600,color:"#0c4a6e",letterSpacing:".5px",textAlign:"center",userSelect:"all"}}>brujula.kit.fono</div>
-            {"Luego envi\u00e1 el comprobante por WhatsApp o email para activar tus cr\u00e9ditos."}
-          </div>
-        </div>
-        <div style={{background:"#f8faf9",border:"1px solid #e2e8f0",borderRadius:10,padding:16}}>
-          <div style={{fontSize:14,fontWeight:600,color:"#1e293b",marginBottom:8}}>{"\ud83d\udce7 Contacto para activaci\u00f3n"}</div>
-          <div style={{fontSize:13,color:"#475569",lineHeight:1.7}}>Email: <b>valkyriumsolutions@gmail.com</b><br/>{"Indic\u00e1 tu email de cuenta y adjunt\u00e1 el comprobante de pago."}</div>
-        </div>
-      </div>
-      <div style={{background:"#fffbeb",border:"1px solid #fde68a",borderRadius:10,padding:16,marginBottom:20,fontSize:12,color:"#92400e",lineHeight:1.6}}>
-        <b>{"\u26a0 Nota:"}</b>{" La activaci\u00f3n de cr\u00e9ditos es manual y puede demorar hasta 24 horas h\u00e1biles. Estamos trabajando en un sistema de pago autom\u00e1tico."}
-      </div>
-      <button onClick={onBack} style={{background:"#f1f5f9",border:"none",padding:"12px 24px",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer",color:"#64748b"}}>{"\u2190 Volver al panel"}</button>
-    </div>
-  );
-}
 
 export default function App() {
   const [authUser, setAuthUser] = useState(undefined);
@@ -288,11 +137,13 @@ export default function App() {
     setAuthUser(null); setProfile(null); setSessionBlocked(false); sV("dash"); sS(null);
   };
 
+  /* ── Pre-auth screens ── */
   if (authUser === undefined) return <div style={{width:"100vw",height:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#0a3d2f",color:"#fff",fontFamily:"'DM Sans',system-ui,sans-serif"}}><div style={{textAlign:"center"}}><div style={{fontSize:48,marginBottom:16}}>{"\ud83e\udded"}</div><div style={{fontSize:20,fontWeight:700}}>Cargando...</div></div></div>;
   if (!authUser) return <AuthScreen onDone={(u, p) => { setAuthUser(u); setProfile(p); }} />;
   if (authUser && !authUser.emailVerified) return <VerifyEmailScreen user={authUser} onLogout={handleLogout} />;
   if (authUser && authUser.emailVerified && !profile) return <CompleteProfileScreen uid={authUser.uid} email={authUser.email} onDone={p => setProfile(p)} />;
 
+  /* ── Session blocked ── */
   if (sessionBlocked) return (
     <div style={{width:"100vw",height:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"linear-gradient(145deg,#0a3d2f,#0d7363)",fontFamily:"'DM Sans',system-ui,sans-serif"}}>
       <div style={{background:"rgba(255,255,255,.97)",borderRadius:16,padding:"44px 36px",width:440,maxWidth:"92vw",boxShadow:"0 20px 50px rgba(0,0,0,.3)",textAlign:"center"}}>
@@ -308,9 +159,11 @@ export default function App() {
     </div>
   );
 
+  /* ── Navigation ── */
   const nav = [["dash", "\u229e", "Panel"], ["tools", "\ud83e\uddf0", "Herramientas"], ["hist", "\u23f1", "Historial"], ["calendario", "\ud83d\udcc5", "Calendario"], ["profile", "\ud83d\udc64", "Perfil"]];
   if (isAdmin) { nav.push(["stats", "\ud83d\udcca", "Estad\u00edsticas"]); nav.push(["adm", "\u2699", "Usuarios"]); }
 
+  /* ── Main layout ── */
   return (
     <div style={{display:"flex",height:"100vh",width:"100vw",fontFamily:"'DM Sans',system-ui,sans-serif",background:K.bg,color:"#1e293b",overflow:"hidden"}}>
       {showNoCredits && <NoCreditsModal onClose={()=>{setShowNoCredits(false);sV("dash")}} onUpgrade={()=>{setShowNoCredits(false);sV("premium")}} />}
@@ -328,7 +181,7 @@ export default function App() {
       </aside>
       <main id="main-scroll" style={{flex:1,overflowY:"auto",overflowX:"hidden",padding:mobile?"16px":"28px 36px",height:"100vh"}}>
         {toast&&<div style={{position:"fixed",top:16,right:16,zIndex:999,background:toast.t==="ok"?"#059669":"#dc2626",color:"#fff",padding:"10px 18px",borderRadius:8,fontSize:13,fontWeight:500,boxShadow:"0 4px 16px rgba(0,0,0,.15)",animation:"fi .3s ease"}}>{toast.m}</div>}
-        {view==="dash"&&<Dash es={evals} pe={peffEvals} onT={()=>navTo("tools")} onV={e=>{sS(e);sV("rpt")}} onVP={e=>{sS(e);sV("rptP")}} ld={loading} profile={profile} isAdmin={isAdmin}/>}
+        {view==="dash"&&<Dashboard es={evals} pe={peffEvals} onT={()=>navTo("tools")} onV={e=>{sS(e);sV("rpt")}} onVP={e=>{sS(e);sV("rptP")}} ld={loading} profile={profile} isAdmin={isAdmin}/>}
         {view==="tools"&&<Tools onSel={startEval} credits={isAdmin?999:(profile.creditos||0)}/>}
         {view==="newELDI"&&<NewELDI onS={saveEval} nfy={nfy}/>}
         {view==="newPEFF"&&<NewPEFF onS={savePeff} nfy={nfy}/>}
@@ -341,218 +194,6 @@ export default function App() {
         {view==="adm"&&isAdmin&&<Admin nfy={nfy}/>}
         {view==="stats"&&isAdmin&&<AdminStats nfy={nfy}/>}
       </main>
-    </div>
-  );
-}
-
-function AuthScreen({ onDone }) {
-  const [mode, setMode] = useState("login");
-  const [email, setEmail] = useState("");
-  const [pass, setPass] = useState("");
-  const [ld, setLd] = useState(false);
-  const [err, setErr] = useState("");
-  const [info, setInfo] = useState("");
-  const I = { width: "100%", padding: "12px 14px", border: "1px solid #e2e8f0", borderRadius: 8, fontSize: 14, background: "#f8faf9" };
-  const handleLogin = async (ev) => {
-    ev.preventDefault(); setLd(true); setErr(""); setInfo("");
-    try {
-      const cred = await signInWithEmailAndPassword(auth, email.trim(), pass);
-      const u = cred.user;
-      if (!u.emailVerified) { setLd(false); return; }
-      const prof = await getUserProfile(u.uid);
-      if (prof && prof.profileComplete) {
-        const canLogin = await acquireSessionLock(u.uid, prof.role === "admin");
-        if (!canLogin) { setErr("Otro usuario ya est\u00e1 conectado. Solo una persona puede usar la app a la vez."); setLd(false); return; }
-        onDone(u, prof);
-      }
-    } catch (e) {
-      if (e.code === "auth/user-not-found" || e.code === "auth/invalid-credential") setErr("Email o contrase\u00f1a incorrectos.");
-      else if (e.code === "auth/wrong-password") setErr("Contrase\u00f1a incorrecta.");
-      else if (e.code === "auth/too-many-requests") setErr("Demasiados intentos. Espere unos minutos.");
-      else setErr("Error: " + e.message);
-    }
-    setLd(false);
-  };
-  const handleRegister = async (ev) => {
-    ev.preventDefault(); setLd(true); setErr(""); setInfo("");
-    if (pass.length < 6) { setErr("La contrase\u00f1a debe tener al menos 6 caracteres."); setLd(false); return; }
-    try {
-      const cred = await createUserWithEmailAndPassword(auth, email.trim(), pass);
-      await sendEmailVerification(cred.user);
-      setInfo("Se envi\u00f3 un email de verificaci\u00f3n a " + email.trim() + ". Revise su bandeja (y spam).");
-    } catch (e) {
-      if (e.code === "auth/email-already-in-use") setErr("Ya existe una cuenta con ese email.");
-      else if (e.code === "auth/invalid-email") setErr("Email inv\u00e1lido.");
-      else setErr("Error: " + e.message);
-    }
-    setLd(false);
-  };
-  return (
-    <div style={{width:"100vw",height:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"linear-gradient(145deg,#0a3d2f,#0d7363)",fontFamily:"'DM Sans',system-ui,sans-serif"}}>
-      <div style={{background:"rgba(255,255,255,.97)",borderRadius:16,padding:"44px 36px",width:400,maxWidth:"92vw",boxShadow:"0 20px 50px rgba(0,0,0,.3)"}}>
-        <div style={{textAlign:"center",marginBottom:28}}>
-          <div style={{display:"inline-flex",alignItems:"center",gap:9,marginBottom:8}}><span style={{fontSize:32}}>{"\ud83e\udded"}</span><span style={{fontSize:26,fontWeight:700,color:"#0a3d2f"}}>{"Br\u00fajula KIT"}</span></div>
-          <p style={{color:"#64748b",fontSize:13}}>{"Sistema Integral de Evaluaci\u00f3n Fonaudiol\u00f3gica"}</p>
-        </div>
-        <div style={{display:"flex",marginBottom:22,borderRadius:8,overflow:"hidden",border:"1px solid #e2e8f0"}}>
-          {[["login","Iniciar sesi\u00f3n"],["register","Crear cuenta"]].map(([id,lb])=>(
-            <button key={id} onClick={()=>{setMode(id);setErr("");setInfo("")}} style={{flex:1,padding:"10px",border:"none",background:mode===id?"#0d9488":"#f8faf9",color:mode===id?"#fff":"#64748b",fontSize:13,fontWeight:600,cursor:"pointer"}}>{lb}</button>
-          ))}
-        </div>
-        <form onSubmit={mode==="login"?handleLogin:handleRegister}>
-          <div style={{marginBottom:14}}><label style={{fontSize:12,fontWeight:600,color:"#64748b",display:"block",marginBottom:5}}>Email</label><input type="email" value={email} onChange={e=>setEmail(e.target.value)} style={I} placeholder="correo@ejemplo.com" required/></div>
-          <div style={{marginBottom:22}}><label style={{fontSize:12,fontWeight:600,color:"#64748b",display:"block",marginBottom:5}}>{"Contrase\u00f1a"}</label><input type="password" value={pass} onChange={e=>setPass(e.target.value)} style={I} placeholder={mode==="register"?"M\u00ednimo 6 caracteres":"Su contrase\u00f1a"} required/></div>
-          {err&&<div style={{background:"#fef2f2",border:"1px solid #fecaca",color:"#dc2626",padding:"10px 12px",borderRadius:8,fontSize:12,marginBottom:14}}>{err}</div>}
-          {info&&<div style={{background:"#f0fdf4",border:"1px solid #bbf7d0",color:"#059669",padding:"10px 12px",borderRadius:8,fontSize:12,marginBottom:14}}>{info}</div>}
-          <button type="submit" disabled={ld} style={{width:"100%",padding:"13px",background:"#0d9488",color:"#fff",border:"none",borderRadius:8,fontSize:15,fontWeight:600,cursor:ld?"wait":"pointer",opacity:ld?.7:1}}>
-            {ld?"Procesando...":mode==="login"?"Iniciar sesi\u00f3n":"Crear cuenta"}
-          </button>
-        </form>
-        <p style={{textAlign:"center",marginTop:20,fontSize:10,color:"#94a3b8"}}>{"Br\u00fajula KIT v5.6"}</p>
-      </div>
-    </div>
-  );
-}
-
-function VerifyEmailScreen({ user, onLogout }) {
-  const [sending, setSending] = useState(false);
-  const [sent, setSent] = useState(false);
-  const resend = async () => { setSending(true); try { await sendEmailVerification(user); setSent(true); } catch(e){} setSending(false); };
-  return (
-    <div style={{width:"100vw",height:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"linear-gradient(145deg,#0a3d2f,#0d7363)",fontFamily:"'DM Sans',system-ui,sans-serif"}}>
-      <div style={{background:"rgba(255,255,255,.97)",borderRadius:16,padding:"44px 36px",width:420,maxWidth:"92vw",boxShadow:"0 20px 50px rgba(0,0,0,.3)",textAlign:"center"}}>
-        <div style={{fontSize:48,marginBottom:16}}>{"\ud83d\udce7"}</div>
-        <h2 style={{fontSize:20,fontWeight:700,color:"#0a3d2f",marginBottom:10}}>Verifique su email</h2>
-        <p style={{color:"#64748b",fontSize:14,lineHeight:1.6,marginBottom:20}}>{"Enviamos un enlace de verificaci\u00f3n a "}<b style={{color:"#0d9488"}}>{user.email}</b>{'. Haga clic en el enlace y vuelva aqu\u00ed.'}</p>
-        <p style={{color:"#94a3b8",fontSize:12,marginBottom:20}}>{"Revise tambi\u00e9n su carpeta de spam."}</p>
-        <div style={{display:"flex",gap:10,justifyContent:"center",flexWrap:"wrap"}}>
-          <button onClick={()=>window.location.reload()} style={{background:"#0d9488",color:"#fff",border:"none",padding:"12px 24px",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer"}}>{"Ya verifiqu\u00e9 \u2192"}</button>
-          <button onClick={resend} disabled={sending||sent} style={{background:"#f1f5f9",border:"none",padding:"12px 24px",borderRadius:8,fontSize:14,cursor:sending?"wait":"pointer",color:"#64748b"}}>{sent?"\u2713 Reenviado":sending?"Enviando...":"Reenviar email"}</button>
-        </div>
-        <button onClick={onLogout} style={{marginTop:20,background:"none",border:"none",color:"#94a3b8",fontSize:12,cursor:"pointer",textDecoration:"underline"}}>{"Cerrar sesi\u00f3n"}</button>
-      </div>
-    </div>
-  );
-}
-
-function CompleteProfileScreen({ uid, email, onDone }) {
-  const [nombre, setNombre] = useState("");
-  const [apellido, setApellido] = useState("");
-  const [dni, setDni] = useState("");
-  const [ld, setLd] = useState(false);
-  const [err, setErr] = useState("");
-  const [genUser, setGenUser] = useState("");
-  const I = { width: "100%", padding: "12px 14px", border: "1px solid #e2e8f0", borderRadius: 8, fontSize: 14, background: "#f8faf9" };
-  useEffect(() => { (async () => { const existing = await getUserProfile(uid); if (existing && existing.profileComplete) onDone(existing); })(); }, [uid]);
-  const handleSubmit = async (ev) => {
-    ev.preventDefault(); setLd(true); setErr("");
-    if (!nombre.trim() || !apellido.trim() || !dni.trim()) { setErr("Complete todos los campos."); setLd(false); return; }
-    const allUsers = await fbGetAll("usuarios");
-    const dniDup = allUsers.find(u => u.dni === dni.trim());
-    if (dniDup) { setErr("Ya existe una cuenta registrada con ese DNI. Si es tu cuenta, inici\u00e1 sesi\u00f3n con tu email."); setLd(false); return; }
-    try {
-      const isAdminUser = email === ADMIN_EMAIL;
-      let username = isAdminUser ? "CalaAdmin976" : await generateUsername(nombre.trim(), apellido.trim());
-      const profileData = { uid, email, nombre: nombre.trim(), apellido: apellido.trim(), dni: dni.trim(), username, creditos: 5, plan: "Plan Demo", role: isAdminUser ? "admin" : "user", profileComplete: true, createdAt: new Date().toISOString() };
-      await setDoc(doc(db, "usuarios", uid), profileData);
-      setGenUser(username);
-      setTimeout(() => onDone(profileData), 2500);
-    } catch (e) { setErr("Error: " + e.message); }
-    setLd(false);
-  };
-  if (genUser) return (
-    <div style={{width:"100vw",height:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"linear-gradient(145deg,#0a3d2f,#0d7363)",fontFamily:"'DM Sans',system-ui,sans-serif"}}>
-      <div style={{background:"rgba(255,255,255,.97)",borderRadius:16,padding:"44px 36px",width:420,maxWidth:"92vw",textAlign:"center",boxShadow:"0 20px 50px rgba(0,0,0,.3)"}}>
-        <div style={{fontSize:48,marginBottom:16}}>{"\u2705"}</div>
-        <h2 style={{fontSize:20,fontWeight:700,color:"#0a3d2f",marginBottom:10}}>Cuenta creada</h2>
-        <p style={{color:"#64748b",fontSize:14,marginBottom:20}}>Su nombre de usuario es:</p>
-        <div style={{background:"#ccfbf1",borderRadius:10,padding:"16px 24px",fontSize:24,fontWeight:700,color:"#0d9488",marginBottom:16}}>{genUser}</div>
-        <p style={{color:"#94a3b8",fontSize:12}}>{"Tiene 5 cr\u00e9ditos de prueba (Plan Demo). Ingresando..."}</p>
-      </div>
-    </div>
-  );
-  return (
-    <div style={{width:"100vw",height:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"linear-gradient(145deg,#0a3d2f,#0d7363)",fontFamily:"'DM Sans',system-ui,sans-serif"}}>
-      <div style={{background:"rgba(255,255,255,.97)",borderRadius:16,padding:"44px 36px",width:420,maxWidth:"92vw",boxShadow:"0 20px 50px rgba(0,0,0,.3)"}}>
-        <div style={{textAlign:"center",marginBottom:24}}>
-          <div style={{fontSize:40,marginBottom:8}}>{"\ud83d\udcdd"}</div>
-          <h2 style={{fontSize:20,fontWeight:700,color:"#0a3d2f"}}>Complete su perfil</h2>
-          <p style={{color:"#64748b",fontSize:13,marginTop:4}}>{email}</p>
-        </div>
-        <form onSubmit={handleSubmit}>
-          <div style={{marginBottom:14}}><label style={{fontSize:12,fontWeight:600,color:"#64748b",display:"block",marginBottom:5}}>Nombre</label><input value={nombre} onChange={e=>setNombre(e.target.value)} style={I} placeholder="Nombre del profesional" required/></div>
-          <div style={{marginBottom:14}}><label style={{fontSize:12,fontWeight:600,color:"#64748b",display:"block",marginBottom:5}}>Apellido</label><input value={apellido} onChange={e=>setApellido(e.target.value)} style={I} placeholder="Apellido" required/></div>
-          <div style={{marginBottom:22}}><label style={{fontSize:12,fontWeight:600,color:"#64748b",display:"block",marginBottom:5}}>DNI</label><input value={dni} onChange={e=>setDni(e.target.value)} style={I} placeholder={"N\u00famero de documento"} required/></div>
-          {err&&<div style={{background:"#fef2f2",border:"1px solid #fecaca",color:"#dc2626",padding:"10px 12px",borderRadius:8,fontSize:12,marginBottom:14}}>{err}</div>}
-          <button type="submit" disabled={ld} style={{width:"100%",padding:"13px",background:"#0d9488",color:"#fff",border:"none",borderRadius:8,fontSize:15,fontWeight:600,cursor:ld?"wait":"pointer",opacity:ld?.7:1}}>{ld?"Creando perfil...":"Completar registro"}</button>
-        </form>
-      </div>
-    </div>
-  );
-}
-
-function Dash({ es, pe, onT, onV, onVP, ld, profile, isAdmin }) {
-  const all = [...es, ...pe].sort((a, b) => (b.fechaGuardado || "").localeCompare(a.fechaGuardado || ""));
-  const rc = all.slice(0, 5);
-  const cards = [
-    { ic: "\ud83d\udccb", label: "Eval. ELDI", value: es.length },
-    { ic: "\ud83d\udd0a", label: "Eval. PEFF", value: pe.length },
-    { ic: "\ud83d\udc66\ud83d\udc67", label: "Pacientes", value: new Set([...es.map(e=>e.paciente),...pe.map(e=>e.paciente)]).size },
-    { ic: "\ud83d\udcb3", label: "Cr\u00e9ditos", value: isAdmin?"\u221e":(profile?.creditos||0) }
-  ];
-  return (
-    <div style={{animation:"fi .3s ease",width:"100%"}}>
-      <h1 style={{fontSize:22,fontWeight:700,marginBottom:6}}>{"\ud83e\udded Panel Principal"}</h1>
-      <p style={{color:K.mt,fontSize:14,marginBottom:24}}>Bienvenido/a, {profile?.nombre || profile?.username}{ld?" \u2014 cargando...":""}</p>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))",gap:16,marginBottom:28}}>
-        {cards.map((c,i)=>
-          <div key={i} style={{background:"#fff",borderRadius:12,padding:22,border:"1px solid #e2e8f0"}}>
-            <div style={{fontSize:28,marginBottom:6}}>{c.ic}</div>
-            <div style={{fontSize:28,fontWeight:700}}>{c.value}</div>
-            <div style={{fontSize:13,color:K.mt,marginTop:2}}>{c.label}</div>
-          </div>)}
-      </div>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20}}>
-        <button onClick={onT} style={{background:"linear-gradient(135deg,#0a3d2f,#0d9488)",color:"#fff",border:"none",borderRadius:14,padding:"28px 24px",cursor:"pointer",display:"flex",alignItems:"center",gap:16,textAlign:"left"}}>
-          <div style={{width:52,height:52,borderRadius:12,background:"rgba(255,255,255,.14)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,flexShrink:0}}>{"\ud83e\uddf0"}</div>
-          <div><div style={{fontSize:18,fontWeight:700}}>Herramientas</div><div style={{fontSize:13,opacity:.8,marginTop:4}}>{"Nueva evaluaci\u00f3n"}</div></div>
-        </button>
-        <div style={{background:"#fff",borderRadius:14,padding:22,border:"1px solid #e2e8f0"}}>
-          <h3 style={{fontSize:15,fontWeight:600,marginBottom:14}}>Recientes</h3>
-          {rc.length===0?<p style={{color:K.mt,fontSize:13}}>{"Sin evaluaciones a\u00fan."}</p>:rc.map(ev=>{const isP=!!ev.seccionData;return(
-            <div key={ev._fbId||ev.id} onClick={()=>isP?onVP(ev):onV(ev)} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 0",borderBottom:"1px solid #e2e8f0",cursor:"pointer"}}>
-              <div><div style={{fontWeight:600,fontSize:14}}>{ev.paciente}</div><div style={{fontSize:11,color:K.mt}}>{isP?"PEFF":"ELDI"} {"\u00b7"} {new Date(ev.fechaGuardado).toLocaleDateString("es-CL")}</div></div>
-              <span style={{color:K.mt}}>{"\u2192"}</span>
-            </div>)})}        </div>
-      </div>
-    </div>
-  );
-}
-
-function Tools({ onSel, credits }) {
-  const noCredits = credits < 1;
-  const tools = [
-    { id: "newELDI", icon: "\ud83d\udccb", name: "ELDI", full: "Evaluaci\u00f3n del Lenguaje y Desarrollo Infantil", desc: "Comprensi\u00f3n auditiva y comunicaci\u00f3n expresiva (55+55 \u00edtems) de 0 a 7 a\u00f1os.", age: "0-7;11", time: "~30-45 min", color: "#0d9488" },
-    { id: "newPEFF", icon: "\ud83d\udd0a", name: "PEFF", full: "Protocolo Fon\u00e9tico-Fonol\u00f3gico", desc: "OFA, diadococinesis, s\u00edlabas, discriminaci\u00f3n y reconocimiento fonol\u00f3gico.", age: "2;6-6;11", time: "~45-60 min", color: "#7c3aed" }
-  ];
-  return (
-    <div style={{animation:"fi .3s ease",width:"100%"}}>
-      <h1 style={{fontSize:22,fontWeight:700,marginBottom:6}}>{"\ud83e\uddf0 Herramientas"}</h1>
-      <p style={{color:K.mt,fontSize:14,marginBottom:8}}>{"Seleccione evaluaci\u00f3n"}</p>
-      {noCredits&&<div style={{background:"#fef3c7",border:"1px solid #fde68a",borderRadius:10,padding:14,marginBottom:16,fontSize:13,color:"#92400e",fontWeight:600}}>{"\u26a0 Sin cr\u00e9ditos disponibles. Actualice su plan para continuar."}</div>}
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20}}>
-        {tools.map(t=><div key={t.id} style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",overflow:"hidden",opacity:noCredits?0.5:1}}>
-          <div style={{background:`linear-gradient(135deg,${t.color},${t.color}aa)`,padding:"24px 24px 20px",color:"#fff"}}>
-            <div style={{fontSize:36,marginBottom:8}}>{t.icon}</div><div style={{fontSize:22,fontWeight:700}}>{t.name}</div>
-            <div style={{fontSize:12,opacity:.85,marginTop:2}}>{t.full}</div>
-          </div>
-          <div style={{padding:"20px 24px"}}>
-            <p style={{fontSize:13,color:"#475569",lineHeight:1.6,marginBottom:16}}>{t.desc}</p>
-            <div style={{display:"flex",gap:16,fontSize:12,color:K.mt}}><span>{"\ud83d\udc66\ud83d\udc67 "}{t.age}</span><span>{"\u23f1 "}{t.time}</span></div>
-            <button onClick={()=>{if(!noCredits)onSel(t.id)}} disabled={noCredits} style={{marginTop:16,width:"100%",padding:"11px",background:noCredits?"#94a3b8":t.color,color:"#fff",border:"none",borderRadius:8,fontSize:14,fontWeight:600,cursor:noCredits?"not-allowed":"pointer"}}>{noCredits?"Sin cr\u00e9ditos":"Iniciar \u2192"}</button>
-          </div>
-        </div>)}
-      </div>
     </div>
   );
 }
