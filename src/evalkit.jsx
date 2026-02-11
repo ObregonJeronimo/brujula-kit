@@ -43,6 +43,29 @@ export default function App() {
   const isAdmin = profile?.role === "admin";
   useSessionHeartbeat(authUser?.uid, isAdmin);
 
+  /* ── Check for payment return from MercadoPago ── */
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const payment = params.get("payment");
+    if (payment === "success") {
+      nfy("\u2705 \u00a1Pago aprobado! Tus cr\u00e9ditos se acreditar\u00e1n en unos segundos.", "ok");
+      window.history.replaceState({}, "", window.location.pathname);
+      // Reload profile after a short delay to pick up new credits
+      setTimeout(async () => {
+        if (authUser?.uid) {
+          const prof = await getUserProfile(authUser.uid);
+          if (prof) setProfile(prof);
+        }
+      }, 3000);
+    } else if (payment === "failure") {
+      nfy("El pago no se complet\u00f3. Intent\u00e1 nuevamente.", "er");
+      window.history.replaceState({}, "", window.location.pathname);
+    } else if (payment === "pending") {
+      nfy("\u23f3 Pago pendiente. Los cr\u00e9ditos se acreditar\u00e1n cuando se confirme.", "ok");
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+  }, [authUser]);
+
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
       if (u) {
@@ -190,7 +213,7 @@ export default function App() {
         {view==="rptP"&&sel&&<RptPEFF ev={sel} isA={isAdmin} onD={deleteEval}/>}
         {view==="profile"&&<ProfilePage profile={profile} authUser={authUser} nfy={nfy}/>}
         {view==="calendario"&&<CalendarPage userId={authUser?.uid} nfy={nfy}/>}
-        {view==="premium"&&<PremiumPage profile={profile} nfy={nfy} onBack={()=>sV("dash")}/>}
+        {view==="premium"&&<PremiumPage profile={profile} authUser={authUser} nfy={nfy} onBack={()=>sV("dash")}/>}
         {view==="adm"&&isAdmin&&<Admin nfy={nfy}/>}
         {view==="stats"&&isAdmin&&<AdminStats nfy={nfy}/>}
       </main>
