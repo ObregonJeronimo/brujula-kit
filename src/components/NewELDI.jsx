@@ -73,7 +73,7 @@ function SequenceGame(){
           <div style={{fontSize:10,color:"#94a3b8",marginTop:2}}>Paso {idx+1}</div>
         </div>})}
     </div>
-    {correct&&<div style={{marginTop:10,textAlign:"center",color:"#059669",fontWeight:700,fontSize:13}}>{"\u00a1"}Orden correcto!</div>}
+    {correct&&<div style={{marginTop:10,textAlign:"center",color:"#059669",fontWeight:700,fontSize:13}}>{"¡"}Orden correcto!</div>}
     {!correct&&<div style={{marginTop:8,textAlign:"center",fontSize:11,color:"#94a3b8"}}>Arrastrá y soltá para reordenar</div>}
   </div>;
 }
@@ -109,7 +109,7 @@ function ShapesGame(){
           </div>)}
       </div>
     </div>
-    {allDone&&<div style={{marginTop:10,textAlign:"center",color:"#059669",fontWeight:700,fontSize:13}}>{"\u00a1"}Todas en su lugar!</div>}
+    {allDone&&<div style={{marginTop:10,textAlign:"center",color:"#059669",fontWeight:700,fontSize:13}}>{"¡"}Todas en su lugar!</div>}
     {Object.keys(matched).length>0&&!allDone&&<button onClick={()=>setMatched({})} style={{display:"block",margin:"8px auto 0",background:"#f1f5f9",border:"1px solid #e2e8f0",borderRadius:6,padding:"4px 12px",fontSize:11,cursor:"pointer"}}>Reiniciar</button>}
   </div>;
 }
@@ -188,7 +188,7 @@ export default function NewELDI({onS,nfy}){
             const v=rsp[item.id];
             const exO=showEx[item.id];
             const imgO=showImg[item.id];
-            const hasImg=!!item.img;
+            const hasImg=!!item.img||!!item.imgUrl;
             const hasGame=!!item.game;
             const hasStoryBtn=!!item.story;
             return(<div key={item.id} style={{marginBottom:3}}>
@@ -219,6 +219,9 @@ export default function NewELDI({onS,nfy}){
               {imgO&&<div style={{background:"#f8faf9",padding:12,borderRadius:"0 0 8px 8px",border:"1px solid #e2e8f0",borderTop:"none",textAlign:"center"}}>
                 {item.game==="sequence"?<SequenceGame/>:
                  item.game==="shapes"?<ShapesGame/>:
+                 /* ELDI AC12: external image URL support — imgUrl renders <img> from external source (e.g. Pixabay) */
+                 item.imgUrl?
+                  <img src={item.imgUrl} alt={item.l} style={{maxWidth:340,maxHeight:340,borderRadius:10,margin:"0 auto",display:"block"}} loading="lazy"/>:
                  item.img&&ELDI_IMAGES[item.img]?
                   <div dangerouslySetInnerHTML={{__html:ELDI_IMAGES[item.img]}} style={{maxWidth:300,margin:"0 auto"}}/>:
                   <div style={{color:"#94a3b8",fontSize:12,fontStyle:"italic"}}>Imagen no disponible</div>}
@@ -242,7 +245,7 @@ export default function NewELDI({onS,nfy}){
       <div style={{fontSize:12,fontWeight:600,color:"#92400e",marginBottom:8}}>Items no evaluados:</div>
       {Object.entries(groups).map(([band,gItems])=><div key={band} style={{marginBottom:6}}>
         <div style={{fontSize:11,fontWeight:600,color:"#78350f",marginBottom:2}}>Edad {band}:</div>
-        {gItems.map(it=><div key={it.id} style={{fontSize:11,color:"#78350f",paddingLeft:8,lineHeight:1.6}}>{"\u2022"} {it.l} ({it.id})</div>)}
+        {gItems.map(it=><div key={it.id} style={{fontSize:11,color:"#78350f",paddingLeft:8,lineHeight:1.6}}>{"•"} {it.l} ({it.id})</div>)}
       </div>)}
     </div>;
   };
@@ -353,7 +356,7 @@ export default function NewELDI({onS,nfy}){
 
           <div style={{marginBottom:20}}><label style={{fontSize:13,fontWeight:600,color:K.mt,display:"block",marginBottom:6}}>{"Observaciones cl\u00ednicas"}</label><textarea value={pd.obs} onChange={e=>sPd(p=>({...p,obs:e.target.value}))} rows={4} style={{width:"100%",padding:"12px 14px",border:"1px solid #e2e8f0",borderRadius:8,fontSize:14,resize:"vertical",background:"#f8faf9"}} placeholder={"Interpretaci\u00f3n profesional..."}/></div>
           <div style={{display:"flex",justifyContent:"space-between"}}><Bt onClick={()=>sS(step-1)}>{"\u2190 Atr\u00e1s"}</Bt><button onClick={()=>{setDirty(false);onS({...pd,a,rsp,evalRec,evalExp,rR:rR.logrado,rE:rE.logrado,recRes,expRes,allNoEval,scoringRec:evalRec?rR:null,scoringExp:evalExp?rE:null})}} style={{background:"#0d9488",color:"#fff",border:"none",padding:"12px 28px",borderRadius:8,fontSize:15,fontWeight:700,cursor:"pointer"}}>Guardar</button></div>
-        </div>})()}
+        </div>)()}
     </div>
   </div>);
 }
