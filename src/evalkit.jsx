@@ -408,7 +408,7 @@ function AuthScreen({ onDone }) {
             {ld?"Procesando...":mode==="login"?"Iniciar sesi\u00f3n":"Crear cuenta"}
           </button>
         </form>
-        <p style={{textAlign:"center",marginTop:20,fontSize:10,color:"#94a3b8"}}>{"Br\u00fajula KIT v6.0"}</p>
+        <p style={{textAlign:"center",marginTop:20,fontSize:10,color:"#94a3b8"}}>{"Br\u00fajula KIT v5.6"}</p>
       </div>
     </div>
   );
