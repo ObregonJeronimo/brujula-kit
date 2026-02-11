@@ -7,7 +7,7 @@ export default function Dashboard({ es, pe, onT, onV, onVP, ld, profile, isAdmin
     { ic: "\ud83d\udccb", label: "Eval. ELDI", value: es.length },
     { ic: "\ud83d\udd0a", label: "Eval. PEFF", value: pe.length },
     { ic: "\ud83d\udc66\ud83d\udc67", label: "Pacientes", value: new Set([...es.map(e=>e.paciente),...pe.map(e=>e.paciente)]).size },
-    { ic: "\ud83d\udcb3", label: "Cr\u00e9ditos", value: isAdmin?"\u221e":(profile?.creditos||0) }
+    { ic: "\ud83c\udf38", label: "Cr\u00e9ditos", value: isAdmin?"\u221e":(profile?.creditos||0) }
   ];
   return (
     <div style={{animation:"fi .3s ease",width:"100%"}}>
