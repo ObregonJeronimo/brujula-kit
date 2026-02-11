@@ -2,13 +2,13 @@ import { useState, useEffect, useCallback } from "react";
 import { db, collection, addDoc, getDocs, deleteDoc, doc, updateDoc, query, where } from "../firebase.js";
 
 const K = { mt: "#64748b", ac: "#0d9488", sd: "#0a3d2f" };
-const DAYS = ["Lun", "Mar", "Mi\u00e9", "Jue", "Vie", "S\u00e1b", "Dom"];
+const DAYS = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
 const MONTHS = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 
 const COLORS = [
   { id: "red", hex: "#dc2626", label: "Urgente" },
   { id: "blue", hex: "#2563eb", label: "Control" },
-  { id: "green", hex: "#059669", label: "Reevaluaci\u00f3n" },
+  { id: "green", hex: "#059669", label: "Reevaluación" },
   { id: "yellow", hex: "#d97706", label: "Primera vez" },
   { id: "violet", hex: "#7c3aed", label: "Seguimiento" }
 ];
@@ -33,7 +33,6 @@ export default function CalendarPage({ userId, nfy }) {
     if (!userId) return;
     setLoading(true);
     try {
-      const prefix = `${year}-${pad(month + 1)}`;
       const q2 = query(collection(db, "citas"), where("userId", "==", userId));
       const snap = await getDocs(q2);
       const all = snap.docs.map(d => ({ _fbId: d.id, ...d.data() }));
@@ -119,20 +118,18 @@ export default function CalendarPage({ userId, nfy }) {
 
   return (
     <div style={{ animation: "fi .3s ease", width: "100%", maxWidth: 900 }}>
-      <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 6 }}>{"\ud83d\udcc5"} Calendario de Citas</h1>
-      <p style={{ color: K.mt, fontSize: 14, marginBottom: 24 }}>Organiz\u00e1 tu agenda de evaluaciones</p>
+      <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 6 }}>📅 Calendario de Citas</h1>
+      <p style={{ color: K.mt, fontSize: 14, marginBottom: 24 }}>Organizá tu agenda de evaluaciones</p>
 
-      {/* Month navigation */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-        <button onClick={prevMonth} style={{ background: "#f1f5f9", border: "none", padding: "10px 18px", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer", color: "#475569" }}>{"\u2190"}</button>
+        <button onClick={prevMonth} style={{ background: "#f1f5f9", border: "none", padding: "10px 18px", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer", color: "#475569" }}>←</button>
         <div style={{ textAlign: "center" }}>
           <div style={{ fontSize: 20, fontWeight: 700, color: K.sd }}>{MONTHS[month]} {year}</div>
           <button onClick={goToday} style={{ background: "none", border: "none", color: K.ac, fontSize: 12, cursor: "pointer", fontWeight: 600, marginTop: 2 }}>Ir a hoy</button>
         </div>
-        <button onClick={nextMonth} style={{ background: "#f1f5f9", border: "none", padding: "10px 18px", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer", color: "#475569" }}>{"\u2192"}</button>
+        <button onClick={nextMonth} style={{ background: "#f1f5f9", border: "none", padding: "10px 18px", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer", color: "#475569" }}>→</button>
       </div>
 
-      {/* Color legend */}
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 16 }}>
         {COLORS.map(c => (
           <div key={c.id} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: K.mt }}>
@@ -142,15 +139,12 @@ export default function CalendarPage({ userId, nfy }) {
         ))}
       </div>
 
-      {/* Calendar grid */}
       <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #e2e8f0", overflow: "hidden", marginBottom: 24 }}>
-        {/* Header */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", background: K.sd }}>
           {DAYS.map(d => (
             <div key={d} style={{ padding: "10px 0", textAlign: "center", color: "#5eead4", fontSize: 12, fontWeight: 600 }}>{d}</div>
           ))}
         </div>
-        {/* Days */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)" }}>
           {Array.from({ length: offset }).map((_, i) => (
             <div key={"e" + i} style={{ minHeight: 80, borderRight: "1px solid #f1f5f9", borderBottom: "1px solid #f1f5f9", background: "#f8faf9" }} />
@@ -169,25 +163,24 @@ export default function CalendarPage({ userId, nfy }) {
                     {c.hora ? c.hora.substring(0, 5) + " " : ""}{c.paciente}
                   </div>
                 ))}
-                {dc.length > 2 && <div style={{ fontSize: 9, color: K.mt, padding: "0 4px" }}>+{dc.length - 2} m\u00e1s</div>}
+                {dc.length > 2 && <div style={{ fontSize: 9, color: K.mt, padding: "0 4px" }}>+{dc.length - 2} más</div>}
               </div>
             );
           })}
         </div>
       </div>
 
-      {/* Day detail panel */}
       {selDay && !showForm && (
         <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #e2e8f0", padding: 24, marginBottom: 20 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
             <h3 style={{ fontSize: 16, fontWeight: 700, color: K.sd }}>{selDay} de {MONTHS[month]} {year}</h3>
             <div style={{ display: "flex", gap: 8 }}>
               <button onClick={() => openNewForm(selDay)} style={{ background: K.ac, color: "#fff", border: "none", padding: "8px 16px", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>+ Nueva cita</button>
-              <button onClick={() => setSelDay(null)} style={{ background: "#f1f5f9", border: "none", padding: "8px 14px", borderRadius: 8, fontSize: 13, cursor: "pointer", color: K.mt }}>{"\u00d7"}</button>
+              <button onClick={() => setSelDay(null)} style={{ background: "#f1f5f9", border: "none", padding: "8px 14px", borderRadius: 8, fontSize: 13, cursor: "pointer", color: K.mt }}>×</button>
             </div>
           </div>
           {dayCitas.length === 0 ? (
-            <p style={{ color: K.mt, fontSize: 13, fontStyle: "italic" }}>No hay citas para este d\u00eda</p>
+            <p style={{ color: K.mt, fontSize: 13, fontStyle: "italic" }}>No hay citas para este día</p>
           ) : (
             dayCitas.sort((a, b) => (a.hora || "").localeCompare(b.hora || "")).map(c => (
               <div key={c._fbId} style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", background: "#f8faf9", borderRadius: 10, border: "1px solid #e2e8f0", marginBottom: 8, borderLeft: `4px solid ${getColorHex(c.color)}` }}>
@@ -210,12 +203,11 @@ export default function CalendarPage({ userId, nfy }) {
         </div>
       )}
 
-      {/* Appointment form */}
       {showForm && selDay && (
         <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #e2e8f0", padding: 24, marginBottom: 20 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
             <h3 style={{ fontSize: 16, fontWeight: 700, color: K.sd }}>{editId ? "Editar cita" : "Nueva cita"} - {selDay} de {MONTHS[month]}</h3>
-            <button onClick={() => { setShowForm(false); setEditId(null); }} style={{ background: "none", border: "none", fontSize: 18, color: K.mt, cursor: "pointer" }}>{"\u00d7"}</button>
+            <button onClick={() => { setShowForm(false); setEditId(null); }} style={{ background: "none", border: "none", fontSize: 18, color: K.mt, cursor: "pointer" }}>×</button>
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
@@ -224,7 +216,7 @@ export default function CalendarPage({ userId, nfy }) {
               <input value={form.paciente} onChange={e => setForm(p => ({ ...p, paciente: e.target.value }))} style={I} placeholder="Nombre y apellido" />
             </div>
             <div>
-              <label style={{ fontSize: 12, fontWeight: 600, color: K.mt, display: "block", marginBottom: 4 }}>Tipo de evaluaci\u00f3n</label>
+              <label style={{ fontSize: 12, fontWeight: 600, color: K.mt, display: "block", marginBottom: 4 }}>Tipo de evaluación</label>
               <select value={form.tipo} onChange={e => setForm(p => ({ ...p, tipo: e.target.value }))} style={{ ...I, cursor: "pointer" }}>
                 {EVAL_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
               </select>
@@ -240,21 +232,21 @@ export default function CalendarPage({ userId, nfy }) {
               </select>
             </div>
             <div>
-              <label style={{ fontSize: 12, fontWeight: 600, color: K.mt, display: "block", marginBottom: 6 }}>Color / Categor\u00eda</label>
+              <label style={{ fontSize: 12, fontWeight: 600, color: K.mt, display: "block", marginBottom: 6 }}>Color / Categoría</label>
               <div style={{ display: "flex", gap: 8 }}>
                 {COLORS.map(c => (
                   <button key={c.id} onClick={() => setForm(p => ({ ...p, color: c.id }))}
                     title={c.label}
                     style={{ width: 36, height: 36, borderRadius: 8, background: c.hex, border: form.color === c.id ? "3px solid #1e293b" : "2px solid #e2e8f0", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 14, fontWeight: 700, transition: "all .15s" }}>
-                    {form.color === c.id ? "\u2713" : ""}
+                    {form.color === c.id ? "✓" : ""}
                   </button>
                 ))}
               </div>
               <div style={{ fontSize: 10, color: K.mt, marginTop: 4 }}>{COLORS.find(c => c.id === form.color)?.label || ""}</div>
             </div>
             <div style={{ gridColumn: "1/-1" }}>
-              <label style={{ fontSize: 12, fontWeight: 600, color: K.mt, display: "block", marginBottom: 4 }}>Notas cl\u00ednicas</label>
-              <textarea value={form.notas} onChange={e => setForm(p => ({ ...p, notas: e.target.value }))} rows={3} style={{ ...I, resize: "vertical" }} placeholder="Observaciones, objetivos de la sesi\u00f3n..." />
+              <label style={{ fontSize: 12, fontWeight: 600, color: K.mt, display: "block", marginBottom: 4 }}>Notas clínicas</label>
+              <textarea value={form.notas} onChange={e => setForm(p => ({ ...p, notas: e.target.value }))} rows={3} style={{ ...I, resize: "vertical" }} placeholder="Observaciones, objetivos de la sesión..." />
             </div>
           </div>
 
