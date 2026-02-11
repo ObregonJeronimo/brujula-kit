@@ -13,12 +13,12 @@ const scrollTop=()=>{
 };
 
 const BANDS=[
-  {min:0,max:5,label:"0;0\u20130;5"},{min:6,max:11,label:"0;6\u20130;11"},
-  {min:12,max:17,label:"1;0\u20131;5"},{min:18,max:23,label:"1;6\u20131;11"},
-  {min:24,max:29,label:"2;0\u20132;5"},{min:30,max:35,label:"2;6\u20132;11"},
-  {min:36,max:41,label:"3;0\u20133;5"},{min:42,max:47,label:"3;6\u20133;11"},
-  {min:48,max:59,label:"4;0\u20134;11"},{min:60,max:71,label:"5;0\u20135;11"},
-  {min:72,max:95,label:"6;0\u20137;11"}
+  {min:0,max:5,label:"0;0–0;5"},{min:6,max:11,label:"0;6–0;11"},
+  {min:12,max:17,label:"1;0–1;5"},{min:18,max:23,label:"1;6–1;11"},
+  {min:24,max:29,label:"2;0–2;5"},{min:30,max:35,label:"2;6–2;11"},
+  {min:36,max:41,label:"3;0–3;5"},{min:42,max:47,label:"3;6–3;11"},
+  {min:48,max:59,label:"4;0–4;11"},{min:60,max:71,label:"5;0–5;11"},
+  {min:72,max:95,label:"6;0–7;11"}
 ];
 function getBandIndex(ageMo){for(let i=BANDS.length-1;i>=0;i--){if(ageMo>=BANDS[i].min)return i;}return 0;}
 
@@ -40,7 +40,7 @@ function calcScoring(items, rsp, ageMo){
   const pctExpected=expectedCount>0?Math.round(logradoExpected/expectedCount*100):null;
   let classification=null,classColor=null;
   if(pctExpected!==null){
-    if(pctExpected>=90){classification="Dentro de L\u00edmites Normales";classColor="#059669";}
+    if(pctExpected>=90){classification="Dentro de Límites Normales";classColor="#059669";}
     else if(pctExpected>=75){classification="En Riesgo / Retraso Leve";classColor="#f59e0b";}
     else if(pctExpected>=50){classification="Retraso Moderado";classColor="#ea580c";}
     else{classification="Retraso Significativo";classColor="#dc2626";}
@@ -53,16 +53,16 @@ function calcScoring(items, rsp, ageMo){
 
 function SequenceGame(){
   const imgs=[
-    {id:1,label:"Corre hacia la pelota",emoji:"\ud83c\udfc3\u200d\u2642\ufe0f\u27a1\ufe0f\u26bd"},
-    {id:2,label:"Patea la pelota",emoji:"\ud83e\uddb5\u26bd"},
-    {id:3,label:"La pelota vuela",emoji:"\u26bd\ud83d\udca8"}
+    {id:1,label:"Corre hacia la pelota",emoji:"🏃‍♂️➡️⚽"},
+    {id:2,label:"Patea la pelota",emoji:"🦵⚽"},
+    {id:3,label:"La pelota vuela",emoji:"⚽💨"}
   ];
   const[order,setOrder]=useState([3,1,2]);
   const[dragging,setDragging]=useState(null);
   const correct=order[0]===1&&order[1]===2&&order[2]===3;
   const swap=(from,to)=>{const n=[...order];const t=n[from];n[from]=n[to];n[to]=t;setOrder(n);};
   return<div style={{padding:16,background:"#f8faf9",borderRadius:10,border:"1px solid #e2e8f0"}}>
-    <div style={{fontSize:13,fontWeight:600,color:"#0a3d2f",marginBottom:10}}>Orden\u00e1 las im\u00e1genes en secuencia correcta:</div>
+    <div style={{fontSize:13,fontWeight:600,color:"#0a3d2f",marginBottom:10}}>Ordená las imágenes en secuencia correcta:</div>
     <div style={{display:"flex",gap:10,justifyContent:"center",flexWrap:"wrap"}}>
       {order.map((imgId,idx)=>{const img=imgs.find(i=>i.id===imgId);
         return<div key={idx} draggable onDragStart={()=>setDragging(idx)} onDragOver={e=>e.preventDefault()}
@@ -74,21 +74,21 @@ function SequenceGame(){
         </div>})}
     </div>
     {correct&&<div style={{marginTop:10,textAlign:"center",color:"#059669",fontWeight:700,fontSize:13}}>{"\u00a1"}Orden correcto!</div>}
-    {!correct&&<div style={{marginTop:8,textAlign:"center",fontSize:11,color:"#94a3b8"}}>Arrastr\u00e1 y solt\u00e1 para reordenar</div>}
+    {!correct&&<div style={{marginTop:8,textAlign:"center",fontSize:11,color:"#94a3b8"}}>Arrastrá y soltá para reordenar</div>}
   </div>;
 }
 
 function ShapesGame(){
   const shapes=[
-    {id:"circle",filled:"\ud83d\udd34",empty:"\u2b55",label:"C\u00edrculo"},
-    {id:"square",filled:"\ud83d\udfe6",empty:"\u2b1c",label:"Cuadrado"},
-    {id:"triangle",filled:"\ud83d\udd3a",empty:"\u25b3",label:"Tri\u00e1ngulo"}
+    {id:"circle",filled:"🔴",empty:"⭕",label:"Círculo"},
+    {id:"square",filled:"🟦",empty:"⬜",label:"Cuadrado"},
+    {id:"triangle",filled:"🔺",empty:"△",label:"Triángulo"}
   ];
   const[matched,setMatched]=useState({});
   const[draggingShape,setDraggingShape]=useState(null);
   const allDone=Object.keys(matched).length===3&&Object.entries(matched).every(([k,v])=>k===v);
   return<div style={{padding:16,background:"#f8faf9",borderRadius:10,border:"1px solid #e2e8f0"}}>
-    <div style={{fontSize:13,fontWeight:600,color:"#0a3d2f",marginBottom:10}}>Arrastr\u00e1 cada forma a su lugar:</div>
+    <div style={{fontSize:13,fontWeight:600,color:"#0a3d2f",marginBottom:10}}>Arrastrá cada forma a su lugar:</div>
     <div style={{display:"flex",gap:24,justifyContent:"center",flexWrap:"wrap"}}>
       <div>
         <div style={{fontSize:11,color:"#94a3b8",marginBottom:6,textAlign:"center"}}>Formas</div>
@@ -114,7 +114,7 @@ function ShapesGame(){
   </div>;
 }
 
-export default function NewELDI({onS,nfy,deductCredit,isAdmin}){
+export default function NewELDI({onS,nfy}){
   const[step,sS]=useState(1);
   const[pd,sPd]=useState({pN:"",birth:"",eD:new Date().toISOString().split("T")[0],sch:"",ref:"",obs:""});
   const[rsp,sR]=useState({});
@@ -124,7 +124,6 @@ export default function NewELDI({onS,nfy,deductCredit,isAdmin}){
   const[evalRec,setEvalRec]=useState(true);
   const[evalExp,setEvalExp]=useState(true);
   const[dirty,setDirty]=useState(false);
-  const creditDeducted=useRef(false);
 
   useEffect(()=>{scrollTop()},[step]);
 
@@ -161,7 +160,7 @@ export default function NewELDI({onS,nfy,deductCredit,isAdmin}){
   const RI=(items,prefix)=>{
     const gr={};items.forEach(i=>{if(!gr[i.a])gr[i.a]=[];gr[i.a].push(i)});
     return(<div>
-      <h2 style={{fontSize:18,fontWeight:700,marginBottom:4}}>{prefix==="AC"?"\ud83d\udd0a Comprensi\u00f3n Auditiva":"\ud83d\udde3\ufe0f Comunicaci\u00f3n Expresiva"}</h2>
+      <h2 style={{fontSize:18,fontWeight:700,marginBottom:4}}>{prefix==="AC"?"🔊 Comprensión Auditiva":"🗣️ Comunicación Expresiva"}</h2>
       <p style={{color:K.mt,fontSize:13,marginBottom:16}}>{"1 click = \u2714 Logrado \u00b7 2 clicks = \u2718 No logrado \u00b7 3 clicks = Sin evaluar"}</p>
       {Object.entries(gr).map(([range,gi])=>{
         const allOk=gi.every(i=>rsp[i.id]===true);
@@ -179,7 +178,7 @@ export default function NewELDI({onS,nfy,deductCredit,isAdmin}){
                 style={{background:allNo?"#dc2626":"#fff",color:allNo?"#fff":"#dc2626",border:"1px solid #dc2626",borderRadius:6,padding:"3px 10px",fontSize:11,fontWeight:600,cursor:"pointer"}}>
                 {"\u2717"} Todas
               </button>
-              <button onClick={()=>markSection(gi,"clear")} title="Limpiar secci\u00f3n"
+              <button onClick={()=>markSection(gi,"clear")} title="Limpiar sección"
                 style={{background:allClear?"#94a3b8":"#fff",color:allClear?"#fff":"#94a3b8",border:"1px solid #94a3b8",borderRadius:6,padding:"3px 10px",fontSize:11,fontWeight:600,cursor:"pointer"}}>
                 {"\u25cb"} Limpiar
               </button>
@@ -234,14 +233,6 @@ export default function NewELDI({onS,nfy,deductCredit,isAdmin}){
   steps.push("Resultado");
   const getStepContent=()=>{const label=steps[step-1];if(label==="Paciente")return"patient";if(label==="Receptivo")return"rec";if(label==="Expresivo")return"exp";return"result";};
   const content=getStepContent();
-
-  /* Deduct credit when reaching results screen */
-  useEffect(()=>{
-    if(content==="result"&&!creditDeducted.current&&deductCredit&&!isAdmin){
-      creditDeducted.current=true;
-      deductCredit();
-    }
-  },[content]);
 
   const renderNoEval=(noEvalIds,items)=>{
     if(noEvalIds.length===0)return null;
