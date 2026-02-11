@@ -37,7 +37,7 @@ export default function ProfilePage({ profile, authUser, nfy }) {
         <InfoRow icon={"\ud83d\udc64"} label="Nombre de usuario" value={profile?.username || "\u2014"} />
         <InfoRow icon={"\ud83e\udea3"} label="DNI" value={profile?.dni || "\u2014"} />
         <InfoRow icon={"\ud83d\udcdd"} label="Nombre completo" value={profile?.nombre && profile?.apellido ? `${profile.nombre} ${profile.apellido}` : "\u2014"} />
-        <InfoRow icon={"\ud83d\udcb3"} label={"Cr\u00e9ditos restantes"} value={isAdm ? "Ilimitados" : `${profile?.creditos || 0} evaluaciones`} />
+        <InfoRow icon={"\ud83c\udf38"} label={"Cr\u00e9ditos restantes"} value={isAdm ? "Ilimitados" : `${profile?.creditos || 0} evaluaciones`} />
         <div style={{display:"flex",alignItems:"center",gap:14,padding:"16px 0"}}>
           <div style={{width:40,height:40,borderRadius:10,background:"#f0f5f3",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>{"\ud83d\udcc5"}</div>
           <div style={{flex:1}}><div style={{fontSize:11,fontWeight:600,color:"#94a3b8",textTransform:"uppercase",letterSpacing:".5px",marginBottom:2}}>Miembro desde</div><div style={{fontSize:15,fontWeight:500,color:"#1e293b"}}>{profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString("es-AR",{year:"numeric",month:"long",day:"numeric"}) : "\u2014"}</div></div>
