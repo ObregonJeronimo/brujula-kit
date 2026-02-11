@@ -36,10 +36,9 @@ const scrollTop=()=>{const el=document.getElementById("main-scroll");if(el)el.sc
 
 const RESULT_STEP=PEFF_SECTIONS.length+1;
 
-export default function NewPEFF({onS,nfy,deductCredit,isAdmin}){
+export default function NewPEFF({onS,nfy}){
   const[step,setStep]=useState(0),[pd,sPd]=useState({pN:"",birth:"",eD:new Date().toISOString().split("T")[0],sch:"",ref:"",obs:""}),[data,setD]=useState({}),[procData,setProcData]=useState({});
   const[playingId,setPlayingId]=useState(null);
-  const creditDeducted=useRef(false);
   const a=pd.birth&&pd.eD?gm(pd.birth,pd.eD):0;
   const I={width:"100%",padding:"10px 14px",border:"1px solid #e2e8f0",borderRadius:8,fontSize:14,background:"#f8faf9"};
   const sf=(id,v)=>setD(p=>({...p,[id]:v}));
@@ -47,14 +46,6 @@ export default function NewPEFF({onS,nfy,deductCredit,isAdmin}){
 
   useEffect(()=>{scrollTop()},[step]);
   useEffect(()=>{if(window.speechSynthesis){window.speechSynthesis.getVoices();window.speechSynthesis.onvoiceschanged=()=>window.speechSynthesis.getVoices()}},[]);
-
-  /* Deduct credit when reaching results */
-  useEffect(()=>{
-    if(step===RESULT_STEP&&!creditDeducted.current&&deductCredit&&!isAdmin){
-      creditDeducted.current=true;
-      deductCredit();
-    }
-  },[step]);
 
   const goStep=(s)=>{setStep(s)};
 
