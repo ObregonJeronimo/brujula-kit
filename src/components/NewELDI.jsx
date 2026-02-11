@@ -157,6 +157,7 @@ export default function NewELDI({onS,nfy}){
   const I={width:"100%",padding:"10px 14px",border:"1px solid #e2e8f0",borderRadius:8,fontSize:14,background:"#f8faf9"};
   const Bt=({children,onClick,pr})=><button onClick={onClick} style={{background:pr?"#0d9488":"#f1f5f9",color:pr?"#fff":"#1e293b",border:"none",padding:"10px 22px",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer"}}>{children}</button>;
 
+  // ELDI AC12: items with imgUrl render external <img> (e.g. Pixabay) instead of internal SVG
   const RI=(items,prefix)=>{
     const gr={};items.forEach(i=>{if(!gr[i.a])gr[i.a]=[];gr[i.a].push(i)});
     return(<div>
@@ -219,7 +220,6 @@ export default function NewELDI({onS,nfy}){
               {imgO&&<div style={{background:"#f8faf9",padding:12,borderRadius:"0 0 8px 8px",border:"1px solid #e2e8f0",borderTop:"none",textAlign:"center"}}>
                 {item.game==="sequence"?<SequenceGame/>:
                  item.game==="shapes"?<ShapesGame/>:
-                 /* ELDI AC12: external image URL support — imgUrl renders <img> from external source (e.g. Pixabay) */
                  item.imgUrl?
                   <img src={item.imgUrl} alt={item.l} style={{maxWidth:340,maxHeight:340,borderRadius:10,margin:"0 auto",display:"block"}} loading="lazy"/>:
                  item.img&&ELDI_IMAGES[item.img]?
@@ -245,7 +245,7 @@ export default function NewELDI({onS,nfy}){
       <div style={{fontSize:12,fontWeight:600,color:"#92400e",marginBottom:8}}>Items no evaluados:</div>
       {Object.entries(groups).map(([band,gItems])=><div key={band} style={{marginBottom:6}}>
         <div style={{fontSize:11,fontWeight:600,color:"#78350f",marginBottom:2}}>Edad {band}:</div>
-        {gItems.map(it=><div key={it.id} style={{fontSize:11,color:"#78350f",paddingLeft:8,lineHeight:1.6}}>{"•"} {it.l} ({it.id})</div>)}
+        {gItems.map(it=><div key={it.id} style={{fontSize:11,color:"#78350f",paddingLeft:8,lineHeight:1.6}}>{"\u2022"} {it.l} ({it.id})</div>)}
       </div>)}
     </div>;
   };
@@ -306,16 +306,16 @@ export default function NewELDI({onS,nfy}){
       {content==="exp"&&<div>{RI(EXP,"EC")}<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:14,paddingTop:14,borderTop:"1px solid #e2e8f0"}}><span style={{fontSize:13,color:K.mt}}>Logrados: <b style={{color:"#0d9488"}}>{rE.logrado}</b>/55 {"\u00b7"} Sin evaluar: <b style={{color:"#f59e0b"}}>{rE.noEvaluado.length}</b></span><div style={{display:"flex",gap:8}}><Bt onClick={()=>sS(step-1)}>{"\u2190 Atr\u00e1s"}</Bt><Bt pr onClick={()=>sS(step+1)}>{"Resultados \u2192"}</Bt></div></div></div>}
 
       {content==="result"&&(()=>{
-        const recRes={label:"Comprensi\u00f3n Auditiva",evaluated:evalRec,...rR};
-        const expRes={label:"Comunicaci\u00f3n Expresiva",evaluated:evalExp,...rE};
+        const recRes={label:"Comprensión Auditiva",evaluated:evalRec,...rR};
+        const expRes={label:"Comunicación Expresiva",evaluated:evalExp,...rE};
         const allNoEval=[...(evalRec?rR.noEvaluado:[]),...(evalExp?rE.noEvaluado:[])];
 
         return<div>
           <h2 style={{fontSize:20,fontWeight:700,marginBottom:8}}>{"Resultados ELDI \u2014"} {pd.pN}</h2>
           <p style={{fontSize:12,color:K.mt,marginBottom:20}}>Edad: {fa(a)} {"\u00b7"} {"Evaluaci\u00f3n:"} {pd.eD}</p>
 
-          {evalRec&&rR.evaluados>0&&renderClassification(rR,"Comprensi\u00f3n Auditiva")}
-          {evalExp&&rE.evaluados>0&&renderClassification(rE,"Comunicaci\u00f3n Expresiva")}
+          {evalRec&&rR.evaluados>0&&renderClassification(rR,"Comprensión Auditiva")}
+          {evalExp&&rE.evaluados>0&&renderClassification(rE,"Comunicación Expresiva")}
 
           <div style={{background:"#f0f9ff",border:"1px solid #bae6fd",borderRadius:10,padding:14,marginBottom:20,fontSize:12,color:"#0369a1"}}>
             <strong>Nota:</strong> {NOTA_TEXT}
@@ -342,7 +342,7 @@ export default function NewELDI({onS,nfy}){
                 </div>
               </div>}
               {renderNoEval(area.noEvaluado,items)}
-            </div>
+            </div>;
           })}
 
           <div style={{background:"linear-gradient(135deg,#0a3d2f,#0d9488)",borderRadius:10,padding:24,color:"#fff",marginBottom:24}}>
@@ -356,7 +356,8 @@ export default function NewELDI({onS,nfy}){
 
           <div style={{marginBottom:20}}><label style={{fontSize:13,fontWeight:600,color:K.mt,display:"block",marginBottom:6}}>{"Observaciones cl\u00ednicas"}</label><textarea value={pd.obs} onChange={e=>sPd(p=>({...p,obs:e.target.value}))} rows={4} style={{width:"100%",padding:"12px 14px",border:"1px solid #e2e8f0",borderRadius:8,fontSize:14,resize:"vertical",background:"#f8faf9"}} placeholder={"Interpretaci\u00f3n profesional..."}/></div>
           <div style={{display:"flex",justifyContent:"space-between"}}><Bt onClick={()=>sS(step-1)}>{"\u2190 Atr\u00e1s"}</Bt><button onClick={()=>{setDirty(false);onS({...pd,a,rsp,evalRec,evalExp,rR:rR.logrado,rE:rE.logrado,recRes,expRes,allNoEval,scoringRec:evalRec?rR:null,scoringExp:evalExp?rE:null})}} style={{background:"#0d9488",color:"#fff",border:"none",padding:"12px 28px",borderRadius:8,fontSize:15,fontWeight:700,cursor:"pointer"}}>Guardar</button></div>
-        </div>)()}
+        </div>;
+      })()}
     </div>
   </div>);
 }
