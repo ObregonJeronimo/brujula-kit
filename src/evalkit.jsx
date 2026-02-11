@@ -112,14 +112,25 @@ export default function App() {
     return true;
   };
 
+  // deductCredit: descuenta 1 credito del usuario en Firestore
+  // Retorna una Promise que resuelve true si tuvo exito, false si fallo
   var deductCredit = function(){
-    if(!profile || profile.role==="admin") return Promise.resolve();
+    if(!profile || profile.role==="admin") return Promise.resolve(true);
     var userRef = doc(db,"usuarios",authUser.uid);
     return updateDoc(userRef,{creditos:increment(-1)}).then(function(){
       return getDoc(userRef);
     }).then(function(fresh){
-      if(fresh.exists()) setProfile(function(p){return Object.assign({},p,{creditos:fresh.data().creditos})});
-    }).catch(function(e){console.error("deductCredit error:",e)});
+      if(fresh.exists()){
+        var newCredits = fresh.data().creditos;
+        setProfile(function(p){return Object.assign({},p,{creditos:newCredits})});
+        console.log("deductCredit OK: creditos ahora =", newCredits);
+      }
+      return true;
+    }).catch(function(e){
+      console.error("deductCredit FAILED:", e);
+      nfy("Error al descontar cr\u00e9dito: " + e.message, "er");
+      return false;
+    });
   };
 
   var startEval = function(toolId){
@@ -127,7 +138,12 @@ export default function App() {
     if(!isAdmin){
       var ok = window.confirm("\u00bfIniciar evaluaci\u00f3n?\n\nSe consumir\u00e1 1 cr\u00e9dito de tu cuenta. Esta acci\u00f3n no se puede deshacer.");
       if(!ok) return;
-      deductCredit().then(function(){ sV(toolId); });
+      deductCredit().then(function(success){
+        if(success){
+          sV(toolId);
+        }
+        // If deductCredit failed, nfy already showed error - don't navigate
+      });
     } else {
       sV(toolId);
     }
@@ -195,7 +211,7 @@ export default function App() {
     <div style={{width:"100vw",height:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"linear-gradient(145deg,#0a3d2f,#0d7363)",fontFamily:"'DM Sans',system-ui,sans-serif"}}>
       <div style={{background:"rgba(255,255,255,.97)",borderRadius:16,padding:"44px 36px",width:440,maxWidth:"92vw",boxShadow:"0 20px 50px rgba(0,0,0,.3)",textAlign:"center"}}>
         <div style={{fontSize:48,marginBottom:16}}>{"\ud83d\udd12"}</div>
-        <h2 style={{fontSize:20,fontWeight:700,color:"#0a3d2f",marginBottom:12}}>{"Sesi\u00f3n ocupada"}</h2>
+        <h2 style={{fontSize:20,fontWeight:700,color:"#0a3d2f",marginBottom:12}}>{"\u00bfSesi\u00f3n ocupada?"}</h2>
         <p style={{color:"#64748b",fontSize:14,lineHeight:1.7,marginBottom:20}}>{"Otro usuario ya est\u00e1 conectado en este momento. Solo una persona puede usar la aplicaci\u00f3n a la vez."}</p>
         <p style={{color:"#94a3b8",fontSize:12,marginBottom:24}}>{"Si cree que es un error, espere unos minutos e intente nuevamente. La sesi\u00f3n se libera autom\u00e1ticamente despu\u00e9s de 2 horas de inactividad."}</p>
         <div style={{display:"flex",gap:10,justifyContent:"center",flexWrap:"wrap"}}>
