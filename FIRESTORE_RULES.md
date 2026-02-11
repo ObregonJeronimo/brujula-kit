@@ -1,4 +1,4 @@
-# Reglas de Seguridad de Firestore — Brújula KIT v5.6
+# Reglas de Seguridad de Firestore - Brujula KIT v5.7
 
 ## Reglas DEFINITIVAS (copiar y pegar en Firebase Console)
 
@@ -16,9 +16,15 @@ service cloud.firestore {
       allow read: if request.auth != null;
       allow create: if request.auth != null && request.auth.uid == userId;
       allow update: if request.auth != null && (
+        isAdmin() ||
         (request.auth.uid == userId &&
-         !request.resource.data.diff(resource.data).affectedKeys().hasAny(['creditos', 'role'])) ||
-        isAdmin()
+         !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role']) &&
+         (
+           !request.resource.data.diff(resource.data).affectedKeys().hasAny(['creditos']) ||
+           (request.resource.data.creditos < resource.data.creditos &&
+            request.resource.data.creditos >= 0)
+         )
+        )
       );
       allow delete: if isAdmin();
     }
@@ -53,14 +59,25 @@ service cloud.firestore {
 }
 ```
 
-## Son estas reglas seguras? Si.
+## Cambio v5.7: fix descuento de creditos
 
-**Usuarios**: Cualquier usuario logueado puede leer perfiles (necesario para verificar usernames unicos y para admin). Los datos en `/usuarios/` son solo: nombre, apellido, username, email, creditos, role. NO contiene datos sensibles como contrasenas. Las evaluaciones clinicas estan en colecciones separadas y protegidas por userId.
+La regla anterior bloqueaba TODO cambio al campo `creditos` para usuarios normales.
+Esto causaba que deductCredit() fallara silenciosamente en Firestore.
 
-**Creditos y Role**: Solo el admin puede modificar `creditos` y `role`. Un usuario normal puede editar su perfil pero esos dos campos estan bloqueados por las reglas.
+Nueva regla: un usuario normal puede modificar `creditos` SOLO si:
+- El nuevo valor es MENOR que el actual (solo decrementar)
+- El nuevo valor es >= 0 (no puede quedar negativo)
+
+El campo `role` sigue completamente bloqueado para usuarios normales.
+
+## Son seguras estas reglas? Si.
+
+**Usuarios**: Cualquier usuario logueado puede leer perfiles.
+
+**Creditos**: Un usuario solo puede DECREMENTAR sus propios creditos. Solo admin puede incrementar.
+
+**Role**: Solo el admin puede modificar role.
 
 **Evaluaciones**: Solo puedes leer las tuyas. Solo puedes crear con tu propio userId. Solo admin puede eliminar.
 
-**Citas**: Solo puedes leer, crear, editar y eliminar tus propias citas. El admin puede ver y gestionar todas las citas.
-
-**Estas son las reglas definitivas.** No son temporales. Son seguras para produccion.
+**Citas**: Solo puedes leer, crear, editar y eliminar tus propias citas. El admin puede ver y gestionar todas.
