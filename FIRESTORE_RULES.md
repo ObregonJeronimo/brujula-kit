@@ -1,4 +1,4 @@
-# Reglas de Seguridad de Firestore - Brujula KIT v5.7
+# Reglas de Seguridad de Firestore - Brujula KIT v5.8
 
 ## Reglas DEFINITIVAS (copiar y pegar en Firebase Console)
 
@@ -45,6 +45,17 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    match /pacientes/{pacienteId} {
+      allow read: if request.auth != null &&
+        (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if request.auth != null &&
+        request.resource.data.userId == request.auth.uid;
+      allow update: if request.auth != null &&
+        (resource.data.userId == request.auth.uid || isAdmin());
+      allow delete: if request.auth != null &&
+        (resource.data.userId == request.auth.uid || isAdmin());
+    }
+
     match /citas/{citaId} {
       allow read: if request.auth != null &&
         (resource.data.userId == request.auth.uid || isAdmin());
@@ -59,16 +70,11 @@ service cloud.firestore {
 }
 ```
 
-## Cambio v5.7: fix descuento de creditos
+## Cambios v5.8: coleccion pacientes
 
-La regla anterior bloqueaba TODO cambio al campo `creditos` para usuarios normales.
-Esto causaba que deductCredit() fallara silenciosamente en Firestore.
-
-Nueva regla: un usuario normal puede modificar `creditos` SOLO si:
-- El nuevo valor es MENOR que el actual (solo decrementar)
-- El nuevo valor es >= 0 (no puede quedar negativo)
-
-El campo `role` sigue completamente bloqueado para usuarios normales.
+Agregada coleccion `pacientes` con permisos CRUD completos por usuario.
+Cada usuario solo puede ver, crear, editar y eliminar sus propios pacientes.
+Admin puede gestionar todos.
 
 ## Son seguras estas reglas? Si.
 
@@ -80,4 +86,6 @@ El campo `role` sigue completamente bloqueado para usuarios normales.
 
 **Evaluaciones**: Solo puedes leer las tuyas. Solo puedes crear con tu propio userId. Solo admin puede eliminar.
 
-**Citas**: Solo puedes leer, crear, editar y eliminar tus propias citas. El admin puede ver y gestionar todas.
+**Pacientes**: Solo puedes leer, crear, editar y eliminar tus propios pacientes. Admin puede gestionar todos.
+
+**Citas**: Solo puedes leer, crear, editar y eliminar tus propias citas. Admin puede gestionar todas.
