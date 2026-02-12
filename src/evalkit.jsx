@@ -21,6 +21,7 @@ import AdminStats from "./components/AdminStats.jsx";
 import NewELDI from "./components/NewELDI.jsx";
 import NewPEFF from "./components/NewPEFF.jsx";
 import CalendarPage from "./components/CalendarPage.jsx";
+import PacientesPage from "./components/PacientesPage.jsx";
 
 var isMobile = function(){ return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) && window.innerWidth < 900; };
 
@@ -112,8 +113,6 @@ export default function App() {
     return true;
   };
 
-  // deductCredit: descuenta 1 credito del usuario en Firestore
-  // Retorna una Promise que resuelve true si tuvo exito, false si fallo
   var deductCredit = function(){
     if(!profile || profile.role==="admin") return Promise.resolve(true);
     var userRef = doc(db,"usuarios",authUser.uid);
@@ -138,12 +137,7 @@ export default function App() {
     if(!isAdmin){
       var ok = window.confirm("\u00bfIniciar evaluaci\u00f3n?\n\nSe consumir\u00e1 1 cr\u00e9dito de tu cuenta. Esta acci\u00f3n no se puede deshacer.");
       if(!ok) return;
-      deductCredit().then(function(success){
-        if(success){
-          sV(toolId);
-        }
-        // If deductCredit failed, nfy already showed error - don't navigate
-      });
+      deductCredit().then(function(success){ if(success){ sV(toolId); } });
     } else {
       sV(toolId);
     }
@@ -153,7 +147,7 @@ export default function App() {
     var rspClean = {};
     if(ev.rsp){ Object.entries(ev.rsp).forEach(function(e){ if(e[1]===true)rspClean[e[0]]=true; else if(e[1]===false)rspClean[e[0]]=false; }); }
     var newEv = {
-      id:Date.now()+"", userId:authUser.uid, paciente:ev.pN, fechaNacimiento:ev.birth,
+      id:Date.now()+"", userId:authUser.uid, paciente:ev.pN, pacienteDni:ev.dni||"", fechaNacimiento:ev.birth,
       fechaEvaluacion:ev.eD, establecimiento:ev.sch, derivadoPor:ev.ref, edadMeses:ev.a,
       evalRec:ev.evalRec||false, evalExp:ev.evalExp||false,
       brutoReceptivo:ev.rR, brutoExpresivo:ev.rE, recRes:ev.recRes||null, expRes:ev.expRes||null,
@@ -226,6 +220,7 @@ export default function App() {
     ["dash","\u229e","Panel"],
     ["tools","\ud83e\uddf0","Herramientas"],
     ["hist","\u23f1","Historial"],
+    ["pacientes","\ud83d\udc67\ud83d\udc66","Pacientes"],
     ["calendario","\ud83d\udcc5","Calendario"],
     ["profile","\ud83d\udc64","Perfil"]
   ];
@@ -256,12 +251,13 @@ export default function App() {
         {toast&&<div style={{position:"fixed",top:16,right:16,zIndex:999,background:toast.t==="ok"?"#059669":"#dc2626",color:"#fff",padding:"10px 18px",borderRadius:8,fontSize:13,fontWeight:500,boxShadow:"0 4px 16px rgba(0,0,0,.15)",animation:"fi .3s ease"}}>{toast.m}</div>}
         {view==="dash"&&<Dashboard es={evals} pe={peffEvals} onT={function(){navTo("tools")}} onV={function(e){sS(e);sV("rpt")}} onVP={function(e){sS(e);sV("rptP")}} ld={loading} profile={profile} isAdmin={isAdmin} userId={authUser?.uid} nfy={nfy} onCalendar={function(){navTo("calendario")}} />}
         {view==="tools"&&<Tools onSel={startEval} credits={isAdmin?999:(profile.creditos||0)} />}
-        {view==="newELDI"&&<NewELDI onS={saveEval} nfy={nfy} />}
-        {view==="newPEFF"&&<NewPEFF onS={savePeff} nfy={nfy} />}
+        {view==="newELDI"&&<NewELDI onS={saveEval} nfy={nfy} userId={authUser?.uid} />}
+        {view==="newPEFF"&&<NewPEFF onS={savePeff} nfy={nfy} userId={authUser?.uid} />}
         {view==="hist"&&<Hist es={evals} pe={peffEvals} onV={function(e){sS(e);sV("rpt")}} onVP={function(e){sS(e);sV("rptP")}} isA={isAdmin} onD={deleteEval} />}
         {view==="rpt"&&sel&&<RptELDI ev={sel} isA={isAdmin} onD={deleteEval} />}
         {view==="rptP"&&sel&&<RptPEFF ev={sel} isA={isAdmin} onD={deleteEval} />}
         {view==="profile"&&<ProfilePage profile={profile} authUser={authUser} nfy={nfy} />}
+        {view==="pacientes"&&<PacientesPage userId={authUser?.uid} nfy={nfy} evals={evals} peffEvals={peffEvals} />}
         {view==="calendario"&&<CalendarPage userId={authUser?.uid} nfy={nfy} />}
         {view==="premium"&&<PremiumPage profile={profile} authUser={authUser} nfy={nfy} onBack={function(){sV("dash")}} />}
         {view==="adm"&&isAdmin&&<Admin nfy={nfy} />}
