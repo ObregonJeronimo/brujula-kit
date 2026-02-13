@@ -20,7 +20,7 @@ function calcAge(birthStr){
 
 var I = {width:"100%",padding:"10px 14px",border:"1px solid #e2e8f0",borderRadius:8,fontSize:14,background:"#f8faf9"};
 
-export default function PacientesPage({ userId, nfy, evals, peffEvals }){
+export default function PacientesPage({ userId, nfy, evals, peffEvals, repEvals }){
   var _p = useState([]), pacientes = _p[0], setPacientes = _p[1];
   var _l = useState(true), loading = _l[0], setLoading = _l[1];
   var _q = useState(""), busqueda = _q[0], setBusqueda = _q[1];
@@ -107,11 +107,12 @@ export default function PacientesPage({ userId, nfy, evals, peffEvals }){
 
   var openView = function(pac){ setSelected(pac); setEditing(false); };
 
-  var getLastEval = function(pacNombre){
-    if(!pacNombre) return null;
+  var getLastEval = function(pacDni){
+    if(!pacDni) return null;
     var allEvals = [];
-    if(evals) evals.forEach(function(ev){ if(ev.paciente === pacNombre) allEvals.push({tipo:"ELDI", fecha:ev.fechaGuardado || ev.fechaEvaluacion || ""}); });
-    if(peffEvals) peffEvals.forEach(function(ev){ if(ev.paciente === pacNombre) allEvals.push({tipo:"PEFF", fecha:ev.fechaGuardado || ev.fechaEvaluacion || ""}); });
+    if(evals) evals.forEach(function(ev){ if((ev.pacienteDni||"") === pacDni) allEvals.push({tipo:"ELDI", fecha:ev.fechaGuardado || ev.fechaEvaluacion || ""}); });
+    if(peffEvals) peffEvals.forEach(function(ev){ if((ev.pacienteDni||ev.dni||"") === pacDni) allEvals.push({tipo:"PEFF", fecha:ev.fechaGuardado || ev.fechaEvaluacion || ""}); });
+    if(repEvals) repEvals.forEach(function(ev){ if((ev.pacienteDni||"") === pacDni) allEvals.push({tipo:"REP", fecha:ev.fechaGuardado || ev.fechaEvaluacion || ""}); });
     if(allEvals.length === 0) return null;
     allEvals.sort(function(a,b){ return (b.fecha||"").localeCompare(a.fecha||""); });
     return allEvals[0];
@@ -209,7 +210,7 @@ export default function PacientesPage({ userId, nfy, evals, peffEvals }){
             <div><div style={{fontSize:11,fontWeight:600,color:K.mt}}>{"Jard\u00edn / Colegio"}</div><div style={{fontSize:15}}>{selected.colegio || "-"}</div></div>
           </div>
           {(function(){
-            var last = getLastEval(selected.nombre);
+            var last = getLastEval(selected.dni);
             if(!last) return <div style={{marginTop:16,padding:"10px 14px",background:"#f8faf9",borderRadius:8,border:"1px solid #e2e8f0",fontSize:12,color:K.mt,fontStyle:"italic"}}>{"Sin evaluaciones registradas"}</div>;
             return <div style={{marginTop:16,padding:"12px 14px",background:"#f0fdf4",borderRadius:8,border:"1px solid #bbf7d0"}}>
               <div style={{fontSize:11,fontWeight:600,color:K.mt,marginBottom:4}}>{"\u00daltima evaluaci\u00f3n"}</div>
@@ -232,7 +233,7 @@ export default function PacientesPage({ userId, nfy, evals, peffEvals }){
         <div style={{display:"flex",flexDirection:"column",gap:6}}>
           {filtered.map(function(pac){
             var isSelected = selected && selected._fbId === pac._fbId && !editing;
-            var lastEv = getLastEval(pac.nombre);
+            var lastEv = getLastEval(pac.dni);
             return <div key={pac._fbId} onClick={function(){ openView(pac); }}
                 style={{display:"flex",alignItems:"center",gap:12,padding:"14px 16px",background:isSelected?"#ccfbf1":"#fff",borderRadius:10,border:"1px solid "+(isSelected?"#5eead4":"#e2e8f0"),cursor:"pointer",transition:"all .15s"}}>
                 <div style={{width:40,height:40,borderRadius:10,background:"#f0f9ff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>{"\ud83d\udc64"}</div>
