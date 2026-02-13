@@ -16,10 +16,12 @@ import NoCreditsModal from "./components/NoCreditsModal.jsx";
 import Hist from "./components/Hist.jsx";
 import RptELDI from "./components/RptELDI.jsx";
 import RptPEFF from "./components/RptPEFF.jsx";
+import RptREP from "./components/RptREP.jsx";
 import Admin from "./components/Admin.jsx";
 import AdminStats from "./components/AdminStats.jsx";
 import NewELDI from "./components/NewELDI.jsx";
 import NewPEFF from "./components/NewPEFF.jsx";
+import NewREP from "./components/NewREP.jsx";
 import CalendarPage from "./components/CalendarPage.jsx";
 import PacientesPage from "./components/PacientesPage.jsx";
 
@@ -31,6 +33,7 @@ export default function App() {
   var _vw = useState("dash"), view = _vw[0], sV = _vw[1];
   var _ev = useState([]), evals = _ev[0], sE = _ev[1];
   var _pe = useState([]), peffEvals = _pe[0], sPE = _pe[1];
+  var _re = useState([]), repEvals = _re[0], sRE = _re[1];
   var _sl = useState(null), sel = _sl[0], sS = _sl[1];
   var _tt = useState(null), toast = _tt[0], sT = _tt[1];
   var _ld = useState(false), loading = _ld[0], sL = _ld[1];
@@ -86,21 +89,23 @@ export default function App() {
     if(!profile) return;
     sL(true);
     var doLoad = function(){
-      var p1, p2;
-      if(profile.role==="admin"){ p1=fbGetAll("evaluaciones"); p2=fbGetAll("peff_evaluaciones"); }
-      else { p1=fbGetFiltered("evaluaciones",authUser.uid); p2=fbGetFiltered("peff_evaluaciones",authUser.uid); }
-      return Promise.all([p1,p2]);
+      var p1, p2, p3;
+      if(profile.role==="admin"){ p1=fbGetAll("evaluaciones"); p2=fbGetAll("peff_evaluaciones"); p3=fbGetAll("rep_evaluaciones"); }
+      else { p1=fbGetFiltered("evaluaciones",authUser.uid); p2=fbGetFiltered("peff_evaluaciones",authUser.uid); p3=fbGetFiltered("rep_evaluaciones",authUser.uid); }
+      return Promise.all([p1,p2,p3]);
     };
     doLoad().then(function(res){
-      sE(res[0].sort(function(a,b){return(b.fechaGuardado||"").localeCompare(a.fechaGuardado||"")}));
-      sPE(res[1].sort(function(a,b){return(b.fechaGuardado||"").localeCompare(a.fechaGuardado||"")}));
+      var sortFn = function(a,b){return(b.fechaGuardado||"").localeCompare(a.fechaGuardado||"")};
+      sE(res[0].sort(sortFn));
+      sPE(res[1].sort(sortFn));
+      sRE(res[2].sort(sortFn));
     }).catch(function(e){console.error(e)}).finally(function(){sL(false)});
   },[profile,authUser]);
 
   useEffect(function(){ if(profile && !sessionBlocked) loadEvals(); },[profile,loadEvals,sessionBlocked]);
 
   var navTo = function(v){
-    if((view==="newELDI"||view==="newPEFF") && v!==view){
+    if((view==="newELDI"||view==="newPEFF"||view==="newREP") && v!==view){
       if(!window.confirm("\u00bfSalir de la evaluaci\u00f3n?\n\nLa evaluaci\u00f3n no se guarda a medias y el cr\u00e9dito consumido no se recupera.")) return;
     }
     sV(v); sS(null); window.scrollTo({top:0,behavior:"smooth"});
@@ -169,6 +174,18 @@ export default function App() {
     }, data);
     fbAdd("peff_evaluaciones",payload).then(function(res){
       if(res.success){ nfy("PEFF guardada","ok"); loadEvals(); } else nfy("Error: "+res.error,"er");
+      sV("dash");
+    });
+  };
+
+  var saveRep = function(data){
+    var payload = Object.assign({
+      id:Date.now()+"", userId:authUser.uid,
+      evaluador:profile?.nombre?(profile.nombre+" "+profile.apellido):(profile?.username||""),
+      fechaGuardado:new Date().toISOString()
+    }, data);
+    fbAdd("rep_evaluaciones",payload).then(function(res){
+      if(res.success){ nfy("Rep. Palabras guardada","ok"); loadEvals(); } else nfy("Error: "+res.error,"er");
       sV("dash");
     });
   };
@@ -253,9 +270,11 @@ export default function App() {
         {view==="tools"&&<Tools onSel={startEval} credits={isAdmin?999:(profile.creditos||0)} />}
         {view==="newELDI"&&<NewELDI onS={saveEval} nfy={nfy} userId={authUser?.uid} />}
         {view==="newPEFF"&&<NewPEFF onS={savePeff} nfy={nfy} userId={authUser?.uid} />}
-        {view==="hist"&&<Hist es={evals} pe={peffEvals} onV={function(e){sS(e);sV("rpt")}} onVP={function(e){sS(e);sV("rptP")}} isA={isAdmin} onD={deleteEval} />}
+        {view==="newREP"&&<NewREP onS={saveRep} nfy={nfy} userId={authUser?.uid} />}
+        {view==="hist"&&<Hist es={evals} pe={peffEvals} re={repEvals} onV={function(e){sS(e);sV("rpt")}} onVP={function(e){sS(e);sV("rptP")}} onVR={function(e){sS(e);sV("rptR")}} isA={isAdmin} onD={deleteEval} />}
         {view==="rpt"&&sel&&<RptELDI ev={sel} isA={isAdmin} onD={deleteEval} />}
         {view==="rptP"&&sel&&<RptPEFF ev={sel} isA={isAdmin} onD={deleteEval} />}
+        {view==="rptR"&&sel&&<RptREP ev={sel} isA={isAdmin} onD={deleteEval} />}
         {view==="profile"&&<ProfilePage profile={profile} authUser={authUser} nfy={nfy} />}
         {view==="pacientes"&&<PacientesPage userId={authUser?.uid} nfy={nfy} evals={evals} peffEvals={peffEvals} />}
         {view==="calendario"&&<CalendarPage userId={authUser?.uid} nfy={nfy} />}
