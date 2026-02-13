@@ -17,7 +17,7 @@ export default function NewREP({ onS, nfy, userId }){
   var _ci = useState(0), catIdx = _ci[0], setCatIdx = _ci[1];
   var mainRef = useRef(null);
 
-  var patientAge = patient ? ageMo(patient.fechaNacimiento) : 0;
+  var patientAge = patient ? ageMo(patient.fechaNac) : 0;
 
   var setResponse = useCallback(function(key, val){
     setResponses(function(prev){
@@ -40,7 +40,7 @@ export default function NewREP({ onS, nfy, userId }){
     var res = computeResults(responses);
     onS({
       tipo: "rep_palabras", paciente: patient.nombre, pacienteDni: patient.dni || "",
-      fechaNacimiento: patient.fechaNacimiento || "", edadMeses: patientAge,
+      fechaNacimiento: patient.fechaNac || "", edadMeses: patientAge,
       fechaEvaluacion: evalDate, derivadoPor: derivado, observaciones: obs,
       responses: responses, resultados: res
     });
