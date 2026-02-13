@@ -60,7 +60,7 @@ function computeResults(responses){
   });
 
   var pcc = totalEvaluated > 0 ? Math.round((totalCorrect/totalEvaluated)*100) : 0;
-  var severity = pcc >= 85 ? "Leve" : pcc >= 65 ? "Leve-Moderado" : pcc >= 50 ? "Moderado-Severo" : "Severo";
+  var severity = totalErrors === 0 ? "Adecuado" : pcc >= 85 ? "Leve" : pcc >= 65 ? "Leve-Moderado" : pcc >= 50 ? "Moderado-Severo" : "Severo";
 
   return { byPhoneme:byPhoneme, byCat:byCat, totalCorrect:totalCorrect, totalEvaluated:totalEvaluated, totalErrors:totalErrors, errorDetail:errorDetail, pcc:pcc, severity:severity };
 }
@@ -137,7 +137,7 @@ export default function NewREP({ onS, nfy, userId }){
         <span style={{fontSize:32}}>{"\ud83d\udcdd"}</span>
         <div>
           <h1 style={{fontSize:20,fontWeight:700,margin:0}}>{"Repetici\u00f3n de Palabras"}</h1>
-          <p style={{fontSize:12,color:K.mt,margin:0}}>{"PEFF 3.2 \u2014 An\u00e1lisis fon\u00e9tico-fonol\u00f3gico (Susanibar, Dioses & Huaman\u00ed, 2014)"}</p>
+          <p style={{fontSize:12,color:K.mt,margin:0}}>{"PEFF 3.2 \u2014 An\u00e1lisis fon\u00e9tico-fonol\u00f3gico"}</p>
         </div>
       </div>
 
@@ -314,12 +314,11 @@ export default function NewREP({ onS, nfy, userId }){
           <div style={{background:"#fff",borderRadius:12,border:"1px solid "+K.bd,padding:20,textAlign:"center"}}>
             <div style={{fontSize:32,fontWeight:800,color:K.ac}}>{results.pcc+"%"}</div>
             <div style={{fontSize:12,color:K.mt,fontWeight:600}}>PCC</div>
-            <div style={{fontSize:11,color:K.mt}}>Porcentaje de Consonantes Correctas</div>
+            <div style={{fontSize:11,color:K.mt}}>{"Porcentaje de Consonantes Correctas"}</div>
           </div>
           <div style={{background:"#fff",borderRadius:12,border:"1px solid "+K.bd,padding:20,textAlign:"center"}}>
-            <div style={{fontSize:24,fontWeight:700,color:results.pcc>=85?"#059669":results.pcc>=65?"#d97706":results.pcc>=50?"#ea580c":"#dc2626"}}>{results.severity}</div>
+            <div style={{fontSize:24,fontWeight:700,color:results.totalErrors===0?"#059669":results.pcc>=85?"#059669":results.pcc>=65?"#d97706":results.pcc>=50?"#ea580c":"#dc2626"}}>{results.severity}</div>
             <div style={{fontSize:12,color:K.mt,fontWeight:600}}>Severidad</div>
-            <div style={{fontSize:11,color:K.mt}}>Shriberg & Kwiatkowski, 1982</div>
           </div>
           <div style={{background:"#fff",borderRadius:12,border:"1px solid "+K.bd,padding:20,textAlign:"center"}}>
             <div style={{fontSize:24,fontWeight:700,color:K.sd}}>{results.totalCorrect+"/"+results.totalEvaluated}</div>
