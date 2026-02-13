@@ -276,7 +276,7 @@ export default function App() {
         {view==="rptP"&&sel&&<RptPEFF ev={sel} isA={isAdmin} onD={deleteEval} />}
         {view==="rptR"&&sel&&<RptREP ev={sel} isA={isAdmin} onD={deleteEval} />}
         {view==="profile"&&<ProfilePage profile={profile} authUser={authUser} nfy={nfy} />}
-        {view==="pacientes"&&<PacientesPage userId={authUser?.uid} nfy={nfy} evals={evals} peffEvals={peffEvals} />}
+        {view==="pacientes"&&<PacientesPage userId={authUser?.uid} nfy={nfy} evals={evals} peffEvals={peffEvals} repEvals={repEvals} />}
         {view==="calendario"&&<CalendarPage userId={authUser?.uid} nfy={nfy} />}
         {view==="premium"&&<PremiumPage profile={profile} authUser={authUser} nfy={nfy} onBack={function(){sV("dash")}} />}
         {view==="adm"&&isAdmin&&<Admin nfy={nfy} />}
