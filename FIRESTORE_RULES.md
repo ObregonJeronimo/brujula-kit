@@ -1,4 +1,4 @@
-# Reglas de Seguridad de Firestore - Brujula KIT v5.8
+# Reglas de Seguridad de Firestore - Brujula KIT v5.9
 
 ## Reglas DEFINITIVAS (copiar y pegar en Firebase Console)
 
@@ -45,6 +45,14 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    match /rep_evaluaciones/{evalId} {
+      allow read: if request.auth != null &&
+        (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if request.auth != null &&
+        request.resource.data.userId == request.auth.uid;
+      allow delete: if isAdmin();
+    }
+
     match /pacientes/{pacienteId} {
       allow read: if request.auth != null &&
         (resource.data.userId == request.auth.uid || isAdmin());
@@ -70,22 +78,9 @@ service cloud.firestore {
 }
 ```
 
-## Cambios v5.8: coleccion pacientes
+## Cambios v5.9: coleccion rep_evaluaciones
 
-Agregada coleccion `pacientes` con permisos CRUD completos por usuario.
-Cada usuario solo puede ver, crear, editar y eliminar sus propios pacientes.
-Admin puede gestionar todos.
+Agregada coleccion `rep_evaluaciones` para la herramienta Repeticion de Palabras (PEFF 3.2).
+Mismos permisos que evaluaciones y peff_evaluaciones: read/create own, delete admin only.
 
-## Son seguras estas reglas? Si.
-
-**Usuarios**: Cualquier usuario logueado puede leer perfiles.
-
-**Creditos**: Un usuario solo puede DECREMENTAR sus propios creditos. Solo admin puede incrementar.
-
-**Role**: Solo el admin puede modificar role.
-
-**Evaluaciones**: Solo puedes leer las tuyas. Solo puedes crear con tu propio userId. Solo admin puede eliminar.
-
-**Pacientes**: Solo puedes leer, crear, editar y eliminar tus propios pacientes. Admin puede gestionar todos.
-
-**Citas**: Solo puedes leer, crear, editar y eliminar tus propias citas. Admin puede gestionar todas.
+## IMPORTANTE: Copiar las reglas de arriba y pegarlas en Firebase Console > Firestore Database > Rules > Publish
