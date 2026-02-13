@@ -2,6 +2,8 @@ import { useState, useRef } from "react";
 
 var K = { sd:"#0a3d2f", ac:"#0d9488", mt:"#64748b", bd:"#e2e8f0" };
 function ageLabel(m){ return Math.floor(m/12)+" a\u00f1os, "+(m%12)+" meses"; }
+var posLabels = {ISPP:"ISPP",ISIP:"ISIP",CSIP:"CSIP",CSFP:"CSFP"};
+var posFull = {ISPP:"Inicio s\u00edl. \u2014 Pos. palabra",ISIP:"Inicio s\u00edl. \u2014 Int. palabra",CSIP:"Coda s\u00edl. \u2014 Int. palabra",CSFP:"Coda s\u00edl. \u2014 Final palabra"};
 
 export default function RptREP({ ev, isA, onD }){
   var _cf = useState(false), confirmDel = _cf[0], sCf = _cf[1];
@@ -9,6 +11,8 @@ export default function RptREP({ ev, isA, onD }){
   var res = ev.resultados || {};
   var byPhoneme = res.byPhoneme || {};
   var byCat = res.byCat || {};
+  var byPosition = res.byPosition || {};
+  var errorList = res.errorList || [];
   var patientAge = ev.edadMeses || 0;
 
   var handlePDF = function(){
@@ -44,8 +48,8 @@ export default function RptREP({ ev, isA, onD }){
     });
   };
 
-  var sevColor = res.totalErrors===0?"#059669":res.pcc>=85?"#059669":res.pcc>=65?"#d97706":"#dc2626";
-  var sevBg = res.totalErrors===0?"#f0fdf4":res.pcc>=85?"#f0fdf4":res.pcc>=65?"#fffbeb":"#fef2f2";
+  var sevColor = res.pcc===100?"#059669":res.pcc>=85?"#059669":res.pcc>=65?"#d97706":"#dc2626";
+  var sevBg = res.pcc===100?"#f0fdf4":res.pcc>=85?"#f0fdf4":res.pcc>=65?"#fffbeb":"#fef2f2";
 
   return (
     <div style={{animation:"fi .3s ease",maxWidth:900,margin:"0 auto"}}>
@@ -62,6 +66,7 @@ export default function RptREP({ ev, isA, onD }){
       </div>
 
       <div ref={printRef} style={{background:"#fff",borderRadius:12,border:"1px solid "+K.bd,padding:28}}>
+        {/* Patient info */}
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:20,paddingBottom:16,borderBottom:"2px solid "+K.bd}}>
           <div>
             <div style={{fontSize:10,color:K.mt,fontWeight:600,textTransform:"uppercase",letterSpacing:1}}>{"Repetici\u00f3n de Palabras \u2014 PEFF 3.2"}</div>
@@ -75,6 +80,7 @@ export default function RptREP({ ev, isA, onD }){
           </div>
         </div>
 
+        {/* Summary cards */}
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12,marginBottom:24}}>
           <div style={{background:"#f0fdf4",borderRadius:10,padding:16,textAlign:"center"}}>
             <div style={{fontSize:28,fontWeight:800,color:K.ac}}>{(res.pcc||0)+"%"}</div>
@@ -87,10 +93,29 @@ export default function RptREP({ ev, isA, onD }){
           <div style={{background:"#f8fafc",borderRadius:10,padding:16,textAlign:"center"}}>
             <div style={{fontSize:20,fontWeight:700,color:K.sd}}>{(res.totalCorrect||0)+"/"+(res.totalEvaluated||0)}</div>
             <div style={{fontSize:11,color:K.mt,fontWeight:600}}>Correctos</div>
-            <div style={{fontSize:10,color:K.mt}}>{"D:"+(res.errorDetail?.D||0)+" O:"+(res.errorDetail?.O||0)+" S:"+(res.errorDetail?.S||0)}</div>
+            <div style={{fontSize:10,color:K.mt}}>{(res.totalErrors||0)+" errores"}</div>
           </div>
         </div>
 
+        {/* Distribution by position */}
+        <h3 style={{fontSize:14,fontWeight:700,marginBottom:8}}>{"Distribuci\u00f3n por posici\u00f3n"}</h3>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:8,marginBottom:20}}>
+          {["ISPP","ISIP","CSIP","CSFP"].map(function(posId){
+            var p = byPosition[posId] || {ok:0,err:0,total:0};
+            var pct = p.total > 0 ? Math.round((p.ok/p.total)*100) : 0;
+            var clr = p.total===0?"#cbd5e1":pct>=85?"#059669":pct>=65?"#d97706":"#dc2626";
+            return <div key={posId} style={{background:"#f8faf9",borderRadius:8,padding:12,textAlign:"center",border:"1px solid "+K.bd}}>
+              <div style={{fontSize:12,fontWeight:700,color:K.ac}}>{posLabels[posId]}</div>
+              <div style={{fontSize:9,color:K.mt,marginBottom:4}}>{posFull[posId]}</div>
+              {p.total > 0 ? <div>
+                <div style={{fontSize:18,fontWeight:700,color:clr}}>{pct+"%"}</div>
+                <div style={{fontSize:10,color:K.mt}}>{p.ok+"/"+p.total}</div>
+              </div> : <div style={{fontSize:10,color:"#cbd5e1"}}>{"Sin \u00edtems"}</div>}
+            </div>;
+          })}
+        </div>
+
+        {/* Category summary */}
         <h3 style={{fontSize:14,fontWeight:700,marginBottom:8}}>{"Resumen por categor\u00eda"}</h3>
         <table style={{width:"100%",borderCollapse:"collapse",fontSize:12,marginBottom:20}}>
           <thead><tr style={{borderBottom:"2px solid "+K.bd,background:"#f8fafc"}}>
@@ -116,29 +141,28 @@ export default function RptREP({ ev, isA, onD }){
           </tbody>
         </table>
 
+        {/* Phoneme detail */}
         <h3 style={{fontSize:14,fontWeight:700,marginBottom:8}}>{"Detalle por fonema"}</h3>
         <table style={{width:"100%",borderCollapse:"collapse",fontSize:11,marginBottom:20}}>
           <thead><tr style={{borderBottom:"2px solid "+K.bd,background:"#f8fafc"}}>
             <th style={{textAlign:"left",padding:"5px 8px",color:K.mt}}>Fonema</th>
             <th style={{textAlign:"center",padding:"5px",color:K.mt}}>Edad</th>
             <th style={{textAlign:"center",padding:"5px",color:"#059669"}}>{"\u2713"}</th>
-            <th style={{textAlign:"center",padding:"5px",color:"#f59e0b"}}>D</th>
-            <th style={{textAlign:"center",padding:"5px",color:"#dc2626"}}>O</th>
-            <th style={{textAlign:"center",padding:"5px",color:"#7c3aed"}}>S</th>
+            <th style={{textAlign:"center",padding:"5px",color:"#dc2626"}}>Err.</th>
+            <th style={{textAlign:"center",padding:"5px",color:K.mt}}>Total</th>
             <th style={{textAlign:"center",padding:"5px",color:K.mt}}>Estado</th>
           </tr></thead>
           <tbody>
             {Object.entries(byPhoneme).map(function(e){
               var id = e[0], ph = e[1];
-              var hasErr = ph.D > 0 || ph.O > 0 || ph.S > 0;
+              var hasErr = ph.errors > 0;
               var expected = (patientAge/12) >= ph.age;
               return <tr key={id} style={{borderBottom:"1px solid #f1f5f9",background:hasErr&&expected?"#fef2f2":"transparent"}}>
                 <td style={{padding:"5px 8px",fontWeight:700}}>{ph.phoneme}</td>
                 <td style={{textAlign:"center",padding:"5px"}}>{ph.age+"a"}</td>
                 <td style={{textAlign:"center",padding:"5px",color:"#059669",fontWeight:600}}>{ph.ok||"-"}</td>
-                <td style={{textAlign:"center",padding:"5px",color:ph.D>0?"#f59e0b":"#d1d5db",fontWeight:600}}>{ph.D||"-"}</td>
-                <td style={{textAlign:"center",padding:"5px",color:ph.O>0?"#dc2626":"#d1d5db",fontWeight:600}}>{ph.O||"-"}</td>
-                <td style={{textAlign:"center",padding:"5px",color:ph.S>0?"#7c3aed":"#d1d5db",fontWeight:600}}>{ph.S||"-"}</td>
+                <td style={{textAlign:"center",padding:"5px",color:ph.errors>0?"#dc2626":"#d1d5db",fontWeight:600}}>{ph.errors||"-"}</td>
+                <td style={{textAlign:"center",padding:"5px"}}>{ph.total}</td>
                 <td style={{textAlign:"center",padding:"5px"}}>
                   {hasErr&&expected&&<span style={{padding:"1px 6px",borderRadius:8,background:"#fef2f2",color:"#dc2626",fontSize:9,fontWeight:700}}>ALTERADO</span>}
                   {hasErr&&!expected&&<span style={{padding:"1px 6px",borderRadius:8,background:"#fef3c7",color:"#d97706",fontSize:9,fontWeight:700}}>EN DESARROLLO</span>}
@@ -149,8 +173,33 @@ export default function RptREP({ ev, isA, onD }){
           </tbody>
         </table>
 
+        {/* Error list */}
+        {errorList.length > 0 && <div style={{marginBottom:20}}>
+          <h3 style={{fontSize:14,fontWeight:700,color:"#dc2626",marginBottom:8}}>{"\u26a0 Detalle de errores ("+errorList.length+")"}</h3>
+          <table style={{width:"100%",borderCollapse:"collapse",fontSize:11}}>
+            <thead><tr style={{borderBottom:"2px solid "+K.bd,background:"#fef2f2"}}>
+              <th style={{textAlign:"left",padding:"5px 8px",color:K.mt}}>Fonema</th>
+              <th style={{textAlign:"left",padding:"5px 8px",color:K.mt}}>Palabra</th>
+              <th style={{textAlign:"center",padding:"5px",color:K.mt}}>Pos.</th>
+              <th style={{textAlign:"left",padding:"5px 8px",color:K.mt}}>{"Producci\u00f3n"}</th>
+            </tr></thead>
+            <tbody>
+              {errorList.map(function(err,i){
+                var expected = (patientAge/12) >= err.age;
+                return <tr key={i} style={{borderBottom:"1px solid #f1f5f9",background:expected?"#fef2f2":"#fffbeb"}}>
+                  <td style={{padding:"5px 8px",fontWeight:700,color:K.ac}}>{err.phoneme}</td>
+                  <td style={{padding:"5px 8px"}}>{err.word}</td>
+                  <td style={{textAlign:"center",padding:"5px",fontSize:10,fontWeight:600,color:K.mt}}>{err.posId}</td>
+                  <td style={{padding:"5px 8px",color:"#dc2626",fontWeight:600}}>{err.produccion}</td>
+                </tr>;
+              })}
+            </tbody>
+          </table>
+        </div>}
+
+        {/* Altered phonemes */}
         {(function(){
-          var alt = Object.entries(byPhoneme).filter(function(e){ var ph=e[1]; return (ph.D>0||ph.O>0||ph.S>0)&&(patientAge/12)>=ph.age; });
+          var alt = Object.entries(byPhoneme).filter(function(e){ var ph=e[1]; return ph.errors>0&&(patientAge/12)>=ph.age; });
           if(alt.length===0) return <div style={{background:"#dcfce7",borderRadius:12,padding:20,marginBottom:16,textAlign:"center"}}>
             <span style={{fontSize:24}}>{"\u2705"}</span>
             <p style={{fontSize:14,fontWeight:600,color:"#059669",marginTop:8}}>{"Todos los fonemas esperados est\u00e1n adecuados."}</p>
@@ -158,11 +207,13 @@ export default function RptREP({ ev, isA, onD }){
           return <div style={{background:"#fef2f2",borderRadius:12,border:"1px solid #fecaca",padding:20,marginBottom:16}}>
             <h3 style={{fontSize:15,fontWeight:700,color:"#dc2626",marginBottom:8}}>{"\u26a0 Fonemas alterados (esperados para la edad)"}</h3>
             <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
-              {alt.map(function(e){ var ph=e[1],errs=[];
-                if(ph.D>0)errs.push(ph.D+"D"); if(ph.O>0)errs.push(ph.O+"O"); if(ph.S>0)errs.push(ph.S+"S");
+              {alt.map(function(e){ var ph=e[1];
                 return <div key={e[0]} style={{background:"#fff",borderRadius:8,padding:"8px 14px",border:"1px solid #fecaca"}}>
                   <span style={{fontWeight:700,fontSize:16}}>{ph.phoneme}</span>
-                  <span style={{fontSize:11,color:"#dc2626",marginLeft:6}}>{errs.join(", ")}</span>
+                  <span style={{fontSize:11,color:"#dc2626",marginLeft:6}}>{ph.errors+" err."}</span>
+                  {ph.errorWords && ph.errorWords.length>0 && <div style={{fontSize:10,color:K.mt,marginTop:2}}>
+                    {ph.errorWords.map(function(ew){return ew.word+"\u2192"+ew.produccion}).join(", ")}
+                  </div>}
                 </div>;
               })}
             </div>
