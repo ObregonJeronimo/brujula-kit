@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef } from "react";
-import { REP_CATEGORIES, ERROR_TYPES } from "../data/repWordsData.js";
+import { REP_CATEGORIES, POSITIONS } from "../data/repWordsData.js";
 import PatientLookup from "./PatientLookup.jsx";
-import { ageMo, ageLabel, ALL_ITEMS, computeResults, buildCatGroups, catProgress, scrollTop } from "./NewREP_logic.js";
+import { ageMo, ageLabel, ALL_ITEMS, buildCatGroups, wordKey, catProgress, computeResults, scrollTop } from "./NewREP_logic.js";
 import NewREPResults from "./NewREP_results.jsx";
 
 var K = { sd:"#0a3d2f", ac:"#0d9488", al:"#ccfbf1", mt:"#64748b", bd:"#e2e8f0", bg:"#f0f5f3" };
@@ -22,16 +22,42 @@ export default function NewREP({ onS, nfy, userId }){
   var setResponse = useCallback(function(key, val){
     setResponses(function(prev){
       var n = Object.assign({}, prev);
-      if(n[key] === val) delete n[key];
-      else n[key] = val;
+      n[key] = val;
       return n;
     });
   },[]);
 
-  var markAllCat = useCallback(function(catId, val){
+  // Toggle OK for a word: if already "ok", clear it; if has text, switch to "ok"; if empty, set "ok"
+  var toggleOk = useCallback(function(key){
     setResponses(function(prev){
       var n = Object.assign({}, prev);
-      ALL_ITEMS.filter(function(it){ return it.catId === catId; }).forEach(function(it){ n[it.key] = val; });
+      if(n[key] === "ok") delete n[key];
+      else n[key] = "ok";
+      return n;
+    });
+  },[]);
+
+  // Mark all words in a phoneme row as OK
+  var markPhonOk = useCallback(function(phonId, posWords){
+    setResponses(function(prev){
+      var n = Object.assign({}, prev);
+      POSITIONS.forEach(function(pos){
+        var ws = posWords[pos.id] || [];
+        ws.forEach(function(w){
+          n[wordKey(phonId, pos.id, w)] = "ok";
+        });
+      });
+      return n;
+    });
+  },[]);
+
+  // Mark all words in entire category as OK
+  var markAllCatOk = useCallback(function(catId){
+    setResponses(function(prev){
+      var n = Object.assign({}, prev);
+      ALL_ITEMS.filter(function(it){ return it.catId === catId; }).forEach(function(it){
+        n[it.key] = "ok";
+      });
       return n;
     });
   },[]);
@@ -48,8 +74,46 @@ export default function NewREP({ onS, nfy, userId }){
 
   var results = step === 2 ? computeResults(responses) : null;
 
+  // Render a single word cell: checkmark toggle + text field for error transcription
+  var renderWordCell = function(phonId, posId, word){
+    if(!word) return <div style={{padding:4,color:"#cbd5e1",fontSize:11,textAlign:"center"}}>{"\u2014"}</div>;
+    var key = wordKey(phonId, posId, word);
+    var val = responses[key] || "";
+    var isOk = val === "ok";
+    var hasError = val !== "" && val !== "ok";
+
+    return <div style={{marginBottom:6}}>
+      <div style={{fontSize:12,color:K.sd,fontWeight:500,marginBottom:2}}>{word}</div>
+      <div style={{display:"flex",gap:4,alignItems:"center"}}>
+        <button onClick={function(){ toggleOk(key); }}
+          style={{width:30,height:30,borderRadius:6,flexShrink:0,
+            border:isOk?"2px solid #059669":"1px solid "+K.bd,
+            background:isOk?"#dcfce7":"#fff",color:isOk?"#059669":K.mt,
+            fontSize:14,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
+          {isOk?"\u2713":""}
+        </button>
+        <input
+          value={hasError ? val : ""}
+          placeholder="error..."
+          onChange={function(e){
+            var v = e.target.value.trim();
+            if(v === "") setResponse(key, "");
+            else setResponse(key, v);
+          }}
+          onFocus={function(){
+            // If was marked ok, clear to allow typing
+            if(isOk) setResponse(key, "");
+          }}
+          style={{flex:1,padding:"5px 8px",border:"1px solid "+(hasError?"#fca5a5":K.bd),borderRadius:6,
+            fontSize:12,background:hasError?"#fef2f2":"#fff",color:hasError?"#dc2626":"#1e293b",
+            minWidth:0}}
+        />
+      </div>
+    </div>;
+  };
+
   return (
-    <div ref={mainRef} style={{animation:"fi .3s ease",maxWidth:900,margin:"0 auto"}}>
+    <div ref={mainRef} style={{animation:"fi .3s ease",maxWidth:960,margin:"0 auto"}}>
       <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20}}>
         <span style={{fontSize:32}}>{"\ud83d\udcdd"}</span>
         <div>
@@ -97,6 +161,7 @@ export default function NewREP({ onS, nfy, userId }){
       </div>}
 
       {step===1 && <div>
+        {/* Category tabs */}
         <div style={{display:"flex",gap:4,marginBottom:16,overflowX:"auto",paddingBottom:4}}>
           {catGroups.map(function(cg,i){
             var prog = catProgress(cg.id, responses);
@@ -118,93 +183,58 @@ export default function NewREP({ onS, nfy, userId }){
           return <div>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
               <h2 style={{fontSize:17,fontWeight:700,margin:0}}>{cg.title}</h2>
-              <div style={{display:"flex",gap:6}}>
-                <button onClick={function(){markAllCat(cg.id,"ok")}}
-                  style={{padding:"6px 12px",borderRadius:6,border:"1px solid #059669",background:"#dcfce7",color:"#059669",fontSize:11,fontWeight:600,cursor:"pointer"}}>
-                  {"\u2713 Todo correcto"}</button>
-                <button onClick={function(){markAllCat(cg.id,"NE")}}
-                  style={{padding:"6px 12px",borderRadius:6,border:"1px solid "+K.bd,background:"#f8fafc",color:K.mt,fontSize:11,fontWeight:600,cursor:"pointer"}}>
-                  {"No evaluado"}</button>
-              </div>
+              <button onClick={function(){markAllCatOk(cg.id)}}
+                style={{padding:"6px 14px",borderRadius:6,border:"1px solid #059669",background:"#dcfce7",color:"#059669",fontSize:11,fontWeight:600,cursor:"pointer"}}>
+                {"\u2713 Todo correcto"}</button>
             </div>
 
-            <div style={{display:"flex",gap:12,marginBottom:16,flexWrap:"wrap"}}>
-              {ERROR_TYPES.map(function(et){
-                return <span key={et.id} style={{display:"flex",alignItems:"center",gap:4,fontSize:11,color:K.mt}}>
-                  <span style={{width:20,height:20,borderRadius:4,background:et.color,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700}}>{et.label}</span>
-                  {et.desc}
-                </span>;
-              })}
-              <span style={{display:"flex",alignItems:"center",gap:4,fontSize:11,color:K.mt}}>
-                <span style={{width:20,height:20,borderRadius:4,background:"#94a3b8",color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700}}>NE</span>
-                No evaluado
-              </span>
+            {/* Instructions */}
+            <div style={{background:"#f0f9ff",border:"1px solid #bae6fd",borderRadius:8,padding:"10px 14px",marginBottom:16,fontSize:12,color:"#0369a1",lineHeight:1.6}}>
+              <strong>{"\u2139\ufe0f Instrucciones:"}</strong>{" Marque \u2713 si el paciente repiti\u00f3 correctamente. Si hay error, escriba la producci\u00f3n del paciente en el campo de texto."}
             </div>
 
-            {cg.phonGroups.map(function(pg){
-              var isExpected = (patientAge/12) >= pg.age;
-              return <div key={pg.phoneme} style={{background:"#fff",borderRadius:12,border:"1px solid "+K.bd,marginBottom:12,overflow:"hidden"}}>
-                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 16px",
+            {/* Phoneme tables */}
+            {cg.phonRows.map(function(pr){
+              var isExpected = (patientAge/12) >= pr.age;
+              return <div key={pr.phonId} style={{background:"#fff",borderRadius:12,border:"1px solid "+K.bd,marginBottom:14,overflow:"hidden"}}>
+                {/* Header */}
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 16px",
                   background:isExpected?"#f0fdf4":"#fffbeb",borderBottom:"1px solid "+K.bd}}>
                   <div style={{display:"flex",alignItems:"center",gap:10}}>
-                    <span style={{fontSize:18,fontWeight:700,color:K.sd}}>{pg.phoneme}</span>
+                    <span style={{fontSize:18,fontWeight:700,color:K.sd}}>{pr.phoneme}</span>
                     <span style={{fontSize:11,color:K.mt,background:"#f1f5f9",padding:"2px 8px",borderRadius:10}}>
-                      {"Adquisici\u00f3n: "+pg.age+" a\u00f1os"}
+                      {"Adq: "+pr.age+" a."}
                     </span>
                     {!isExpected && <span style={{fontSize:10,color:"#d97706",background:"#fef3c7",padding:"2px 8px",borderRadius:10,fontWeight:600}}>
-                      {"No esperado a\u00fan"}
-                    </span>}
+                      {"No esperado a\u00fan"}</span>}
                   </div>
+                  <button onClick={function(){markPhonOk(pr.phonId, pr.posWords)}}
+                    style={{padding:"4px 10px",borderRadius:6,border:"1px solid #bbf7d0",background:"#dcfce7",color:"#059669",fontSize:10,fontWeight:600,cursor:"pointer"}}>
+                    {"\u2713 Todo"}</button>
                 </div>
+
+                {/* Table: 4 position columns */}
                 <div style={{padding:"12px 16px"}}>
-                  <table style={{width:"100%",borderCollapse:"collapse",fontSize:13}}>
-                    <thead>
-                      <tr>
-                        <th style={{textAlign:"left",padding:"4px 8px",color:K.mt,fontSize:11,fontWeight:600,borderBottom:"1px solid "+K.bd}}>Palabra</th>
-                        <th style={{textAlign:"center",padding:"4px 4px",color:K.mt,fontSize:10,fontWeight:600,borderBottom:"1px solid "+K.bd,width:40}}>Pos.</th>
-                        {ERROR_TYPES.map(function(et){
-                          return <th key={et.id} style={{textAlign:"center",padding:"4px 2px",width:36,borderBottom:"1px solid "+K.bd}}>
-                            <span style={{width:24,height:24,borderRadius:4,background:et.color,color:"#fff",display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700}}>{et.label}</span>
-                          </th>;
-                        })}
-                        <th style={{textAlign:"center",padding:"4px 2px",width:36,borderBottom:"1px solid "+K.bd}}>
-                          <span style={{width:24,height:24,borderRadius:4,background:"#94a3b8",color:"#fff",display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:8,fontWeight:700}}>NE</span>
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {pg.items.map(function(it){
-                        var current = responses[it.key] || "";
-                        return <tr key={it.key} style={{borderBottom:"1px solid #f1f5f9"}}>
-                          <td style={{padding:"6px 8px",fontWeight:500}}>{it.word}</td>
-                          <td style={{textAlign:"center",padding:"6px 4px",fontSize:10,color:K.mt,fontWeight:600}}>{it.posLabel}</td>
-                          {ERROR_TYPES.map(function(et){
-                            var sel = current === et.id;
-                            return <td key={et.id} style={{textAlign:"center",padding:"3px 2px"}}>
-                              <button onClick={function(){setResponse(it.key, et.id)}}
-                                style={{width:32,height:32,borderRadius:6,border:sel?"2px solid "+et.color:"1px solid #e2e8f0",
-                                  background:sel?et.color+"22":"#fff",color:sel?et.color:K.mt,
-                                  fontSize:12,fontWeight:700,cursor:"pointer",transition:"all .15s"}}>
-                                {et.label}
-                              </button>
-                            </td>;
-                          })}
-                          <td style={{textAlign:"center",padding:"3px 2px"}}>
-                            <button onClick={function(){setResponse(it.key, "NE")}}
-                              style={{width:32,height:32,borderRadius:6,border:current==="NE"?"2px solid #94a3b8":"1px solid #e2e8f0",
-                                background:current==="NE"?"#94a3b822":"#fff",color:current==="NE"?"#94a3b8":K.mt,
-                                fontSize:8,fontWeight:700,cursor:"pointer",transition:"all .15s"}}>
-                              NE
-                            </button>
-                          </td>
-                        </tr>;
-                      })}
-                    </tbody>
-                  </table>
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:12}}>
+                    {POSITIONS.map(function(pos){
+                      var ws = pr.posWords[pos.id] || [];
+                      var hasWords = ws.length > 0;
+                      return <div key={pos.id}>
+                        <div style={{fontSize:11,fontWeight:700,color:hasWords?K.ac:"#cbd5e1",textAlign:"center",
+                          padding:"4px 0",borderBottom:"2px solid "+(hasWords?K.ac:"#f1f5f9"),marginBottom:8}}>
+                          {pos.label}
+                        </div>
+                        {hasWords ? ws.map(function(w){
+                          return <div key={w}>{renderWordCell(pr.phonId, pos.id, w)}</div>;
+                        }) : <div style={{textAlign:"center",color:"#cbd5e1",fontSize:11,padding:8}}>{"\u2014"}</div>}
+                      </div>;
+                    })}
+                  </div>
                 </div>
               </div>;
             })}
 
+            {/* Navigation */}
             <div style={{display:"flex",gap:10,marginTop:16}}>
               {catIdx > 0 && <button onClick={function(){setCatIdx(catIdx-1);scrollTop();}}
                 style={{flex:1,padding:"12px",background:"#f1f5f9",border:"1px solid "+K.bd,borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer",color:K.mt}}>
