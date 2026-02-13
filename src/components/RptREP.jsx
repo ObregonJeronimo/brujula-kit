@@ -14,21 +14,38 @@ export default function RptREP({ ev, isA, onD }){
   var handlePDF = function(){
     if(!printRef.current) return;
     import("html2canvas").then(function(mod){
-      return mod.default(printRef.current,{scale:2,useCORS:true,backgroundColor:"#ffffff"});
+      return mod.default(printRef.current,{scale:2,useCORS:true,backgroundColor:"#ffffff",scrollY:-window.scrollY,windowHeight:printRef.current.scrollHeight});
     }).then(function(canvas){
       return import("jspdf").then(function(mod){
         var jsPDF = mod.jsPDF;
         var pdf = new jsPDF("p","mm","a4");
-        var imgW = 190, imgH = (canvas.height*imgW)/canvas.width;
-        var pages = Math.ceil(imgH/277);
-        for(var i=0;i<pages;i++){
-          if(i>0) pdf.addPage();
-          pdf.addImage(canvas.toDataURL("image/png"),"PNG",10,10-(i*277),imgW,imgH);
+        var pW = 210, pH = 297, margin = 10;
+        var imgW = pW - margin*2;
+        var imgH = (canvas.height * imgW) / canvas.width;
+        var usableH = pH - margin*2;
+        var pos = 0;
+        var page = 0;
+        while(pos < imgH){
+          if(page > 0) pdf.addPage();
+          var srcY = Math.round((pos / imgH) * canvas.height);
+          var srcH = Math.round((Math.min(usableH, imgH - pos) / imgH) * canvas.height);
+          var sliceCanvas = document.createElement("canvas");
+          sliceCanvas.width = canvas.width;
+          sliceCanvas.height = srcH;
+          var ctx = sliceCanvas.getContext("2d");
+          ctx.drawImage(canvas, 0, srcY, canvas.width, srcH, 0, 0, canvas.width, srcH);
+          var sliceH = (srcH * imgW) / canvas.width;
+          pdf.addImage(sliceCanvas.toDataURL("image/png"), "PNG", margin, margin, imgW, sliceH);
+          pos += usableH;
+          page++;
         }
         pdf.save("REP_"+((ev.paciente||"").replace(/\s/g,"_"))+"_"+ev.fechaEvaluacion+".pdf");
       });
     });
   };
+
+  var sevColor = res.totalErrors===0?"#059669":res.pcc>=85?"#059669":res.pcc>=65?"#d97706":"#dc2626";
+  var sevBg = res.totalErrors===0?"#f0fdf4":res.pcc>=85?"#f0fdf4":res.pcc>=65?"#fffbeb":"#fef2f2";
 
   return (
     <div style={{animation:"fi .3s ease",maxWidth:900,margin:"0 auto"}}>
@@ -63,8 +80,8 @@ export default function RptREP({ ev, isA, onD }){
             <div style={{fontSize:28,fontWeight:800,color:K.ac}}>{(res.pcc||0)+"%"}</div>
             <div style={{fontSize:11,color:K.mt,fontWeight:600}}>PCC</div>
           </div>
-          <div style={{background:res.pcc>=85?"#f0fdf4":res.pcc>=65?"#fffbeb":"#fef2f2",borderRadius:10,padding:16,textAlign:"center"}}>
-            <div style={{fontSize:20,fontWeight:700,color:res.pcc>=85?"#059669":res.pcc>=65?"#d97706":"#dc2626"}}>{res.severity||"-"}</div>
+          <div style={{background:sevBg,borderRadius:10,padding:16,textAlign:"center"}}>
+            <div style={{fontSize:20,fontWeight:700,color:sevColor}}>{res.severity||"-"}</div>
             <div style={{fontSize:11,color:K.mt,fontWeight:600}}>Severidad</div>
           </div>
           <div style={{background:"#f8fafc",borderRadius:10,padding:16,textAlign:"center"}}>
