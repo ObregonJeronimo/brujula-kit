@@ -27,6 +27,15 @@ import PacientesPage from "./components/PacientesPage.jsx";
 
 var isMobile = function(){ return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) && window.innerWidth < 900; };
 
+// Read payment params from URL once at load time (before any replaceState)
+var _urlParams = new URLSearchParams(window.location.search);
+var _paymentFlag = _urlParams.get("payment") || (_urlParams.get("collection_status") === "approved" ? "success" : null);
+var _paymentId = _urlParams.get("payment_id") || _urlParams.get("collection_id");
+// Clean URL immediately
+if(_paymentFlag || _paymentId){
+  window.history.replaceState({},"",window.location.pathname);
+}
+
 export default function App() {
   var _au = useState(undefined), authUser = _au[0], setAuthUser = _au[1];
   var _pr = useState(null), profile = _pr[0], setProfile = _pr[1];
@@ -40,63 +49,60 @@ export default function App() {
   var _mb = useState(isMobile()), mobile = _mb[0];
   var _sb = useState(false), sessionBlocked = _sb[0], setSessionBlocked = _sb[1];
   var _nc = useState(false), showNoCredits = _nc[0], setShowNoCredits = _nc[1];
-  var nfy = useCallback(function(m,t){ sT({m:m,t:t}); setTimeout(function(){sT(null)},3500); },[]);
+  var _pp = useState(false), paymentProcessed = _pp[0], setPaymentProcessed = _pp[1];
+  var nfy = useCallback(function(m,t){ sT({m:m,t:t}); setTimeout(function(){sT(null)},4500); },[]);
   var isAdmin = profile?.role === "admin";
   useSessionHeartbeat(authUser?.uid, isAdmin);
 
-  // Handle payment return from MercadoPago
+  // Handle payment return — runs when authUser becomes available
   useEffect(function(){
-    var params = new URLSearchParams(window.location.search);
-    var payment = params.get("payment");
-    var paymentId = params.get("payment_id") || params.get("collection_id");
+    if(!authUser?.uid || paymentProcessed) return;
+    if(!_paymentFlag) return;
 
-    if(payment==="success"){
+    setPaymentProcessed(true);
+
+    if(_paymentFlag === "success"){
       nfy("\u2705 \u00a1Pago aprobado! Acreditando cr\u00e9ditos...","ok");
-      window.history.replaceState({},"",window.location.pathname);
 
-      // Verify payment server-side and credit immediately
-      if(paymentId && authUser?.uid){
+      if(_paymentId){
+        console.log("[payment] Verifying payment_id:", _paymentId, "for uid:", authUser.uid);
         fetch("/api/verify-payment", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ uid: authUser.uid, payment_id: paymentId })
+          body: JSON.stringify({ uid: authUser.uid, payment_id: _paymentId })
         }).then(function(r){ return r.json(); }).then(function(data){
+          console.log("[payment] verify-payment response:", data);
           if(data.success){
-            nfy("\u2705 \u00a1"+( data.credits_added||"")+" cr\u00e9ditos acreditados!","ok");
+            nfy("\u2705 \u00a1"+(data.credits_added||"")+" cr\u00e9ditos acreditados!","ok");
           } else if(data.already_processed){
             nfy("\u2705 Cr\u00e9ditos ya acreditados","ok");
+          } else {
+            nfy("Error verificando pago: "+(data.error||data.status||"desconocido"),"er");
           }
-          // Refresh profile to get updated credits
-          getUserProfile(authUser.uid).then(function(prof){
-            if(prof) setProfile(prof);
-          });
+          getUserProfile(authUser.uid).then(function(prof){ if(prof) setProfile(prof); });
         }).catch(function(e){
-          console.error("verify-payment error:", e);
-          // Fallback: just refresh profile after delay
+          console.error("[payment] verify-payment error:", e);
+          nfy("Error de conexi\u00f3n al verificar pago","er");
           setTimeout(function(){
-            getUserProfile(authUser.uid).then(function(prof){
-              if(prof) setProfile(prof);
-            });
-          },3000);
+            getUserProfile(authUser.uid).then(function(prof){ if(prof) setProfile(prof); });
+          },5000);
         });
       } else {
-        // No payment_id in URL, just refresh profile after delay (webhook might handle it)
-        setTimeout(function(){
-          if(authUser?.uid){
-            getUserProfile(authUser.uid).then(function(prof){
-              if(prof) setProfile(prof);
-            });
-          }
-        },3000);
+        console.log("[payment] No payment_id in URL, waiting for webhook...");
+        // No payment_id — retry profile refresh a few times
+        var attempts = [3000, 8000, 15000];
+        attempts.forEach(function(delay){
+          setTimeout(function(){
+            getUserProfile(authUser.uid).then(function(prof){ if(prof) setProfile(prof); });
+          }, delay);
+        });
       }
-    } else if(payment==="failure"){
+    } else if(_paymentFlag === "failure"){
       nfy("El pago no se complet\u00f3. Intent\u00e1 nuevamente.","er");
-      window.history.replaceState({},"",window.location.pathname);
-    } else if(payment==="pending"){
+    } else if(_paymentFlag === "pending"){
       nfy("\u23f3 Pago pendiente. Los cr\u00e9ditos se acreditar\u00e1n cuando se confirme.","ok");
-      window.history.replaceState({},"",window.location.pathname);
     }
-  },[authUser]);
+  },[authUser, paymentProcessed]);
 
   useEffect(function(){
     var unsub = onAuthStateChanged(auth, function(u){
