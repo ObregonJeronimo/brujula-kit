@@ -33,7 +33,7 @@ export default function ProfilePage({ profile, authUser, nfy, onBuyCredits }) {
           <div style={{fontSize:32,fontWeight:700}}>{credits}</div>
         </div>
         {!isAdm && <button onClick={onBuyCredits} style={{background:"linear-gradient(135deg,#f59e0b,#d97706)",color:"#fff",border:"none",padding:"12px 22px",borderRadius:12,fontSize:14,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",gap:8,boxShadow:"0 4px 16px rgba(245,158,11,.35)",transition:"all .2s",letterSpacing:".3px"}}>
-          <span style={{fontSize:16}}>+</span> Agregar cr\u00e9ditos
+          {"+ Agregar cr\u00e9ditos"}
         </button>}
       </div>
 
