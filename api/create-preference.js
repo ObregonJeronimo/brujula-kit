@@ -28,6 +28,9 @@ export default async function handler(req, res) {
     const ACCESS_TOKEN = process.env.MP_ACCESS_TOKEN;
     if (!ACCESS_TOKEN) return res.status(500).json({ error: "MP_ACCESS_TOKEN not configured" });
 
+    // Detect sandbox mode: test tokens start with "APP_USR-" or "TEST-"
+    const isSandbox = ACCESS_TOKEN.startsWith("TEST-") || process.env.MP_SANDBOX === "true";
+
     // Determine the base URL for callbacks
     const BASE_URL = process.env.VERCEL_PROJECT_PRODUCTION_URL
       ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
@@ -48,7 +51,6 @@ export default async function handler(req, res) {
         email: email,
         name: nombre || "",
       },
-      // external_reference encodes uid AND credits so webhook knows how many to add
       external_reference: `${uid}|${pack.credits}`,
       back_urls: {
         success: `${BASE_URL}/?payment=success`,
@@ -79,6 +81,7 @@ export default async function handler(req, res) {
       init_point: data.init_point,
       sandbox_init_point: data.sandbox_init_point,
       preference_id: data.id,
+      sandbox: isSandbox,
     });
   } catch (err) {
     console.error("create-preference error:", err);
