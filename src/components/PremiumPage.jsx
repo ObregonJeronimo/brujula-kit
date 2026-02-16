@@ -31,8 +31,10 @@ export default function PremiumPage({ profile, nfy, onBack, authUser }) {
         price: pack.price
       })
     }).then(function(res){ return res.json(); }).then(function(data){
-      if(data.init_point){
-        window.location.href = data.init_point;
+      // Use sandbox_init_point when API signals sandbox mode, otherwise init_point
+      var url = data.sandbox ? data.sandbox_init_point : data.init_point;
+      if(url){
+        window.location.href = url;
       } else {
         nfy("Error al crear el pago: "+(data.error||"intent\u00e9 nuevamente"),"er");
       }
@@ -65,7 +67,6 @@ export default function PremiumPage({ profile, nfy, onBack, authUser }) {
         {PACKS.map(function(pack){
           var active = selId === pack.id;
           var pp = perCredit(pack);
-          var basePP = perCredit(PACKS[0]);
           return <div key={pack.id} onClick={function(){setSelId(pack.id)}}
             style={{
               position:"relative",background:"#fff",borderRadius:16,padding:"28px 24px",
@@ -74,24 +75,16 @@ export default function PremiumPage({ profile, nfy, onBack, authUser }) {
               boxShadow:active?"0 8px 30px rgba(13,148,136,.2)":"0 2px 8px rgba(0,0,0,.04)",
               transform:active?"scale(1.02)":"scale(1)"
             }}>
-            {/* Popular badge */}
             {pack.popular && <div style={{position:"absolute",top:-1,right:20,background:"linear-gradient(135deg,#f59e0b,#d97706)",color:"#fff",padding:"4px 14px",borderRadius:"0 0 10px 10px",fontSize:10,fontWeight:800,letterSpacing:".5px",textTransform:"uppercase"}}>{"M\u00e1s elegido"}</div>}
-
-            {/* Credits circle */}
             <div style={{width:64,height:64,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",marginBottom:16,
               background:active?"linear-gradient(135deg,#0d9488,#2dd4bf)":"linear-gradient(135deg,#f1f5f9,#e2e8f0)",
               color:active?"#fff":"#64748b",fontSize:22,fontWeight:800,transition:"all .2s"}}>
               {pack.label}
             </div>
-
             <div style={{fontSize:13,fontWeight:600,color:"#64748b",marginBottom:4}}>{pack.credits+" cr\u00e9ditos"}</div>
             <div style={{fontSize:28,fontWeight:800,color:active?"#0a3d2f":"#334155",marginBottom:4,lineHeight:1}}>{fmt(pack.price)}</div>
             <div style={{fontSize:12,color:"#94a3b8"}}>{fmt(pp)+" por evaluaci\u00f3n"}</div>
-
-            {/* Savings badge */}
             {pack.save > 0 && <div style={{marginTop:10,display:"inline-block",padding:"3px 10px",borderRadius:20,background:"#dcfce7",color:"#059669",fontSize:11,fontWeight:700}}>{"Ahorr\u00e1s "+pack.save+"%"}</div>}
-
-            {/* Selection indicator */}
             <div style={{position:"absolute",top:16,left:16,width:22,height:22,borderRadius:"50%",
               border:active?"2px solid #0d9488":"2px solid #d1d5db",
               background:active?"#0d9488":"transparent",display:"flex",alignItems:"center",justifyContent:"center",transition:"all .2s"}}>
@@ -115,7 +108,6 @@ export default function PremiumPage({ profile, nfy, onBack, authUser }) {
         {loading ? "Procesando..." : "\ud83d\udd12 Pagar "+fmt(PACKS.find(function(p){return p.id===selId})?.price||0)+" con MercadoPago"}
       </button>
 
-      {/* Payment methods */}
       <div style={{textAlign:"center",marginBottom:24}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:10,flexWrap:"wrap",marginBottom:8}}>
           {["Tarjeta cr\u00e9dito/d\u00e9bito","MercadoPago","Transferencia","QR"].map(function(m,i){
@@ -125,7 +117,6 @@ export default function PremiumPage({ profile, nfy, onBack, authUser }) {
         <p style={{fontSize:11,color:"#94a3b8",margin:0}}>{"Pago seguro procesado por MercadoPago. Los cr\u00e9ditos se acreditan autom\u00e1ticamente."}</p>
       </div>
 
-      {/* Features */}
       <div style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",padding:24,marginBottom:20}}>
         <div style={{fontSize:14,fontWeight:700,color:"#0a3d2f",marginBottom:14}}>{"Incluido con tus cr\u00e9ditos"}</div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
@@ -143,7 +134,6 @@ export default function PremiumPage({ profile, nfy, onBack, authUser }) {
         </div>
       </div>
 
-      {/* Manual transfer */}
       <div style={{background:"#f0f9ff",border:"1px solid #bae6fd",borderRadius:12,padding:18,marginBottom:20}}>
         <div style={{fontSize:13,fontWeight:600,color:"#0369a1",marginBottom:6}}>{"\ud83d\udce7 \u00bfPrefer\u00eds transferencia manual?"}</div>
         <div style={{fontSize:12,color:"#475569",lineHeight:1.7}}>
