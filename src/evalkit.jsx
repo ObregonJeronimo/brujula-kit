@@ -89,7 +89,6 @@ export default function App() {
         });
       } else {
         console.log("[payment] No payment_id in URL, waiting for webhook...");
-        // No payment_id — retry profile refresh a few times
         var attempts = [3000, 8000, 15000];
         attempts.forEach(function(delay){
           setTimeout(function(){
@@ -279,6 +278,7 @@ export default function App() {
     ["hist","\u23f1","Historial"],
     ["pacientes","\ud83d\udc67\ud83d\udc66","Pacientes"],
     ["calendario","\ud83d\udcc5","Calendario"],
+    ["premium","\ud83d\udcb3","Cr\u00e9ditos"],
     ["profile","\ud83d\udc64","Perfil"]
   ];
   if(isAdmin){
@@ -315,7 +315,7 @@ export default function App() {
         {view==="rpt"&&sel&&<RptELDI ev={sel} isA={isAdmin} onD={deleteEval} />}
         {view==="rptP"&&sel&&<RptPEFF ev={sel} isA={isAdmin} onD={deleteEval} />}
         {view==="rptR"&&sel&&<RptREP ev={sel} isA={isAdmin} onD={deleteEval} />}
-        {view==="profile"&&<ProfilePage profile={profile} authUser={authUser} nfy={nfy} />}
+        {view==="profile"&&<ProfilePage profile={profile} authUser={authUser} nfy={nfy} onBuyCredits={goToPremium} />}
         {view==="pacientes"&&<PacientesPage userId={authUser?.uid} nfy={nfy} evals={evals} peffEvals={peffEvals} repEvals={repEvals} />}
         {view==="calendario"&&<CalendarPage userId={authUser?.uid} nfy={nfy} />}
         {view==="premium"&&<PremiumPage profile={profile} authUser={authUser} nfy={nfy} onBack={function(){sV("dash")}} />}
