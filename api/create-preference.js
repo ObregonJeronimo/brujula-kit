@@ -1,6 +1,13 @@
 // Vercel Serverless Function — creates MercadoPago Checkout Pro preference
 // POST /api/create-preference
-// Body: { uid, email, nombre }
+// Body: { uid, email, nombre, packId, credits, price }
+
+var VALID_PACKS = {
+  "pack-10": { credits: 10, price: 18999, title: "10 Cr\u00e9ditos" },
+  "pack-25": { credits: 25, price: 35499, title: "25 Cr\u00e9ditos" },
+  "pack-40": { credits: 40, price: 53199, title: "40 Cr\u00e9ditos" },
+  "pack-60": { credits: 60, price: 79799, title: "60 Cr\u00e9ditos" }
+};
 
 export default async function handler(req, res) {
   // CORS
@@ -11,8 +18,12 @@ export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
   try {
-    const { uid, email, nombre } = req.body;
+    const { uid, email, nombre, packId } = req.body;
     if (!uid || !email) return res.status(400).json({ error: "Missing uid or email" });
+
+    // Validate pack — use server-side prices for security
+    const pack = VALID_PACKS[packId];
+    if (!pack) return res.status(400).json({ error: "Invalid pack: " + packId });
 
     const ACCESS_TOKEN = process.env.MP_ACCESS_TOKEN;
     if (!ACCESS_TOKEN) return res.status(500).json({ error: "MP_ACCESS_TOKEN not configured" });
@@ -25,19 +36,20 @@ export default async function handler(req, res) {
     const preference = {
       items: [
         {
-          id: "premium-30",
-          title: "Brújula KIT — 30 Créditos Premium",
-          description: "30 evaluaciones fonoaudiológicas (ELDI + PEFF)",
+          id: packId,
+          title: `Br\u00fajula KIT \u2014 ${pack.title}`,
+          description: `${pack.credits} evaluaciones fonoaudiol\u00f3gicas (ELDI + PEFF + Rep. Palabras)`,
           quantity: 1,
           currency_id: "ARS",
-          unit_price: 49950,
+          unit_price: pack.price,
         },
       ],
       payer: {
         email: email,
         name: nombre || "",
       },
-      external_reference: uid,
+      // external_reference encodes uid AND credits so webhook knows how many to add
+      external_reference: `${uid}|${pack.credits}`,
       back_urls: {
         success: `${BASE_URL}/?payment=success`,
         failure: `${BASE_URL}/?payment=failure`,
