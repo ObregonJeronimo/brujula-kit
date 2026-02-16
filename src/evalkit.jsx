@@ -27,11 +27,25 @@ import PacientesPage from "./components/PacientesPage.jsx";
 
 var isMobile = function(){ return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) && window.innerWidth < 900; };
 
+// SVG icon components (Lucide/Feather style, 20x20, stroke-based)
+var I = function(d){ return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">{d}</svg>; };
+var icons = {
+  dash: I(<><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></>),
+  tools: I(<><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></>),
+  hist: I(<><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>),
+  pacientes: I(<><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></>),
+  calendario: I(<><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></>),
+  premium: I(<><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><line x1="12" y1="6" x2="12" y2="8"/><line x1="12" y1="16" x2="12" y2="18"/></>),
+  profile: I(<><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></>),
+  stats: I(<><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></>),
+  adm: I(<><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></>),
+  logout: I(<><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></>)
+};
+
 // Read payment params from URL once at load time (before any replaceState)
 var _urlParams = new URLSearchParams(window.location.search);
 var _paymentFlag = _urlParams.get("payment") || (_urlParams.get("collection_status") === "approved" ? "success" : null);
 var _paymentId = _urlParams.get("payment_id") || _urlParams.get("collection_id");
-// Clean URL immediately
 if(_paymentFlag || _paymentId){
   window.history.replaceState({},"",window.location.pathname);
 }
@@ -54,16 +68,12 @@ export default function App() {
   var isAdmin = profile?.role === "admin";
   useSessionHeartbeat(authUser?.uid, isAdmin);
 
-  // Handle payment return — runs when authUser becomes available
   useEffect(function(){
     if(!authUser?.uid || paymentProcessed) return;
     if(!_paymentFlag) return;
-
     setPaymentProcessed(true);
-
     if(_paymentFlag === "success"){
       nfy("\u2705 \u00a1Pago aprobado! Acreditando cr\u00e9ditos...","ok");
-
       if(_paymentId){
         console.log("[payment] Verifying payment_id:", _paymentId, "for uid:", authUser.uid);
         fetch("/api/verify-payment", {
@@ -72,35 +82,21 @@ export default function App() {
           body: JSON.stringify({ uid: authUser.uid, payment_id: _paymentId })
         }).then(function(r){ return r.json(); }).then(function(data){
           console.log("[payment] verify-payment response:", data);
-          if(data.success){
-            nfy("\u2705 \u00a1"+(data.credits_added||"")+" cr\u00e9ditos acreditados!","ok");
-          } else if(data.already_processed){
-            nfy("\u2705 Cr\u00e9ditos ya acreditados","ok");
-          } else {
-            nfy("Error verificando pago: "+(data.error||data.status||"desconocido"),"er");
-          }
+          if(data.success){ nfy("\u2705 \u00a1"+(data.credits_added||"")+" cr\u00e9ditos acreditados!","ok"); }
+          else if(data.already_processed){ nfy("\u2705 Cr\u00e9ditos ya acreditados","ok"); }
+          else { nfy("Error verificando pago: "+(data.error||data.status||"desconocido"),"er"); }
           getUserProfile(authUser.uid).then(function(prof){ if(prof) setProfile(prof); });
         }).catch(function(e){
           console.error("[payment] verify-payment error:", e);
           nfy("Error de conexi\u00f3n al verificar pago","er");
-          setTimeout(function(){
-            getUserProfile(authUser.uid).then(function(prof){ if(prof) setProfile(prof); });
-          },5000);
+          setTimeout(function(){ getUserProfile(authUser.uid).then(function(prof){ if(prof) setProfile(prof); }); },5000);
         });
       } else {
         console.log("[payment] No payment_id in URL, waiting for webhook...");
-        var attempts = [3000, 8000, 15000];
-        attempts.forEach(function(delay){
-          setTimeout(function(){
-            getUserProfile(authUser.uid).then(function(prof){ if(prof) setProfile(prof); });
-          }, delay);
-        });
+        [3000, 8000, 15000].forEach(function(delay){ setTimeout(function(){ getUserProfile(authUser.uid).then(function(prof){ if(prof) setProfile(prof); }); }, delay); });
       }
-    } else if(_paymentFlag === "failure"){
-      nfy("El pago no se complet\u00f3. Intent\u00e1 nuevamente.","er");
-    } else if(_paymentFlag === "pending"){
-      nfy("\u23f3 Pago pendiente. Los cr\u00e9ditos se acreditar\u00e1n cuando se confirme.","ok");
-    }
+    } else if(_paymentFlag === "failure"){ nfy("El pago no se complet\u00f3. Intent\u00e1 nuevamente.","er"); }
+    else if(_paymentFlag === "pending"){ nfy("\u23f3 Pago pendiente. Los cr\u00e9ditos se acreditar\u00e1n cuando se confirme.","ok"); }
   },[authUser, paymentProcessed]);
 
   useEffect(function(){
@@ -133,9 +129,7 @@ export default function App() {
     };
     doLoad().then(function(res){
       var sortFn = function(a,b){return(b.fechaGuardado||"").localeCompare(a.fechaGuardado||"")};
-      sE(res[0].sort(sortFn));
-      sPE(res[1].sort(sortFn));
-      sRE(res[2].sort(sortFn));
+      sE(res[0].sort(sortFn)); sPE(res[1].sort(sortFn)); sRE(res[2].sort(sortFn));
     }).catch(function(e){console.error(e)}).finally(function(){sL(false)});
   },[profile,authUser]);
 
@@ -182,9 +176,7 @@ export default function App() {
       var ok = window.confirm("\u00bfIniciar evaluaci\u00f3n?\n\nSe consumir\u00e1 1 cr\u00e9dito de tu cuenta. Esta acci\u00f3n no se puede deshacer.");
       if(!ok) return;
       deductCredit().then(function(success){ if(success){ sV(toolId); } });
-    } else {
-      sV(toolId);
-    }
+    } else { sV(toolId); }
   };
 
   var saveEval = function(ev){
@@ -206,11 +198,7 @@ export default function App() {
   };
 
   var savePeff = function(data){
-    var payload = Object.assign({
-      id:Date.now()+"", userId:authUser.uid,
-      evaluador:profile?.nombre?(profile.nombre+" "+profile.apellido):(profile?.username||""),
-      fechaGuardado:new Date().toISOString()
-    }, data);
+    var payload = Object.assign({ id:Date.now()+"", userId:authUser.uid, evaluador:profile?.nombre?(profile.nombre+" "+profile.apellido):(profile?.username||""), fechaGuardado:new Date().toISOString() }, data);
     fbAdd("peff_evaluaciones",payload).then(function(res){
       if(res.success){ nfy("PEFF guardada","ok"); loadEvals(); } else nfy("Error: "+res.error,"er");
       sV("dash");
@@ -218,11 +206,7 @@ export default function App() {
   };
 
   var saveRep = function(data){
-    var payload = Object.assign({
-      id:Date.now()+"", userId:authUser.uid,
-      evaluador:profile?.nombre?(profile.nombre+" "+profile.apellido):(profile?.username||""),
-      fechaGuardado:new Date().toISOString()
-    }, data);
+    var payload = Object.assign({ id:Date.now()+"", userId:authUser.uid, evaluador:profile?.nombre?(profile.nombre+" "+profile.apellido):(profile?.username||""), fechaGuardado:new Date().toISOString() }, data);
     fbAdd("rep_evaluaciones",payload).then(function(res){
       if(res.success){ nfy("Rep. Palabras guardada","ok"); loadEvals(); } else nfy("Error: "+res.error,"er");
       sV("dash");
@@ -273,17 +257,17 @@ export default function App() {
   );
 
   var nav = [
-    ["dash","\u229e","Panel"],
-    ["tools","\ud83e\uddf0","Herramientas"],
-    ["hist","\u23f1","Historial"],
-    ["pacientes","\ud83d\udc67\ud83d\udc66","Pacientes"],
-    ["calendario","\ud83d\udcc5","Calendario"],
-    ["premium","\ud83d\udcb3","Cr\u00e9ditos"],
-    ["profile","\ud83d\udc64","Perfil"]
+    ["dash","dash","Panel"],
+    ["tools","tools","Herramientas"],
+    ["hist","hist","Historial"],
+    ["pacientes","pacientes","Pacientes"],
+    ["calendario","calendario","Calendario"],
+    ["premium","premium","Cr\u00e9ditos"],
+    ["profile","profile","Perfil"]
   ];
   if(isAdmin){
-    nav.push(["stats","\ud83d\udcca","Estad\u00edsticas"]);
-    nav.push(["adm","\u2699","Usuarios"]);
+    nav.push(["stats","stats","Estad\u00edsticas"]);
+    nav.push(["adm","adm","Usuarios"]);
   }
 
   return (
@@ -295,13 +279,20 @@ export default function App() {
           {!mobile&&<div><div style={{fontSize:17,fontWeight:700}}>{"Br\u00fajula KIT"}</div><div style={{fontSize:9,color:"#5eead4",fontWeight:600,letterSpacing:"1px"}}>{"FONOAUDIOLOG\u00cdA"}</div></div>}
         </div>
         <nav style={{flex:1}}>{nav.map(function(n){
-          var id=n[0],ic=n[1],lb=n[2];
-          return <button key={id} onClick={function(){navTo(id)}} style={{display:"flex",alignItems:"center",gap:10,width:"100%",padding:mobile?"13px 0":"11px 18px",background:view===id?"rgba(94,234,212,.12)":"transparent",border:"none",color:view===id?"#5eead4":"rgba(255,255,255,.6)",cursor:"pointer",fontSize:14,fontWeight:view===id?600:400,borderLeft:view===id?"3px solid #5eead4":"3px solid transparent",textAlign:"left",justifyContent:mobile?"center":"flex-start"}}><span>{ic}</span>{!mobile&&<span>{lb}</span>}</button>;
+          var id=n[0],iconKey=n[1],lb=n[2];
+          var active = view===id;
+          return <button key={id} onClick={function(){navTo(id)}} style={{display:"flex",alignItems:"center",gap:10,width:"100%",padding:mobile?"13px 0":"11px 18px",background:active?"rgba(94,234,212,.12)":"transparent",border:"none",color:active?"#5eead4":"rgba(255,255,255,.55)",cursor:"pointer",fontSize:14,fontWeight:active?600:400,borderLeft:active?"3px solid #5eead4":"3px solid transparent",textAlign:"left",justifyContent:mobile?"center":"flex-start",transition:"all .15s ease"}}>
+            <span style={{display:"flex",alignItems:"center",opacity:active?1:.7}}>{icons[iconKey]}</span>
+            {!mobile&&<span>{lb}</span>}
+          </button>;
         })}</nav>
         <div style={{padding:"0 14px",borderTop:"1px solid rgba(255,255,255,.1)",paddingTop:12}}>
           {!mobile&&<div style={{fontSize:10,color:"rgba(255,255,255,.45)",marginBottom:3}}>{"Sesi\u00f3n: "}<b style={{color:"#5eead4"}}>{profile.username}</b>{isAdmin&&<span style={{background:"#5eead4",color:K.sd,padding:"1px 5px",borderRadius:3,fontSize:8,marginLeft:6,fontWeight:700}}>ADMIN</span>}</div>}
           {!mobile&&<div style={{fontSize:10,color:"rgba(255,255,255,.35)",marginBottom:8}}>{"Cr\u00e9ditos: "}<b style={{color:profile.creditos>0?"#5eead4":"#f87171"}}>{isAdmin?"\u221e":(profile.creditos||0)}</b></div>}
-          <button onClick={handleLogout} style={{background:"rgba(255,255,255,.08)",border:"none",color:"rgba(255,255,255,.6)",padding:"7px 12px",borderRadius:6,cursor:"pointer",fontSize:mobile?16:12,width:"100%"}}>{mobile?"\u21a9":"\u21a9 Cerrar sesi\u00f3n"}</button>
+          <button onClick={handleLogout} style={{display:"flex",alignItems:"center",justifyContent:mobile?"center":"flex-start",gap:8,background:"rgba(255,255,255,.08)",border:"none",color:"rgba(255,255,255,.6)",padding:"9px 12px",borderRadius:8,cursor:"pointer",fontSize:12,width:"100%",transition:"all .15s ease"}}>
+            <span style={{display:"flex",alignItems:"center"}}>{icons.logout}</span>
+            {!mobile&&<span>{"Cerrar sesi\u00f3n"}</span>}
+          </button>
         </div>
       </aside>
       <main id="main-scroll" style={{flex:1,overflowY:"auto",overflowX:"hidden",padding:mobile?"16px":"28px 36px",height:"100vh"}}>
