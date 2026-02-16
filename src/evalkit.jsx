@@ -44,19 +44,51 @@ export default function App() {
   var isAdmin = profile?.role === "admin";
   useSessionHeartbeat(authUser?.uid, isAdmin);
 
+  // Handle payment return from MercadoPago
   useEffect(function(){
     var params = new URLSearchParams(window.location.search);
     var payment = params.get("payment");
+    var paymentId = params.get("payment_id") || params.get("collection_id");
+
     if(payment==="success"){
-      nfy("\u2705 \u00a1Pago aprobado! Tus cr\u00e9ditos se acreditar\u00e1n en unos segundos.","ok");
+      nfy("\u2705 \u00a1Pago aprobado! Acreditando cr\u00e9ditos...","ok");
       window.history.replaceState({},"",window.location.pathname);
-      setTimeout(function(){
-        if(authUser?.uid){
+
+      // Verify payment server-side and credit immediately
+      if(paymentId && authUser?.uid){
+        fetch("/api/verify-payment", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ uid: authUser.uid, payment_id: paymentId })
+        }).then(function(r){ return r.json(); }).then(function(data){
+          if(data.success){
+            nfy("\u2705 \u00a1"+( data.credits_added||"")+" cr\u00e9ditos acreditados!","ok");
+          } else if(data.already_processed){
+            nfy("\u2705 Cr\u00e9ditos ya acreditados","ok");
+          }
+          // Refresh profile to get updated credits
           getUserProfile(authUser.uid).then(function(prof){
             if(prof) setProfile(prof);
           });
-        }
-      },3000);
+        }).catch(function(e){
+          console.error("verify-payment error:", e);
+          // Fallback: just refresh profile after delay
+          setTimeout(function(){
+            getUserProfile(authUser.uid).then(function(prof){
+              if(prof) setProfile(prof);
+            });
+          },3000);
+        });
+      } else {
+        // No payment_id in URL, just refresh profile after delay (webhook might handle it)
+        setTimeout(function(){
+          if(authUser?.uid){
+            getUserProfile(authUser.uid).then(function(prof){
+              if(prof) setProfile(prof);
+            });
+          }
+        },3000);
+      }
     } else if(payment==="failure"){
       nfy("El pago no se complet\u00f3. Intent\u00e1 nuevamente.","er");
       window.history.replaceState({},"",window.location.pathname);
