@@ -5,7 +5,7 @@ import { openDetailPdf, openSummaryPdf } from "./RptELDI_pdf.js";
 
 var K = { mt: "#64748b" };
 
-export default function RptELDI({ev,isA,onD}){
+export default function RptELDI({ev,onD}){
   var _cd = useState(false), cd = _cd[0], sCD = _cd[1];
   var _sd = useState(false), showDetail = _sd[0], setShowDetail = _sd[1];
   var rsp = ev.respuestas || {};
@@ -110,8 +110,19 @@ export default function RptELDI({ev,isA,onD}){
     <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:24,flexWrap:"wrap",gap:12}}>
       <div><h1 style={{fontSize:24,fontWeight:700}}>{"Informe ELDI"}</h1><p style={{color:K.mt,fontSize:15,marginTop:2}}>{ev.paciente+" \u2014 "+fa(ev.edadMeses)}</p></div>
       <div style={{display:"flex",gap:8}}>
-        {isA&&(cd?<div style={{display:"flex",gap:4}}><button onClick={function(){onD(ev._fbId,"evaluaciones");sCD(false)}} style={{background:"#dc2626",color:"#fff",border:"none",padding:"8px 16px",borderRadius:6,fontSize:12,fontWeight:600,cursor:"pointer"}}>{"S\u00ed"}</button><button onClick={function(){sCD(false)}} style={{background:"#f1f5f9",border:"none",padding:"8px 16px",borderRadius:6,fontSize:12,cursor:"pointer"}}>{"No"}</button></div>:<button onClick={function(){sCD(true)}} style={{background:"#fef2f2",color:"#dc2626",border:"1px solid #fecaca",padding:"8px 16px",borderRadius:8,fontSize:13,cursor:"pointer"}}>{"\ud83d\uddd1 Eliminar"}</button>)}
-        <button onClick={function(){openSummaryPdf(ev,recScoring,expScoring,recRes,expRes,allNoEval)}} style={{background:"#dc2626",color:"#fff",border:"none",padding:"11px 22px",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer"}}>{"\ud83d\udcc4 PDF"}</button>
+        {cd
+          ?<div style={{background:"#fef2f2",border:"1px solid #fecaca",borderRadius:10,padding:"14px 20px",display:"flex",flexDirection:"column",alignItems:"center",gap:10}}>
+            <div style={{fontSize:13,fontWeight:600,color:"#dc2626",textAlign:"center"}}>{"\u00bfEst\u00e1 seguro que desea eliminar?"}</div>
+            <div style={{fontSize:12,color:"#64748b",textAlign:"center"}}>{"Esta acci\u00f3n es irreversible"}</div>
+            <div style={{display:"flex",gap:8}}>
+              <button onClick={function(){onD(ev._fbId,"evaluaciones");sCD(false)}} style={{background:"#dc2626",color:"#fff",border:"none",padding:"8px 20px",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer"}}>{"S\u00ed, eliminar"}</button>
+              <button onClick={function(){sCD(false)}} style={{background:"#f1f5f9",border:"1px solid #e2e8f0",padding:"8px 20px",borderRadius:8,fontSize:13,cursor:"pointer",color:"#64748b"}}>Cancelar</button>
+            </div>
+          </div>
+          :<><button onClick={function(){openSummaryPdf(ev,recScoring,expScoring,recRes,expRes,allNoEval)}} style={{background:"#dc2626",color:"#fff",border:"none",padding:"11px 22px",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer"}}>{"\ud83d\udcc4 PDF"}</button>
+            <button onClick={function(){sCD(true)}} style={{background:"#fef2f2",color:"#dc2626",border:"1px solid #fecaca",padding:"11px 22px",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer"}}>{"Eliminar"}</button>
+          </>
+        }
       </div>
     </div>
     <div style={{background:"#fff",borderRadius:14,padding:32,border:"1px solid #e2e8f0"}}>
@@ -132,8 +143,8 @@ export default function RptELDI({ev,isA,onD}){
       <div style={{background:"linear-gradient(135deg,#0a3d2f,#0d9488)",borderRadius:10,padding:24,color:"#fff",marginBottom:28}}>
         <div style={{fontSize:13,opacity:.8,marginBottom:8}}>{"Resumen"}</div>
         <div style={{display:"flex",gap:24,flexWrap:"wrap"}}>
-          {recRes.evaluated&&<div><span style={{fontSize:36,fontWeight:700}}>{recRes.logrado}</span><span style={{fontSize:14,opacity:.7}}>{"/"+( recRes.evaluados||recRes.total)+" Receptivo"}</span></div>}
-          {expRes.evaluated&&<div><span style={{fontSize:36,fontWeight:700}}>{expRes.logrado}</span><span style={{fontSize:14,opacity:.7}}>{"/"+( expRes.evaluados||expRes.total)+" Expresivo"}</span></div>}
+          {recRes.evaluated&&<div><span style={{fontSize:36,fontWeight:700}}>{recRes.logrado}</span><span style={{fontSize:14,opacity:.7}}>{"/"+(recRes.evaluados||recRes.total)+" Receptivo"}</span></div>}
+          {expRes.evaluated&&<div><span style={{fontSize:36,fontWeight:700}}>{expRes.logrado}</span><span style={{fontSize:14,opacity:.7}}>{"/"+(expRes.evaluados||expRes.total)+" Expresivo"}</span></div>}
         </div>
         {allNoEval.length>0&&<div style={{marginTop:12,padding:"8px 12px",background:"rgba(255,255,255,.12)",borderRadius:8,fontSize:12}}>{"\u26a0 "+allNoEval.length+" \u00edtems sin evaluar \u2014 parcial"}</div>}
       </div>
