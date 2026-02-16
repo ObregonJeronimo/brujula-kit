@@ -1,6 +1,7 @@
 // Vercel Serverless Function — MercadoPago webhook
 // POST /api/webhook-mp
-// Receives payment notifications, adds 30 credits to user in Firestore
+// Receives payment notifications, adds credits to user in Firestore
+// external_reference format: "uid|credits" (e.g. "abc123|25")
 
 import { initializeApp, cert, getApps } from "firebase-admin/app";
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
@@ -13,6 +14,9 @@ if (!getApps().length) {
   });
 }
 const db = getFirestore();
+
+// Valid credit amounts (security: only accept known amounts)
+var VALID_CREDITS = [10, 25, 40, 60];
 
 export default async function handler(req, res) {
   // CORS
@@ -49,7 +53,25 @@ export default async function handler(req, res) {
       return res.status(200).json({ received: true, status: payment.status });
     }
 
-    const uid = payment.external_reference;
+    // Parse external_reference: "uid|credits" or legacy "uid" (defaults to 30)
+    const extRef = payment.external_reference || "";
+    let uid, creditsToAdd;
+
+    if (extRef.includes("|")) {
+      const parts = extRef.split("|");
+      uid = parts[0];
+      creditsToAdd = parseInt(parts[1], 10);
+      // Validate credits amount
+      if (!VALID_CREDITS.includes(creditsToAdd)) {
+        console.error(`[webhook-mp] Invalid credits amount: ${creditsToAdd}`);
+        return res.status(200).json({ received: true, error: "invalid_credits" });
+      }
+    } else {
+      // Legacy format: just uid, default 30 credits
+      uid = extRef;
+      creditsToAdd = 30;
+    }
+
     if (!uid) {
       console.error("[webhook-mp] No external_reference (uid) in payment");
       return res.status(200).json({ received: true, error: "no_uid" });
@@ -62,7 +84,7 @@ export default async function handler(req, res) {
       return res.status(200).json({ received: true, already_processed: true });
     }
 
-    // Add 30 credits to user
+    // Add credits to user
     const userRef = db.collection("usuarios").doc(uid);
     const userDoc = await userRef.get();
     if (!userDoc.exists) {
@@ -71,8 +93,7 @@ export default async function handler(req, res) {
     }
 
     await userRef.update({
-      creditos: FieldValue.increment(30),
-      plan: "Plan Premium",
+      creditos: FieldValue.increment(creditsToAdd),
     });
 
     // Record the payment for idempotency and audit
@@ -82,14 +103,14 @@ export default async function handler(req, res) {
       email: payment.payer?.email || "",
       amount: payment.transaction_amount,
       status: payment.status,
-      creditosAgregados: 30,
+      creditosAgregados: creditsToAdd,
       processedAt: new Date().toISOString(),
       paymentDate: payment.date_approved || payment.date_created,
       paymentMethod: payment.payment_method_id || "",
     });
 
-    console.log(`[webhook-mp] ✅ Added 30 credits to user ${uid}`);
-    return res.status(200).json({ received: true, credits_added: 30 });
+    console.log(`[webhook-mp] \u2705 Added ${creditsToAdd} credits to user ${uid}`);
+    return res.status(200).json({ received: true, credits_added: creditsToAdd });
   } catch (err) {
     console.error("[webhook-mp] Error:", err);
     // Always return 200 so MP doesn't retry indefinitely
