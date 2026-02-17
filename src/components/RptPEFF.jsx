@@ -96,4 +96,80 @@ export default function RptPEFF({ev,onD}){
               <button onClick={function(){sCD(false)}} style={{background:"#f1f5f9",border:"1px solid #e2e8f0",padding:"8px 20px",borderRadius:8,fontSize:13,cursor:"pointer",color:"#64748b"}}>Cancelar</button>
             </div>
           </div>
-          :<><button onClick={function(){openSummaryPdf(ev)}} style={{background:"#7c3aed",color:"#fff",border:"none",padding:"11px 22
+          :<><button onClick={function(){openSummaryPdf(ev)}} style={{background:"#7c3aed",color:"#fff",border:"none",padding:"11px 22px",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer"}}>{"\ud83d\udcc4 PDF"}</button>
+            <button onClick={function(){sCD(true)}} style={{background:"#fef2f2",color:"#dc2626",border:"1px solid #fecaca",padding:"11px 22px",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer"}}>{"Eliminar"}</button>
+          </>
+        }
+      </div>
+    </div>
+
+    <div style={{background:"#fff",borderRadius:14,padding:32,border:"1px solid #e2e8f0"}}>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:14,marginBottom:20}}>
+        <RC title="Producci\u00f3n de S\u00edlabas" desc="S\u00edlabas producidas correctamente al repetir est\u00edmulos fon\u00e9ticos."
+          ok={r.silOk||0} total={r.silTotal||0} pct={r.silPct||0}
+          color={(r.silPct||0)>=85?"#059669":(r.silPct||0)>=50?"#f59e0b":"#dc2626"}/>
+        <RC title="Discriminaci\u00f3n Auditiva" desc="Pares de palabras diferenciados correctamente (igual vs diferente)."
+          ok={r.discOk||0} total={r.discTotal||0} pct={r.discEval>0?Math.round((r.discOk||0)/r.discEval*100):0}
+          color={(r.discOk||0)>=(r.discTotal||1)*0.85?"#059669":(r.discOk||0)>=(r.discTotal||1)*0.5?"#f59e0b":"#dc2626"}/>
+        <RC title="Reconocimiento Fonol\u00f3gico" desc="Palabras identificadas correctamente entre opciones fonol\u00f3gicamente similares."
+          ok={r.recOk||0} total={r.recTotal||0} pct={r.recEval>0?Math.round((r.recOk||0)/r.recEval*100):0}
+          color={(r.recOk||0)>=(r.recTotal||1)*0.85?"#059669":(r.recOk||0)>=(r.recTotal||1)*0.5?"#f59e0b":"#dc2626"}/>
+      </div>
+
+      <div style={{background:"linear-gradient(135deg,"+sc+"dd,"+sc+")",borderRadius:12,padding:24,color:"#fff",marginBottom:20}}>
+        <div style={{fontSize:13,opacity:.8,marginBottom:4}}>{"Severidad del trastorno fon\u00e9tico-fonol\u00f3gico"}</div>
+        <div style={{fontSize:36,fontWeight:700,marginBottom:8}}>{sev}</div>
+        <div style={{fontSize:13,opacity:.9,lineHeight:1.6}}>{sevDesc[sev]||""}</div>
+      </div>
+
+      <div style={{background:"#f0f9ff",border:"1px solid #bae6fd",borderRadius:10,padding:14,marginBottom:20,fontSize:12,color:"#0369a1",lineHeight:1.6}}>
+        <strong>{"\u2139\ufe0f Criterios de clasificaci\u00f3n:"}</strong><br/>
+        {"Adecuado: \u226598% \u00b7 Leve: 85-97% \u00b7 Moderado: 65-84% \u00b7 Moderado-Severo: 50-64% \u00b7 Severo: <50%"}
+      </div>
+
+      {r.unevalTotal>0&&<div style={{background:"#fffbeb",border:"1px solid #fde68a",borderRadius:10,padding:16,marginBottom:20}}>
+        <div style={{fontSize:13,fontWeight:700,color:"#92400e",marginBottom:8}}>{"\u26a0 \u00cdtems sin evaluar ("+r.unevalTotal+")"}</div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,fontSize:12,color:"#78350f"}}>
+          {r.unevalSelects>0&&<div>{"Examen Cl\u00ednico OFA / Coordinaci\u00f3n: "}<b>{r.unevalSelects}</b></div>}
+          {r.unevalPhon>0&&<div>{"Producci\u00f3n de S\u00edlabas: "}<b>{r.unevalPhon}</b></div>}
+          {r.unevalDisc>0&&<div>{"Discriminaci\u00f3n Auditiva: "}<b>{r.unevalDisc}</b></div>}
+          {r.unevalRec>0&&<div>{"Reconocimiento Fonol\u00f3gico: "}<b>{r.unevalRec}</b></div>}
+        </div>
+      </div>}
+
+      {renderProcSection()}
+
+      <button onClick={function(){setShowDetail(!showDetail)}} style={{width:"100%",padding:"14px",background:showDetail?"#f1f5f9":"#5b21b6",color:showDetail?"#1e293b":"#fff",border:"1px solid #e2e8f0",borderRadius:10,fontSize:14,fontWeight:600,cursor:"pointer",marginTop:20,marginBottom:showDetail?0:20}}>
+        {showDetail?"\u25b2 Ocultar detalle":"\u25bc Ver detalle de cada respuesta"}
+      </button>
+
+      {showDetail&&<div style={{marginTop:12}}>
+        <div style={{display:"flex",justifyContent:"flex-end",marginBottom:12}}>
+          <button onClick={function(){openDetailPdf(ev,sd)}} style={{background:"#059669",color:"#fff",border:"none",padding:"8px 18px",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer"}}>{"\ud83d\udda8 Imprimir detalle"}</button>
+        </div>
+        <div style={{border:"1px solid #e2e8f0",borderRadius:8,overflow:"hidden",maxHeight:500,overflowY:"auto"}}>
+          <div style={{display:"grid",gridTemplateColumns:"120px 1fr 140px",background:"#5b21b6",color:"#fff",padding:"8px 12px",fontSize:12,fontWeight:600,position:"sticky",top:0}}>
+            <span>{"Secci\u00f3n"}</span><span>{"\u00cdtem"}</span><span>{"Resultado"}</span>
+          </div>
+          {PEFF_SECTIONS.flatMap(function(sec){return sec.subsections.flatMap(function(sub){
+            var rows = [];
+            if(sub.fields) sub.fields.forEach(function(f){if(f.type==="select"){var v=sd[f.id]||"";rows.push({sec:sec.title.substring(0,20),item:f.label,val:v||"\u2014 Sin evaluar",ok:!!v})}});
+            if(sub.items) sub.items.forEach(function(item){var v=sd[item.id]||"";var res=v==="ok"?"\u2714 Correcto":v==="D"?"D":v==="O"?"O":v==="S"?"S":"\u2014 Sin evaluar";rows.push({sec:"S\u00edlaba",item:item.word+" ("+item.target+")",val:res,ok:v==="ok"})});
+            if(sub.discItems) sub.discItems.forEach(function(item){var v=sd[item.id]||"";rows.push({sec:"Discriminaci\u00f3n",item:item.pair,val:v==="correcto"?"\u2714":v==="incorrecto"?"\u2718":"\u2014 Sin evaluar",ok:v==="correcto"})});
+            if(sub.recItems) sub.recItems.forEach(function(item){var v=sd[item.id]||"";rows.push({sec:"Reconocimiento",item:item.target,val:v==="reconoce"?"\u2714":v==="no"?"\u2718":"\u2014 Sin evaluar",ok:v==="reconoce"})});
+            return rows;
+          })}).map(function(row,i){
+            return <div key={i} style={{display:"grid",gridTemplateColumns:"120px 1fr 140px",padding:"6px 12px",fontSize:12,borderTop:"1px solid #f1f5f9",background:row.ok?"#ecfdf5":row.val.indexOf("Sin")>=0?"#fffbeb":"#fef2f2"}}>
+              <span style={{color:K.mt,fontSize:11}}>{row.sec}</span>
+              <span>{row.item}</span>
+              <span style={{fontWeight:600,color:row.ok?"#059669":row.val.indexOf("Sin")>=0?"#92400e":"#dc2626"}}>{row.val}</span>
+            </div>;
+          })}
+        </div>
+      </div>}
+
+      <h3 style={{fontSize:16,fontWeight:700,color:"#5b21b6",marginBottom:10,marginTop:28}}>{"Observaciones Cl\u00ednicas"}</h3>
+      <div style={{background:"#f8faf9",padding:18,borderRadius:10,fontSize:14,border:"1px solid #e2e8f0",lineHeight:1.7,minHeight:60}}>{ev.observaciones||"Sin observaciones."}</div>
+    </div>
+  </div>;
+}
