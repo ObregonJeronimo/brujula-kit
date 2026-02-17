@@ -13,9 +13,12 @@ export default function RptRECO({ ev, onD }){
 
   var handlePDF = function(){
     if(!printRef.current) return;
+    var el = printRef.current;
+    el.style.paddingBottom = "40px";
     import("html2canvas").then(function(mod){
-      return mod.default(printRef.current,{scale:2,useCORS:true,backgroundColor:"#ffffff",scrollY:-window.scrollY,windowHeight:printRef.current.scrollHeight});
+      return mod.default(el,{scale:2,useCORS:true,backgroundColor:"#ffffff",scrollY:-window.scrollY,height:el.scrollHeight,windowHeight:el.scrollHeight+100});
     }).then(function(canvas){
+      el.style.paddingBottom = "";
       return import("jspdf").then(function(mod){
         var jsPDF = mod.jsPDF;
         var pdf = new jsPDF("p","mm","a4");
@@ -28,17 +31,19 @@ export default function RptRECO({ ev, onD }){
           if(page>0) pdf.addPage();
           var srcY=Math.round((pos/imgH)*canvas.height);
           var srcH=Math.round((Math.min(usableH,imgH-pos)/imgH)*canvas.height);
+          if(srcH<=0) break;
           var sliceCanvas=document.createElement("canvas");
           sliceCanvas.width=canvas.width; sliceCanvas.height=srcH;
           var ctx=sliceCanvas.getContext("2d");
           ctx.drawImage(canvas,0,srcY,canvas.width,srcH,0,0,canvas.width,srcH);
           var sliceH=(srcH*imgW)/canvas.width;
+          if(sliceH<1) break;
           pdf.addImage(sliceCanvas.toDataURL("image/png"),"PNG",margin,margin,imgW,sliceH);
           pos+=usableH; page++;
         }
         pdf.save("RECO_"+((ev.paciente||"").replace(/\s/g,"_"))+"_"+ev.fechaEvaluacion+".pdf");
       });
-    });
+    }).catch(function(e){ el.style.paddingBottom = ""; console.error(e); });
   };
 
   var sevColor = res.severity==="Adecuado"?"#059669":res.severity==="Leve"?"#d97706":"#dc2626";
@@ -65,7 +70,7 @@ export default function RptRECO({ ev, onD }){
         </div>
       </div>
 
-      <div ref={printRef} style={{background:"#fff",borderRadius:12,border:"1px solid "+K.bd,padding:28}}>
+      <div ref={printRef} style={{background:"#fff",borderRadius:12,border:"1px solid "+K.bd,padding:28,overflow:"visible"}}>
         {/* Patient info */}
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:20,paddingBottom:16,borderBottom:"2px solid "+K.bd}}>
           <div>

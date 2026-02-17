@@ -50,9 +50,9 @@ export default function PremiumPage({ profile, nfy, onBack, authUser }) {
         <div style={{position:"absolute",top:-40,right:-40,width:180,height:180,borderRadius:"50%",background:"rgba(255,255,255,.06)"}}></div>
         <div style={{position:"absolute",bottom:-60,left:-30,width:200,height:200,borderRadius:"50%",background:"rgba(255,255,255,.04)"}}></div>
         <div style={{position:"relative",zIndex:1}}>
-          <div style={{fontSize:14,fontWeight:600,opacity:.85,letterSpacing:"1.5px",textTransform:"uppercase",marginBottom:8}}>{"Br\u00fajula KIT"}</div>
+          <div style={{fontSize:14,fontWeight:600,opacity:.85,letterSpacing:"1.5px",textTransform:"uppercase",marginBottom:8}}>{"BR\u00daJULA KIT"}</div>
           <h1 style={{fontSize:28,fontWeight:800,margin:"0 0 8px",lineHeight:1.2}}>{"Compr\u00e1 cr\u00e9ditos para evaluar"}</h1>
-          <p style={{fontSize:14,opacity:.8,margin:0,lineHeight:1.6}}>{"Cada cr\u00e9dito = 1 evaluaci\u00f3n (ELDI, PEFF o Rep. Palabras). Sin vencimiento."}</p>
+          <p style={{fontSize:14,opacity:.8,margin:0,lineHeight:1.6}}>{"Cada cr\u00e9dito = 1 evaluaci\u00f3n (Herramientas). Sin vencimiento."}</p>
           {profile && <div style={{marginTop:14,display:"inline-flex",alignItems:"center",gap:8,background:"rgba(255,255,255,.15)",backdropFilter:"blur(8px)",borderRadius:10,padding:"8px 16px"}}>
             <span style={{fontSize:13,opacity:.9}}>{"Cr\u00e9ditos actuales:"}</span>
             <span style={{fontSize:18,fontWeight:800}}>{profile.creditos||0}</span>
@@ -106,7 +106,7 @@ export default function PremiumPage({ profile, nfy, onBack, authUser }) {
 
       <div style={{textAlign:"center",marginBottom:24}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:10,flexWrap:"wrap",marginBottom:8}}>
-          {["Tarjeta cr\u00e9dito/d\u00e9bito","MercadoPago","Transferencia","QR"].map(function(m,i){
+          {["Tarjeta cr\u00e9dito/d\u00e9bito","MercadoPago"].map(function(m,i){
             return <span key={i} style={{fontSize:11,color:"#64748b",background:"#f1f5f9",padding:"5px 12px",borderRadius:20,fontWeight:500}}>{m}</span>;
           })}
         </div>
@@ -117,7 +117,7 @@ export default function PremiumPage({ profile, nfy, onBack, authUser }) {
         <div style={{fontSize:14,fontWeight:700,color:"#0a3d2f",marginBottom:14}}>{"Incluido con tus cr\u00e9ditos"}</div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
           {[
-            ["\ud83d\udccb","Evaluaciones ELDI, PEFF y Rep. Palabras"],
+            ["\ud83d\udccb","Todas las herramientas de evaluaci\u00f3n"],
             ["\u23f0","Sin vencimiento \u2014 us\u00e1los cuando quieras"],
             ["\ud83d\udcc4","Reportes completos con exportaci\u00f3n a PDF"],
             ["\ud83d\udcc5","Calendario y gesti\u00f3n de pacientes"]
