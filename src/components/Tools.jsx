@@ -28,6 +28,15 @@ var infoTexts = {
       { label: "Resultados", text: "Los resultados se calculan con el porcentaje de aciertos y el an\u00e1lisis de qu\u00e9 fonemas o contrastes generan m\u00e1s confusi\u00f3n." },
       { label: "Utilidad cl\u00ednica", text: "Esto permite identificar dificultades perceptivas que pueden afectar la producci\u00f3n del habla y la lectoescritura. Es clave para diferenciar trastornos de percepci\u00f3n de los de producci\u00f3n." }
     ]
+  },
+  newRECO: {
+    title: "Reco. Fonol\u00f3gico \u2014 PEFF-R 3.5",
+    sections: [
+      { label: "Qu\u00e9 eval\u00faa", text: "Esta prueba mide la capacidad del paciente para reconocer contrastes fonol\u00f3gicos entre distintos grupos de sonidos (oclusivas, fricativas, nasales, l\u00edquidas, etc.). Se presentan secuencias de palabras que difieren en un rasgo fonol\u00f3gico." },
+      { label: "C\u00f3mo se registra", text: "El profesional presenta los 5 est\u00edmulos de cada \u00edtem y registra la respuesta del paciente. En la columna final se marca si el paciente reconoci\u00f3 o no el contraste. Se pueden anotar observaciones por \u00edtem." },
+      { label: "Resultados", text: "Se calcula el porcentaje de aciertos globales y la distribuci\u00f3n de errores por grupo de contraste (12 grupos, 36 \u00edtems). El an\u00e1lisis muestra qu\u00e9 rasgos fonol\u00f3gicos son m\u00e1s problem\u00e1ticos." },
+      { label: "Utilidad cl\u00ednica", text: "Permite identificar el perfil perceptivo-fonol\u00f3gico del paciente, diferenciando dificultades seg\u00fan tipo de contraste. Orienta el diagn\u00f3stico y la planificaci\u00f3n terap\u00e9utica comparando con normas de edad y desarrollo." }
+    ]
   }
 };
 
@@ -38,7 +47,8 @@ export default function Tools({ onSel, credits, onBuy }) {
     { id: "newELDI", icon: "\ud83d\udccb", name: "ELDI", full: "Evaluaci\u00f3n del Lenguaje y Desarrollo Infantil", desc: "Comprensi\u00f3n auditiva y comunicaci\u00f3n expresiva (55+55 \u00edtems) de 0 a 7 a\u00f1os.", age: "0-7;11", time: "~30-45 min", color: "#0d9488" },
     { id: "newPEFF", icon: "\ud83d\udd0a", name: "PEFF", full: "Protocolo Fon\u00e9tico-Fonol\u00f3gico", desc: "OFA, diadococinesis, s\u00edlabas, discriminaci\u00f3n y reconocimiento fonol\u00f3gico.", age: "2;6-6;11", time: "~45-60 min", color: "#7c3aed" },
     { id: "newREP", icon: "\ud83d\udcdd", name: "Rep. Palabras", full: "Repetici\u00f3n de Palabras (PEFF 3.2)", desc: "An\u00e1lisis fon\u00e9tico-fonol\u00f3gico: oclusivas, fricativas, nasales, vibrantes, grupos y diptongos.", age: "3-5+", time: "~20-30 min", color: "#2563eb" },
-    { id: "newDISC", icon: "\ud83d\udc42", name: "Disc. Fonol\u00f3gica", full: "Discriminaci\u00f3n Fonol\u00f3gica (PEFF-R 3.4)", desc: "Evaluaci\u00f3n de la capacidad para discriminar auditivamente fonemas mediante 14 pares de palabras.", age: "3-6+", time: "~10-15 min", color: "#d97706" }
+    { id: "newDISC", icon: "\ud83d\udc42", name: "Disc. Fonol\u00f3gica", full: "Discriminaci\u00f3n Fonol\u00f3gica (PEFF-R 3.4)", desc: "Evaluaci\u00f3n de la capacidad para discriminar auditivamente fonemas mediante 14 pares de palabras.", age: "3-6+", time: "~10-15 min", color: "#d97706" },
+    { id: "newRECO", icon: "\ud83c\udfaf", name: "Reco. Fonol\u00f3gico", full: "Reconocimiento Fonol\u00f3gico (PEFF-R 3.5)", desc: "Reconocimiento de contrastes fonol\u00f3gicos entre 12 grupos de rasgos (36 \u00edtems con 5 est\u00edmulos cada uno).", age: "3-6+", time: "~15-25 min", color: "#9333ea" }
   ];
 
   var hasInfo = function(id){ return !!infoTexts[id]; };
