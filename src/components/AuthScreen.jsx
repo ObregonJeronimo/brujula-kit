@@ -66,7 +66,8 @@ export default function AuthScreen({ onDone }) {
             {ld?"Procesando...":mode==="login"?"Iniciar sesi\u00f3n":"Crear cuenta"}
           </button>
         </form>
-        <p style={{textAlign:"center",marginTop:20,fontSize:10,color:"#94a3b8"}}>{"Br\u00fajula KIT v5.6"}</p>
+        <p style={{textAlign:"center",marginTop:12,fontSize:11,color:"#94a3b8",lineHeight:1.5}}>{"Se permite compartir cuentas entre profesionales, pero se compartir\u00e1n pacientes."}</p>
+        <p style={{textAlign:"center",marginTop:10,fontSize:10,color:"#94a3b8"}}>{"Br\u00fajula KIT v5.6"}</p>
       </div>
     </div>
   );
