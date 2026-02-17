@@ -19,32 +19,44 @@ function calcAge(birthStr){
 }
 
 export default function PatientLookup({ userId, onSelect, selected, color }){
-  var _d = useState(""), dniInput = _d[0], setDniInput = _d[1];
+  var _inp = useState(""), searchInput = _inp[0], setSearchInput = _inp[1];
   var _s = useState("idle"), status = _s[0], setStatus = _s[1];
   var _r = useState([]), results = _r[0], setResults = _r[1];
   var accent = color || "#0d9488";
 
+  var isNumeric = function(str){ return /^\d+$/.test(str); };
+
   var doSearch = function(){
-    var dni = (dniInput||"").replace(/\D/g,"").trim();
-    if(!dni || dni.length < 3){ setStatus("idle"); setResults([]); return; }
+    var raw = (searchInput||"").trim();
+    if(!raw || raw.length < 2){ setStatus("idle"); setResults([]); return; }
     setStatus("searching");
     var q2 = query(collection(db,"pacientes"), where("userId","==",userId));
     getDocs(q2).then(function(snap){
       var all = snap.docs.map(function(d){ return Object.assign({_fbId:d.id},d.data()); });
-      var matched = all.filter(function(p){ return p.dni && p.dni.indexOf(dni) === 0; });
+      var matched;
+      var searchingDni = isNumeric(raw);
+      if(searchingDni){
+        matched = all.filter(function(p){ return p.dni && p.dni.indexOf(raw) === 0; });
+        if(matched.length === 1 && matched[0].dni === raw){
+          setResults(matched); setStatus("found"); onSelect(matched[0]); return;
+        }
+      } else {
+        var q = raw.toLowerCase();
+        matched = all.filter(function(p){ return p.nombre && p.nombre.toLowerCase().indexOf(q) >= 0; });
+      }
       if(matched.length === 0){ setResults([]); setStatus("empty"); }
-      else if(matched.length === 1 && matched[0].dni === dni){ setResults(matched); setStatus("found"); onSelect(matched[0]); }
       else { setResults(matched); setStatus("found"); }
     }).catch(function(e){ console.error("PatientLookup error:", e); setStatus("error"); });
   };
 
   useEffect(function(){
-    if(!dniInput || dniInput.replace(/\D/g,"").length < 3){ setStatus("idle"); setResults([]); return; }
+    var raw = (searchInput||"").trim();
+    if(!raw || raw.length < 2){ setStatus("idle"); setResults([]); return; }
     var timer = setTimeout(doSearch, 400);
     return function(){ clearTimeout(timer); };
-  },[dniInput]);
+  },[searchInput]);
 
-  var clearSelection = function(){ onSelect(null); setDniInput(""); setResults([]); setStatus("idle"); };
+  var clearSelection = function(){ onSelect(null); setSearchInput(""); setResults([]); setStatus("idle"); };
 
   if(selected){
     return (
@@ -68,19 +80,19 @@ export default function PatientLookup({ userId, onSelect, selected, color }){
 
   return (
     <div style={{marginBottom:20}}>
-      <label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>{"Ingrese DNI del paciente (sin puntos)"}</label>
+      <label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>{"Buscar paciente por DNI o nombre"}</label>
       <div style={{display:"flex",gap:8}}>
-        <input value={dniInput}
-          onChange={function(e){ setDniInput(e.target.value.replace(/\D/g,"").slice(0,8)); onSelect(null); }}
-          style={Object.assign({},I,{flex:1})} placeholder="Ej: 45123456" maxLength={8} inputMode="numeric" />
+        <input value={searchInput}
+          onChange={function(e){ setSearchInput(e.target.value); onSelect(null); }}
+          style={Object.assign({},I,{flex:1})} placeholder="Ej: 45123456 o Alonso Pepe" />
         <button onClick={doSearch} style={{background:accent,color:"#fff",border:"none",padding:"10px 18px",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer",flexShrink:0}}>Buscar</button>
       </div>
       {status==="searching" && <div style={{marginTop:8,fontSize:12,color:K.mt}}>Buscando...</div>}
-      {status==="empty" && <div style={{marginTop:8,fontSize:12,color:"#dc2626"}}>{"No se encontr\u00f3 paciente con ese DNI. Cargalo primero en la secci\u00f3n Pacientes."}</div>}
+      {status==="empty" && <div style={{marginTop:8,fontSize:12,color:"#dc2626"}}>{"No se encontr\u00f3 paciente. Cargalo primero en la secci\u00f3n Pacientes."}</div>}
       {status==="error" && <div style={{marginTop:8,fontSize:12,color:"#dc2626"}}>Error al buscar. Intente nuevamente.</div>}
       {status==="found" && results.length > 0 && !selected && (
         <div style={{marginTop:8}}>
-          {results.length > 1 && <div style={{fontSize:11,color:K.mt,marginBottom:4}}>{"Seleccione un paciente:"}</div>}
+          <div style={{fontSize:11,color:K.mt,marginBottom:4}}>{results.length === 1 ? "1 paciente encontrado:" : results.length+" pacientes encontrados. Seleccione uno:"}</div>
           {results.map(function(pac){
             return <div key={pac._fbId} onClick={function(){ onSelect(pac); }}
               style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",background:"#fff",borderRadius:8,border:"1px solid #e2e8f0",cursor:"pointer",marginBottom:4,transition:"all .15s"}}>
