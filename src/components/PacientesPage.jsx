@@ -20,7 +20,7 @@ function calcAge(birthStr){
 
 var IS = {width:"100%",padding:"10px 14px",border:"1px solid #e2e8f0",borderRadius:8,fontSize:14,background:"#f8faf9"};
 
-export default function PacientesPage({ userId, nfy, evals, peffEvals, repEvals }){
+export default function PacientesPage({ userId, nfy, evals, peffEvals, repEvals, discEvals }){
   var _p = useState([]), pacientes = _p[0], setPacientes = _p[1];
   var _l = useState(true), loading = _l[0], setLoading = _l[1];
   var _q = useState(""), busqueda = _q[0], setBusqueda = _q[1];
@@ -126,6 +126,7 @@ export default function PacientesPage({ userId, nfy, evals, peffEvals, repEvals 
     if(evals) evals.forEach(function(ev){ if((ev.pacienteDni||"") === pacDni) allEvals.push({tipo:"ELDI", fecha:ev.fechaGuardado || ev.fechaEvaluacion || ""}); });
     if(peffEvals) peffEvals.forEach(function(ev){ if((ev.pacienteDni||ev.dni||"") === pacDni) allEvals.push({tipo:"PEFF", fecha:ev.fechaGuardado || ev.fechaEvaluacion || ""}); });
     if(repEvals) repEvals.forEach(function(ev){ if((ev.pacienteDni||"") === pacDni) allEvals.push({tipo:"REP", fecha:ev.fechaGuardado || ev.fechaEvaluacion || ""}); });
+    if(discEvals) discEvals.forEach(function(ev){ if((ev.pacienteDni||"") === pacDni) allEvals.push({tipo:"DISC", fecha:ev.fechaGuardado || ev.fechaEvaluacion || ""}); });
     if(allEvals.length === 0) return null;
     allEvals.sort(function(a,b){ return (b.fecha||"").localeCompare(a.fecha||""); });
     return allEvals[0];
