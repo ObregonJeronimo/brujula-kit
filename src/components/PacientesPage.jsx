@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { db, collection, addDoc, getDocs, updateDoc, doc, query, where } from "../firebase.js";
+import { db, collection, addDoc, getDocs, updateDoc, deleteDoc, doc, query, where } from "../firebase.js";
 import { K } from "../lib/fb.js";
 
 var pad = function(n){ return String(n).padStart(2,"0"); };
@@ -18,7 +18,7 @@ function calcAge(birthStr){
   return parts;
 }
 
-var I = {width:"100%",padding:"10px 14px",border:"1px solid #e2e8f0",borderRadius:8,fontSize:14,background:"#f8faf9"};
+var IS = {width:"100%",padding:"10px 14px",border:"1px solid #e2e8f0",borderRadius:8,fontSize:14,background:"#f8faf9"};
 
 export default function PacientesPage({ userId, nfy, evals, peffEvals, repEvals }){
   var _p = useState([]), pacientes = _p[0], setPacientes = _p[1];
@@ -29,6 +29,7 @@ export default function PacientesPage({ userId, nfy, evals, peffEvals, repEvals 
   var _f = useState({dni:"",nombre:"",colegio:"",fechaNac:""}), form = _f[0], setForm = _f[1];
   var _ef = useState({dni:"",nombre:"",colegio:"",fechaNac:""}), editForm = _ef[0], setEditForm = _ef[1];
   var _sf = useState(false), showForm = _sf[0], setShowForm = _sf[1];
+  var _cd = useState(false), confirmDelPac = _cd[0], setConfirmDelPac = _cd[1];
 
   var loadPacientes = useCallback(function(){
     if(!userId) return;
@@ -99,13 +100,25 @@ export default function PacientesPage({ userId, nfy, evals, peffEvals, repEvals 
     }).catch(function(e){ nfy("Error: " + e.message,"er"); });
   };
 
+  var deletePaciente = function(){
+    if(!selected) return;
+    var ref = doc(db,"pacientes",selected._fbId);
+    deleteDoc(ref).then(function(){
+      nfy("Paciente eliminado","ok");
+      setConfirmDelPac(false);
+      setSelected(null);
+      loadPacientes();
+    }).catch(function(e){ nfy("Error: " + e.message,"er"); });
+  };
+
   var openEdit = function(pac){
     setSelected(pac);
     setEditForm({ dni: pac.dni||"", nombre: pac.nombre||"", colegio: pac.colegio||"", fechaNac: pac.fechaNac||"" });
     setEditing(true);
+    setConfirmDelPac(false);
   };
 
-  var openView = function(pac){ setSelected(pac); setEditing(false); };
+  var openView = function(pac){ setSelected(pac); setEditing(false); setConfirmDelPac(false); };
 
   var getLastEval = function(pacDni){
     if(!pacDni) return null;
@@ -141,7 +154,7 @@ export default function PacientesPage({ userId, nfy, evals, peffEvals, repEvals 
       <p style={{color:K.mt,fontSize:14,marginBottom:20}}>{"Gestiona los datos de tus pacientes"}</p>
 
       {!showForm && !editing && (
-        <button onClick={function(){ setShowForm(true); setSelected(null); }}
+        <button onClick={function(){ setShowForm(true); setSelected(null); setConfirmDelPac(false); }}
           style={{background:"#0d9488",color:"#fff",border:"none",padding:"10px 20px",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer",marginBottom:20}}>
           {"+ Nuevo paciente"}
         </button>
@@ -155,13 +168,13 @@ export default function PacientesPage({ userId, nfy, evals, peffEvals, repEvals 
           </div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
             <div><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>DNI (sin puntos)</label>
-              <input value={form.dni} onChange={function(e){ setForm(function(p){ return Object.assign({},p,{dni:e.target.value.replace(/\D/g,"").slice(0,8)}); }); }} style={I} placeholder="Ej: 45123456" maxLength={8} inputMode="numeric" /></div>
+              <input value={form.dni} onChange={function(e){ setForm(function(p){ return Object.assign({},p,{dni:e.target.value.replace(/\D/g,"").slice(0,8)}); }); }} style={IS} placeholder="Ej: 45123456" maxLength={8} inputMode="numeric" /></div>
             <div><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>Fecha de nacimiento</label>
-              <input type="date" value={form.fechaNac} onChange={function(e){ setForm(function(p){ return Object.assign({},p,{fechaNac:e.target.value}); }); }} style={I} /></div>
+              <input type="date" value={form.fechaNac} onChange={function(e){ setForm(function(p){ return Object.assign({},p,{fechaNac:e.target.value}); }); }} style={IS} /></div>
             <div style={{gridColumn:"1/-1"}}><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>Nombre completo (Apellido Nombre)</label>
-              <input value={form.nombre} onChange={function(e){ setForm(function(p){ return Object.assign({},p,{nombre:e.target.value}); }); }} style={I} placeholder="Ej: Alonso Pepe" /></div>
+              <input value={form.nombre} onChange={function(e){ setForm(function(p){ return Object.assign({},p,{nombre:e.target.value}); }); }} style={IS} placeholder="Ej: Alonso Pepe" /></div>
             <div style={{gridColumn:"1/-1"}}><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>{"Jard\u00edn / Colegio"}</label>
-              <input value={form.colegio} onChange={function(e){ setForm(function(p){ return Object.assign({},p,{colegio:e.target.value}); }); }} style={I} placeholder="Nombre del establecimiento" /></div>
+              <input value={form.colegio} onChange={function(e){ setForm(function(p){ return Object.assign({},p,{colegio:e.target.value}); }); }} style={IS} placeholder="Nombre del establecimiento" /></div>
           </div>
           <div style={{display:"flex",justifyContent:"flex-end",gap:10,marginTop:18}}>
             <button onClick={function(){ setShowForm(false); }} style={{background:"#f1f5f9",border:"none",padding:"10px 20px",borderRadius:8,fontSize:14,cursor:"pointer",color:K.mt}}>Cancelar</button>
@@ -178,13 +191,13 @@ export default function PacientesPage({ userId, nfy, evals, peffEvals, repEvals 
           </div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
             <div><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>DNI (sin puntos)</label>
-              <input value={editForm.dni} onChange={function(e){ setEditForm(function(p){ return Object.assign({},p,{dni:e.target.value.replace(/\D/g,"").slice(0,8)}); }); }} style={I} maxLength={8} inputMode="numeric" /></div>
+              <input value={editForm.dni} onChange={function(e){ setEditForm(function(p){ return Object.assign({},p,{dni:e.target.value.replace(/\D/g,"").slice(0,8)}); }); }} style={IS} maxLength={8} inputMode="numeric" /></div>
             <div><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>Fecha de nacimiento</label>
-              <input type="date" value={editForm.fechaNac} onChange={function(e){ setEditForm(function(p){ return Object.assign({},p,{fechaNac:e.target.value}); }); }} style={I} /></div>
+              <input type="date" value={editForm.fechaNac} onChange={function(e){ setEditForm(function(p){ return Object.assign({},p,{fechaNac:e.target.value}); }); }} style={IS} /></div>
             <div style={{gridColumn:"1/-1"}}><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>Nombre completo (Apellido Nombre)</label>
-              <input value={editForm.nombre} onChange={function(e){ setEditForm(function(p){ return Object.assign({},p,{nombre:e.target.value}); }); }} style={I} /></div>
+              <input value={editForm.nombre} onChange={function(e){ setEditForm(function(p){ return Object.assign({},p,{nombre:e.target.value}); }); }} style={IS} /></div>
             <div style={{gridColumn:"1/-1"}}><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>{"Jard\u00edn / Colegio"}</label>
-              <input value={editForm.colegio} onChange={function(e){ setEditForm(function(p){ return Object.assign({},p,{colegio:e.target.value}); }); }} style={I} /></div>
+              <input value={editForm.colegio} onChange={function(e){ setEditForm(function(p){ return Object.assign({},p,{colegio:e.target.value}); }); }} style={IS} /></div>
           </div>
           <div style={{display:"flex",justifyContent:"flex-end",gap:10,marginTop:18}}>
             <button onClick={function(){ setEditing(false); setSelected(null); }} style={{background:"#f1f5f9",border:"none",padding:"10px 20px",borderRadius:8,fontSize:14,cursor:"pointer",color:K.mt}}>Cancelar</button>
@@ -199,9 +212,22 @@ export default function PacientesPage({ userId, nfy, evals, peffEvals, repEvals 
             <h3 style={{fontSize:16,fontWeight:700,color:"#0a3d2f",margin:0}}>{"Ficha del paciente"}</h3>
             <div style={{display:"flex",gap:8}}>
               <button onClick={function(){ openEdit(selected); }} style={{background:"#f0f9ff",border:"1px solid #bae6fd",borderRadius:6,padding:"6px 14px",fontSize:12,fontWeight:600,cursor:"pointer",color:"#0369a1"}}>Editar</button>
-              <button onClick={function(){ setSelected(null); }} style={{background:"#f1f5f9",border:"none",padding:"6px 14px",borderRadius:6,fontSize:12,cursor:"pointer",color:K.mt}}>{"\u00d7"}</button>
+              <button onClick={function(){ setConfirmDelPac(true); }} style={{background:"#fef2f2",border:"1px solid #fecaca",borderRadius:6,padding:"6px 14px",fontSize:12,fontWeight:600,cursor:"pointer",color:"#dc2626"}}>Eliminar</button>
+              <button onClick={function(){ setSelected(null); setConfirmDelPac(false); }} style={{background:"#f1f5f9",border:"none",padding:"6px 14px",borderRadius:6,fontSize:12,cursor:"pointer",color:K.mt}}>{"\u00d7"}</button>
             </div>
           </div>
+
+          {confirmDelPac && (
+            <div style={{background:"#fef2f2",border:"1px solid #fecaca",borderRadius:10,padding:"14px 20px",marginBottom:16,display:"flex",flexDirection:"column",alignItems:"center",gap:10}}>
+              <div style={{fontSize:13,fontWeight:600,color:"#dc2626",textAlign:"center"}}>{"\u00bfEst\u00e1 seguro que desea eliminar este paciente?"}</div>
+              <div style={{fontSize:12,color:"#64748b",textAlign:"center"}}>{"Esta acci\u00f3n es irreversible"}</div>
+              <div style={{display:"flex",gap:8}}>
+                <button onClick={deletePaciente} style={{background:"#dc2626",color:"#fff",border:"none",padding:"8px 20px",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer"}}>{"S\u00ed, eliminar"}</button>
+                <button onClick={function(){ setConfirmDelPac(false); }} style={{background:"#f1f5f9",border:"1px solid #e2e8f0",padding:"8px 20px",borderRadius:8,fontSize:13,cursor:"pointer",color:"#64748b"}}>Cancelar</button>
+              </div>
+            </div>
+          )}
+
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
             <div><div style={{fontSize:11,fontWeight:600,color:K.mt}}>DNI</div><div style={{fontSize:15,fontWeight:600}}>{selected.dni}</div></div>
             <div><div style={{fontSize:11,fontWeight:600,color:K.mt}}>Edad</div><div style={{fontSize:15,fontWeight:600}}>{calcAge(selected.fechaNac)}</div></div>
@@ -221,8 +247,8 @@ export default function PacientesPage({ userId, nfy, evals, peffEvals, repEvals 
       )}
 
       <div style={{marginBottom:16}}>
-        <input value={busqueda} onChange={function(e){ setBusqueda(e.target.value); setSelected(null); setEditing(false); }}
-          style={Object.assign({},I,{background:"#fff",fontSize:15})} placeholder={"Buscar por DNI o nombre..."} />
+        <input value={busqueda} onChange={function(e){ setBusqueda(e.target.value); setSelected(null); setEditing(false); setConfirmDelPac(false); }}
+          style={Object.assign({},IS,{background:"#fff",fontSize:15})} placeholder={"Buscar por DNI o nombre..."} />
       </div>
 
       {loading ? (
