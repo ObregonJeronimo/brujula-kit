@@ -5,7 +5,7 @@ function ageLabel(m){ return Math.floor(m/12)+" a\u00f1os, "+(m%12)+" meses"; }
 var posLabels = {ISPP:"ISPP",ISIP:"ISIP",CSIP:"CSIP",CSFP:"CSFP"};
 var posFull = {ISPP:"Inicio s\u00edl. \u2014 Pos. palabra",ISIP:"Inicio s\u00edl. \u2014 Int. palabra",CSIP:"Coda s\u00edl. \u2014 Int. palabra",CSFP:"Coda s\u00edl. \u2014 Final palabra"};
 
-export default function RptREP({ ev, isA, onD }){
+export default function RptREP({ ev, onD }){
   var _cf = useState(false), confirmDel = _cf[0], sCf = _cf[1];
   var printRef = useRef(null);
   var res = ev.resultados || {};
@@ -53,20 +53,26 @@ export default function RptREP({ ev, isA, onD }){
 
   return (
     <div style={{animation:"fi .3s ease",maxWidth:900,margin:"0 auto"}}>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20,flexWrap:"wrap",gap:12}}>
         <h1 style={{fontSize:20,fontWeight:700}}>{"\ud83d\udcdd Reporte Rep. Palabras"}</h1>
         <div style={{display:"flex",gap:8}}>
-          <button onClick={handlePDF} style={{padding:"8px 16px",background:K.ac,color:"#fff",border:"none",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer"}}>{"\ud83d\udcc4 Exportar PDF"}</button>
-          {isA && !confirmDel && <button onClick={function(){sCf(true)}} style={{padding:"8px 16px",background:"#fef2f2",color:"#dc2626",border:"1px solid #fecaca",borderRadius:8,fontSize:13,cursor:"pointer"}}>{"\ud83d\uddd1 Eliminar"}</button>}
-          {isA && confirmDel && <div style={{display:"flex",gap:4}}>
-            <button onClick={function(){onD(ev._fbId,"rep_evaluaciones")}} style={{padding:"8px 12px",background:"#dc2626",color:"#fff",border:"none",borderRadius:6,fontSize:12,fontWeight:600,cursor:"pointer"}}>{"\u00bfEliminar?"}</button>
-            <button onClick={function(){sCf(false)}} style={{padding:"8px 12px",background:"#f1f5f9",border:"none",borderRadius:6,fontSize:12,cursor:"pointer"}}>No</button>
-          </div>}
+          {confirmDel
+            ?<div style={{background:"#fef2f2",border:"1px solid #fecaca",borderRadius:10,padding:"14px 20px",display:"flex",flexDirection:"column",alignItems:"center",gap:10}}>
+              <div style={{fontSize:13,fontWeight:600,color:"#dc2626",textAlign:"center"}}>{"\u00bfEst\u00e1 seguro que desea eliminar?"}</div>
+              <div style={{fontSize:12,color:"#64748b",textAlign:"center"}}>{"Esta acci\u00f3n es irreversible"}</div>
+              <div style={{display:"flex",gap:8}}>
+                <button onClick={function(){onD(ev._fbId,"rep_evaluaciones")}} style={{background:"#dc2626",color:"#fff",border:"none",padding:"8px 20px",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer"}}>{"S\u00ed, eliminar"}</button>
+                <button onClick={function(){sCf(false)}} style={{background:"#f1f5f9",border:"1px solid #e2e8f0",padding:"8px 20px",borderRadius:8,fontSize:13,cursor:"pointer",color:"#64748b"}}>Cancelar</button>
+              </div>
+            </div>
+            :<><button onClick={handlePDF} style={{padding:"11px 22px",background:K.ac,color:"#fff",border:"none",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer"}}>{"\ud83d\udcc4 PDF"}</button>
+              <button onClick={function(){sCf(true)}} style={{padding:"11px 22px",background:"#fef2f2",color:"#dc2626",border:"1px solid #fecaca",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer"}}>{"Eliminar"}</button>
+            </>
+          }
         </div>
       </div>
 
       <div ref={printRef} style={{background:"#fff",borderRadius:12,border:"1px solid "+K.bd,padding:28}}>
-        {/* Patient info */}
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:20,paddingBottom:16,borderBottom:"2px solid "+K.bd}}>
           <div>
             <div style={{fontSize:10,color:K.mt,fontWeight:600,textTransform:"uppercase",letterSpacing:1}}>{"Repetici\u00f3n de Palabras \u2014 PEFF 3.2"}</div>
@@ -80,7 +86,6 @@ export default function RptREP({ ev, isA, onD }){
           </div>
         </div>
 
-        {/* Summary cards */}
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12,marginBottom:24}}>
           <div style={{background:"#f0fdf4",borderRadius:10,padding:16,textAlign:"center"}}>
             <div style={{fontSize:28,fontWeight:800,color:K.ac}}>{(res.pcc||0)+"%"}</div>
@@ -97,7 +102,6 @@ export default function RptREP({ ev, isA, onD }){
           </div>
         </div>
 
-        {/* Distribution by position */}
         <h3 style={{fontSize:14,fontWeight:700,marginBottom:8}}>{"Distribuci\u00f3n por posici\u00f3n"}</h3>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:8,marginBottom:20}}>
           {["ISPP","ISIP","CSIP","CSFP"].map(function(posId){
@@ -115,7 +119,6 @@ export default function RptREP({ ev, isA, onD }){
           })}
         </div>
 
-        {/* Category summary */}
         <h3 style={{fontSize:14,fontWeight:700,marginBottom:8}}>{"Resumen por categor\u00eda"}</h3>
         <table style={{width:"100%",borderCollapse:"collapse",fontSize:12,marginBottom:20}}>
           <thead><tr style={{borderBottom:"2px solid "+K.bd,background:"#f8fafc"}}>
@@ -141,7 +144,6 @@ export default function RptREP({ ev, isA, onD }){
           </tbody>
         </table>
 
-        {/* Phoneme detail */}
         <h3 style={{fontSize:14,fontWeight:700,marginBottom:8}}>{"Detalle por fonema"}</h3>
         <table style={{width:"100%",borderCollapse:"collapse",fontSize:11,marginBottom:20}}>
           <thead><tr style={{borderBottom:"2px solid "+K.bd,background:"#f8fafc"}}>
@@ -173,7 +175,6 @@ export default function RptREP({ ev, isA, onD }){
           </tbody>
         </table>
 
-        {/* Error list */}
         {errorList.length > 0 && <div style={{marginBottom:20}}>
           <h3 style={{fontSize:14,fontWeight:700,color:"#dc2626",marginBottom:8}}>{"\u26a0 Detalle de errores ("+errorList.length+")"}</h3>
           <table style={{width:"100%",borderCollapse:"collapse",fontSize:11}}>
@@ -197,7 +198,6 @@ export default function RptREP({ ev, isA, onD }){
           </table>
         </div>}
 
-        {/* Altered phonemes */}
         {(function(){
           var alt = Object.entries(byPhoneme).filter(function(e){ var ph=e[1]; return ph.errors>0&&(patientAge/12)>=ph.age; });
           if(alt.length===0) return <div style={{background:"#dcfce7",borderRadius:12,padding:20,marginBottom:16,textAlign:"center"}}>
