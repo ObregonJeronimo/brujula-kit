@@ -18,12 +18,14 @@ import RptELDI from "./components/RptELDI.jsx";
 import RptPEFF from "./components/RptPEFF.jsx";
 import RptREP from "./components/RptREP.jsx";
 import RptDISC from "./components/RptDISC.jsx";
+import RptRECO from "./components/RptRECO.jsx";
 import Admin from "./components/Admin.jsx";
 import AdminStats from "./components/AdminStats.jsx";
 import NewELDI from "./components/NewELDI.jsx";
 import NewPEFF from "./components/NewPEFF.jsx";
 import NewREP from "./components/NewREP.jsx";
 import NewDISC from "./components/NewDISC.jsx";
+import NewRECO from "./components/NewRECO.jsx";
 import CalendarPage from "./components/CalendarPage.jsx";
 import PacientesPage from "./components/PacientesPage.jsx";
 
@@ -56,6 +58,7 @@ export default function App() {
   var _pe = useState([]), peffEvals = _pe[0], sPE = _pe[1];
   var _re = useState([]), repEvals = _re[0], sRE = _re[1];
   var _de = useState([]), discEvals = _de[0], sDE = _de[1];
+  var _rce = useState([]), recoEvals = _rce[0], sRCE = _rce[1];
   var _sl = useState(null), sel = _sl[0], sS = _sl[1];
   var _tt = useState(null), toast = _tt[0], sT = _tt[1];
   var _ld = useState(false), loading = _ld[0], sL = _ld[1];
@@ -95,14 +98,14 @@ export default function App() {
 
   var loadEvals = useCallback(function(){
     if(!profile) return; sL(true);
-    var doLoad = function(){ var p1, p2, p3, p4; if(profile.role==="admin"){ p1=fbGetAll("evaluaciones"); p2=fbGetAll("peff_evaluaciones"); p3=fbGetAll("rep_evaluaciones"); p4=fbGetAll("disc_evaluaciones"); } else { p1=fbGetFiltered("evaluaciones",authUser.uid); p2=fbGetFiltered("peff_evaluaciones",authUser.uid); p3=fbGetFiltered("rep_evaluaciones",authUser.uid); p4=fbGetFiltered("disc_evaluaciones",authUser.uid); } return Promise.all([p1,p2,p3,p4]); };
-    doLoad().then(function(res){ var sortFn = function(a,b){return(b.fechaGuardado||"").localeCompare(a.fechaGuardado||"")}; sE(res[0].sort(sortFn)); sPE(res[1].sort(sortFn)); sRE(res[2].sort(sortFn)); sDE(res[3].sort(sortFn)); }).catch(function(e){console.error(e)}).finally(function(){sL(false)});
+    var doLoad = function(){ var p1, p2, p3, p4, p5; if(profile.role==="admin"){ p1=fbGetAll("evaluaciones"); p2=fbGetAll("peff_evaluaciones"); p3=fbGetAll("rep_evaluaciones"); p4=fbGetAll("disc_evaluaciones"); p5=fbGetAll("reco_evaluaciones"); } else { p1=fbGetFiltered("evaluaciones",authUser.uid); p2=fbGetFiltered("peff_evaluaciones",authUser.uid); p3=fbGetFiltered("rep_evaluaciones",authUser.uid); p4=fbGetFiltered("disc_evaluaciones",authUser.uid); p5=fbGetFiltered("reco_evaluaciones",authUser.uid); } return Promise.all([p1,p2,p3,p4,p5]); };
+    doLoad().then(function(res){ var sortFn = function(a,b){return(b.fechaGuardado||"").localeCompare(a.fechaGuardado||"")}; sE(res[0].sort(sortFn)); sPE(res[1].sort(sortFn)); sRE(res[2].sort(sortFn)); sDE(res[3].sort(sortFn)); sRCE(res[4].sort(sortFn)); }).catch(function(e){console.error(e)}).finally(function(){sL(false)});
   },[profile,authUser]);
 
   useEffect(function(){ if(profile && !sessionBlocked) loadEvals(); },[profile,loadEvals,sessionBlocked]);
 
   var goToPremium = function(){ sV("premium"); sS(null); window.scrollTo({top:0,behavior:"smooth"}); };
-  var navTo = function(v){ if((view==="newELDI"||view==="newPEFF"||view==="newREP"||view==="newDISC") && v!==view){ if(!window.confirm("\u00bfSalir de la evaluaci\u00f3n?\n\nLa evaluaci\u00f3n no se guarda a medias y el cr\u00e9dito consumido no se recupera.")) return; } sV(v); sS(null); window.scrollTo({top:0,behavior:"smooth"}); };
+  var navTo = function(v){ if((view==="newELDI"||view==="newPEFF"||view==="newREP"||view==="newDISC"||view==="newRECO") && v!==view){ if(!window.confirm("\u00bfSalir de la evaluaci\u00f3n?\n\nLa evaluaci\u00f3n no se guarda a medias y el cr\u00e9dito consumido no se recupera.")) return; } sV(v); sS(null); window.scrollTo({top:0,behavior:"smooth"}); };
   var checkCredits = function(){ if(!profile) return false; if(profile.role==="admin") return true; if((profile.creditos||0)<1){ setShowNoCredits(true); return false; } return true; };
   var deductCredit = function(){ if(!profile || profile.role==="admin") return Promise.resolve(true); var userRef = doc(db,"usuarios",authUser.uid); return updateDoc(userRef,{creditos:increment(-1)}).then(function(){ return getDoc(userRef); }).then(function(fresh){ if(fresh.exists()){ var newCredits = fresh.data().creditos; setProfile(function(p){return Object.assign({},p,{creditos:newCredits})}); } return true; }).catch(function(e){ nfy("Error al descontar cr\u00e9dito: " + e.message, "er"); return false; }); };
   var startEval = function(toolId){ if(!checkCredits()) return; if(!isAdmin){ var ok = window.confirm("\u00bfIniciar evaluaci\u00f3n?\n\nSe consumir\u00e1 1 cr\u00e9dito de tu cuenta. Esta acci\u00f3n no se puede deshacer."); if(!ok) return; deductCredit().then(function(success){ if(success){ sV(toolId); } }); } else { sV(toolId); } };
@@ -111,6 +114,7 @@ export default function App() {
   var savePeff = function(data){ var payload = Object.assign({ id:Date.now()+"", userId:authUser.uid, evaluador:profile?.nombre?(profile.nombre+" "+profile.apellido):(profile?.username||""), fechaGuardado:new Date().toISOString() }, data); fbAdd("peff_evaluaciones",payload).then(function(res){ if(res.success){ nfy("PEFF guardada","ok"); loadEvals(); } else nfy("Error: "+res.error,"er"); sV("dash"); }); };
   var saveRep = function(data){ var payload = Object.assign({ id:Date.now()+"", userId:authUser.uid, evaluador:profile?.nombre?(profile.nombre+" "+profile.apellido):(profile?.username||""), fechaGuardado:new Date().toISOString() }, data); fbAdd("rep_evaluaciones",payload).then(function(res){ if(res.success){ nfy("Rep. Palabras guardada","ok"); loadEvals(); } else nfy("Error: "+res.error,"er"); sV("dash"); }); };
   var saveDisc = function(data){ var payload = Object.assign({ id:Date.now()+"", userId:authUser.uid, evaluador:profile?.nombre?(profile.nombre+" "+profile.apellido):(profile?.username||""), fechaGuardado:new Date().toISOString() }, data); fbAdd("disc_evaluaciones",payload).then(function(res){ if(res.success){ nfy("Disc. Fonol\u00f3gica guardada","ok"); loadEvals(); } else nfy("Error: "+res.error,"er"); sV("dash"); }); };
+  var saveReco = function(data){ var payload = Object.assign({ id:Date.now()+"", userId:authUser.uid, evaluador:profile?.nombre?(profile.nombre+" "+profile.apellido):(profile?.username||""), fechaGuardado:new Date().toISOString() }, data); fbAdd("reco_evaluaciones",payload).then(function(res){ if(res.success){ nfy("Reco. Fonol\u00f3gico guardada","ok"); loadEvals(); } else nfy("Error: "+res.error,"er"); sV("dash"); }); };
 
   var deleteEval = function(fbId, colName){
     colName = colName || "evaluaciones";
@@ -148,13 +152,15 @@ export default function App() {
         {view==="newPEFF"&&<NewPEFF onS={savePeff} nfy={nfy} userId={authUser?.uid} />}
         {view==="newREP"&&<NewREP onS={saveRep} nfy={nfy} userId={authUser?.uid} />}
         {view==="newDISC"&&<NewDISC onS={saveDisc} nfy={nfy} userId={authUser?.uid} />}
-        {view==="hist"&&<Hist es={evals} pe={peffEvals} re={repEvals} de={discEvals} onV={function(e){sS(e);sV("rpt")}} onVP={function(e){sS(e);sV("rptP")}} onVR={function(e){sS(e);sV("rptR")}} onVD={function(e){sS(e);sV("rptD")}} isA={isAdmin} onD={deleteEval} />}
+        {view==="newRECO"&&<NewRECO onS={saveReco} nfy={nfy} userId={authUser?.uid} />}
+        {view==="hist"&&<Hist es={evals} pe={peffEvals} re={repEvals} de={discEvals} rce={recoEvals} onV={function(e){sS(e);sV("rpt")}} onVP={function(e){sS(e);sV("rptP")}} onVR={function(e){sS(e);sV("rptR")}} onVD={function(e){sS(e);sV("rptD")}} onVRC={function(e){sS(e);sV("rptRC")}} isA={isAdmin} onD={deleteEval} />}
         {view==="rpt"&&sel&&<RptELDI ev={sel} onD={deleteEval} />}
         {view==="rptP"&&sel&&<RptPEFF ev={sel} onD={deleteEval} />}
         {view==="rptR"&&sel&&<RptREP ev={sel} onD={deleteEval} />}
         {view==="rptD"&&sel&&<RptDISC ev={sel} onD={deleteEval} />}
+        {view==="rptRC"&&sel&&<RptRECO ev={sel} onD={deleteEval} />}
         {view==="profile"&&<ProfilePage profile={profile} authUser={authUser} nfy={nfy} onBuyCredits={goToPremium} />}
-        {view==="pacientes"&&<PacientesPage userId={authUser?.uid} nfy={nfy} evals={evals} peffEvals={peffEvals} repEvals={repEvals} discEvals={discEvals} />}
+        {view==="pacientes"&&<PacientesPage userId={authUser?.uid} nfy={nfy} evals={evals} peffEvals={peffEvals} repEvals={repEvals} discEvals={discEvals} recoEvals={recoEvals} />}
         {view==="calendario"&&<CalendarPage userId={authUser?.uid} nfy={nfy} />}
         {view==="premium"&&<PremiumPage profile={profile} authUser={authUser} nfy={nfy} onBack={function(){sV("dash")}} />}
         {view==="adm"&&isAdmin&&<Admin nfy={nfy} />}
