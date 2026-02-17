@@ -31,7 +31,6 @@ export default function PremiumPage({ profile, nfy, onBack, authUser }) {
         price: pack.price
       })
     }).then(function(res){ return res.json(); }).then(function(data){
-      // Use sandbox_init_point when API signals sandbox mode, otherwise init_point
       var url = data.sandbox ? data.sandbox_init_point : data.init_point;
       if(url){
         window.location.href = url;
@@ -47,7 +46,6 @@ export default function PremiumPage({ profile, nfy, onBack, authUser }) {
 
   return (
     <div style={{animation:"fi .3s ease",width:"100%",maxWidth:800}}>
-      {/* Header with gradient */}
       <div style={{background:"linear-gradient(135deg,#0a3d2f 0%,#0d9488 50%,#2dd4bf 100%)",borderRadius:20,padding:"36px 32px 32px",color:"#fff",marginBottom:28,position:"relative",overflow:"hidden"}}>
         <div style={{position:"absolute",top:-40,right:-40,width:180,height:180,borderRadius:"50%",background:"rgba(255,255,255,.06)"}}></div>
         <div style={{position:"absolute",bottom:-60,left:-30,width:200,height:200,borderRadius:"50%",background:"rgba(255,255,255,.04)"}}></div>
@@ -62,7 +60,6 @@ export default function PremiumPage({ profile, nfy, onBack, authUser }) {
         </div>
       </div>
 
-      {/* Pack cards */}
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:28}}>
         {PACKS.map(function(pack){
           var active = selId === pack.id;
@@ -94,7 +91,6 @@ export default function PremiumPage({ profile, nfy, onBack, authUser }) {
         })}
       </div>
 
-      {/* Buy button */}
       <button onClick={function(){handleBuy(selId)}} disabled={loading}
         style={{
           width:"100%",padding:"18px 24px",
@@ -131,15 +127,6 @@ export default function PremiumPage({ profile, nfy, onBack, authUser }) {
               <span>{item[1]}</span>
             </div>;
           })}
-        </div>
-      </div>
-
-      <div style={{background:"#f0f9ff",border:"1px solid #bae6fd",borderRadius:12,padding:18,marginBottom:20}}>
-        <div style={{fontSize:13,fontWeight:600,color:"#0369a1",marginBottom:6}}>{"\ud83d\udce7 \u00bfPrefer\u00eds transferencia manual?"}</div>
-        <div style={{fontSize:12,color:"#475569",lineHeight:1.7}}>
-          {"Transfer\u00ed el monto al alias: "}
-          <span style={{background:"#e0f2fe",borderRadius:6,padding:"2px 10px",fontFamily:"monospace",fontSize:13,fontWeight:600,color:"#0c4a6e",userSelect:"all"}}>brujula.kit.fono</span>
-          {" y envi\u00e1 el comprobante a "}<b>valkyriumsolutions@gmail.com</b>
         </div>
       </div>
 
