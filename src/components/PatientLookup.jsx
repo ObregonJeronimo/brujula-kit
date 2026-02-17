@@ -84,7 +84,7 @@ export default function PatientLookup({ userId, onSelect, selected, color }){
       <div style={{display:"flex",gap:8}}>
         <input value={searchInput}
           onChange={function(e){ setSearchInput(e.target.value); onSelect(null); }}
-          style={Object.assign({},I,{flex:1})} placeholder="Ej: 45123456 o Alonso Pepe" />
+          style={Object.assign({},I,{flex:1})} placeholder="Introducir DNI o Nombre y Apellido" />
         <button onClick={doSearch} style={{background:accent,color:"#fff",border:"none",padding:"10px 18px",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer",flexShrink:0}}>Buscar</button>
       </div>
       {status==="searching" && <div style={{marginTop:8,fontSize:12,color:K.mt}}>Buscando...</div>}
