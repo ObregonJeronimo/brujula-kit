@@ -5,7 +5,8 @@ export default function Tools({ onSel, credits, onBuy }) {
   const tools = [
     { id: "newELDI", icon: "\ud83d\udccb", name: "ELDI", full: "Evaluaci\u00f3n del Lenguaje y Desarrollo Infantil", desc: "Comprensi\u00f3n auditiva y comunicaci\u00f3n expresiva (55+55 \u00edtems) de 0 a 7 a\u00f1os.", age: "0-7;11", time: "~30-45 min", color: "#0d9488" },
     { id: "newPEFF", icon: "\ud83d\udd0a", name: "PEFF", full: "Protocolo Fon\u00e9tico-Fonol\u00f3gico", desc: "OFA, diadococinesis, s\u00edlabas, discriminaci\u00f3n y reconocimiento fonol\u00f3gico.", age: "2;6-6;11", time: "~45-60 min", color: "#7c3aed" },
-    { id: "newREP", icon: "\ud83d\udcdd", name: "Rep. Palabras", full: "Repetici\u00f3n de Palabras (PEFF 3.2)", desc: "An\u00e1lisis fon\u00e9tico-fonol\u00f3gico: oclusivas, fricativas, nasales, vibrantes, grupos y diptongos.", age: "3-5+", time: "~20-30 min", color: "#2563eb" }
+    { id: "newREP", icon: "\ud83d\udcdd", name: "Rep. Palabras", full: "Repetici\u00f3n de Palabras (PEFF 3.2)", desc: "An\u00e1lisis fon\u00e9tico-fonol\u00f3gico: oclusivas, fricativas, nasales, vibrantes, grupos y diptongos.", age: "3-5+", time: "~20-30 min", color: "#2563eb" },
+    { id: "newDISC", icon: "\ud83d\udc42", name: "Disc. Fonol\u00f3gica", full: "Discriminaci\u00f3n Fonol\u00f3gica (PEFF-R 3.4)", desc: "Evaluaci\u00f3n de la capacidad para discriminar auditivamente fonemas mediante 14 pares de palabras.", age: "3-6+", time: "~10-15 min", color: "#d97706" }
   ];
   return (
     <div style={{animation:"fi .3s ease",width:"100%"}}>
@@ -18,7 +19,7 @@ export default function Tools({ onSel, credits, onBuy }) {
         </div>
         <button onClick={onBuy} style={{padding:"10px 24px",background:"linear-gradient(135deg,#f59e0b,#d97706)",color:"#fff",border:"none",borderRadius:10,fontSize:14,fontWeight:700,cursor:"pointer",boxShadow:"0 4px 12px rgba(245,158,11,.3)",letterSpacing:".3px",whiteSpace:"nowrap"}}>{"COMPRAR CR\u00c9DITOS \u2192"}</button>
       </div>}
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:20}}>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20}}>
         {tools.map(t=><div key={t.id} style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",overflow:"hidden",opacity:noCredits?0.5:1,transition:"opacity .2s"}}>
           <div style={{background:`linear-gradient(135deg,${t.color},${t.color}aa)`,padding:"24px 24px 20px",color:"#fff"}}>
             <div style={{fontSize:36,marginBottom:8}}>{t.icon}</div><div style={{fontSize:22,fontWeight:700}}>{t.name}</div>
