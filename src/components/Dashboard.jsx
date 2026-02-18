@@ -46,6 +46,32 @@ function saveShortcuts(uid, arr){
   try { window.localStorage.setItem("bk_shortcuts_"+uid, JSON.stringify(arr.slice(0,4))); } catch(e){}
 }
 
+function computeAlerts(citasArr, todayDate){
+  var todayMs = new Date(todayDate.getFullYear(), todayDate.getMonth(), todayDate.getDate()).getTime();
+  var threeDaysMs = 3 * 24 * 60 * 60 * 1000;
+  var results = [];
+  for(var i = 0; i < citasArr.length; i++){
+    var c = citasArr[i];
+    var est = (c.estado || "").toLowerCase();
+    if(est === "cancelada" || est === "realizada") continue;
+    var fecha = c.fecha || "";
+    var parts = fecha.split("-");
+    if(parts.length < 3) continue;
+    var anio = parseInt(parts[0], 10);
+    var mes = parseInt(parts[1], 10) - 1;
+    var dia = parseInt(parts[2], 10);
+    if(isNaN(anio) || isNaN(mes) || isNaN(dia)) continue;
+    var citaMs = new Date(anio, mes, dia).getTime();
+    var diff = citaMs - todayMs;
+    if(diff >= 0 && diff <= threeDaysMs){
+      var diasRestantes = Math.round(diff / (24 * 60 * 60 * 1000));
+      results.push({ cita: c, dias: diasRestantes });
+    }
+  }
+  results.sort(function(a, b){ return a.dias - b.dias; });
+  return results;
+}
+
 export default function Dashboard({ es, pe, re, de, rce, onT, onV, onVP, ld, profile, isAdmin, userId, nfy, onCalendar, onStartEval, onBuyCredits }) {
   var allEs = [].concat(es || []);
   var allPe = [].concat(pe || []);
@@ -79,32 +105,32 @@ export default function Dashboard({ es, pe, re, de, rce, onT, onV, onVP, ld, pro
   var _ys = useState(now.getFullYear()), calYear = _ys[0], setCalYear = _ys[1];
   var _cs = useState([]), citas = _cs[0], setCitas = _cs[1];
   var _ls = useState(false), citasLoading = _ls[0], setCitasLoading = _ls[1];
+  var _citasReady = useState(false), citasReady = _citasReady[0], setCitasReady = _citasReady[1];
 
   var loadCitas = useCallback(function(){
     if(!userId) return;
     setCitasLoading(true);
+    setCitasReady(false);
     var q2 = query(collection(db,"citas"), where("userId","==",userId));
     getDocs(q2).then(function(snap){
       var arr = snap.docs.map(function(d){ return Object.assign({_fbId:d.id},d.data()); });
-      setCitas(arr); setCitasLoading(false);
-    }).catch(function(e){ console.error("Error cargando citas:", e); setCitasLoading(false); });
+      console.log("[Dashboard] Citas cargadas:", arr.length, "items");
+      setCitas(arr);
+      setCitasLoading(false);
+      setCitasReady(true);
+    }).catch(function(e){ console.error("Error cargando citas:", e); setCitasLoading(false); setCitasReady(true); });
   },[userId]);
   useEffect(function(){ loadCitas(); },[loadCitas]);
 
-  var todayMs = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-  var threeDaysMs = 3 * 24 * 60 * 60 * 1000;
-  var upcomingAlerts = citas.filter(function(c){
-    if(c.estado === "cancelada" || c.estado === "realizada") return false;
-    var parts = (c.fecha || "").split("-"); if(parts.length < 3) return false;
-    var citaMs = new Date(parseInt(parts[0],10), parseInt(parts[1],10)-1, parseInt(parts[2],10)).getTime();
-    var diff = citaMs - todayMs; return diff >= 0 && diff <= threeDaysMs;
-  }).map(function(c){
-    var parts = (c.fecha || "").split("-");
-    var citaMs = new Date(parseInt(parts[0],10), parseInt(parts[1],10)-1, parseInt(parts[2],10)).getTime();
-    return { cita: c, dias: Math.round((citaMs - todayMs) / (24*60*60*1000)) };
-  }).sort(function(a,b){ return a.dias - b.dias; });
+  var upcomingAlerts = citasReady ? computeAlerts(citas, now) : [];
   var lowCredits = !isAdmin && credits <= 5 && credits > 0;
   var alertCount = upcomingAlerts.length + (lowCredits ? 1 : 0);
+
+  useEffect(function(){
+    if(citasReady && citas.length > 0){
+      console.log("[Dashboard] Alerts computed:", upcomingAlerts.length, "upcoming, lowCredits:", lowCredits, "total:", alertCount);
+    }
+  }, [citasReady, citas.length]);
 
   var prevMonth = function(){ if(calMonth===0){ setCalMonth(11); setCalYear(function(y){return y-1;}); } else setCalMonth(function(m){return m-1;}); };
   var nextMonth = function(){ if(calMonth===11){ setCalMonth(0); setCalYear(function(y){return y+1;}); } else setCalMonth(function(m){return m+1;}); };
@@ -118,7 +144,6 @@ export default function Dashboard({ es, pe, re, de, rce, onT, onV, onVP, ld, pro
 
   return (
     <div style={{animation:"fi .3s ease",width:"100%"}}>
-      {/* HEADER + ALERTS BUTTON */}
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6,flexWrap:"wrap",gap:10}}>
         <div>
           <h1 style={{fontSize:22,fontWeight:700,marginBottom:6}}>{"\ud83e\udded Panel Principal"}</h1>
@@ -131,7 +156,6 @@ export default function Dashboard({ es, pe, re, de, rce, onT, onV, onVP, ld, pro
         </button>
       </div>
 
-      {/* ALERTS PANEL */}
       {showAlerts && <div style={{background:"#fff",borderRadius:12,border:"1px solid #e2e8f0",padding:20,marginBottom:20,animation:"fi .2s ease"}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
           <h3 style={{fontSize:15,fontWeight:700,color:"#0a3d2f",margin:0}}>{"Alertas y recordatorios"}</h3>
@@ -157,7 +181,6 @@ export default function Dashboard({ es, pe, re, de, rce, onT, onV, onVP, ld, pro
         </div>}
       </div>}
 
-      {/* CARDS */}
       <div style={{marginBottom:28}}>
         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))",gap:16}}>
           {cards.map(function(c,i){
@@ -171,7 +194,6 @@ export default function Dashboard({ es, pe, re, de, rce, onT, onV, onVP, ld, pro
         </div>
       </div>
 
-      {/* TOOLS + QUICK ACCESS */}
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20,marginBottom:28}}>
         <button onClick={onT} style={{background:"linear-gradient(135deg,#0a3d2f,#0d9488)",color:"#fff",border:"none",borderRadius:14,padding:"28px 24px",cursor:"pointer",display:"flex",alignItems:"center",gap:16,textAlign:"left"}}>
           <div style={{width:52,height:52,borderRadius:12,background:"rgba(255,255,255,.14)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,flexShrink:0}}>{"\ud83e\uddf0"}</div>
@@ -208,7 +230,6 @@ export default function Dashboard({ es, pe, re, de, rce, onT, onV, onVP, ld, pro
         </div>
       </div>
 
-      {/* RECIENTES */}
       <div style={{background:"#fff",borderRadius:14,padding:22,border:"1px solid #e2e8f0",marginBottom:28}}>
         <h3 style={{fontSize:15,fontWeight:600,marginBottom:14}}>Recientes</h3>
         {rc.length===0 ? <p style={{color:K.mt,fontSize:13}}>{"Sin evaluaciones a\u00fan."}</p> : rc.map(function(ev){
@@ -220,7 +241,6 @@ export default function Dashboard({ es, pe, re, de, rce, onT, onV, onVP, ld, pro
         })}
       </div>
 
-      {/* CALENDAR */}
       <div style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",padding:24,marginBottom:20}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}}>
           <h3 style={{fontSize:16,fontWeight:700,color:"#0a3d2f",margin:0}}>{"\ud83d\udcc5 Agenda"}</h3>
