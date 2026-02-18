@@ -146,7 +146,7 @@ export default function App() {
       </aside>
       <main id="main-scroll" style={{flex:1,overflowY:"auto",overflowX:"hidden",padding:mobile?"16px":"28px 36px",height:"100vh"}}>
         {toast&&<div style={{position:"fixed",top:16,right:16,zIndex:999,background:toast.t==="ok"?"#059669":"#dc2626",color:"#fff",padding:"10px 18px",borderRadius:8,fontSize:13,fontWeight:500,boxShadow:"0 4px 16px rgba(0,0,0,.15)",animation:"fi .3s ease"}}>{toast.m}</div>}
-        {view==="dash"&&<Dashboard es={evals} pe={peffEvals} onT={function(){navTo("tools")}} onV={function(e){sS(e);sV("rpt")}} onVP={function(e){sS(e);sV("rptP")}} ld={loading} profile={profile} isAdmin={isAdmin} userId={authUser?.uid} nfy={nfy} onCalendar={function(){navTo("calendario")}} />}
+        {view==="dash"&&<Dashboard es={evals} pe={peffEvals} re={repEvals} de={discEvals} rce={recoEvals} onT={function(){navTo("tools")}} onV={function(e){sS(e);sV("rpt")}} onVP={function(e){sS(e);sV("rptP")}} ld={loading} profile={profile} isAdmin={isAdmin} userId={authUser?.uid} nfy={nfy} onCalendar={function(){navTo("calendario")}} />}
         {view==="tools"&&<Tools onSel={startEval} credits={isAdmin?999:(profile.creditos||0)} onBuy={goToPremium} />}
         {view==="newELDI"&&<NewELDI onS={saveEval} nfy={nfy} userId={authUser?.uid} />}
         {view==="newPEFF"&&<NewPEFF onS={savePeff} nfy={nfy} userId={authUser?.uid} />}
