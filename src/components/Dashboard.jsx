@@ -13,14 +13,43 @@ var COLOR_MAP = {
 };
 function getHex(id){ return COLOR_MAP[id] || "#2563eb"; }
 
-export default function Dashboard({ es, pe, onT, onV, onVP, ld, profile, isAdmin, userId, nfy, onCalendar }) {
-  var all = [].concat(es,pe).sort(function(a,b){ return (b.fechaGuardado||"").localeCompare(a.fechaGuardado||""); });
-  var rc = all.slice(0, 5);
+function countThisMonth(arr){
+  var now = new Date();
+  var y = now.getFullYear();
+  var m = now.getMonth();
+  var prefix = y + "-" + pad(m + 1);
+  var count = 0;
+  for(var i = 0; i < arr.length; i++){
+    var fg = arr[i].fechaGuardado || "";
+    if(fg.substring(0, 7) === prefix) count++;
+  }
+  return count;
+}
+
+export default function Dashboard({ es, pe, re, de, rce, onT, onV, onVP, ld, profile, isAdmin, userId, nfy, onCalendar }) {
+  var allEs = [].concat(es || []);
+  var allPe = [].concat(pe || []);
+  var allRe = [].concat(re || []);
+  var allDe = [].concat(de || []);
+  var allRce = [].concat(rce || []);
+  var allEvals = [].concat(allEs, allPe, allRe, allDe, allRce);
+
+  allEvals.sort(function(a,b){ return (b.fechaGuardado || "").localeCompare(a.fechaGuardado || ""); });
+  var rc = allEvals.slice(0, 5);
+
+  var evalsThisMonth = countThisMonth(allEs) + countThisMonth(allPe) + countThisMonth(allRe) + countThisMonth(allDe) + countThisMonth(allRce);
+
+  var allPatients = {};
+  allEvals.forEach(function(ev){
+    var name = (ev.paciente || "").trim();
+    if(name) allPatients[name.toLowerCase()] = true;
+  });
+  var uniquePatients = Object.keys(allPatients).length;
+
   var cards = [
-    { ic: "\ud83d\udccb", label: "Eval. ELDI", value: es.length },
-    { ic: "\ud83d\udd0a", label: "Eval. PEFF", value: pe.length },
-    { ic: "\ud83d\udc66\ud83d\udc67", label: "Pacientes", value: new Set([].concat(es.map(function(e){return e.paciente}),pe.map(function(e){return e.paciente}))).size },
-    { ic: "\ud83c\udf38", label: "Cr\u00e9ditos", value: isAdmin ? "\u221e" : (profile?.creditos || 0) }
+    { ic: "\ud83d\udccb", label: "Evaluaciones", sublabel: "este mes", value: evalsThisMonth },
+    { ic: "\ud83d\udc66\ud83d\udc67", label: "Pacientes evaluados", value: uniquePatients },
+    { ic: "\ud83c\udf38", label: "Cr\u00e9ditos", value: isAdmin ? "\u221e" : (profile && profile.creditos ? profile.creditos : 0) }
   ];
 
   var now = new Date();
@@ -73,7 +102,7 @@ export default function Dashboard({ es, pe, onT, onV, onVP, ld, profile, isAdmin
   return (
     <div style={{animation:"fi .3s ease",width:"100%"}}>
       <h1 style={{fontSize:22,fontWeight:700,marginBottom:6}}>{"\ud83e\udded Panel Principal"}</h1>
-      <p style={{color:K.mt,fontSize:14,marginBottom:24}}>{"Bienvenido/a, "}{profile?.nombre || profile?.username}{ld ? " \u2014 cargando..." : ""}</p>
+      <p style={{color:K.mt,fontSize:14,marginBottom:24}}>{"Bienvenido/a, "}{profile && profile.nombre ? profile.nombre : (profile && profile.username ? profile.username : "")}{ld ? " \u2014 cargando..." : ""}</p>
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))",gap:16,marginBottom:28}}>
         {cards.map(function(c,i){
           return (
@@ -81,6 +110,7 @@ export default function Dashboard({ es, pe, onT, onV, onVP, ld, profile, isAdmin
               <div style={{fontSize:28,marginBottom:6}}>{c.ic}</div>
               <div style={{fontSize:28,fontWeight:700}}>{c.value}</div>
               <div style={{fontSize:13,color:K.mt,marginTop:2}}>{c.label}</div>
+              {c.sublabel && <div style={{fontSize:11,color:"#94a3b8",marginTop:1}}>{c.sublabel}</div>}
             </div>
           );
         })}
