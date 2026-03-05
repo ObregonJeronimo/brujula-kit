@@ -2,6 +2,23 @@
 // POST /api/generate-report
 // Body: { evalData, evalType }
 
+async function callGemini(apiKey, prompt, attempt) {
+  var geminiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" + apiKey;
+  var geminiRes = await fetch(geminiUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: { temperature: 0.4, maxOutputTokens: 3000 }
+    })
+  });
+  return geminiRes;
+}
+
+function sleep(ms) {
+  return new Promise(function(resolve) { setTimeout(resolve, ms); });
+}
+
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
@@ -81,40 +98,52 @@ export default async function handler(req, res) {
       + "5. CONCLUSION PROFESIONAL\n"
       + "6. RECOMENDACIONES";
 
-    // Call Gemini API
-    var geminiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" + GEMINI_KEY;
+    // Try up to 3 times with increasing delays on 429
+    var maxRetries = 3;
+    var geminiRes = null;
+    var lastStatus = 0;
+    var lastErrBody = "";
 
-    var geminiRes = await fetch(geminiUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [
-          { parts: [{ text: prompt }] }
-        ],
-        generationConfig: {
-          temperature: 0.4,
-          maxOutputTokens: 3000
-        }
-      })
-    });
+    for (var attempt = 0; attempt < maxRetries; attempt++) {
+      if (attempt > 0) {
+        var waitMs = attempt * 4000;
+        console.log("[generate-report] Retry " + attempt + ", waiting " + waitMs + "ms...");
+        await sleep(waitMs);
+      }
 
-    if (!geminiRes.ok) {
-      var errBody = await geminiRes.text();
-      var statusCode = geminiRes.status;
-      console.error("[generate-report] Gemini error:", statusCode, errBody);
+      console.log("[generate-report] Attempt " + (attempt + 1) + "/" + maxRetries);
+      geminiRes = await callGemini(GEMINI_KEY, prompt, attempt);
 
+      if (geminiRes.ok) {
+        break;
+      }
+
+      lastStatus = geminiRes.status;
+      lastErrBody = await geminiRes.text();
+      console.error("[generate-report] Attempt " + (attempt + 1) + " failed:", lastStatus, lastErrBody);
+
+      // Only retry on 429 (rate limit)
+      if (lastStatus !== 429) {
+        break;
+      }
+
+      geminiRes = null;
+    }
+
+    // Handle final failure
+    if (!geminiRes || !geminiRes.ok) {
       var parsedErr = null;
-      try { parsedErr = JSON.parse(errBody); } catch(e) {}
-      var errMsg = (parsedErr && parsedErr.error && parsedErr.error.message) || "";
+      try { parsedErr = JSON.parse(lastErrBody); } catch(e) {}
+      var errMsg = (parsedErr && parsedErr.error && parsedErr.error.message) || lastErrBody || "Error desconocido";
 
-      if (statusCode === 429) {
-        return res.status(502).json({ error: "L\u00edmite de solicitudes de Gemini excedido. Esper\u00e1 unos segundos e intent\u00e1 de nuevo." });
-      } else if (statusCode === 400) {
+      if (lastStatus === 429) {
+        return res.status(502).json({ error: "L\u00edmite de solicitudes de Gemini excedido tras " + maxRetries + " intentos. Esper\u00e1 1 minuto e intent\u00e1 de nuevo." });
+      } else if (lastStatus === 403) {
+        return res.status(502).json({ error: "API Key de Gemini sin permisos o no activada. Verific\u00e1 que la key est\u00e9 habilitada en Google AI Studio (aistudio.google.com)." });
+      } else if (lastStatus === 400) {
         return res.status(502).json({ error: "Error en la solicitud a Gemini: " + errMsg });
-      } else if (statusCode === 403) {
-        return res.status(502).json({ error: "API Key de Gemini sin permisos o inv\u00e1lida. Verific\u00e1 la variable GEMINI_API_KEY en Vercel." });
       } else {
-        return res.status(502).json({ error: "Error de Gemini (c\u00f3digo " + statusCode + "): " + errMsg });
+        return res.status(502).json({ error: "Error de Gemini (c\u00f3digo " + lastStatus + "): " + errMsg });
       }
     }
 
