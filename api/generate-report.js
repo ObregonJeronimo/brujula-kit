@@ -1,4 +1,4 @@
-// Vercel Serverless Function — generate AI fonoaudiological report
+// Vercel Serverless Function — generate AI fonoaudiological report using Gemini
 // POST /api/generate-report
 // Body: { evalData, evalType }
 
@@ -9,9 +9,9 @@ export default async function handler(req, res) {
   if (req.method === "OPTIONS") return res.status(200).end();
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
-  var OPENAI_KEY = process.env.OPENAI_API_KEY;
-  if (!OPENAI_KEY) {
-    return res.status(500).json({ error: "OPENAI_API_KEY no est\u00e1 configurada en las variables de entorno de Vercel." });
+  var GEMINI_KEY = process.env.GEMINI_API_KEY;
+  if (!GEMINI_KEY) {
+    return res.status(500).json({ error: "GEMINI_API_KEY no est\u00e1 configurada en las variables de entorno de Vercel." });
   }
 
   try {
@@ -21,7 +21,6 @@ export default async function handler(req, res) {
     }
 
     var ev = body.evalData;
-    var evalType = body.evalType || "reco";
 
     var edadAnios = Math.floor((ev.edadMeses || 0) / 12);
     var edadMesesResto = (ev.edadMeses || 0) % 12;
@@ -48,9 +47,16 @@ export default async function handler(req, res) {
 
     var observaciones = ev.observaciones || "No se registraron observaciones.";
 
-    var systemPrompt = "Eres un fonoaudi\u00f3logo cl\u00ednico profesional especializado en evaluaci\u00f3n infantil y trastornos de los sonidos del habla. Tu rol es generar informes fonoaudiol\u00f3gicos claros, profesionales y estructurados a partir de los datos de evaluaciones cl\u00ednicas.\n\nReglas importantes:\n- NO inventes datos que no est\u00e9n presentes en la evaluaci\u00f3n. Si alg\u00fan dato no est\u00e1 disponible, ind\u00edcalo expl\u00edcitamente.\n- Usa terminolog\u00eda cl\u00ednica apropiada pero comprensible.\n- S\u00e9 objetivo y preciso en el an\u00e1lisis.\n- El informe debe ser \u00fatil para otros profesionales de salud y educaci\u00f3n.\n- Redacta en espa\u00f1ol rioplatense profesional.\n- No uses markdown ni formato especial, solo texto plano con saltos de l\u00ednea para separar secciones.\n- Cada secci\u00f3n debe tener un t\u00edtulo en may\u00fasculas seguido de dos puntos.";
-
-    var userPrompt = "Genera un informe fonoaudiol\u00f3gico profesional basado en los siguientes datos de la evaluaci\u00f3n de Reconocimiento Fonol\u00f3gico (PEFF-R 3.5):\n\n"
+    var prompt = "Eres un fonoaudi\u00f3logo cl\u00ednico profesional especializado en evaluaci\u00f3n infantil y trastornos de los sonidos del habla. Tu rol es generar informes fonoaudiol\u00f3gicos claros, profesionales y estructurados a partir de los datos de evaluaciones cl\u00ednicas.\n\n"
+      + "Reglas importantes:\n"
+      + "- NO inventes datos que no est\u00e9n presentes en la evaluaci\u00f3n. Si alg\u00fan dato no est\u00e1 disponible, indic\u00e1lo expl\u00edcitamente.\n"
+      + "- Us\u00e1 terminolog\u00eda cl\u00ednica apropiada pero comprensible.\n"
+      + "- S\u00e9 objetivo y preciso en el an\u00e1lisis.\n"
+      + "- El informe debe ser \u00fatil para otros profesionales de salud y educaci\u00f3n.\n"
+      + "- Redact\u00e1 en espa\u00f1ol rioplatense profesional.\n"
+      + "- No uses markdown ni formato especial, solo texto plano con saltos de l\u00ednea para separar secciones.\n"
+      + "- Cada secci\u00f3n debe tener un t\u00edtulo en MAY\u00daSCULAS seguido de dos puntos.\n\n"
+      + "Gener\u00e1 un informe fonoaudiol\u00f3gico profesional basado en los siguientes datos de la evaluaci\u00f3n de Reconocimiento Fonol\u00f3gico (PEFF-R 3.5):\n\n"
       + "DATOS DEL PACIENTE:\n"
       + "- Nombre: " + (ev.paciente || "No disponible") + "\n"
       + "- DNI: " + (ev.pacienteDni || "No disponible") + "\n"
@@ -67,7 +73,7 @@ export default async function handler(req, res) {
       + "\nDETALLE POR GRUPO DE CONTRASTE:\n" + groupDetail
       + "\n\nGRUPOS CON DIFICULTADES:\n" + errorDetail
       + "\n\nOBSERVACIONES DEL PROFESIONAL:\n" + observaciones
-      + "\n\nGenera el informe con las siguientes secciones:\n"
+      + "\n\nGener\u00e1 el informe con las siguientes secciones:\n"
       + "1. DESCRIPCION GENERAL DEL DESEMPE\u00d1O\n"
       + "2. ANALISIS DE RESULTADOS\n"
       + "3. FONEMAS ALTERADOS Y PROCESOS FONOLOGICOS DETECTADOS\n"
@@ -75,84 +81,68 @@ export default async function handler(req, res) {
       + "5. CONCLUSION PROFESIONAL\n"
       + "6. RECOMENDACIONES";
 
-    // Try primary model, fallback to gpt-3.5-turbo if rate limited
-    var models = ["gpt-4o-mini", "gpt-3.5-turbo"];
-    var openaiData = null;
-    var lastError = null;
+    // Call Gemini API
+    var geminiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" + GEMINI_KEY;
 
-    for (var i = 0; i < models.length; i++) {
-      var model = models[i];
-      console.log("[generate-report] Trying model:", model);
+    var geminiRes = await fetch(geminiUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [
+          { parts: [{ text: prompt }] }
+        ],
+        generationConfig: {
+          temperature: 0.4,
+          maxOutputTokens: 3000
+        }
+      })
+    });
 
-      var openaiRes = await fetch("https://api.openai.com/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer " + OPENAI_KEY
-        },
-        body: JSON.stringify({
-          model: model,
-          messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: userPrompt }
-          ],
-          max_tokens: 2500,
-          temperature: 0.4
-        })
-      });
+    if (!geminiRes.ok) {
+      var errBody = await geminiRes.text();
+      var statusCode = geminiRes.status;
+      console.error("[generate-report] Gemini error:", statusCode, errBody);
 
-      if (openaiRes.ok) {
-        openaiData = await openaiRes.json();
-        break;
-      }
-
-      var errBody = await openaiRes.text();
-      var statusCode = openaiRes.status;
-      console.error("[generate-report] Model " + model + " failed:", statusCode, errBody);
-
-      // Parse error for better messages
       var parsedErr = null;
       try { parsedErr = JSON.parse(errBody); } catch(e) {}
+      var errMsg = (parsedErr && parsedErr.error && parsedErr.error.message) || "";
 
       if (statusCode === 429) {
-        var errMsg = (parsedErr && parsedErr.error && parsedErr.error.message) || "";
-        if (errMsg.indexOf("insufficient_quota") !== -1 || errMsg.indexOf("exceeded") !== -1) {
-          lastError = "Tu cuenta de OpenAI no tiene saldo suficiente. Verific\u00e1 tu billing en platform.openai.com > Settings > Billing.";
-          // Don't try fallback model if it's a billing issue
-          break;
-        }
-        lastError = "L\u00edmite de solicitudes excedido (429). Esper\u00e1 unos segundos e intent\u00e1 de nuevo.";
-        // Try next model
-        continue;
-      } else if (statusCode === 401) {
-        lastError = "API Key de OpenAI inv\u00e1lida o expirada. Verific\u00e1 la variable OPENAI_API_KEY en Vercel.";
-        break;
+        return res.status(502).json({ error: "L\u00edmite de solicitudes de Gemini excedido. Esper\u00e1 unos segundos e intent\u00e1 de nuevo." });
+      } else if (statusCode === 400) {
+        return res.status(502).json({ error: "Error en la solicitud a Gemini: " + errMsg });
+      } else if (statusCode === 403) {
+        return res.status(502).json({ error: "API Key de Gemini sin permisos o inv\u00e1lida. Verific\u00e1 la variable GEMINI_API_KEY en Vercel." });
       } else {
-        lastError = "Error de OpenAI (c\u00f3digo " + statusCode + "). Intent\u00e1 nuevamente en unos minutos.";
-        break;
+        return res.status(502).json({ error: "Error de Gemini (c\u00f3digo " + statusCode + "): " + errMsg });
       }
     }
 
-    if (!openaiData) {
-      return res.status(502).json({ error: lastError || "No se pudo conectar con OpenAI." });
-    }
-
+    var geminiData = await geminiRes.json();
     var reportText = "";
-    if (openaiData.choices && openaiData.choices.length > 0 && openaiData.choices[0].message) {
-      reportText = openaiData.choices[0].message.content || "";
+
+    if (geminiData.candidates && geminiData.candidates.length > 0) {
+      var candidate = geminiData.candidates[0];
+      if (candidate.content && candidate.content.parts && candidate.content.parts.length > 0) {
+        reportText = candidate.content.parts[0].text || "";
+      }
     }
 
     if (!reportText) {
-      return res.status(500).json({ error: "OpenAI devolvi\u00f3 una respuesta vac\u00eda. Intent\u00e1 de nuevo." });
+      console.error("[generate-report] Empty Gemini response:", JSON.stringify(geminiData).substring(0, 500));
+      return res.status(500).json({ error: "Gemini devolvi\u00f3 una respuesta vac\u00eda. Intent\u00e1 de nuevo." });
     }
 
-    console.log("[generate-report] Report generated for " + (ev.paciente || "unknown") + ", model: " + (openaiData.model || "?") + ", length: " + reportText.length);
+    // Clean up any markdown formatting Gemini might add
+    reportText = reportText.replace(/\*\*/g, "").replace(/^#+\s*/gm, "").replace(/^[-*]\s+/gm, "- ");
+
+    console.log("[generate-report] Report generated for " + (ev.paciente || "unknown") + ", length: " + reportText.length);
 
     return res.status(200).json({
       success: true,
       report: reportText,
-      model: openaiData.model || "unknown",
-      tokens: openaiData.usage || null
+      model: "gemini-2.0-flash",
+      tokens: geminiData.usageMetadata || null
     });
   } catch (err) {
     console.error("[generate-report] Error:", err);
