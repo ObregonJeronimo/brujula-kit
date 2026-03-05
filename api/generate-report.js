@@ -81,10 +81,10 @@ export default async function handler(req, res) {
       + "5. CONCLUSION PROFESIONAL\n"
       + "6. RECOMENDACIONES";
 
-    // Single request to Gemini using v1 API
-    var geminiUrl = "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=" + GEMINI_KEY;
+    // Single request — Gemini 2.0 Flash via v1beta (free tier)
+    var geminiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" + GEMINI_KEY;
 
-    console.log("[generate-report] Calling gemini-1.5-flash (v1) for patient:", ev.paciente || "unknown");
+    console.log("[generate-report] Calling gemini-2.0-flash for patient:", ev.paciente || "unknown");
 
     var geminiRes = await fetch(geminiUrl, {
       method: "POST",
@@ -136,7 +136,7 @@ export default async function handler(req, res) {
     return res.status(200).json({
       success: true,
       report: reportText,
-      model: "gemini-1.5-flash",
+      model: "gemini-2.0-flash",
       tokens: geminiData.usageMetadata || null
     });
   } catch (err) {
