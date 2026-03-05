@@ -85,6 +85,7 @@ export default async function handler(req, res) {
     var geminiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" + GEMINI_KEY;
 
     console.log("[generate-report] Calling gemini-2.0-flash for patient:", ev.paciente || "unknown");
+    console.log("[generate-report] Key prefix:", GEMINI_KEY.substring(0, 10) + "...");
 
     var geminiRes = await fetch(geminiUrl, {
       method: "POST",
@@ -98,19 +99,17 @@ export default async function handler(req, res) {
     if (!geminiRes.ok) {
       var errBody = await geminiRes.text();
       var statusCode = geminiRes.status;
-      console.error("[generate-report] Gemini error:", statusCode, errBody.substring(0, 400));
+      console.error("[generate-report] FULL Gemini error:", statusCode, errBody);
 
       var parsedErr = null;
       try { parsedErr = JSON.parse(errBody); } catch(e) {}
-      var errMsg = (parsedErr && parsedErr.error && parsedErr.error.message) || errBody.substring(0, 200);
+      var errMsg = (parsedErr && parsedErr.error && parsedErr.error.message) || errBody.substring(0, 300);
+      var errStatus = (parsedErr && parsedErr.error && parsedErr.error.status) || "";
 
-      if (statusCode === 429) {
-        return res.status(502).json({ error: "L\u00edmite de solicitudes de Gemini excedido. Esper\u00e1 1-2 minutos e intent\u00e1 de nuevo." });
-      } else if (statusCode === 403) {
-        return res.status(502).json({ error: "API Key sin permisos. Verific\u00e1 en Google AI Studio que la key est\u00e9 activa. Detalle: " + errMsg });
-      } else {
-        return res.status(502).json({ error: "Error de Gemini [" + statusCode + "]: " + errMsg });
-      }
+      // Show the FULL error to the user so we can diagnose
+      return res.status(502).json({
+        error: "Error de Google [" + statusCode + " " + errStatus + "]: " + errMsg
+      });
     }
 
     var geminiData = await geminiRes.json();
