@@ -2,23 +2,6 @@
 // POST /api/generate-report
 // Body: { evalData, evalType }
 
-function sleep(ms) {
-  return new Promise(function(resolve) { setTimeout(resolve, ms); });
-}
-
-async function tryGeminiModel(apiKey, modelName, prompt) {
-  var url = "https://generativelanguage.googleapis.com/v1beta/models/" + modelName + ":generateContent?key=" + apiKey;
-  var response = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: { temperature: 0.4, maxOutputTokens: 3000 }
-    })
-  });
-  return response;
-}
-
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
@@ -98,62 +81,35 @@ export default async function handler(req, res) {
       + "5. CONCLUSION PROFESIONAL\n"
       + "6. RECOMENDACIONES";
 
-    // Try multiple models as fallback
-    var models = ["gemini-1.5-flash", "gemini-1.5-flash-latest", "gemini-pro"];
-    var geminiRes = null;
-    var lastStatus = 0;
-    var lastErrBody = "";
-    var usedModel = "";
+    // Single request to Gemini
+    var geminiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + GEMINI_KEY;
 
-    for (var m = 0; m < models.length; m++) {
-      var model = models[m];
-      console.log("[generate-report] Trying model:", model);
+    console.log("[generate-report] Calling gemini-1.5-flash for patient:", ev.paciente || "unknown");
 
-      // Each model gets up to 2 attempts with delay
-      for (var attempt = 0; attempt < 2; attempt++) {
-        if (attempt > 0) {
-          console.log("[generate-report] Retry for " + model + ", waiting 5s...");
-          await sleep(5000);
-        }
+    var geminiRes = await fetch(geminiUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.4, maxOutputTokens: 3000 }
+      })
+    });
 
-        geminiRes = await tryGeminiModel(GEMINI_KEY, model, prompt);
+    if (!geminiRes.ok) {
+      var errBody = await geminiRes.text();
+      var statusCode = geminiRes.status;
+      console.error("[generate-report] Gemini error:", statusCode, errBody.substring(0, 400));
 
-        if (geminiRes.ok) {
-          usedModel = model;
-          break;
-        }
-
-        lastStatus = geminiRes.status;
-        lastErrBody = await geminiRes.text();
-        console.error("[generate-report] " + model + " attempt " + (attempt + 1) + " failed:", lastStatus, lastErrBody.substring(0, 300));
-
-        // Only retry on 429, break on other errors
-        if (lastStatus !== 429) break;
-        geminiRes = null;
-      }
-
-      if (geminiRes && geminiRes.ok) break;
-
-      // If not 429 and not 404, don't try other models
-      if (lastStatus !== 429 && lastStatus !== 404) break;
-      geminiRes = null;
-    }
-
-    // Handle final failure
-    if (!geminiRes || !geminiRes.ok) {
       var parsedErr = null;
-      try { parsedErr = JSON.parse(lastErrBody); } catch(e) {}
-      var errMsg = (parsedErr && parsedErr.error && parsedErr.error.message) || "";
-      var errStatus = (parsedErr && parsedErr.error && parsedErr.error.status) || "";
+      try { parsedErr = JSON.parse(errBody); } catch(e) {}
+      var errMsg = (parsedErr && parsedErr.error && parsedErr.error.message) || errBody.substring(0, 200);
 
-      console.error("[generate-report] FINAL FAILURE - status:", lastStatus, "errStatus:", errStatus, "msg:", errMsg.substring(0, 200));
-
-      if (lastStatus === 429) {
-        return res.status(502).json({ error: "L\u00edmite de Gemini excedido. Esper\u00e1 1-2 minutos sin tocar el bot\u00f3n e intent\u00e1 de nuevo. (Detalle: " + errMsg.substring(0, 100) + ")" });
-      } else if (lastStatus === 403) {
-        return res.status(502).json({ error: "API Key sin permisos. En Google AI Studio, verific\u00e1 que la Generative Language API est\u00e9 habilitada para tu proyecto. (Detalle: " + errMsg.substring(0, 100) + ")" });
+      if (statusCode === 429) {
+        return res.status(502).json({ error: "L\u00edmite de solicitudes de Gemini excedido. Esper\u00e1 1-2 minutos e intent\u00e1 de nuevo." });
+      } else if (statusCode === 403) {
+        return res.status(502).json({ error: "API Key sin permisos. Verific\u00e1 en Google AI Studio que la key est\u00e9 activa. Detalle: " + errMsg });
       } else {
-        return res.status(502).json({ error: "Error de Gemini [" + lastStatus + "]: " + errMsg.substring(0, 200) });
+        return res.status(502).json({ error: "Error de Gemini [" + statusCode + "]: " + errMsg });
       }
     }
 
@@ -175,12 +131,12 @@ export default async function handler(req, res) {
     // Clean markdown
     reportText = reportText.replace(/\*\*/g, "").replace(/^#+\s*/gm, "").replace(/^[-*]\s+/gm, "- ");
 
-    console.log("[generate-report] OK - model: " + usedModel + ", patient: " + (ev.paciente || "?") + ", chars: " + reportText.length);
+    console.log("[generate-report] OK - patient:", ev.paciente || "?", "chars:", reportText.length);
 
     return res.status(200).json({
       success: true,
       report: reportText,
-      model: usedModel,
+      model: "gemini-1.5-flash",
       tokens: geminiData.usageMetadata || null
     });
   } catch (err) {
