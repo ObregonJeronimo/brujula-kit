@@ -11,7 +11,7 @@ export default async function handler(req, res) {
 
   var OPENAI_KEY = process.env.OPENAI_API_KEY;
   if (!OPENAI_KEY) {
-    return res.status(500).json({ error: "OPENAI_API_KEY not configured in environment" });
+    return res.status(500).json({ error: "OPENAI_API_KEY no est\u00e1 configurada en las variables de entorno de Vercel." });
   }
 
   try {
@@ -75,50 +75,87 @@ export default async function handler(req, res) {
       + "5. CONCLUSION PROFESIONAL\n"
       + "6. RECOMENDACIONES";
 
-    var openaiRes = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer " + OPENAI_KEY
-      },
-      body: JSON.stringify({
-        model: "gpt-4o-mini",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt }
-        ],
-        max_tokens: 2500,
-        temperature: 0.4
-      })
-    });
+    // Try primary model, fallback to gpt-3.5-turbo if rate limited
+    var models = ["gpt-4o-mini", "gpt-3.5-turbo"];
+    var openaiData = null;
+    var lastError = null;
 
-    if (!openaiRes.ok) {
+    for (var i = 0; i < models.length; i++) {
+      var model = models[i];
+      console.log("[generate-report] Trying model:", model);
+
+      var openaiRes = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + OPENAI_KEY
+        },
+        body: JSON.stringify({
+          model: model,
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userPrompt }
+          ],
+          max_tokens: 2500,
+          temperature: 0.4
+        })
+      });
+
+      if (openaiRes.ok) {
+        openaiData = await openaiRes.json();
+        break;
+      }
+
       var errBody = await openaiRes.text();
-      console.error("[generate-report] OpenAI error:", openaiRes.status, errBody);
-      return res.status(502).json({ error: "OpenAI API error: " + openaiRes.status });
+      var statusCode = openaiRes.status;
+      console.error("[generate-report] Model " + model + " failed:", statusCode, errBody);
+
+      // Parse error for better messages
+      var parsedErr = null;
+      try { parsedErr = JSON.parse(errBody); } catch(e) {}
+
+      if (statusCode === 429) {
+        var errMsg = (parsedErr && parsedErr.error && parsedErr.error.message) || "";
+        if (errMsg.indexOf("insufficient_quota") !== -1 || errMsg.indexOf("exceeded") !== -1) {
+          lastError = "Tu cuenta de OpenAI no tiene saldo suficiente. Verific\u00e1 tu billing en platform.openai.com > Settings > Billing.";
+          // Don't try fallback model if it's a billing issue
+          break;
+        }
+        lastError = "L\u00edmite de solicitudes excedido (429). Esper\u00e1 unos segundos e intent\u00e1 de nuevo.";
+        // Try next model
+        continue;
+      } else if (statusCode === 401) {
+        lastError = "API Key de OpenAI inv\u00e1lida o expirada. Verific\u00e1 la variable OPENAI_API_KEY en Vercel.";
+        break;
+      } else {
+        lastError = "Error de OpenAI (c\u00f3digo " + statusCode + "). Intent\u00e1 nuevamente en unos minutos.";
+        break;
+      }
     }
 
-    var openaiData = await openaiRes.json();
-    var reportText = "";
+    if (!openaiData) {
+      return res.status(502).json({ error: lastError || "No se pudo conectar con OpenAI." });
+    }
 
+    var reportText = "";
     if (openaiData.choices && openaiData.choices.length > 0 && openaiData.choices[0].message) {
       reportText = openaiData.choices[0].message.content || "";
     }
 
     if (!reportText) {
-      return res.status(500).json({ error: "Empty response from OpenAI" });
+      return res.status(500).json({ error: "OpenAI devolvi\u00f3 una respuesta vac\u00eda. Intent\u00e1 de nuevo." });
     }
 
-    console.log("[generate-report] Report generated for " + (ev.paciente || "unknown") + ", length: " + reportText.length);
+    console.log("[generate-report] Report generated for " + (ev.paciente || "unknown") + ", model: " + (openaiData.model || "?") + ", length: " + reportText.length);
 
     return res.status(200).json({
       success: true,
       report: reportText,
-      model: openaiData.model || "gpt-4o-mini",
+      model: openaiData.model || "unknown",
       tokens: openaiData.usage || null
     });
   } catch (err) {
     console.error("[generate-report] Error:", err);
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: "Error interno del servidor: " + err.message });
   }
 }
