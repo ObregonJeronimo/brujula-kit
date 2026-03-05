@@ -81,63 +81,68 @@ export default async function handler(req, res) {
       + "5. CONCLUSION PROFESIONAL\n"
       + "6. RECOMENDACIONES";
 
-    // Single request — Gemini 2.0 Flash via v1beta (free tier)
-    var geminiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" + GEMINI_KEY;
+    // Try gemini-2.0-flash-lite first (separate quota), then gemini-2.0-flash
+    var models = ["gemini-2.0-flash-lite", "gemini-2.0-flash"];
+    var lastError = "";
 
-    console.log("[generate-report] Calling gemini-2.0-flash for patient:", ev.paciente || "unknown");
-    console.log("[generate-report] Key prefix:", GEMINI_KEY.substring(0, 10) + "...");
+    for (var i = 0; i < models.length; i++) {
+      var model = models[i];
+      var geminiUrl = "https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent?key=" + GEMINI_KEY;
 
-    var geminiRes = await fetch(geminiUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.4, maxOutputTokens: 3000 }
-      })
-    });
+      console.log("[generate-report] Trying " + model + " for patient:", ev.paciente || "unknown");
 
-    if (!geminiRes.ok) {
+      var geminiRes = await fetch(geminiUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { temperature: 0.4, maxOutputTokens: 3000 }
+        })
+      });
+
+      if (geminiRes.ok) {
+        var geminiData = await geminiRes.json();
+        var reportText = "";
+
+        if (geminiData.candidates && geminiData.candidates.length > 0) {
+          var candidate = geminiData.candidates[0];
+          if (candidate.content && candidate.content.parts && candidate.content.parts.length > 0) {
+            reportText = candidate.content.parts[0].text || "";
+          }
+        }
+
+        if (!reportText) {
+          console.error("[generate-report] Empty response from " + model);
+          lastError = "Gemini devolvi\u00f3 respuesta vac\u00eda con " + model;
+          continue;
+        }
+
+        // Clean markdown
+        reportText = reportText.replace(/\*\*/g, "").replace(/^#+\s*/gm, "").replace(/^[-*]\s+/gm, "- ");
+        console.log("[generate-report] OK - model:", model, "patient:", ev.paciente || "?", "chars:", reportText.length);
+
+        return res.status(200).json({
+          success: true,
+          report: reportText,
+          model: model,
+          tokens: geminiData.usageMetadata || null
+        });
+      }
+
+      // Failed - log and try next model
       var errBody = await geminiRes.text();
       var statusCode = geminiRes.status;
-      console.error("[generate-report] FULL Gemini error:", statusCode, errBody);
+      console.error("[generate-report] " + model + " error:", statusCode, errBody.substring(0, 300));
 
       var parsedErr = null;
       try { parsedErr = JSON.parse(errBody); } catch(e) {}
-      var errMsg = (parsedErr && parsedErr.error && parsedErr.error.message) || errBody.substring(0, 300);
-      var errStatus = (parsedErr && parsedErr.error && parsedErr.error.status) || "";
+      lastError = (parsedErr && parsedErr.error && parsedErr.error.message) || errBody.substring(0, 300);
 
-      // Show the FULL error to the user so we can diagnose
-      return res.status(502).json({
-        error: "Error de Google [" + statusCode + " " + errStatus + "]: " + errMsg
-      });
+      // If it's not a quota/model issue, don't try next model
+      if (statusCode !== 429 && statusCode !== 404) break;
     }
 
-    var geminiData = await geminiRes.json();
-    var reportText = "";
-
-    if (geminiData.candidates && geminiData.candidates.length > 0) {
-      var candidate = geminiData.candidates[0];
-      if (candidate.content && candidate.content.parts && candidate.content.parts.length > 0) {
-        reportText = candidate.content.parts[0].text || "";
-      }
-    }
-
-    if (!reportText) {
-      console.error("[generate-report] Empty response:", JSON.stringify(geminiData).substring(0, 500));
-      return res.status(500).json({ error: "Gemini devolvi\u00f3 respuesta vac\u00eda. Intent\u00e1 de nuevo." });
-    }
-
-    // Clean markdown
-    reportText = reportText.replace(/\*\*/g, "").replace(/^#+\s*/gm, "").replace(/^[-*]\s+/gm, "- ");
-
-    console.log("[generate-report] OK - patient:", ev.paciente || "?", "chars:", reportText.length);
-
-    return res.status(200).json({
-      success: true,
-      report: reportText,
-      model: "gemini-2.0-flash",
-      tokens: geminiData.usageMetadata || null
-    });
+    return res.status(502).json({ error: "Error de Gemini: " + lastError });
   } catch (err) {
     console.error("[generate-report] EXCEPTION:", err);
     return res.status(500).json({ error: "Error interno: " + err.message });
