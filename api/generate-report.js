@@ -2,9 +2,13 @@
 // POST /api/generate-report
 // Body: { evalData, evalType }
 
-async function callGemini(apiKey, prompt, attempt) {
-  var geminiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" + apiKey;
-  var geminiRes = await fetch(geminiUrl, {
+function sleep(ms) {
+  return new Promise(function(resolve) { setTimeout(resolve, ms); });
+}
+
+async function tryGeminiModel(apiKey, modelName, prompt) {
+  var url = "https://generativelanguage.googleapis.com/v1beta/models/" + modelName + ":generateContent?key=" + apiKey;
+  var response = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -12,11 +16,7 @@ async function callGemini(apiKey, prompt, attempt) {
       generationConfig: { temperature: 0.4, maxOutputTokens: 3000 }
     })
   });
-  return geminiRes;
-}
-
-function sleep(ms) {
-  return new Promise(function(resolve) { setTimeout(resolve, ms); });
+  return response;
 }
 
 export default async function handler(req, res) {
@@ -98,35 +98,44 @@ export default async function handler(req, res) {
       + "5. CONCLUSION PROFESIONAL\n"
       + "6. RECOMENDACIONES";
 
-    // Try up to 3 times with increasing delays on 429
-    var maxRetries = 3;
+    // Try multiple models as fallback
+    var models = ["gemini-1.5-flash", "gemini-1.5-flash-latest", "gemini-pro"];
     var geminiRes = null;
     var lastStatus = 0;
     var lastErrBody = "";
+    var usedModel = "";
 
-    for (var attempt = 0; attempt < maxRetries; attempt++) {
-      if (attempt > 0) {
-        var waitMs = attempt * 4000;
-        console.log("[generate-report] Retry " + attempt + ", waiting " + waitMs + "ms...");
-        await sleep(waitMs);
+    for (var m = 0; m < models.length; m++) {
+      var model = models[m];
+      console.log("[generate-report] Trying model:", model);
+
+      // Each model gets up to 2 attempts with delay
+      for (var attempt = 0; attempt < 2; attempt++) {
+        if (attempt > 0) {
+          console.log("[generate-report] Retry for " + model + ", waiting 5s...");
+          await sleep(5000);
+        }
+
+        geminiRes = await tryGeminiModel(GEMINI_KEY, model, prompt);
+
+        if (geminiRes.ok) {
+          usedModel = model;
+          break;
+        }
+
+        lastStatus = geminiRes.status;
+        lastErrBody = await geminiRes.text();
+        console.error("[generate-report] " + model + " attempt " + (attempt + 1) + " failed:", lastStatus, lastErrBody.substring(0, 300));
+
+        // Only retry on 429, break on other errors
+        if (lastStatus !== 429) break;
+        geminiRes = null;
       }
 
-      console.log("[generate-report] Attempt " + (attempt + 1) + "/" + maxRetries);
-      geminiRes = await callGemini(GEMINI_KEY, prompt, attempt);
+      if (geminiRes && geminiRes.ok) break;
 
-      if (geminiRes.ok) {
-        break;
-      }
-
-      lastStatus = geminiRes.status;
-      lastErrBody = await geminiRes.text();
-      console.error("[generate-report] Attempt " + (attempt + 1) + " failed:", lastStatus, lastErrBody);
-
-      // Only retry on 429 (rate limit)
-      if (lastStatus !== 429) {
-        break;
-      }
-
+      // If not 429 and not 404, don't try other models
+      if (lastStatus !== 429 && lastStatus !== 404) break;
       geminiRes = null;
     }
 
@@ -134,16 +143,17 @@ export default async function handler(req, res) {
     if (!geminiRes || !geminiRes.ok) {
       var parsedErr = null;
       try { parsedErr = JSON.parse(lastErrBody); } catch(e) {}
-      var errMsg = (parsedErr && parsedErr.error && parsedErr.error.message) || lastErrBody || "Error desconocido";
+      var errMsg = (parsedErr && parsedErr.error && parsedErr.error.message) || "";
+      var errStatus = (parsedErr && parsedErr.error && parsedErr.error.status) || "";
+
+      console.error("[generate-report] FINAL FAILURE - status:", lastStatus, "errStatus:", errStatus, "msg:", errMsg.substring(0, 200));
 
       if (lastStatus === 429) {
-        return res.status(502).json({ error: "L\u00edmite de solicitudes de Gemini excedido tras " + maxRetries + " intentos. Esper\u00e1 1 minuto e intent\u00e1 de nuevo." });
+        return res.status(502).json({ error: "L\u00edmite de Gemini excedido. Esper\u00e1 1-2 minutos sin tocar el bot\u00f3n e intent\u00e1 de nuevo. (Detalle: " + errMsg.substring(0, 100) + ")" });
       } else if (lastStatus === 403) {
-        return res.status(502).json({ error: "API Key de Gemini sin permisos o no activada. Verific\u00e1 que la key est\u00e9 habilitada en Google AI Studio (aistudio.google.com)." });
-      } else if (lastStatus === 400) {
-        return res.status(502).json({ error: "Error en la solicitud a Gemini: " + errMsg });
+        return res.status(502).json({ error: "API Key sin permisos. En Google AI Studio, verific\u00e1 que la Generative Language API est\u00e9 habilitada para tu proyecto. (Detalle: " + errMsg.substring(0, 100) + ")" });
       } else {
-        return res.status(502).json({ error: "Error de Gemini (c\u00f3digo " + lastStatus + "): " + errMsg });
+        return res.status(502).json({ error: "Error de Gemini [" + lastStatus + "]: " + errMsg.substring(0, 200) });
       }
     }
 
@@ -158,23 +168,23 @@ export default async function handler(req, res) {
     }
 
     if (!reportText) {
-      console.error("[generate-report] Empty Gemini response:", JSON.stringify(geminiData).substring(0, 500));
-      return res.status(500).json({ error: "Gemini devolvi\u00f3 una respuesta vac\u00eda. Intent\u00e1 de nuevo." });
+      console.error("[generate-report] Empty response:", JSON.stringify(geminiData).substring(0, 500));
+      return res.status(500).json({ error: "Gemini devolvi\u00f3 respuesta vac\u00eda. Intent\u00e1 de nuevo." });
     }
 
-    // Clean up any markdown formatting Gemini might add
+    // Clean markdown
     reportText = reportText.replace(/\*\*/g, "").replace(/^#+\s*/gm, "").replace(/^[-*]\s+/gm, "- ");
 
-    console.log("[generate-report] Report generated for " + (ev.paciente || "unknown") + ", length: " + reportText.length);
+    console.log("[generate-report] OK - model: " + usedModel + ", patient: " + (ev.paciente || "?") + ", chars: " + reportText.length);
 
     return res.status(200).json({
       success: true,
       report: reportText,
-      model: "gemini-2.0-flash",
+      model: usedModel,
       tokens: geminiData.usageMetadata || null
     });
   } catch (err) {
-    console.error("[generate-report] Error:", err);
-    return res.status(500).json({ error: "Error interno del servidor: " + err.message });
+    console.error("[generate-report] EXCEPTION:", err);
+    return res.status(500).json({ error: "Error interno: " + err.message });
   }
 }
