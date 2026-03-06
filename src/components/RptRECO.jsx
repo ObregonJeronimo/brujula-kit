@@ -11,6 +11,7 @@ export default function RptRECO({ ev, onD }){
   var _report = useState(ev.aiReport || null), report = _report[0], setReport = _report[1];
   var _generating = useState(false), generating = _generating[0], setGenerating = _generating[1];
   var _genError = useState(null), genError = _genError[0], setGenError = _genError[1];
+  var _regenUsed = useState(ev.aiReportRegenerated || false), regenUsed = _regenUsed[0], setRegenUsed = _regenUsed[1];
   var printRef = useRef(null);
   var reportPrintRef = useRef(null);
   var res = ev.resultados || {};
@@ -19,9 +20,10 @@ export default function RptRECO({ ev, onD }){
 
   useEffect(function(){
     if(ev.aiReport && !report){ setReport(ev.aiReport); }
-  }, [ev.aiReport]);
+    if(ev.aiReportRegenerated){ setRegenUsed(true); }
+  }, [ev.aiReport, ev.aiReportRegenerated]);
 
-  var generateReport = function(){
+  var generateReport = function(isRegen){
     setGenerating(true);
     setGenError(null);
     var evalData = {
@@ -46,9 +48,12 @@ export default function RptRECO({ ev, onD }){
       if(data.success && data.report){
         setReport(data.report);
         setViewMode("report");
+        if(isRegen){ setRegenUsed(true); }
         if(ev._fbId){
+          var updateData = { aiReport: data.report, aiReportDate: new Date().toISOString() };
+          if(isRegen){ updateData.aiReportRegenerated = true; }
           var docRef = doc(db, "reco_evaluaciones", ev._fbId);
-          updateDoc(docRef, { aiReport: data.report, aiReportDate: new Date().toISOString() })
+          updateDoc(docRef, updateData)
             .catch(function(e){ console.error("Error saving report to Firestore:", e); });
         }
       } else {
@@ -160,7 +165,10 @@ export default function RptRECO({ ev, onD }){
             <div style={{fontSize:14,fontWeight:600,color:K.sd}}>{"Informe generado con IA"}</div>
             <div style={{display:"flex",gap:8}}>
               <button onClick={handlePDFReport} style={{padding:"8px 16px",background:K.ac,color:"#fff",border:"none",borderRadius:8,fontSize:12,fontWeight:600,cursor:"pointer"}}>{"\ud83d\udcc4 Descargar PDF"}</button>
-              <button onClick={generateReport} style={{padding:"8px 16px",background:"#f1f5f9",color:"#64748b",border:"1px solid #e2e8f0",borderRadius:8,fontSize:12,fontWeight:600,cursor:"pointer"}}>{"\u21bb Regenerar"}</button>
+              {!regenUsed
+                ? <button onClick={function(){ generateReport(true); }} disabled={generating} style={{padding:"8px 16px",background:"#f1f5f9",color:"#64748b",border:"1px solid #e2e8f0",borderRadius:8,fontSize:12,fontWeight:600,cursor:generating?"wait":"pointer",opacity:generating?0.6:1}}>{generating ? "\u23f3 Regenerando..." : "\u21bb Regenerar"}</button>
+                : <span style={{padding:"8px 16px",background:"#f1f5f9",color:"#cbd5e1",borderRadius:8,fontSize:12,fontWeight:600,border:"1px solid #e2e8f0"}}>{"\u21bb Regenerado"}</span>
+              }
             </div>
           </div>
           <div ref={reportPrintRef} style={{background:"#fff",borderRadius:12,border:"1px solid "+K.bd,padding:28}}>
@@ -208,7 +216,7 @@ export default function RptRECO({ ev, onD }){
             {"Genera autom\u00e1ticamente un informe fonoaudiol\u00f3gico profesional basado en los resultados de esta evaluaci\u00f3n. El informe incluye descripci\u00f3n del desempe\u00f1o, an\u00e1lisis cl\u00ednico, interpretaci\u00f3n y recomendaciones."}
           </p>
           {genError && <div style={{background:"#fef2f2",border:"1px solid #fecaca",borderRadius:8,padding:"10px 14px",marginBottom:12,fontSize:12,color:"#dc2626"}}>{genError}</div>}
-          <button onClick={generateReport} disabled={generating}
+          <button onClick={function(){ generateReport(false); }} disabled={generating}
             style={{padding:"14px 32px",background:generating?"#a78bfa":"linear-gradient(135deg,#7c3aed,#9333ea)",color:"#fff",border:"none",borderRadius:10,fontSize:15,fontWeight:700,cursor:generating?"wait":"pointer",boxShadow:"0 4px 16px rgba(124,58,237,.3)",transition:"all .2s",opacity:generating?0.7:1}}>
             {generating ? "\u23f3 Generando informe..." : "\ud83e\udde0 Generar informe avanzado con IA"}
           </button>

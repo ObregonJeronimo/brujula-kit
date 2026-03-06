@@ -47,35 +47,18 @@ export default async function handler(req, res) {
 
     var observaciones = ev.observaciones || "No se registraron observaciones.";
 
-    var systemPrompt = "Eres un fonoaudi\u00f3logo cl\u00ednico profesional especializado en evaluaci\u00f3n infantil y trastornos de los sonidos del habla. Tu rol es generar informes fonoaudiol\u00f3gicos claros, profesionales y estructurados a partir de los datos de evaluaciones cl\u00ednicas.\n\nReglas importantes:\n- NO inventes datos que no est\u00e9n presentes en la evaluaci\u00f3n. Si alg\u00fan dato no est\u00e1 disponible, indic\u00e1lo expl\u00edcitamente.\n- Us\u00e1 terminolog\u00eda cl\u00ednica apropiada pero comprensible.\n- S\u00e9 objetivo y preciso en el an\u00e1lisis.\n- El informe debe ser \u00fatil para otros profesionales de salud y educaci\u00f3n.\n- Redact\u00e1 en espa\u00f1ol rioplatense profesional.\n- No uses markdown ni formato especial, solo texto plano con saltos de l\u00ednea para separar secciones.\n- Cada secci\u00f3n debe tener un t\u00edtulo en MAY\u00daSCULAS seguido de dos puntos.";
+    var systemPrompt = "Eres un fonoaudi\u00f3logo cl\u00ednico profesional especializado en evaluaci\u00f3n infantil y trastornos de los sonidos del habla. Gener\u00e1 informes fonoaudiol\u00f3gicos claros, profesionales y estructurados.\n\nReglas:\n- NO inventes datos. Si algo no est\u00e1 disponible, indic\u00e1lo.\n- Terminolog\u00eda cl\u00ednica apropiada pero comprensible.\n- Espa\u00f1ol rioplatense profesional.\n- Solo texto plano, sin markdown. T\u00edtulos en MAY\u00daSCULAS seguidos de dos puntos.";
 
-    var userPrompt = "Gener\u00e1 un informe fonoaudiol\u00f3gico profesional basado en los siguientes datos de la evaluaci\u00f3n de Reconocimiento Fonol\u00f3gico (PEFF-R 3.5):\n\n"
-      + "DATOS DEL PACIENTE:\n"
-      + "- Nombre: " + (ev.paciente || "No disponible") + "\n"
-      + "- DNI: " + (ev.pacienteDni || "No disponible") + "\n"
-      + "- Edad: " + edadStr + "\n"
-      + "- Fecha de evaluaci\u00f3n: " + (ev.fechaEvaluacion || "No disponible") + "\n"
-      + "- Establecimiento: " + (ev.establecimiento || "No disponible") + "\n"
-      + "- Derivado por: " + (ev.derivadoPor || "No especificado") + "\n"
-      + "- Evaluador: " + (ev.evaluador || "No disponible") + "\n"
-      + "\nRESULTADOS GLOBALES:\n"
-      + "- Porcentaje de aciertos: " + (resultados.pct || 0) + "%\n"
-      + "- Contrastes reconocidos: " + (resultados.correct || 0) + " de " + (resultados.total || 0) + "\n"
-      + "- Clasificaci\u00f3n de severidad: " + (resultados.severity || "No calculada") + "\n"
-      + "- Criterios: Adecuado >= 95%, Leve 80-94%, Moderado 60-79%, Severo < 60%\n"
-      + "\nDETALLE POR GRUPO DE CONTRASTE:\n" + groupDetail
-      + "\n\nGRUPOS CON DIFICULTADES:\n" + errorDetail
-      + "\n\nOBSERVACIONES DEL PROFESIONAL:\n" + observaciones
-      + "\n\nGener\u00e1 el informe con las siguientes secciones:\n"
-      + "1. DESCRIPCION GENERAL DEL DESEMPE\u00d1O\n"
-      + "2. ANALISIS DE RESULTADOS\n"
-      + "3. FONEMAS ALTERADOS Y PROCESOS FONOLOGICOS DETECTADOS\n"
-      + "4. INTERPRETACION CLINICA\n"
-      + "5. CONCLUSION PROFESIONAL\n"
-      + "6. RECOMENDACIONES";
+    var userPrompt = "Informe fonoaudiol\u00f3gico de Reconocimiento Fonol\u00f3gico (PEFF-R 3.5):\n\n"
+      + "PACIENTE: " + (ev.paciente || "N/D") + " | DNI: " + (ev.pacienteDni || "N/D") + " | Edad: " + edadStr + "\n"
+      + "Fecha: " + (ev.fechaEvaluacion || "N/D") + " | Establecimiento: " + (ev.establecimiento || "N/D") + "\n"
+      + "Derivado por: " + (ev.derivadoPor || "N/E") + " | Evaluador: " + (ev.evaluador || "N/D") + "\n\n"
+      + "RESULTADOS: " + (resultados.pct || 0) + "% aciertos, " + (resultados.correct || 0) + "/" + (resultados.total || 0) + " contrastes, Severidad: " + (resultados.severity || "N/C") + "\n"
+      + "Criterios: Adecuado>=95%, Leve 80-94%, Moderado 60-79%, Severo<60%\n\n"
+      + "GRUPOS:\n" + groupDetail + "\n\nDIFICULTADES:\n" + errorDetail + "\n\nOBS: " + observaciones
+      + "\n\nSecciones: 1)DESCRIPCION GENERAL 2)ANALISIS DE RESULTADOS 3)FONEMAS ALTERADOS 4)INTERPRETACION CLINICA 5)CONCLUSION 6)RECOMENDACIONES";
 
-    // Single request to Groq (OpenAI-compatible API)
-    console.log("[generate-report] Calling Groq llama-3.3-70b for patient:", ev.paciente || "unknown");
+    console.log("[generate-report] Calling Groq llama-3.1-8b for patient:", ev.paciente || "unknown");
 
     var groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
@@ -84,12 +67,12 @@ export default async function handler(req, res) {
         "Authorization": "Bearer " + GROQ_KEY
       },
       body: JSON.stringify({
-        model: "llama-3.3-70b-versatile",
+        model: "llama-3.1-8b-instant",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt }
         ],
-        max_tokens: 3000,
+        max_tokens: 2000,
         temperature: 0.4
       })
     });
@@ -124,15 +107,14 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: "Groq devolvi\u00f3 respuesta vac\u00eda. Intent\u00e1 de nuevo." });
     }
 
-    // Clean markdown
     reportText = reportText.replace(/\*\*/g, "").replace(/^#+\s*/gm, "").replace(/^[-*]\s+/gm, "- ");
 
-    console.log("[generate-report] OK - patient:", ev.paciente || "?", "chars:", reportText.length);
+    console.log("[generate-report] OK - model:", groqData.model || "llama-3.1-8b-instant", "tokens:", groqData.usage ? groqData.usage.total_tokens : "?");
 
     return res.status(200).json({
       success: true,
       report: reportText,
-      model: groqData.model || "llama-3.3-70b-versatile",
+      model: groqData.model || "llama-3.1-8b-instant",
       tokens: groqData.usage || null
     });
   } catch (err) {
