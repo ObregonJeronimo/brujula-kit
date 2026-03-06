@@ -1,4 +1,4 @@
-// Vercel Serverless Function — generate AI fonoaudiological report using Gemini
+// Vercel Serverless Function — generate AI fonoaudiological report using Groq
 // POST /api/generate-report
 // Body: { evalData, evalType }
 
@@ -9,9 +9,9 @@ export default async function handler(req, res) {
   if (req.method === "OPTIONS") return res.status(200).end();
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
-  var GEMINI_KEY = process.env.GEMINI_API_KEY;
-  if (!GEMINI_KEY) {
-    return res.status(500).json({ error: "GEMINI_API_KEY no est\u00e1 configurada en las variables de entorno de Vercel." });
+  var GROQ_KEY = process.env.GROQ_API_KEY;
+  if (!GROQ_KEY) {
+    return res.status(500).json({ error: "GROQ_API_KEY no est\u00e1 configurada en las variables de entorno de Vercel." });
   }
 
   try {
@@ -47,16 +47,9 @@ export default async function handler(req, res) {
 
     var observaciones = ev.observaciones || "No se registraron observaciones.";
 
-    var prompt = "Eres un fonoaudi\u00f3logo cl\u00ednico profesional especializado en evaluaci\u00f3n infantil y trastornos de los sonidos del habla. Tu rol es generar informes fonoaudiol\u00f3gicos claros, profesionales y estructurados a partir de los datos de evaluaciones cl\u00ednicas.\n\n"
-      + "Reglas importantes:\n"
-      + "- NO inventes datos que no est\u00e9n presentes en la evaluaci\u00f3n. Si alg\u00fan dato no est\u00e1 disponible, indic\u00e1lo expl\u00edcitamente.\n"
-      + "- Us\u00e1 terminolog\u00eda cl\u00ednica apropiada pero comprensible.\n"
-      + "- S\u00e9 objetivo y preciso en el an\u00e1lisis.\n"
-      + "- El informe debe ser \u00fatil para otros profesionales de salud y educaci\u00f3n.\n"
-      + "- Redact\u00e1 en espa\u00f1ol rioplatense profesional.\n"
-      + "- No uses markdown ni formato especial, solo texto plano con saltos de l\u00ednea para separar secciones.\n"
-      + "- Cada secci\u00f3n debe tener un t\u00edtulo en MAY\u00daSCULAS seguido de dos puntos.\n\n"
-      + "Gener\u00e1 un informe fonoaudiol\u00f3gico profesional basado en los siguientes datos de la evaluaci\u00f3n de Reconocimiento Fonol\u00f3gico (PEFF-R 3.5):\n\n"
+    var systemPrompt = "Eres un fonoaudi\u00f3logo cl\u00ednico profesional especializado en evaluaci\u00f3n infantil y trastornos de los sonidos del habla. Tu rol es generar informes fonoaudiol\u00f3gicos claros, profesionales y estructurados a partir de los datos de evaluaciones cl\u00ednicas.\n\nReglas importantes:\n- NO inventes datos que no est\u00e9n presentes en la evaluaci\u00f3n. Si alg\u00fan dato no est\u00e1 disponible, indic\u00e1lo expl\u00edcitamente.\n- Us\u00e1 terminolog\u00eda cl\u00ednica apropiada pero comprensible.\n- S\u00e9 objetivo y preciso en el an\u00e1lisis.\n- El informe debe ser \u00fatil para otros profesionales de salud y educaci\u00f3n.\n- Redact\u00e1 en espa\u00f1ol rioplatense profesional.\n- No uses markdown ni formato especial, solo texto plano con saltos de l\u00ednea para separar secciones.\n- Cada secci\u00f3n debe tener un t\u00edtulo en MAY\u00daSCULAS seguido de dos puntos.";
+
+    var userPrompt = "Gener\u00e1 un informe fonoaudiol\u00f3gico profesional basado en los siguientes datos de la evaluaci\u00f3n de Reconocimiento Fonol\u00f3gico (PEFF-R 3.5):\n\n"
       + "DATOS DEL PACIENTE:\n"
       + "- Nombre: " + (ev.paciente || "No disponible") + "\n"
       + "- DNI: " + (ev.pacienteDni || "No disponible") + "\n"
@@ -81,68 +74,67 @@ export default async function handler(req, res) {
       + "5. CONCLUSION PROFESIONAL\n"
       + "6. RECOMENDACIONES";
 
-    // Try gemini-2.0-flash-lite first (separate quota), then gemini-2.0-flash
-    var models = ["gemini-2.0-flash-lite", "gemini-2.0-flash"];
-    var lastError = "";
+    // Single request to Groq (OpenAI-compatible API)
+    console.log("[generate-report] Calling Groq llama-3.3-70b for patient:", ev.paciente || "unknown");
 
-    for (var i = 0; i < models.length; i++) {
-      var model = models[i];
-      var geminiUrl = "https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent?key=" + GEMINI_KEY;
+    var groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + GROQ_KEY
+      },
+      body: JSON.stringify({
+        model: "llama-3.3-70b-versatile",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt }
+        ],
+        max_tokens: 3000,
+        temperature: 0.4
+      })
+    });
 
-      console.log("[generate-report] Trying " + model + " for patient:", ev.paciente || "unknown");
-
-      var geminiRes = await fetch(geminiUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.4, maxOutputTokens: 3000 }
-        })
-      });
-
-      if (geminiRes.ok) {
-        var geminiData = await geminiRes.json();
-        var reportText = "";
-
-        if (geminiData.candidates && geminiData.candidates.length > 0) {
-          var candidate = geminiData.candidates[0];
-          if (candidate.content && candidate.content.parts && candidate.content.parts.length > 0) {
-            reportText = candidate.content.parts[0].text || "";
-          }
-        }
-
-        if (!reportText) {
-          console.error("[generate-report] Empty response from " + model);
-          lastError = "Gemini devolvi\u00f3 respuesta vac\u00eda con " + model;
-          continue;
-        }
-
-        // Clean markdown
-        reportText = reportText.replace(/\*\*/g, "").replace(/^#+\s*/gm, "").replace(/^[-*]\s+/gm, "- ");
-        console.log("[generate-report] OK - model:", model, "patient:", ev.paciente || "?", "chars:", reportText.length);
-
-        return res.status(200).json({
-          success: true,
-          report: reportText,
-          model: model,
-          tokens: geminiData.usageMetadata || null
-        });
-      }
-
-      // Failed - log and try next model
-      var errBody = await geminiRes.text();
-      var statusCode = geminiRes.status;
-      console.error("[generate-report] " + model + " error:", statusCode, errBody.substring(0, 300));
+    if (!groqRes.ok) {
+      var errBody = await groqRes.text();
+      var statusCode = groqRes.status;
+      console.error("[generate-report] Groq error:", statusCode, errBody.substring(0, 400));
 
       var parsedErr = null;
       try { parsedErr = JSON.parse(errBody); } catch(e) {}
-      lastError = (parsedErr && parsedErr.error && parsedErr.error.message) || errBody.substring(0, 300);
+      var errMsg = (parsedErr && parsedErr.error && parsedErr.error.message) || errBody.substring(0, 300);
 
-      // If it's not a quota/model issue, don't try next model
-      if (statusCode !== 429 && statusCode !== 404) break;
+      if (statusCode === 429) {
+        return res.status(502).json({ error: "L\u00edmite de Groq excedido. Esper\u00e1 unos segundos e intent\u00e1 de nuevo." });
+      } else if (statusCode === 401) {
+        return res.status(502).json({ error: "API Key de Groq inv\u00e1lida. Verific\u00e1 GROQ_API_KEY en Vercel." });
+      } else {
+        return res.status(502).json({ error: "Error de Groq [" + statusCode + "]: " + errMsg });
+      }
     }
 
-    return res.status(502).json({ error: "Error de Gemini: " + lastError });
+    var groqData = await groqRes.json();
+    var reportText = "";
+
+    if (groqData.choices && groqData.choices.length > 0 && groqData.choices[0].message) {
+      reportText = groqData.choices[0].message.content || "";
+    }
+
+    if (!reportText) {
+      console.error("[generate-report] Empty Groq response:", JSON.stringify(groqData).substring(0, 500));
+      return res.status(500).json({ error: "Groq devolvi\u00f3 respuesta vac\u00eda. Intent\u00e1 de nuevo." });
+    }
+
+    // Clean markdown
+    reportText = reportText.replace(/\*\*/g, "").replace(/^#+\s*/gm, "").replace(/^[-*]\s+/gm, "- ");
+
+    console.log("[generate-report] OK - patient:", ev.paciente || "?", "chars:", reportText.length);
+
+    return res.status(200).json({
+      success: true,
+      report: reportText,
+      model: groqData.model || "llama-3.3-70b-versatile",
+      tokens: groqData.usage || null
+    });
   } catch (err) {
     console.error("[generate-report] EXCEPTION:", err);
     return res.status(500).json({ error: "Error interno: " + err.message });
