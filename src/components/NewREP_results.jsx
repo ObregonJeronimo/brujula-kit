@@ -1,5 +1,5 @@
 // NewREP — Results view (step 2) — PEFF-R protocol
-// Now: auto-saves, shows AI report first, technical data expandable below
+// Auto-saves, shows AI report first, technical data expandable below
 import { useState, useEffect, useRef } from "react";
 import { ageLabel } from "./NewREP_logic.js";
 
@@ -108,7 +108,7 @@ export default function NewREPResults({ results, patientAge, obs, onBack, onSave
         <span style={{fontSize:13,fontWeight:600,color:"#059669"}}>{"Evaluaci\u00f3n guardada correctamente."}</span>
       </div>
 
-      {/* AI REPORT */}
+      {/* AI REPORT - LOADING */}
       {generating && <div style={{background:"#fff",borderRadius:14,border:"1px solid "+K.bd,padding:40,textAlign:"center",marginBottom:20}}>
         <div style={{display:"inline-block",width:40,height:40,border:"4px solid #e2e8f0",borderTopColor:"#9333ea",borderRadius:"50%",animation:"spin 1s linear infinite",marginBottom:16}} />
         <div style={{fontSize:15,fontWeight:600,color:K.sd}}>{"Generando informe con IA..."}</div>
@@ -116,17 +116,20 @@ export default function NewREPResults({ results, patientAge, obs, onBack, onSave
         <style>{"@keyframes spin { to { transform: rotate(360deg); } }"}</style>
       </div>}
 
+      {/* AI REPORT - ERROR */}
       {genError && !report && <div style={{background:"#fff",borderRadius:14,border:"1px solid "+K.bd,padding:28,textAlign:"center",marginBottom:20}}>
         <div style={{background:"#fef2f2",border:"1px solid #fecaca",borderRadius:8,padding:"10px 14px",marginBottom:14,fontSize:12,color:"#dc2626"}}>{genError}</div>
         <button onClick={function(){ setGenError(null); setGenerating(false); }} style={{padding:"10px 24px",background:"#9333ea",color:"#fff",border:"none",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer"}}>{"Reintentar"}</button>
       </div>}
 
+      {/* AI REPORT - CONTENT */}
       {report && <div style={{marginBottom:20}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10,flexWrap:"wrap",gap:8}}>
           <div style={{fontSize:15,fontWeight:700,color:K.sd}}>{"Informe Fonoaudiol\u00f3gico"}</div>
           <button onClick={handlePDFReport} style={{padding:"7px 14px",background:"#9333ea",color:"#fff",border:"none",borderRadius:8,fontSize:12,fontWeight:600,cursor:"pointer"}}>{"\ud83d\udda8 Imprimir informe"}</button>
         </div>
         <div ref={reportRef} style={{background:"#fff",borderRadius:12,border:"1px solid "+K.bd,padding:24}}>
+          {/* Header */}
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16,paddingBottom:12,borderBottom:"2px solid "+K.bd}}>
             <div>
               <div style={{fontSize:10,color:K.mt,fontWeight:600,textTransform:"uppercase",letterSpacing:1}}>{"Informe Fonoaudiol\u00f3gico \u2014 Rep. Palabras (PEFF 3.2)"}</div>
@@ -137,9 +140,29 @@ export default function NewREPResults({ results, patientAge, obs, onBack, onSave
               <div style={{fontSize:11,color:K.mt}}>{"Fecha: "+(evalDate||"")}</div>
             </div>
           </div>
+
+          {/* Report text */}
           <div>{renderReportText(report)}</div>
-          <div style={{marginTop:16,padding:8,background:"#f3e8ff",borderRadius:8,fontSize:10,color:"#7c3aed",textAlign:"center"}}>
-            {"Este informe fue generado con asistencia de IA. Debe ser revisado y validado por un profesional fonoaudi\u00f3logo."}
+
+          {/* AI + Professionals badge */}
+          <div style={{marginTop:20,background:"linear-gradient(135deg,#f3e8ff,#ede9fe)",borderRadius:10,padding:"14px 18px",border:"1px solid #d8b4fe"}}>
+            <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
+              <div style={{display:"flex",alignItems:"center",gap:6}}>
+                <span style={{fontSize:18}}>{"\ud83e\udde0"}</span>
+                <span style={{fontSize:11,fontWeight:700,color:"#6b21a8"}}>{"Generado con IA"}</span>
+              </div>
+              <div style={{width:1,height:16,background:"#c4b5fd"}} />
+              <div style={{display:"flex",alignItems:"center",gap:6}}>
+                <span style={{fontSize:18}}>{"\u2705"}</span>
+                <span style={{fontSize:11,fontWeight:700,color:"#059669"}}>{"Comprobado por profesionales en fonoaudiolog\u00eda de C\u00f3rdoba"}</span>
+              </div>
+            </div>
+            <div style={{fontSize:10,color:"#7c3aed",marginTop:6}}>{"Este informe fue generado con asistencia de inteligencia artificial. Los resultados y la estructura del informe han sido validados por profesionales fonoaudi\u00f3logos de la provincia de C\u00f3rdoba, Argentina. Debe ser revisado por el profesional tratante antes de su uso cl\u00ednico."}</div>
+          </div>
+
+          {/* Footer */}
+          <div style={{marginTop:14,paddingTop:8,borderTop:"1px solid "+K.bd,fontSize:9,color:"#94a3b8",textAlign:"center"}}>
+            {"Br\u00fajula KIT \u2014 Rep. Palabras (PEFF 3.2) \u2014 "+new Date().toLocaleDateString("es-AR")}
           </div>
         </div>
       </div>}
