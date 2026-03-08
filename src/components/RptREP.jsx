@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import AIReportPanel from "./AIReportPanel.jsx";
 
 var K = { sd:"#0a3d2f", ac:"#0d9488", mt:"#64748b", bd:"#e2e8f0" };
 function ageLabel(m){ return Math.floor(m/12)+" a\u00f1os, "+(m%12)+" meses"; }
@@ -7,6 +8,7 @@ var posFull = {ISPP:"Inicio s\u00edl. \u2014 Pos. palabra",ISIP:"Inicio s\u00edl
 
 export default function RptREP({ ev, onD }){
   var _cf = useState(false), confirmDel = _cf[0], sCf = _cf[1];
+  var _showTech = useState(false), showTech = _showTech[0], setShowTech = _showTech[1];
   var printRef = useRef(null);
   var res = ev.resultados || {};
   var byPhoneme = res.byPhoneme || {};
@@ -27,21 +29,20 @@ export default function RptREP({ ev, onD }){
         var imgW = pW - margin*2;
         var imgH = (canvas.height * imgW) / canvas.width;
         var usableH = pH - margin*2;
-        var pos = 0;
-        var page = 0;
+        var pos = 0, page = 0;
         while(pos < imgH){
           if(page > 0) pdf.addPage();
           var srcY = Math.round((pos / imgH) * canvas.height);
           var srcH = Math.round((Math.min(usableH, imgH - pos) / imgH) * canvas.height);
+          if(srcH<=0) break;
           var sliceCanvas = document.createElement("canvas");
-          sliceCanvas.width = canvas.width;
-          sliceCanvas.height = srcH;
+          sliceCanvas.width = canvas.width; sliceCanvas.height = srcH;
           var ctx = sliceCanvas.getContext("2d");
           ctx.drawImage(canvas, 0, srcY, canvas.width, srcH, 0, 0, canvas.width, srcH);
           var sliceH = (srcH * imgW) / canvas.width;
+          if(sliceH<1) break;
           pdf.addImage(sliceCanvas.toDataURL("image/png"), "PNG", margin, margin, imgW, sliceH);
-          pos += usableH;
-          page++;
+          pos += usableH; page++;
         }
         pdf.save("REP_"+((ev.paciente||"").replace(/\s/g,"_"))+"_"+ev.fechaEvaluacion+".pdf");
       });
@@ -53,8 +54,9 @@ export default function RptREP({ ev, onD }){
 
   return (
     <div style={{animation:"fi .3s ease",maxWidth:900,margin:"0 auto"}}>
+      {/* HEADER */}
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20,flexWrap:"wrap",gap:12}}>
-        <h1 style={{fontSize:20,fontWeight:700}}>{"\ud83d\udcdd Reporte Rep. Palabras"}</h1>
+        <h1 style={{fontSize:20,fontWeight:700}}>{"\ud83d\udcdd Rep. Palabras"}</h1>
         <div style={{display:"flex",gap:8}}>
           {confirmDel
             ?<div style={{background:"#fef2f2",border:"1px solid #fecaca",borderRadius:10,padding:"14px 20px",display:"flex",flexDirection:"column",alignItems:"center",gap:10}}>
@@ -65,14 +67,24 @@ export default function RptREP({ ev, onD }){
                 <button onClick={function(){sCf(false)}} style={{background:"#f1f5f9",border:"1px solid #e2e8f0",padding:"8px 20px",borderRadius:8,fontSize:13,cursor:"pointer",color:"#64748b"}}>Cancelar</button>
               </div>
             </div>
-            :<><button onClick={handlePDF} style={{padding:"11px 22px",background:K.ac,color:"#fff",border:"none",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer"}}>{"\ud83d\udcc4 PDF"}</button>
-              <button onClick={function(){sCf(true)}} style={{padding:"11px 22px",background:"#fef2f2",color:"#dc2626",border:"1px solid #fecaca",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer"}}>{"Eliminar"}</button>
-            </>
+            :<button onClick={function(){sCf(true)}} style={{padding:"11px 22px",background:"#fef2f2",color:"#dc2626",border:"1px solid #fecaca",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer"}}>{"Eliminar"}</button>
           }
         </div>
       </div>
 
-      <div ref={printRef} style={{background:"#fff",borderRadius:12,border:"1px solid "+K.bd,padding:28}}>
+      {/* AI REPORT (auto-generates) */}
+      <AIReportPanel ev={ev} evalType="rep" collectionName="rep_evaluaciones" evalLabel="Rep. Palabras (PEFF 3.2)" />
+
+      {/* TECHNICAL DATA TOGGLE */}
+      <button onClick={function(){ setShowTech(!showTech); }} style={{width:"100%",padding:"14px",background:showTech?"#f1f5f9":"#0a3d2f",color:showTech?"#1e293b":"#fff",border:"1px solid #e2e8f0",borderRadius:10,fontSize:14,fontWeight:600,cursor:"pointer",marginBottom:showTech?16:20}}>
+        {showTech ? "\u25b2 Ocultar datos t\u00e9cnicos" : "\u25bc Ver datos t\u00e9cnicos de la evaluaci\u00f3n"}
+      </button>
+
+      {/* TECHNICAL DETAILS */}
+      {showTech && <div ref={printRef} style={{background:"#fff",borderRadius:12,border:"1px solid "+K.bd,padding:28,marginBottom:20}}>
+        <div style={{display:"flex",justifyContent:"flex-end",marginBottom:16}}>
+          <button onClick={handlePDF} style={{padding:"9px 18px",background:K.ac,color:"#fff",border:"none",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer"}}>{"\ud83d\udcc4 PDF datos t\u00e9cnicos"}</button>
+        </div>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:20,paddingBottom:16,borderBottom:"2px solid "+K.bd}}>
           <div>
             <div style={{fontSize:10,color:K.mt,fontWeight:600,textTransform:"uppercase",letterSpacing:1}}>{"Repetici\u00f3n de Palabras \u2014 PEFF 3.2"}</div>
@@ -111,10 +123,7 @@ export default function RptREP({ ev, onD }){
             return <div key={posId} style={{background:"#f8faf9",borderRadius:8,padding:12,textAlign:"center",border:"1px solid "+K.bd}}>
               <div style={{fontSize:12,fontWeight:700,color:K.ac}}>{posLabels[posId]}</div>
               <div style={{fontSize:9,color:K.mt,marginBottom:4}}>{posFull[posId]}</div>
-              {p.total > 0 ? <div>
-                <div style={{fontSize:18,fontWeight:700,color:clr}}>{pct+"%"}</div>
-                <div style={{fontSize:10,color:K.mt}}>{p.ok+"/"+p.total}</div>
-              </div> : <div style={{fontSize:10,color:"#cbd5e1"}}>{"Sin \u00edtems"}</div>}
+              {p.total > 0 ? <div><div style={{fontSize:18,fontWeight:700,color:clr}}>{pct+"%"}</div><div style={{fontSize:10,color:K.mt}}>{p.ok+"/"+p.total}</div></div> : <div style={{fontSize:10,color:"#cbd5e1"}}>{"Sin \u00edtems"}</div>}
             </div>;
           })}
         </div>
@@ -136,9 +145,7 @@ export default function RptREP({ ev, onD }){
                 <td style={{textAlign:"center",padding:"6px",color:"#059669",fontWeight:600}}>{c.ok}</td>
                 <td style={{textAlign:"center",padding:"6px",color:c.errors>0?"#dc2626":"#059669",fontWeight:600}}>{c.errors}</td>
                 <td style={{textAlign:"center",padding:"6px"}}>{c.total}</td>
-                <td style={{textAlign:"center",padding:"6px"}}><span style={{padding:"2px 8px",borderRadius:10,fontSize:11,fontWeight:600,
-                  background:pct>=85?"#dcfce7":pct>=65?"#fef3c7":"#fef2f2",
-                  color:pct>=85?"#059669":pct>=65?"#d97706":"#dc2626"}}>{pct+"%"}</span></td>
+                <td style={{textAlign:"center",padding:"6px"}}><span style={{padding:"2px 8px",borderRadius:10,fontSize:11,fontWeight:600,background:pct>=85?"#dcfce7":pct>=65?"#fef3c7":"#fef2f2",color:pct>=85?"#059669":pct>=65?"#d97706":"#dc2626"}}>{pct+"%"}</span></td>
               </tr>;
             })}
           </tbody>
@@ -228,7 +235,7 @@ export default function RptREP({ ev, onD }){
         <div style={{marginTop:24,paddingTop:12,borderTop:"1px solid "+K.bd,fontSize:10,color:"#94a3b8",textAlign:"center"}}>
           {"Br\u00fajula KIT \u2014 Rep. Palabras (PEFF 3.2) \u2014 Generado el "+new Date().toLocaleDateString("es-AR")}
         </div>
-      </div>
+      </div>}
     </div>
   );
 }
