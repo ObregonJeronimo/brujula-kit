@@ -15,6 +15,7 @@ export default function NewREP({ onS, nfy, userId }){
   var _rsp = useState({}), responses = _rsp[0], setResponses = _rsp[1];
   var _obs = useState(""), obs = _obs[0], setObs = _obs[1];
   var _ci = useState(0), catIdx = _ci[0], setCatIdx = _ci[1];
+  var _didSave = useState(false), didSave = _didSave[0], setDidSave = _didSave[1];
   var mainRef = useRef(null);
 
   var patientAge = patient ? ageMo(patient.fechaNac) : 0;
@@ -27,7 +28,6 @@ export default function NewREP({ onS, nfy, userId }){
     });
   },[]);
 
-  // Toggle OK for a word: if already "ok", clear it; if has text, switch to "ok"; if empty, set "ok"
   var toggleOk = useCallback(function(key){
     setResponses(function(prev){
       var n = Object.assign({}, prev);
@@ -37,7 +37,6 @@ export default function NewREP({ onS, nfy, userId }){
     });
   },[]);
 
-  // Mark all words in a phoneme row as OK
   var markPhonOk = useCallback(function(phonId, posWords){
     setResponses(function(prev){
       var n = Object.assign({}, prev);
@@ -51,7 +50,6 @@ export default function NewREP({ onS, nfy, userId }){
     });
   },[]);
 
-  // Mark all words in entire category as OK
   var markAllCatOk = useCallback(function(catId){
     setResponses(function(prev){
       var n = Object.assign({}, prev);
@@ -63,6 +61,8 @@ export default function NewREP({ onS, nfy, userId }){
   },[]);
 
   var handleSave = function(){
+    if(didSave) return;
+    setDidSave(true);
     var res = computeResults(responses);
     onS({
       tipo: "rep_palabras", paciente: patient.nombre, pacienteDni: patient.dni || "",
@@ -74,7 +74,6 @@ export default function NewREP({ onS, nfy, userId }){
 
   var results = step === 2 ? computeResults(responses) : null;
 
-  // Render a single word cell: checkmark toggle + text field for error transcription
   var renderWordCell = function(phonId, posId, word){
     if(!word) return <div style={{padding:4,color:"#cbd5e1",fontSize:11,textAlign:"center"}}>{"\u2014"}</div>;
     var key = wordKey(phonId, posId, word);
@@ -101,7 +100,6 @@ export default function NewREP({ onS, nfy, userId }){
             else setResponse(key, v);
           }}
           onFocus={function(){
-            // If was marked ok, clear to allow typing
             if(isOk) setResponse(key, "");
           }}
           style={{flex:1,padding:"5px 8px",border:"1px solid "+(hasError?"#fca5a5":K.bd),borderRadius:6,
@@ -161,7 +159,6 @@ export default function NewREP({ onS, nfy, userId }){
       </div>}
 
       {step===1 && <div>
-        {/* Category tabs */}
         <div style={{display:"flex",gap:4,marginBottom:16,overflowX:"auto",paddingBottom:4}}>
           {catGroups.map(function(cg,i){
             var prog = catProgress(cg.id, responses);
@@ -188,16 +185,13 @@ export default function NewREP({ onS, nfy, userId }){
                 {"\u2713 Todo correcto"}</button>
             </div>
 
-            {/* Instructions */}
             <div style={{background:"#f0f9ff",border:"1px solid #bae6fd",borderRadius:8,padding:"10px 14px",marginBottom:16,fontSize:12,color:"#0369a1",lineHeight:1.6}}>
               <strong>{"\u2139\ufe0f Instrucciones:"}</strong>{" Marque \u2713 si el paciente repiti\u00f3 correctamente. Si hay error, escriba la producci\u00f3n del paciente en el campo de texto."}
             </div>
 
-            {/* Phoneme tables */}
             {cg.phonRows.map(function(pr){
               var isExpected = (patientAge/12) >= pr.age;
               return <div key={pr.phonId} style={{background:"#fff",borderRadius:12,border:"1px solid "+K.bd,marginBottom:14,overflow:"hidden"}}>
-                {/* Header */}
                 <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 16px",
                   background:isExpected?"#f0fdf4":"#fffbeb",borderBottom:"1px solid "+K.bd}}>
                   <div style={{display:"flex",alignItems:"center",gap:10}}>
@@ -213,7 +207,6 @@ export default function NewREP({ onS, nfy, userId }){
                     {"\u2713 Todo"}</button>
                 </div>
 
-                {/* Table: 4 position columns */}
                 <div style={{padding:"12px 16px"}}>
                   <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:12}}>
                     {POSITIONS.map(function(pos){
@@ -234,7 +227,6 @@ export default function NewREP({ onS, nfy, userId }){
               </div>;
             })}
 
-            {/* Navigation */}
             <div style={{display:"flex",gap:10,marginTop:16}}>
               {catIdx > 0 && <button onClick={function(){setCatIdx(catIdx-1);scrollTop();}}
                 style={{flex:1,padding:"12px",background:"#f1f5f9",border:"1px solid "+K.bd,borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer",color:K.mt}}>
@@ -257,7 +249,8 @@ export default function NewREP({ onS, nfy, userId }){
       </div>}
 
       {step===2 && <NewREPResults results={results} patientAge={patientAge} obs={obs}
-        onBack={function(){setStep(1);scrollTop();}} onSave={handleSave} />}
+        onBack={function(){setStep(1);setDidSave(false);scrollTop();}} onSave={handleSave}
+        patient={patient} evalDate={evalDate} derivado={derivado} />}
     </div>
   );
 }
