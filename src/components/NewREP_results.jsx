@@ -19,7 +19,7 @@ function renderReportText(text){
   });
 }
 
-export default function NewREPResults({ results, patientAge, obs, onBack, patient, evalDate, derivado, userId, nfy }){
+export default function NewREPResults({ results, patientAge, obs, onBack, onFinish, patient, evalDate, derivado, userId, nfy }){
   var _saved = useState(false), saved = _saved[0], setSaved = _saved[1];
   var _savedDocId = useState(null), savedDocId = _savedDocId[0], setSavedDocId = _savedDocId[1];
   var _report = useState(null), report = _report[0], setReport = _report[1];
@@ -154,7 +154,7 @@ export default function NewREPResults({ results, patientAge, obs, onBack, patien
         {obs&&<div style={{background:"#fff",borderRadius:12,border:"1px solid "+K.bd,padding:20,marginBottom:16}}><h3 style={{fontSize:14,fontWeight:600,marginBottom:6}}>Observaciones</h3><p style={{fontSize:13,color:K.mt}}>{obs}</p></div>}
       </div>}
 
-      <button onClick={onBack} style={{width:"100%",padding:"14px",background:"#f1f5f9",border:"1px solid "+K.bd,borderRadius:10,fontSize:14,fontWeight:600,cursor:"pointer",color:K.mt,marginTop:4}}>{"\u2190 Volver a editar"}</button>
+      <button onClick={function(){if(onFinish)onFinish();else if(onBack)onBack();}} style={{width:"100%",padding:"14px",background:"#0d9488",color:"#fff",border:"none",borderRadius:10,fontSize:15,fontWeight:700,cursor:"pointer",marginTop:4}}>{"Finalizar \u2713"}</button>
     </div>
   );
 }

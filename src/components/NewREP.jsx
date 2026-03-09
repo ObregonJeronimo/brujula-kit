@@ -88,6 +88,7 @@ export default function NewREP({ onS, nfy, userId }){
 
       {step===2 && <NewREPResults results={results} patientAge={patientAge} obs={obs}
         onBack={function(){setStep(1);scrollTop();}}
+        onFinish={function(){onS("tools")}}
         patient={patient} evalDate={evalDate} derivado={derivado} userId={userId} nfy={nfy} />}
     </div>
   );

@@ -245,7 +245,6 @@ export default function NewELDI({onS,nfy,userId}){
             <div><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>{"Fecha de evaluaci\u00f3n"}</label><input type="date" value={pd.eD} onChange={function(e){sPd(function(p){return Object.assign({},p,{eD:e.target.value})})}} style={I}/></div>
             <div><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>Derivado por</label><input value={pd.ref} onChange={function(e){sPd(function(p){return Object.assign({},p,{ref:e.target.value})})}} style={I} placeholder="Profesional"/></div>
           </div>
-          {a>0&&<div style={{marginTop:14,padding:"10px 16px",background:"#ccfbf1",borderRadius:8,fontSize:14}}><strong>{"Edad:"}</strong>{" "+fa(a)+" ("+a+" meses)"}</div>}
         </div>}
         <div style={{marginTop:20,padding:16,background:"#f0f9ff",border:"1px solid #bae6fd",borderRadius:10}}>
           <div style={{fontSize:13,fontWeight:700,color:"#0369a1",marginBottom:10}}>{"Qu\u00e9 \u00e1reas evaluar?"}</div>
@@ -344,7 +343,7 @@ export default function NewELDI({onS,nfy,userId}){
             </div>
           </div>}
 
-          <button onClick={function(){sS(step-1);scrollTop();}} style={{width:"100%",padding:"14px",background:"#f1f5f9",border:"1px solid #e2e8f0",borderRadius:10,fontSize:14,fontWeight:600,cursor:"pointer",color:K.mt,marginTop:4}}>{"\u2190 Volver a editar"}</button>
+          <button onClick={function(){onS("tools")}} style={{width:"100%",padding:"14px",background:"#0d9488",color:"#fff",border:"none",borderRadius:10,fontSize:15,fontWeight:700,cursor:"pointer",marginTop:4}}>{"Finalizar \u2713"}</button>
         </div>;
       })()}
     </div>

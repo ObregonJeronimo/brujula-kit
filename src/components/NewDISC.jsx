@@ -220,7 +220,7 @@ export default function NewDISC({ onS, nfy, userId }){
           {results.errors.length===0 && <div style={{background:"#dcfce7",borderRadius:12,padding:24,textAlign:"center",marginBottom:20}}><span style={{fontSize:28}}>{"\u2705"}</span><p style={{fontSize:14,fontWeight:600,color:"#059669",marginTop:8}}>{"Discriminaci\u00f3n adecuada."}</p></div>}
         </div>}
 
-        <button onClick={function(){setStep(1);scrollTop();}} style={{width:"100%",padding:"14px",background:"#f1f5f9",border:"1px solid "+K.bd,borderRadius:10,fontSize:14,fontWeight:600,cursor:"pointer",color:K.mt,marginTop:4}}>{"\u2190 Volver a editar"}</button>
+        <button onClick={function(){onS("tools")}} style={{width:"100%",padding:"14px",background:"#0d9488",color:"#fff",border:"none",borderRadius:10,fontSize:15,fontWeight:700,cursor:"pointer",marginTop:4}}>{"Finalizar \u2713"}</button>
       </div>}
     </div>
   );
