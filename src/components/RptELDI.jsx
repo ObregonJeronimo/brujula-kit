@@ -2,12 +2,13 @@ import { useState } from "react";
 import { REC, EXP } from "../data/eldiItems.js";
 import { calcScoring, fa, noEvalGrouped } from "./NewELDI_scoring.js";
 import { openDetailPdf, openSummaryPdf } from "./RptELDI_pdf.js";
+import AIReportPanel from "./AIReportPanel.jsx";
 
 var K = { mt: "#64748b" };
 
 export default function RptELDI({ev,onD}){
   var _cd = useState(false), cd = _cd[0], sCD = _cd[1];
-  var _sd = useState(false), showDetail = _sd[0], setShowDetail = _sd[1];
+  var _showTech = useState(false), showTech = _showTech[0], setShowTech = _showTech[1];
   var rsp = ev.respuestas || {};
   var ageMo = ev.edadMeses || 0;
 
@@ -119,13 +120,23 @@ export default function RptELDI({ev,onD}){
               <button onClick={function(){sCD(false)}} style={{background:"#f1f5f9",border:"1px solid #e2e8f0",padding:"8px 20px",borderRadius:8,fontSize:13,cursor:"pointer",color:"#64748b"}}>Cancelar</button>
             </div>
           </div>
-          :<><button onClick={function(){openSummaryPdf(ev,recScoring,expScoring,recRes,expRes,allNoEval)}} style={{background:"#dc2626",color:"#fff",border:"none",padding:"11px 22px",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer"}}>{"\ud83d\udcc4 PDF"}</button>
-            <button onClick={function(){sCD(true)}} style={{background:"#fef2f2",color:"#dc2626",border:"1px solid #fecaca",padding:"11px 22px",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer"}}>{"Eliminar"}</button>
-          </>
+          :<button onClick={function(){sCD(true)}} style={{background:"#fef2f2",color:"#dc2626",border:"1px solid #fecaca",padding:"11px 22px",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer"}}>{"Eliminar"}</button>
         }
       </div>
     </div>
-    <div style={{background:"#fff",borderRadius:14,padding:32,border:"1px solid #e2e8f0"}}>
+
+    {/* AI Report Panel */}
+    <AIReportPanel ev={ev} evalType="eldi" collectionName="evaluaciones" evalLabel="ELDI \u2014 Evaluaci\u00f3n del Lenguaje" />
+
+    {/* Technical Data Toggle */}
+    <button onClick={function(){ setShowTech(!showTech); }} style={{width:"100%",padding:"14px",background:showTech?"#f1f5f9":"#0a3d2f",color:showTech?"#1e293b":"#fff",border:"1px solid #e2e8f0",borderRadius:10,fontSize:14,fontWeight:600,cursor:"pointer",marginBottom:showTech?16:20}}>
+      {showTech ? "\u25b2 Ocultar datos t\u00e9cnicos" : "\u25bc Ver datos t\u00e9cnicos de la evaluaci\u00f3n"}
+    </button>
+
+    {showTech && <div style={{background:"#fff",borderRadius:14,padding:32,border:"1px solid #e2e8f0"}}>
+      <div style={{display:"flex",justifyContent:"flex-end",marginBottom:16}}>
+        <button onClick={function(){openSummaryPdf(ev,recScoring,expScoring,recRes,expRes,allNoEval)}} style={{background:"#059669",color:"#fff",border:"none",padding:"9px 18px",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer"}}>{"\ud83d\udcc4 PDF datos t\u00e9cnicos"}</button>
+      </div>
       <h3 style={{fontSize:16,fontWeight:700,color:"#0a3d2f",marginBottom:14,paddingBottom:8,borderBottom:"2px solid #ccfbf1"}}>{"Datos del Paciente"}</h3>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"8px 32px",marginBottom:28}}>{[["Nombre",ev.paciente],["Edad",fa(ev.edadMeses)],["F. nacimiento",ev.fechaNacimiento],["F. evaluaci\u00f3n",ev.fechaEvaluacion],["Establecimiento",ev.establecimiento||"\u2014"],["Derivado por",ev.derivadoPor||"\u2014"],["Evaluador",ev.evaluador||"\u2014"]].map(function(pair,i){return <div key={i} style={{padding:"8px 0",borderBottom:"1px solid #f1f5f9"}}><div style={{fontSize:11,color:K.mt,marginBottom:3,textTransform:"uppercase"}}>{pair[0]}</div><div style={{fontSize:15,fontWeight:600}}>{pair[1]}</div></div>})}</div>
 
@@ -149,11 +160,11 @@ export default function RptELDI({ev,onD}){
         {allNoEval.length>0&&<div style={{marginTop:12,padding:"8px 12px",background:"rgba(255,255,255,.12)",borderRadius:8,fontSize:12}}>{"\u26a0 "+allNoEval.length+" \u00edtems sin evaluar \u2014 parcial"}</div>}
       </div>
 
-      <button onClick={function(){setShowDetail(!showDetail)}} style={{width:"100%",padding:"14px",background:showDetail?"#f1f5f9":"#0a3d2f",color:showDetail?"#1e293b":"#fff",border:"1px solid #e2e8f0",borderRadius:10,fontSize:14,fontWeight:600,cursor:"pointer",marginBottom:showDetail?0:20}}>{showDetail?"\u25b2 Ocultar detalle":"\u25bc Ver detalle de cada respuesta"}</button>
-      {showDetail&&renderDetailView()}
+      <button onClick={function(){ var el=document.getElementById("eldi-detail-toggle"); if(el) el.style.display=el.style.display==="none"?"block":"none"; }} style={{width:"100%",padding:"14px",background:"#0a3d2f",color:"#fff",border:"1px solid #e2e8f0",borderRadius:10,fontSize:14,fontWeight:600,cursor:"pointer",marginBottom:0}}>{"\u25bc Ver detalle de cada respuesta"}</button>
+      <div id="eldi-detail-toggle" style={{display:"none"}}>{renderDetailView()}</div>
 
       <h3 style={{fontSize:16,fontWeight:700,color:"#0a3d2f",marginBottom:10,paddingBottom:8,borderBottom:"2px solid #ccfbf1",marginTop:20}}>{"Observaciones Cl\u00ednicas"}</h3>
       <div style={{background:"#f8faf9",padding:18,borderRadius:10,fontSize:14,border:"1px solid #e2e8f0",lineHeight:1.7,minHeight:60}}>{ev.observaciones||"Sin observaciones."}</div>
-    </div>
+    </div>}
   </div>;
 }

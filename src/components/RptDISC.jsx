@@ -1,11 +1,13 @@
 import { useState, useRef } from "react";
 import { DISC_PAIRS, CONTRASTS } from "../data/discFonData.js";
+import AIReportPanel from "./AIReportPanel.jsx";
 
 var K = { sd:"#0a3d2f", ac:"#0d9488", mt:"#64748b", bd:"#e2e8f0" };
 function ageLabel(m){ return Math.floor(m/12)+" a\u00f1os, "+(m%12)+" meses"; }
 
 export default function RptDISC({ ev, onD }){
   var _cd = useState(false), cd = _cd[0], sCD = _cd[1];
+  var _showTech = useState(false), showTech = _showTech[0], setShowTech = _showTech[1];
   var printRef = useRef(null);
   var res = ev.resultados || {};
   var responses = ev.responses || {};
@@ -60,14 +62,23 @@ export default function RptDISC({ ev, onD }){
                 <button onClick={function(){sCD(false)}} style={{background:"#f1f5f9",border:"1px solid #e2e8f0",padding:"8px 20px",borderRadius:8,fontSize:13,cursor:"pointer",color:"#64748b"}}>Cancelar</button>
               </div>
             </div>
-            :<><button onClick={handlePDF} style={{padding:"11px 22px",background:K.ac,color:"#fff",border:"none",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer"}}>{"\ud83d\udcc4 PDF"}</button>
-              <button onClick={function(){sCD(true)}} style={{padding:"11px 22px",background:"#fef2f2",color:"#dc2626",border:"1px solid #fecaca",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer"}}>{"Eliminar"}</button>
-            </>
+            :<button onClick={function(){sCD(true)}} style={{padding:"11px 22px",background:"#fef2f2",color:"#dc2626",border:"1px solid #fecaca",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer"}}>{"Eliminar"}</button>
           }
         </div>
       </div>
 
-      <div ref={printRef} style={{background:"#fff",borderRadius:12,border:"1px solid "+K.bd,padding:28}}>
+      {/* AI Report Panel */}
+      <AIReportPanel ev={ev} evalType="disc" collectionName="disc_evaluaciones" evalLabel="Disc. Fonol\u00f3gica (PEFF-R 3.4)" />
+
+      {/* Technical Data Toggle */}
+      <button onClick={function(){ setShowTech(!showTech); }} style={{width:"100%",padding:"14px",background:showTech?"#f1f5f9":"#0a3d2f",color:showTech?"#1e293b":"#fff",border:"1px solid #e2e8f0",borderRadius:10,fontSize:14,fontWeight:600,cursor:"pointer",marginBottom:showTech?16:20}}>
+        {showTech ? "\u25b2 Ocultar datos t\u00e9cnicos" : "\u25bc Ver datos t\u00e9cnicos de la evaluaci\u00f3n"}
+      </button>
+
+      {showTech && <div ref={printRef} style={{background:"#fff",borderRadius:12,border:"1px solid "+K.bd,padding:28}}>
+        <div style={{display:"flex",justifyContent:"flex-end",marginBottom:16}}>
+          <button onClick={handlePDF} style={{padding:"9px 18px",background:K.ac,color:"#fff",border:"none",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer"}}>{"\ud83d\udcc4 PDF datos t\u00e9cnicos"}</button>
+        </div>
         {/* Patient info */}
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:20,paddingBottom:16,borderBottom:"2px solid "+K.bd}}>
           <div>
@@ -188,7 +199,7 @@ export default function RptDISC({ ev, onD }){
         <div style={{marginTop:24,paddingTop:12,borderTop:"1px solid "+K.bd,fontSize:10,color:"#94a3b8",textAlign:"center"}}>
           {"Br\u00fajula KIT \u2014 Disc. Fonol\u00f3gica (PEFF-R 3.4) \u2014 Generado el "+new Date().toLocaleDateString("es-AR")}
         </div>
-      </div>
+      </div>}
     </div>
   );
 }

@@ -1,79 +1,23 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import { RECO_GROUPS } from "../data/recoFonData.js";
-import { db, doc, updateDoc } from "../firebase.js";
+import AIReportPanel from "./AIReportPanel.jsx";
 
 var K = { sd:"#0a3d2f", ac:"#9333ea", mt:"#64748b", bd:"#e2e8f0" };
 function ageLabel(m){ return Math.floor(m/12)+" a\u00f1os, "+(m%12)+" meses"; }
 
 export default function RptRECO({ ev, onD }){
   var _cd = useState(false), cd = _cd[0], sCD = _cd[1];
-  var _view = useState("details"), viewMode = _view[0], setViewMode = _view[1];
-  var _report = useState(ev.aiReport || null), report = _report[0], setReport = _report[1];
-  var _generating = useState(false), generating = _generating[0], setGenerating = _generating[1];
-  var _genError = useState(null), genError = _genError[0], setGenError = _genError[1];
-  var _regenUsed = useState(ev.aiReportRegenerated || false), regenUsed = _regenUsed[0], setRegenUsed = _regenUsed[1];
+  var _showTech = useState(false), showTech = _showTech[0], setShowTech = _showTech[1];
   var printRef = useRef(null);
-  var reportPrintRef = useRef(null);
   var res = ev.resultados || {};
   var responses = ev.responses || {};
   var obsMap = ev.obsMap || {};
 
-  useEffect(function(){
-    if(ev.aiReport && !report){ setReport(ev.aiReport); }
-    if(ev.aiReportRegenerated){ setRegenUsed(true); }
-  }, [ev.aiReport, ev.aiReportRegenerated]);
-
-  var generateReport = function(isRegen){
-    setGenerating(true);
-    setGenError(null);
-    var evalData = {
-      paciente: ev.paciente || "",
-      pacienteDni: ev.pacienteDni || "",
-      edadMeses: ev.edadMeses || 0,
-      fechaEvaluacion: ev.fechaEvaluacion || "",
-      establecimiento: ev.establecimiento || "",
-      derivadoPor: ev.derivadoPor || "",
-      evaluador: ev.evaluador || "",
-      observaciones: ev.observaciones || "",
-      resultados: ev.resultados || {},
-      responses: ev.responses || {}
-    };
-    fetch("/api/generate-report", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ evalData: evalData, evalType: "reco" })
-    })
-    .then(function(r){ return r.json(); })
-    .then(function(data){
-      if(data.success && data.report){
-        setReport(data.report);
-        setViewMode("report");
-        if(isRegen){ setRegenUsed(true); }
-        if(ev._fbId){
-          var updateData = { aiReport: data.report, aiReportDate: new Date().toISOString() };
-          if(isRegen){ updateData.aiReportRegenerated = true; }
-          var docRef = doc(db, "reco_evaluaciones", ev._fbId);
-          updateDoc(docRef, updateData)
-            .catch(function(e){ console.error("Error saving report to Firestore:", e); });
-        }
-      } else {
-        setGenError(data.error || "Error desconocido al generar el informe.");
-      }
-      setGenerating(false);
-    })
-    .catch(function(e){
-      console.error("Error generating report:", e);
-      setGenError("Error de conexi\u00f3n: " + e.message);
-      setGenerating(false);
-    });
-  };
-
-  var doPDF = function(el, filename){
-    el.style.paddingBottom = "40px";
+  var handlePDF = function(){
+    if(!printRef.current) return;
     import("html2canvas").then(function(mod){
-      return mod.default(el,{scale:2,useCORS:true,backgroundColor:"#ffffff",scrollY:-window.scrollY,height:el.scrollHeight,windowHeight:el.scrollHeight+100});
+      return mod.default(printRef.current,{scale:2,useCORS:true,backgroundColor:"#ffffff",scrollY:-window.scrollY,windowHeight:printRef.current.scrollHeight});
     }).then(function(canvas){
-      el.style.paddingBottom = "";
       return import("jspdf").then(function(mod){
         var jsPDF = mod.jsPDF;
         var pdf = new jsPDF("p","mm","a4");
@@ -96,43 +40,20 @@ export default function RptRECO({ ev, onD }){
           pdf.addImage(sliceCanvas.toDataURL("image/png"),"PNG",margin,margin,imgW,sliceH);
           pos+=usableH; page++;
         }
-        pdf.save(filename);
+        pdf.save("RECO_"+((ev.paciente||"").replace(/\s/g,"_"))+"_"+ev.fechaEvaluacion+".pdf");
       });
-    }).catch(function(e){ el.style.paddingBottom = ""; console.error(e); });
-  };
-
-  var handlePDFDetails = function(){
-    if(!printRef.current) return;
-    doPDF(printRef.current, "RECO_"+((ev.paciente||"").replace(/\s/g,"_"))+"_"+ev.fechaEvaluacion+".pdf");
-  };
-
-  var handlePDFReport = function(){
-    if(!reportPrintRef.current) return;
-    doPDF(reportPrintRef.current, "Informe_RECO_"+((ev.paciente||"").replace(/\s/g,"_"))+"_"+ev.fechaEvaluacion+".pdf");
+    });
   };
 
   var sevColor = res.severity==="Adecuado"?"#059669":res.severity==="Leve"?"#d97706":"#dc2626";
   var sevBg = res.severity==="Adecuado"?"#f0fdf4":res.severity==="Leve"?"#fffbeb":"#fef2f2";
 
-  var renderReportText = function(text){
-    if(!text) return null;
-    var lines = text.split("\n");
-    return lines.map(function(line, i){
-      var trimmed = line.trim();
-      if(!trimmed) return <div key={i} style={{height:10}} />;
-      var isTitle = /^[A-Z\u00c0-\u00dc\s\d\.\:\-]{8,}:?\s*$/.test(trimmed) || /^\d+[\.\)]\s*[A-Z]/.test(trimmed);
-      if(isTitle){
-        return <div key={i} style={{fontSize:14,fontWeight:700,color:K.sd,marginTop:16,marginBottom:6}}>{trimmed}</div>;
-      }
-      return <div key={i} style={{fontSize:13,color:"#334155",lineHeight:1.7,marginBottom:2}}>{trimmed}</div>;
-    });
-  };
-
   return (
     <div style={{animation:"fi .3s ease",maxWidth:900,margin:"0 auto"}}>
+      {/* Header */}
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20,flexWrap:"wrap",gap:12}}>
         <h1 style={{fontSize:20,fontWeight:700}}>{"\ud83e\udde0 Reconocimiento Fonol\u00f3gico"}</h1>
-        <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+        <div style={{display:"flex",gap:8}}>
           {cd
             ?<div style={{background:"#fef2f2",border:"1px solid #fecaca",borderRadius:10,padding:"14px 20px",display:"flex",flexDirection:"column",alignItems:"center",gap:10}}>
               <div style={{fontSize:13,fontWeight:600,color:"#dc2626",textAlign:"center"}}>{"\u00bfEst\u00e1 seguro que desea eliminar?"}</div>
@@ -147,193 +68,122 @@ export default function RptRECO({ ev, onD }){
         </div>
       </div>
 
-      <div style={{display:"flex",gap:0,marginBottom:20,borderRadius:10,overflow:"hidden",border:"1px solid "+K.bd}}>
-        <button onClick={function(){setViewMode("details")}} style={{flex:1,padding:"12px 16px",background:viewMode==="details"?"#0a3d2f":"#f8fafc",color:viewMode==="details"?"#fff":"#64748b",border:"none",fontSize:13,fontWeight:600,cursor:"pointer",transition:"all .2s"}}>
-          {"\ud83d\udccb Ver detalles de evaluaci\u00f3n"}
-        </button>
-        <button onClick={function(){ if(report){ setViewMode("report"); } }} style={{flex:1,padding:"12px 16px",background:viewMode==="report"?"#0a3d2f":"#f8fafc",color:viewMode==="report"?"#fff":report?"#64748b":"#cbd5e1",border:"none",fontSize:13,fontWeight:600,cursor:report?"pointer":"default",transition:"all .2s",borderLeft:"1px solid "+K.bd}}>
-          {"\ud83e\udde0 Informe IA"}{report ? "" : " (no generado)"}
-        </button>
-        <button disabled style={{flex:1,padding:"12px 16px",background:"#f8fafc",color:"#cbd5e1",border:"none",fontSize:13,fontWeight:600,cursor:"not-allowed",borderLeft:"1px solid "+K.bd}}>
-          {"\ud83c\udfe5 Info CUD (pr\u00f3ximamente)"}
-        </button>
-      </div>
+      {/* AI Report Panel */}
+      <AIReportPanel ev={ev} evalType="reco" collectionName="reco_evaluaciones" evalLabel="Reco. Fonol\u00f3gico (PEFF-R 3.5)" />
 
-      {viewMode === "report" && report && (
-        <div style={{marginBottom:24}}>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
-            <div style={{fontSize:14,fontWeight:600,color:K.sd}}>{"Informe generado con IA"}</div>
-            <div style={{display:"flex",gap:8}}>
-              <button onClick={handlePDFReport} style={{padding:"8px 16px",background:K.ac,color:"#fff",border:"none",borderRadius:8,fontSize:12,fontWeight:600,cursor:"pointer"}}>{"\ud83d\udcc4 Descargar PDF"}</button>
-              {!regenUsed
-                ? <button onClick={function(){ generateReport(true); }} disabled={generating} style={{padding:"8px 16px",background:"#f1f5f9",color:"#64748b",border:"1px solid #e2e8f0",borderRadius:8,fontSize:12,fontWeight:600,cursor:generating?"wait":"pointer",opacity:generating?0.6:1}}>{generating ? "\u23f3 Regenerando..." : "\u21bb Regenerar"}</button>
-                : <span style={{padding:"8px 16px",background:"#f1f5f9",color:"#cbd5e1",borderRadius:8,fontSize:12,fontWeight:600,border:"1px solid #e2e8f0"}}>{"\u21bb Regenerado"}</span>
-              }
-            </div>
+      {/* Technical Data Toggle */}
+      <button onClick={function(){ setShowTech(!showTech); }} style={{width:"100%",padding:"14px",background:showTech?"#f1f5f9":"#0a3d2f",color:showTech?"#1e293b":"#fff",border:"1px solid #e2e8f0",borderRadius:10,fontSize:14,fontWeight:600,cursor:"pointer",marginBottom:showTech?16:20}}>
+        {showTech ? "\u25b2 Ocultar datos t\u00e9cnicos" : "\u25bc Ver datos t\u00e9cnicos de la evaluaci\u00f3n"}
+      </button>
+
+      {/* Technical Details */}
+      {showTech && <div ref={printRef} style={{background:"#fff",borderRadius:12,border:"1px solid "+K.bd,padding:28,marginBottom:20}}>
+        <div style={{display:"flex",justifyContent:"flex-end",marginBottom:16}}>
+          <button onClick={handlePDF} style={{padding:"9px 18px",background:K.ac,color:"#fff",border:"none",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer"}}>{"\ud83d\udcc4 PDF datos t\u00e9cnicos"}</button>
+        </div>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:20,paddingBottom:16,borderBottom:"2px solid "+K.bd}}>
+          <div>
+            <div style={{fontSize:10,color:K.mt,fontWeight:600,textTransform:"uppercase",letterSpacing:1}}>{"Reconocimiento Fonol\u00f3gico \u2014 PEFF-R 3.5"}</div>
+            <div style={{fontSize:18,fontWeight:700,marginTop:4}}>{ev.paciente}</div>
+            <div style={{fontSize:13,color:K.mt,marginTop:2}}>{"DNI: "+(ev.pacienteDni||"N/A")+" \u00b7 Edad: "+ageLabel(ev.edadMeses||0)}</div>
+            {ev.derivadoPor && <div style={{fontSize:12,color:K.mt,marginTop:2}}>{"Derivado por: "+ev.derivadoPor}</div>}
           </div>
-          <div ref={reportPrintRef} style={{background:"#fff",borderRadius:12,border:"1px solid "+K.bd,padding:28}}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:20,paddingBottom:16,borderBottom:"2px solid "+K.bd}}>
-              <div>
-                <div style={{fontSize:10,color:K.mt,fontWeight:600,textTransform:"uppercase",letterSpacing:1}}>{"Informe Fonoaudiol\u00f3gico \u2014 Reconocimiento Fonol\u00f3gico (PEFF-R 3.5)"}</div>
-                <div style={{fontSize:18,fontWeight:700,marginTop:4}}>{ev.paciente}</div>
-                <div style={{fontSize:13,color:K.mt,marginTop:2}}>{"DNI: "+(ev.pacienteDni||"N/A")+" \u00b7 Edad: "+ageLabel(ev.edadMeses||0)}</div>
-              </div>
-              <div style={{textAlign:"right"}}>
-                <div style={{fontSize:12,color:K.mt}}>{"Fecha eval.: "+ev.fechaEvaluacion}</div>
-                {ev.evaluador && <div style={{fontSize:12,color:K.mt}}>{"Evaluador: "+ev.evaluador}</div>}
-              </div>
-            </div>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12,marginBottom:20}}>
-              <div style={{background:"#f3e8ff",borderRadius:10,padding:14,textAlign:"center"}}>
-                <div style={{fontSize:24,fontWeight:800,color:K.ac}}>{(res.pct||0)+"%"}</div>
-                <div style={{fontSize:10,color:K.mt,fontWeight:600}}>{"Aciertos"}</div>
-              </div>
-              <div style={{background:sevBg,borderRadius:10,padding:14,textAlign:"center"}}>
-                <div style={{fontSize:18,fontWeight:700,color:sevColor}}>{res.severity||"-"}</div>
-                <div style={{fontSize:10,color:K.mt,fontWeight:600}}>{"Severidad"}</div>
-              </div>
-              <div style={{background:"#f8fafc",borderRadius:10,padding:14,textAlign:"center"}}>
-                <div style={{fontSize:18,fontWeight:700,color:K.sd}}>{(res.correct||0)+"/"+(res.total||0)}</div>
-                <div style={{fontSize:10,color:K.mt,fontWeight:600}}>{"Contrastes"}</div>
-              </div>
-            </div>
-            <div>{renderReportText(report)}</div>
-            <div style={{marginTop:20,padding:10,background:"#f3e8ff",borderRadius:8,fontSize:10,color:"#7c3aed",textAlign:"center"}}>
-              {"Este informe fue generado con asistencia de inteligencia artificial a partir de los datos de la evaluaci\u00f3n. Debe ser revisado y validado por un profesional fonoaudi\u00f3logo."}
-            </div>
-            <div style={{marginTop:16,paddingTop:12,borderTop:"1px solid "+K.bd,fontSize:10,color:"#94a3b8",textAlign:"center"}}>
-              {"Br\u00fajula KIT \u2014 Informe IA \u2014 Reco. Fonol\u00f3gico (PEFF-R 3.5) \u2014 "+new Date().toLocaleDateString("es-AR")}
-            </div>
+          <div style={{textAlign:"right"}}>
+            <div style={{fontSize:12,color:K.mt}}>{"Fecha: "+ev.fechaEvaluacion}</div>
+            {ev.evaluador && <div style={{fontSize:12,color:K.mt}}>{"Evaluador: "+ev.evaluador}</div>}
           </div>
         </div>
-      )}
-
-      {!report && (
-        <div style={{background:"linear-gradient(135deg,#f3e8ff,#ede9fe)",borderRadius:14,border:"1px solid #d8b4fe",padding:24,marginBottom:24,textAlign:"center"}}>
-          <div style={{fontSize:32,marginBottom:8}}>{"\ud83e\udde0"}</div>
-          <h3 style={{fontSize:16,fontWeight:700,color:"#6b21a8",marginBottom:6}}>{"Informe avanzado con IA"}</h3>
-          <p style={{fontSize:13,color:"#7c3aed",marginBottom:16,maxWidth:500,margin:"0 auto 16px"}}>
-            {"Genera autom\u00e1ticamente un informe fonoaudiol\u00f3gico profesional basado en los resultados de esta evaluaci\u00f3n. El informe incluye descripci\u00f3n del desempe\u00f1o, an\u00e1lisis cl\u00ednico, interpretaci\u00f3n y recomendaciones."}
-          </p>
-          {genError && <div style={{background:"#fef2f2",border:"1px solid #fecaca",borderRadius:8,padding:"10px 14px",marginBottom:12,fontSize:12,color:"#dc2626"}}>{genError}</div>}
-          <button onClick={function(){ generateReport(false); }} disabled={generating}
-            style={{padding:"14px 32px",background:generating?"#a78bfa":"linear-gradient(135deg,#7c3aed,#9333ea)",color:"#fff",border:"none",borderRadius:10,fontSize:15,fontWeight:700,cursor:generating?"wait":"pointer",boxShadow:"0 4px 16px rgba(124,58,237,.3)",transition:"all .2s",opacity:generating?0.7:1}}>
-            {generating ? "\u23f3 Generando informe..." : "\ud83e\udde0 Generar informe avanzado con IA"}
-          </button>
-        </div>
-      )}
-
-      {viewMode === "details" && (
-        <div>
-          <div style={{display:"flex",justifyContent:"flex-end",marginBottom:12}}>
-            <button onClick={handlePDFDetails} style={{padding:"11px 22px",background:K.ac,color:"#fff",border:"none",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer"}}>{"\ud83d\udcc4 PDF Detalles"}</button>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12,marginBottom:24}}>
+          <div style={{background:"#f3e8ff",borderRadius:10,padding:16,textAlign:"center"}}>
+            <div style={{fontSize:28,fontWeight:800,color:K.ac}}>{(res.pct||0)+"%"}</div>
+            <div style={{fontSize:11,color:K.mt,fontWeight:600}}>{"Aciertos globales"}</div>
           </div>
-          <div ref={printRef} style={{background:"#fff",borderRadius:12,border:"1px solid "+K.bd,padding:28,overflow:"visible"}}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:20,paddingBottom:16,borderBottom:"2px solid "+K.bd}}>
-              <div>
-                <div style={{fontSize:10,color:K.mt,fontWeight:600,textTransform:"uppercase",letterSpacing:1}}>{"Reconocimiento Fonol\u00f3gico \u2014 PEFF-R 3.5"}</div>
-                <div style={{fontSize:18,fontWeight:700,marginTop:4}}>{ev.paciente}</div>
-                <div style={{fontSize:13,color:K.mt,marginTop:2}}>{"DNI: "+(ev.pacienteDni||"N/A")+" \u00b7 Edad: "+ageLabel(ev.edadMeses||0)}</div>
-                {ev.derivadoPor && <div style={{fontSize:12,color:K.mt,marginTop:2}}>{"Derivado por: "+ev.derivadoPor}</div>}
-              </div>
-              <div style={{textAlign:"right"}}>
-                <div style={{fontSize:12,color:K.mt}}>{"Fecha: "+ev.fechaEvaluacion}</div>
-                {ev.evaluador && <div style={{fontSize:12,color:K.mt}}>{"Evaluador: "+ev.evaluador}</div>}
-              </div>
-            </div>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12,marginBottom:24}}>
-              <div style={{background:"#f3e8ff",borderRadius:10,padding:16,textAlign:"center"}}>
-                <div style={{fontSize:28,fontWeight:800,color:K.ac}}>{(res.pct||0)+"%"}</div>
-                <div style={{fontSize:11,color:K.mt,fontWeight:600}}>{"Aciertos globales"}</div>
-              </div>
-              <div style={{background:sevBg,borderRadius:10,padding:16,textAlign:"center"}}>
-                <div style={{fontSize:20,fontWeight:700,color:sevColor}}>{res.severity||"-"}</div>
-                <div style={{fontSize:11,color:K.mt,fontWeight:600}}>{"Severidad"}</div>
-              </div>
-              <div style={{background:"#f8fafc",borderRadius:10,padding:16,textAlign:"center"}}>
-                <div style={{fontSize:20,fontWeight:700,color:K.sd}}>{(res.correct||0)+"/"+(res.total||0)}</div>
-                <div style={{fontSize:11,color:K.mt,fontWeight:600}}>{"Contrastes reconocidos"}</div>
-              </div>
-            </div>
-            <h3 style={{fontSize:14,fontWeight:700,marginBottom:8}}>{"Detalle por grupo de contraste"}</h3>
-            <table style={{width:"100%",borderCollapse:"collapse",fontSize:12,marginBottom:20}}>
-              <thead><tr style={{borderBottom:"2px solid "+K.bd,background:"#f8fafc"}}>
-                <th style={{textAlign:"center",padding:"6px 8px",color:K.mt,width:36}}>{"Gr."}</th>
-                <th style={{textAlign:"left",padding:"6px 8px",color:K.mt}}>{"Tipo de contraste"}</th>
-                <th style={{textAlign:"center",padding:"6px",color:K.mt,width:50}}>{"L\u00e1m."}</th>
-                <th style={{textAlign:"left",padding:"6px 8px",color:K.mt}}>{"Est\u00edmulos"}</th>
-                <th style={{textAlign:"center",padding:"6px",color:K.mt,width:70}}>{"Reconoce"}</th>
-                <th style={{textAlign:"left",padding:"6px 8px",color:K.mt}}>{"Obs."}</th>
-              </tr></thead>
-              <tbody>
-                {RECO_GROUPS.map(function(group){
-                  return group.items.map(function(item, idx){
-                    var r = responses[item.lam];
-                    var reconoce = r === "si" || r === true;
-                    var noReconoce = r === "no" || r === false;
-                    var noResp = r === undefined || r === null;
-                    var bgRow = noResp ? "#fffbeb" : reconoce ? "#f0fdf4" : "#fef2f2";
-                    return <tr key={item.lam} style={{borderBottom:"1px solid #f1f5f9",background:bgRow}}>
-                      {idx === 0 && <td rowSpan={group.items.length} style={{textAlign:"center",padding:"6px 8px",fontWeight:800,color:K.ac,verticalAlign:"top",borderRight:"1px solid #f1f5f9"}}>{group.id}</td>}
-                      {idx === 0 && <td rowSpan={group.items.length} style={{padding:"6px 8px",fontSize:11,color:"#334155",verticalAlign:"top",borderRight:"1px solid #f1f5f9"}}>{group.label}</td>}
-                      <td style={{textAlign:"center",padding:"6px 8px",fontWeight:700,color:K.mt}}>{item.lam}</td>
-                      <td style={{padding:"6px 8px",fontSize:11}}>{item.est.join(", ")}</td>
-                      <td style={{textAlign:"center",padding:"6px"}}>
-                        {noResp && <span style={{fontSize:10,color:"#92400e",fontWeight:600}}>{"Sin resp."}</span>}
-                        {reconoce && <span style={{fontSize:10,color:"#059669",fontWeight:700}}>{"\u2714 S\u00ed"}</span>}
-                        {noReconoce && <span style={{fontSize:10,color:"#dc2626",fontWeight:700}}>{"\u2718 No"}</span>}
-                      </td>
-                      <td style={{padding:"6px 8px",fontSize:11,color:K.mt}}>{obsMap[item.lam]||""}</td>
-                    </tr>;
-                  });
-                })}
-              </tbody>
-            </table>
-            {res.groupResults && <div style={{marginBottom:20}}>
-              <h3 style={{fontSize:14,fontWeight:700,color:K.ac,marginBottom:8}}>{"Resumen por grupo"}</h3>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
-                {res.groupResults.map(function(g){
-                  var isOk = g.correct === g.total;
-                  return <div key={g.id} style={{padding:"8px 12px",borderRadius:8,border:"1px solid "+(isOk?"#bbf7d0":"#fecaca"),background:isOk?"#f0fdf4":"#fef2f2",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                    <div>
-                      <span style={{fontWeight:800,color:isOk?"#059669":"#dc2626",marginRight:6,fontSize:13}}>{g.id}</span>
-                      <span style={{fontSize:11,color:"#334155"}}>{g.label}</span>
-                    </div>
-                    <span style={{fontSize:12,fontWeight:700,color:isOk?"#059669":"#dc2626"}}>{g.correct+"/"+g.total}</span>
-                  </div>;
-                })}
-              </div>
-            </div>}
-            {res.errorGroups && res.errorGroups.length > 0 && <div style={{marginBottom:20}}>
-              <h3 style={{fontSize:14,fontWeight:700,color:"#dc2626",marginBottom:8}}>{"\u26a0 Grupos con dificultades"}</h3>
-              {res.errorGroups.map(function(g){
-                var failedItems = g.items.filter(function(it){ return !it.reconoce; });
-                return <div key={g.id} style={{padding:"10px 14px",background:"#fef2f2",borderRadius:8,marginBottom:6,border:"1px solid #fecaca"}}>
-                  <div style={{fontSize:12,fontWeight:700,color:"#dc2626"}}>{g.id+" - "+g.label}</div>
-                  <div style={{fontSize:11,color:"#7f1d1d",marginTop:2}}>
-                    {"Items no reconocidos: "+failedItems.map(function(it){return "L\u00e1m. "+it.lam}).join(", ")}
-                  </div>
-                </div>;
-              })}
-            </div>}
-            {res.errorGroups && res.errorGroups.length === 0 && <div style={{background:"#dcfce7",borderRadius:12,padding:20,marginBottom:16,textAlign:"center"}}>
-              <span style={{fontSize:24}}>{"\u2705"}</span>
-              <p style={{fontSize:14,fontWeight:600,color:"#059669",marginTop:8}}>{"Reconocimiento fonol\u00f3gico adecuado."}</p>
-            </div>}
-            <div style={{background:"#f3e8ff",border:"1px solid #d8b4fe",borderRadius:10,padding:14,marginBottom:20,fontSize:12,color:"#6b21a8",lineHeight:1.6}}>
-              <strong>{"\u2139\ufe0f Criterios de clasificaci\u00f3n:"}</strong><br/>
-              {"Adecuado: \u226595% \u00b7 Leve: 80-94% \u00b7 Moderado: 60-79% \u00b7 Severo: <60%"}
-            </div>
-            {ev.observaciones && <div style={{marginTop:12,padding:12,background:"#f8fafc",borderRadius:8}}>
-              <strong style={{fontSize:12}}>Observaciones:</strong>
-              <p style={{fontSize:12,color:K.mt,marginTop:4}}>{ev.observaciones}</p>
-            </div>}
-            <div style={{marginTop:24,paddingTop:12,borderTop:"1px solid "+K.bd,fontSize:10,color:"#94a3b8",textAlign:"center"}}>
-              {"Br\u00fajula KIT \u2014 Reco. Fonol\u00f3gico (PEFF-R 3.5) \u2014 Generado el "+new Date().toLocaleDateString("es-AR")}
-            </div>
+          <div style={{background:sevBg,borderRadius:10,padding:16,textAlign:"center"}}>
+            <div style={{fontSize:20,fontWeight:700,color:sevColor}}>{res.severity||"-"}</div>
+            <div style={{fontSize:11,color:K.mt,fontWeight:600}}>{"Severidad"}</div>
+          </div>
+          <div style={{background:"#f8fafc",borderRadius:10,padding:16,textAlign:"center"}}>
+            <div style={{fontSize:20,fontWeight:700,color:K.sd}}>{(res.correct||0)+"/"+(res.total||0)}</div>
+            <div style={{fontSize:11,color:K.mt,fontWeight:600}}>{"Contrastes reconocidos"}</div>
           </div>
         </div>
-      )}
+        <h3 style={{fontSize:14,fontWeight:700,marginBottom:8}}>{"Detalle por grupo de contraste"}</h3>
+        <table style={{width:"100%",borderCollapse:"collapse",fontSize:12,marginBottom:20}}>
+          <thead><tr style={{borderBottom:"2px solid "+K.bd,background:"#f8fafc"}}>
+            <th style={{textAlign:"center",padding:"6px 8px",color:K.mt,width:36}}>{"Gr."}</th>
+            <th style={{textAlign:"left",padding:"6px 8px",color:K.mt}}>{"Tipo de contraste"}</th>
+            <th style={{textAlign:"center",padding:"6px",color:K.mt,width:50}}>{"L\u00e1m."}</th>
+            <th style={{textAlign:"left",padding:"6px 8px",color:K.mt}}>{"Est\u00edmulos"}</th>
+            <th style={{textAlign:"center",padding:"6px",color:K.mt,width:70}}>{"Reconoce"}</th>
+            <th style={{textAlign:"left",padding:"6px 8px",color:K.mt}}>{"Obs."}</th>
+          </tr></thead>
+          <tbody>
+            {RECO_GROUPS.map(function(group){
+              return group.items.map(function(item, idx){
+                var r = responses[item.lam];
+                var reconoce = r === "si" || r === true;
+                var noReconoce = r === "no" || r === false;
+                var noResp = r === undefined || r === null;
+                var bgRow = noResp ? "#fffbeb" : reconoce ? "#f0fdf4" : "#fef2f2";
+                return <tr key={item.lam} style={{borderBottom:"1px solid #f1f5f9",background:bgRow}}>
+                  {idx === 0 && <td rowSpan={group.items.length} style={{textAlign:"center",padding:"6px 8px",fontWeight:800,color:K.ac,verticalAlign:"top",borderRight:"1px solid #f1f5f9"}}>{group.id}</td>}
+                  {idx === 0 && <td rowSpan={group.items.length} style={{padding:"6px 8px",fontSize:11,color:"#334155",verticalAlign:"top",borderRight:"1px solid #f1f5f9"}}>{group.label}</td>}
+                  <td style={{textAlign:"center",padding:"6px 8px",fontWeight:700,color:K.mt}}>{item.lam}</td>
+                  <td style={{padding:"6px 8px",fontSize:11}}>{item.est.join(", ")}</td>
+                  <td style={{textAlign:"center",padding:"6px"}}>
+                    {noResp && <span style={{fontSize:10,color:"#92400e",fontWeight:600}}>{"Sin resp."}</span>}
+                    {reconoce && <span style={{fontSize:10,color:"#059669",fontWeight:700}}>{"\u2714 S\u00ed"}</span>}
+                    {noReconoce && <span style={{fontSize:10,color:"#dc2626",fontWeight:700}}>{"\u2718 No"}</span>}
+                  </td>
+                  <td style={{padding:"6px 8px",fontSize:11,color:K.mt}}>{obsMap[item.lam]||""}</td>
+                </tr>;
+              });
+            })}
+          </tbody>
+        </table>
+        {res.groupResults && <div style={{marginBottom:20}}>
+          <h3 style={{fontSize:14,fontWeight:700,color:K.ac,marginBottom:8}}>{"Resumen por grupo"}</h3>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
+            {res.groupResults.map(function(g){
+              var isOk = g.correct === g.total;
+              return <div key={g.id} style={{padding:"8px 12px",borderRadius:8,border:"1px solid "+(isOk?"#bbf7d0":"#fecaca"),background:isOk?"#f0fdf4":"#fef2f2",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                <div>
+                  <span style={{fontWeight:800,color:isOk?"#059669":"#dc2626",marginRight:6,fontSize:13}}>{g.id}</span>
+                  <span style={{fontSize:11,color:"#334155"}}>{g.label}</span>
+                </div>
+                <span style={{fontSize:12,fontWeight:700,color:isOk?"#059669":"#dc2626"}}>{g.correct+"/"+g.total}</span>
+              </div>;
+            })}
+          </div>
+        </div>}
+        {res.errorGroups && res.errorGroups.length > 0 && <div style={{marginBottom:20}}>
+          <h3 style={{fontSize:14,fontWeight:700,color:"#dc2626",marginBottom:8}}>{"\u26a0 Grupos con dificultades"}</h3>
+          {res.errorGroups.map(function(g){
+            var failedItems = g.items.filter(function(it){ return !it.reconoce; });
+            return <div key={g.id} style={{padding:"10px 14px",background:"#fef2f2",borderRadius:8,marginBottom:6,border:"1px solid #fecaca"}}>
+              <div style={{fontSize:12,fontWeight:700,color:"#dc2626"}}>{g.id+" - "+g.label}</div>
+              <div style={{fontSize:11,color:"#7f1d1d",marginTop:2}}>
+                {"Items no reconocidos: "+failedItems.map(function(it){return "L\u00e1m. "+it.lam}).join(", ")}
+              </div>
+            </div>;
+          })}
+        </div>}
+        {res.errorGroups && res.errorGroups.length === 0 && <div style={{background:"#dcfce7",borderRadius:12,padding:20,marginBottom:16,textAlign:"center"}}>
+          <span style={{fontSize:24}}>{"\u2705"}</span>
+          <p style={{fontSize:14,fontWeight:600,color:"#059669",marginTop:8}}>{"Reconocimiento fonol\u00f3gico adecuado."}</p>
+        </div>}
+        <div style={{background:"#f3e8ff",border:"1px solid #d8b4fe",borderRadius:10,padding:14,marginBottom:20,fontSize:12,color:"#6b21a8",lineHeight:1.6}}>
+          <strong>{"\u2139\ufe0f Criterios de clasificaci\u00f3n:"}</strong><br/>
+          {"Adecuado: \u226595% \u00b7 Leve: 80-94% \u00b7 Moderado: 60-79% \u00b7 Severo: <60%"}
+        </div>
+        {ev.observaciones && <div style={{marginTop:12,padding:12,background:"#f8fafc",borderRadius:8}}>
+          <strong style={{fontSize:12}}>Observaciones:</strong>
+          <p style={{fontSize:12,color:K.mt,marginTop:4}}>{ev.observaciones}</p>
+        </div>}
+        <div style={{marginTop:24,paddingTop:12,borderTop:"1px solid "+K.bd,fontSize:10,color:"#94a3b8",textAlign:"center"}}>
+          {"Br\u00fajula KIT \u2014 Reco. Fonol\u00f3gico (PEFF-R 3.5) \u2014 Generado el "+new Date().toLocaleDateString("es-AR")}
+        </div>
+      </div>}
     </div>
   );
 }

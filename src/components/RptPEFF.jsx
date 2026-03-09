@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ALL_PROCESSES } from "../data/peffProcesos.js";
 import { PEFF_SECTIONS } from "../data/peffSections.js";
 import { openDetailPdf, openSummaryPdf } from "./RptPEFF_pdf.js";
+import AIReportPanel from "./AIReportPanel.jsx";
 
 var K = { mt: "#64748b" };
 var fa = function(m){ return Math.floor(m/12)+" a\u00f1os, "+(m%12)+" meses"; };
@@ -17,7 +18,7 @@ var sevColor = {"Adecuado":"#059669","Leve":"#f59e0b","Moderado":"#ea580c","Mode
 
 export default function RptPEFF({ev,onD}){
   var _cd = useState(false), cd = _cd[0], sCD = _cd[1];
-  var _sd2 = useState(false), showDetail = _sd2[0], setShowDetail = _sd2[1];
+  var _showTech = useState(false), showTech = _showTech[0], setShowTech = _showTech[1];
   var r = ev.resultados||{};
   var pa = r.procAnalysis||null;
   var catNames = {sust:"Sustituciones",asim:"Asimilaciones",estr:"Estructuraci\u00f3n sil\u00e1bica"};
@@ -96,14 +97,24 @@ export default function RptPEFF({ev,onD}){
               <button onClick={function(){sCD(false)}} style={{background:"#f1f5f9",border:"1px solid #e2e8f0",padding:"8px 20px",borderRadius:8,fontSize:13,cursor:"pointer",color:"#64748b"}}>Cancelar</button>
             </div>
           </div>
-          :<><button onClick={function(){openSummaryPdf(ev)}} style={{background:"#7c3aed",color:"#fff",border:"none",padding:"11px 22px",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer"}}>{"\ud83d\udcc4 PDF"}</button>
-            <button onClick={function(){sCD(true)}} style={{background:"#fef2f2",color:"#dc2626",border:"1px solid #fecaca",padding:"11px 22px",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer"}}>{"Eliminar"}</button>
-          </>
+          :<button onClick={function(){sCD(true)}} style={{background:"#fef2f2",color:"#dc2626",border:"1px solid #fecaca",padding:"11px 22px",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer"}}>{"Eliminar"}</button>
         }
       </div>
     </div>
 
-    <div style={{background:"#fff",borderRadius:14,padding:32,border:"1px solid #e2e8f0"}}>
+    {/* AI Report Panel */}
+    <AIReportPanel ev={ev} evalType="peff" collectionName="peff_evaluaciones" evalLabel="PEFF \u2014 Protocolo Fon\u00e9tico-Fonol\u00f3gico" />
+
+    {/* Technical Data Toggle */}
+    <button onClick={function(){ setShowTech(!showTech); }} style={{width:"100%",padding:"14px",background:showTech?"#f1f5f9":"#0a3d2f",color:showTech?"#1e293b":"#fff",border:"1px solid #e2e8f0",borderRadius:10,fontSize:14,fontWeight:600,cursor:"pointer",marginBottom:showTech?16:20}}>
+      {showTech ? "\u25b2 Ocultar datos t\u00e9cnicos" : "\u25bc Ver datos t\u00e9cnicos de la evaluaci\u00f3n"}
+    </button>
+
+    {showTech && <div style={{background:"#fff",borderRadius:14,padding:32,border:"1px solid #e2e8f0"}}>
+      <div style={{display:"flex",justifyContent:"flex-end",marginBottom:16}}>
+        <button onClick={function(){openSummaryPdf(ev)}} style={{background:"#7c3aed",color:"#fff",border:"none",padding:"9px 18px",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer"}}>{"\ud83d\udcc4 PDF datos t\u00e9cnicos"}</button>
+      </div>
+
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:14,marginBottom:20}}>
         <RC title="Producci\u00f3n de S\u00edlabas" desc="S\u00edlabas producidas correctamente al repetir est\u00edmulos fon\u00e9ticos."
           ok={r.silOk||0} total={r.silTotal||0} pct={r.silPct||0}
@@ -139,11 +150,11 @@ export default function RptPEFF({ev,onD}){
 
       {renderProcSection()}
 
-      <button onClick={function(){setShowDetail(!showDetail)}} style={{width:"100%",padding:"14px",background:showDetail?"#f1f5f9":"#5b21b6",color:showDetail?"#1e293b":"#fff",border:"1px solid #e2e8f0",borderRadius:10,fontSize:14,fontWeight:600,cursor:"pointer",marginTop:20,marginBottom:showDetail?0:20}}>
-        {showDetail?"\u25b2 Ocultar detalle":"\u25bc Ver detalle de cada respuesta"}
+      <button onClick={function(){ var el=document.getElementById("peff-detail-toggle"); if(el) el.style.display=el.style.display==="none"?"block":"none"; }} style={{width:"100%",padding:"14px",background:"#5b21b6",color:"#fff",border:"1px solid #e2e8f0",borderRadius:10,fontSize:14,fontWeight:600,cursor:"pointer",marginTop:20,marginBottom:0}}>
+        {"\u25bc Ver detalle de cada respuesta"}
       </button>
 
-      {showDetail&&<div style={{marginTop:12}}>
+      <div id="peff-detail-toggle" style={{display:"none",marginTop:12}}>
         <div style={{display:"flex",justifyContent:"flex-end",marginBottom:12}}>
           <button onClick={function(){openDetailPdf(ev,sd)}} style={{background:"#059669",color:"#fff",border:"none",padding:"8px 18px",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer"}}>{"\ud83d\udda8 Imprimir detalle"}</button>
         </div>
@@ -166,10 +177,10 @@ export default function RptPEFF({ev,onD}){
             </div>;
           })}
         </div>
-      </div>}
+      </div>
 
       <h3 style={{fontSize:16,fontWeight:700,color:"#5b21b6",marginBottom:10,marginTop:28}}>{"Observaciones Cl\u00ednicas"}</h3>
       <div style={{background:"#f8faf9",padding:18,borderRadius:10,fontSize:14,border:"1px solid #e2e8f0",lineHeight:1.7,minHeight:60}}>{ev.observaciones||"Sin observaciones."}</div>
-    </div>
+    </div>}
   </div>;
 }
