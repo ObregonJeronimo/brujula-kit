@@ -5,6 +5,7 @@ import { db, doc, updateDoc } from "../firebase.js";
 import { fbAdd } from "../lib/fb.js";
 
 var K = { sd:"#0a3d2f", ac:"#0d9488", al:"#ccfbf1", mt:"#64748b", bd:"#e2e8f0" };
+var todayStr = new Date().toISOString().split("T")[0];
 
 function ageMo(birth){
   if(!birth) return 0;
@@ -28,7 +29,7 @@ function renderReportText(text){
 export default function NewDISC({ onS, nfy, userId }){
   var _st = useState(0), step = _st[0], setStep = _st[1];
   var _pat = useState(null), patient = _pat[0], setPatient = _pat[1];
-  var _ed = useState(""), evalDate = _ed[0], setEvalDate = _ed[1];
+  var _ed = useState(todayStr), evalDate = _ed[0], setEvalDate = _ed[1];
   var _ref = useState(""), derivado = _ref[0], setDerivado = _ref[1];
   var _rsp = useState({}), responses = _rsp[0], setResponses = _rsp[1];
   var _obsMap = useState({}), obsMap = _obsMap[0], setObsMap = _obsMap[1];
@@ -53,7 +54,6 @@ export default function NewDISC({ onS, nfy, userId }){
   var answeredCount = Object.keys(responses).length;
   var results = step === 2 ? computeDiscResults(responses, obsMap) : null;
 
-  // Direct save to Firestore (no navigation)
   useEffect(function(){
     if(step === 2 && !saved){
       var res = computeDiscResults(responses, obsMap);
@@ -73,7 +73,6 @@ export default function NewDISC({ onS, nfy, userId }){
     }
   }, [step]);
 
-  // Auto-generate AI report after save
   useEffect(function(){
     if(step === 2 && saved && !report && !generating && !genError){
       setGenerating(true);
@@ -90,7 +89,6 @@ export default function NewDISC({ onS, nfy, userId }){
       .then(function(data){
         if(data.success && data.report){
           setReport(data.report);
-          // Save AI report to the doc
           if(savedDocId){
             updateDoc(doc(db, "disc_evaluaciones", savedDocId), { aiReport: data.report, aiReportDate: new Date().toISOString() }).catch(function(e){ console.error(e); });
           }
@@ -140,7 +138,7 @@ export default function NewDISC({ onS, nfy, userId }){
           </div>
           {patientAge > 0 && <div style={{marginTop:12,padding:"8px 14px",background:K.al,borderRadius:8,fontSize:13,color:K.sd,fontWeight:600}}>{"Edad: "+ageLabel(patientAge)}</div>}
         </div>}
-        <button onClick={function(){ if(!patient){nfy("Seleccion\u00e1 un paciente","er");return;} if(!evalDate){nfy("Ingres\u00e1 la fecha","er");return;} setStep(1);scrollTop(); }} disabled={!patient||!evalDate} style={{width:"100%",padding:"14px",background:(!patient||!evalDate)?"#94a3b8":K.ac,color:"#fff",border:"none",borderRadius:10,fontSize:15,fontWeight:700,cursor:(!patient||!evalDate)?"not-allowed":"pointer"}}>{"Comenzar evaluaci\u00f3n \u2192"}</button>
+        <button onClick={function(){ if(!patient){nfy("Seleccion\u00e1 un paciente","er");return;} setStep(1);scrollTop(); }} disabled={!patient} style={{width:"100%",padding:"14px",background:!patient?"#94a3b8":K.ac,color:"#fff",border:"none",borderRadius:10,fontSize:15,fontWeight:700,cursor:!patient?"not-allowed":"pointer"}}>{"Comenzar evaluaci\u00f3n \u2192"}</button>
       </div>}
 
       {step===1 && <div>
