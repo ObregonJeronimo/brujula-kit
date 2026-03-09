@@ -28,7 +28,7 @@ function renderReportText(text){
 export default function NewRECO({ onS, nfy, userId }){
   var _st = useState(0), step = _st[0], setStep = _st[1];
   var _pat = useState(null), patient = _pat[0], setPatient = _pat[1];
-  var _ed = useState(""), evalDate = _ed[0], setEvalDate = _ed[1];
+  var _ed = useState(new Date().toISOString().split("T")[0]), evalDate = _ed[0], setEvalDate = _ed[1];
   var _ref = useState(""), derivado = _ref[0], setDerivado = _ref[1];
   var _rsp = useState({}), responses = _rsp[0], setResponses = _rsp[1];
   var _stim = useState({}), stimResp = _stim[0], setStimResp = _stim[1];
@@ -130,7 +130,7 @@ export default function NewRECO({ onS, nfy, userId }){
           </div>
           {patientAge>0 && <div style={{marginTop:12,padding:"8px 14px",background:K.al,borderRadius:8,fontSize:13,color:K.sd,fontWeight:600}}>{"Edad: "+ageLabel(patientAge)}</div>}
         </div>}
-        <button onClick={function(){ if(!patient){nfy("Seleccion\u00e1 un paciente","er");return;} if(!evalDate){nfy("Ingres\u00e1 la fecha","er");return;} setStep(1);scrollTop(); }} disabled={!patient||!evalDate} style={{width:"100%",padding:"14px",background:(!patient||!evalDate)?"#94a3b8":K.ac,color:"#fff",border:"none",borderRadius:10,fontSize:15,fontWeight:700,cursor:(!patient||!evalDate)?"not-allowed":"pointer"}}>{"Comenzar \u2192"}</button>
+        <button onClick={function(){ if(!patient){nfy("Seleccion\u00e1 un paciente","er");return;} setStep(1);scrollTop(); }} disabled={!patient} style={{width:"100%",padding:"14px",background:(!patient)?"#94a3b8":K.ac,color:"#fff",border:"none",borderRadius:10,fontSize:15,fontWeight:700,cursor:(!patient)?"not-allowed":"pointer"}}>{"Comenzar \u2192"}</button>
       </div>}
 
       {step===1 && <div>
