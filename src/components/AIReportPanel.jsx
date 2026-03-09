@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import { db, doc, updateDoc } from "../firebase.js";
 
 var K = { sd:"#0a3d2f", ac:"#9333ea", mt:"#64748b", bd:"#e2e8f0" };
@@ -29,54 +29,93 @@ function doPDF(el, filename){
   }).catch(function(e){ el.style.paddingBottom = ""; console.error(e); });
 }
 
-function ageLabel(m){ return Math.floor(m/12)+" a\u00f1os, "+(m%12)+" meses"; }
+function ageLabel(m){ return Math.floor(m/12)+" años, "+(m%12)+" meses"; }
 
-// IMPORTANT: If ev.aiReport already exists, show it and do NOT regenerate
 export default function AIReportPanel({ ev, evalType, collectionName, evalLabel }){
   var existingReport = ev.aiReport || null;
   var _report = useState(existingReport), report = _report[0], setReport = _report[1];
   var _generating = useState(false), generating = _generating[0], setGenerating = _generating[1];
   var _genError = useState(null), genError = _genError[0], setGenError = _genError[1];
-  var _regenUsed = useState(ev.aiReportRegenerated || false), regenUsed = _regenUsed[0], setRegenUsed = _regenUsed[1];
   var reportRef = useRef(null);
 
-  // If report already exists from Firestore, just show it - NEVER regenerate
   if(existingReport && !report) setReport(existingReport);
+
+  var handleGenerate = function(){
+    setGenerating(true);
+    setGenError(null);
+    var evalData = {
+      paciente: ev.paciente || "", pacienteDni: ev.pacienteDni || "",
+      edadMeses: ev.edadMeses || 0, fechaEvaluacion: ev.fechaEvaluacion || "",
+      derivadoPor: ev.derivadoPor || "", observaciones: ev.observaciones || "",
+      resultados: ev.resultados || {}
+    };
+    if(evalType === "eldi"){
+      evalData.evalRec = ev.evalRec; evalData.evalExp = ev.evalExp;
+      evalData.resultados = { recRes: ev.recRes, expRes: ev.expRes };
+    }
+    fetch("/api/generate-report", {
+      method: "POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({ evalData: evalData, evalType: evalType, reportMode: "clinico" })
+    })
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      if(data.success && data.report){
+        setReport(data.report);
+        if(ev._fbId && collectionName){
+          updateDoc(doc(db, collectionName, ev._fbId), {aiReport: data.report, aiReportDate: new Date().toISOString()}).catch(function(e){console.error(e);});
+        }
+      } else setGenError(data.error || "Error al generar informe.");
+      setGenerating(false);
+    })
+    .catch(function(e){ setGenError("Error: "+e.message); setGenerating(false); });
+  };
 
   var handlePDF = function(){
     if(!reportRef.current) return;
     doPDF(reportRef.current, "Informe_"+evalType.toUpperCase()+"_"+((ev.paciente||"").replace(/\s/g,"_"))+"_"+(ev.fechaEvaluacion||"")+".pdf");
   };
 
-  // If no report exists at all, show nothing (report should have been generated at eval time)
-  if(!report) return <div style={{background:"#fffbeb",borderRadius:10,padding:"14px 18px",marginBottom:16,fontSize:13,color:"#92400e",border:"1px solid #fde68a"}}>
-    {"\u26a0 No se gener\u00f3 informe IA para esta evaluaci\u00f3n. Los informes se generan autom\u00e1ticamente al completar una evaluaci\u00f3n."}
+  if(!report && !generating && !genError) return <div style={{background:"#fffbeb",borderRadius:10,padding:"14px 18px",marginBottom:16,fontSize:13,color:"#92400e",border:"1px solid #fde68a",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:10}}>
+    <span>⚠ No se generó informe IA para esta evaluación.</span>
+    <button onClick={handleGenerate} style={{padding:"8px 18px",background:"#9333ea",color:"#fff",border:"none",borderRadius:8,fontSize:12,fontWeight:600,cursor:"pointer"}}>Generar informe ahora</button>
+  </div>;
+
+  if(generating) return <div style={{background:"#fff",borderRadius:14,border:"1px solid "+K.bd,padding:40,textAlign:"center",marginBottom:20}}>
+    <div style={{display:"inline-block",width:40,height:40,border:"4px solid #e2e8f0",borderTopColor:"#9333ea",borderRadius:"50%",animation:"spin 1s linear infinite",marginBottom:16}} />
+    <div style={{fontSize:15,fontWeight:600,color:K.sd}}>Generando informe con IA...</div>
+    <div style={{fontSize:12,color:K.mt,marginTop:6}}>Esto puede tardar unos segundos.</div>
+    <style>{"@keyframes spin { to { transform: rotate(360deg); } }"}</style>
+  </div>;
+
+  if(genError && !report) return <div style={{background:"#fff",borderRadius:14,border:"1px solid "+K.bd,padding:28,textAlign:"center",marginBottom:20}}>
+    <div style={{background:"#fef2f2",border:"1px solid #fecaca",borderRadius:8,padding:"10px 14px",marginBottom:14,fontSize:12,color:"#dc2626"}}>{genError}</div>
+    <button onClick={handleGenerate} style={{padding:"10px 24px",background:"#9333ea",color:"#fff",border:"none",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer"}}>Reintentar</button>
   </div>;
 
   return <div style={{marginBottom:20}}>
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10,flexWrap:"wrap",gap:8}}>
-      <div style={{fontSize:15,fontWeight:700,color:K.sd}}>{"Informe Fonoaudiol\u00f3gico"}</div>
-      <button onClick={handlePDF} style={{padding:"7px 14px",background:K.ac,color:"#fff",border:"none",borderRadius:8,fontSize:12,fontWeight:600,cursor:"pointer"}}>{"\ud83d\udda8 Imprimir informe"}</button>
+      <div style={{fontSize:15,fontWeight:700,color:K.sd}}>Informe Fonoaudiológico</div>
+      <button onClick={handlePDF} style={{padding:"7px 14px",background:K.ac,color:"#fff",border:"none",borderRadius:8,fontSize:12,fontWeight:600,cursor:"pointer"}}>🖨 Imprimir informe</button>
     </div>
     <div ref={reportRef} style={{background:"#fff",borderRadius:12,border:"1px solid "+K.bd,padding:24}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16,paddingBottom:12,borderBottom:"2px solid "+K.bd}}>
         <div>
-          <div style={{fontSize:10,color:K.mt,fontWeight:600,textTransform:"uppercase",letterSpacing:1}}>{"Informe Fonoaudiol\u00f3gico \u2014 "+(evalLabel||evalType.toUpperCase())}</div>
+          <div style={{fontSize:10,color:K.mt,fontWeight:600,textTransform:"uppercase",letterSpacing:1}}>{"Informe Fonoaudiológico — "+(evalLabel||evalType.toUpperCase())}</div>
           <div style={{fontSize:17,fontWeight:700,marginTop:3}}>{ev.paciente}</div>
-          <div style={{fontSize:12,color:K.mt,marginTop:2}}>{"DNI: "+(ev.pacienteDni||"N/A")+" \u00b7 Edad: "+ageLabel(ev.edadMeses||0)}</div>
+          <div style={{fontSize:12,color:K.mt,marginTop:2}}>{"DNI: "+(ev.pacienteDni||"N/A")+" · Edad: "+ageLabel(ev.edadMeses||0)}</div>
         </div>
         <div style={{textAlign:"right"}}><div style={{fontSize:11,color:K.mt}}>{"Fecha: "+(ev.fechaEvaluacion||"")}</div>{ev.evaluador && <div style={{fontSize:11,color:K.mt}}>{"Evaluador: "+ev.evaluador}</div>}</div>
       </div>
       <div>{renderReportText(report)}</div>
       <div style={{marginTop:20,background:"linear-gradient(135deg,#f3e8ff,#ede9fe)",borderRadius:10,padding:"14px 18px",border:"1px solid #d8b4fe"}}>
         <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
-          <div style={{display:"flex",alignItems:"center",gap:6}}><span style={{fontSize:18}}>{"\ud83e\udde0"}</span><span style={{fontSize:11,fontWeight:700,color:"#6b21a8"}}>{"Generado con IA"}</span></div>
+          <div style={{display:"flex",alignItems:"center",gap:6}}><span style={{fontSize:18}}>🧠</span><span style={{fontSize:11,fontWeight:700,color:"#6b21a8"}}>Generado con IA</span></div>
           <div style={{width:1,height:16,background:"#c4b5fd"}} />
-          <div style={{display:"flex",alignItems:"center",gap:6}}><span style={{fontSize:18}}>{"\u2705"}</span><span style={{fontSize:11,fontWeight:700,color:"#059669"}}>{"Comprobado por profesionales en fonoaudiolog\u00eda de C\u00f3rdoba"}</span></div>
+          <div style={{display:"flex",alignItems:"center",gap:6}}><span style={{fontSize:18}}>✅</span><span style={{fontSize:11,fontWeight:700,color:"#059669"}}>Comprobado por profesionales en fonoaudiología de Córdoba</span></div>
         </div>
-        <div style={{fontSize:10,color:"#7c3aed",marginTop:6}}>{"Generado con IA. Validado por profesionales fonoaudi\u00f3logos de C\u00f3rdoba, Argentina. Debe ser revisado por el profesional tratante."}</div>
+        <div style={{fontSize:10,color:"#7c3aed",marginTop:6}}>Generado con IA. Validado por profesionales fonoaudiólogos de Córdoba, Argentina. Debe ser revisado por el profesional tratante.</div>
       </div>
-      <div style={{marginTop:14,paddingTop:8,borderTop:"1px solid "+K.bd,fontSize:9,color:"#94a3b8",textAlign:"center"}}>{"Br\u00fajula KIT \u2014 "+(evalLabel||evalType.toUpperCase())+" \u2014 "+new Date().toLocaleDateString("es-AR")}</div>
+      <div style={{marginTop:14,paddingTop:8,borderTop:"1px solid "+K.bd,fontSize:9,color:"#94a3b8",textAlign:"center"}}>{"Brújula KIT — "+(evalLabel||evalType.toUpperCase())+" — "+new Date().toLocaleDateString("es-AR")}</div>
     </div>
   </div>;
 }
