@@ -19,9 +19,24 @@ function renderReportText(text){
   });
 }
 
+function saveReportToDoc(colName, docIdRef, report) {
+  var tryUpdate = function(retries) {
+    var id = docIdRef.current;
+    if (id) {
+      updateDoc(doc(db, colName, id), { aiReport: report, aiReportDate: new Date().toISOString() }).catch(function(e) { console.error("Error saving aiReport:", e); });
+    } else if (retries > 0) {
+      setTimeout(function() { tryUpdate(retries - 1); }, 1500);
+    } else {
+      console.error("Could not save aiReport: docId never arrived");
+    }
+  };
+  tryUpdate(5);
+}
+
 export default function NewREPResults({ results, patientAge, obs, onBack, onFinish, patient, evalDate, derivado, userId, nfy }){
   var _saved = useState(false), saved = _saved[0], setSaved = _saved[1];
   var _savedDocId = useState(null), savedDocId = _savedDocId[0], setSavedDocId = _savedDocId[1];
+  var docIdRef = useRef(null);
   var _report = useState(null), report = _report[0], setReport = _report[1];
   var _generating = useState(false), generating = _generating[0], setGenerating = _generating[1];
   var _genError = useState(null), genError = _genError[0], setGenError = _genError[1];
@@ -42,7 +57,7 @@ export default function NewREPResults({ results, patientAge, obs, onBack, onFini
         resultados: results
       };
       fbAdd("rep_evaluaciones", payload).then(function(r){
-        if(r.success){ setSavedDocId(r.id); if(nfy) nfy("Evaluaci\u00f3n guardada","ok"); }
+        if(r.success){ docIdRef.current = r.id; setSavedDocId(r.id); if(nfy) nfy("Evaluaci\u00f3n guardada","ok"); }
         else if(nfy) nfy("Error: "+(r.error||""),"er");
       });
       setSaved(true);
@@ -66,7 +81,7 @@ export default function NewREPResults({ results, patientAge, obs, onBack, onFini
       .then(function(data){
         if(data.success && data.report){
           setReport(data.report);
-          if(savedDocId) updateDoc(doc(db,"rep_evaluaciones",savedDocId),{aiReport:data.report,aiReportDate:new Date().toISOString()}).catch(function(e){console.error(e);});
+          saveReportToDoc("rep_evaluaciones", docIdRef, data.report);
         } else setGenError(data.error||"Error al generar informe.");
         setGenerating(false);
       })

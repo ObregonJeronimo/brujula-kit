@@ -26,6 +26,20 @@ function renderReportText(text){
   });
 }
 
+function saveReportToDoc(colName, docIdRef, report) {
+  var tryUpdate = function(retries) {
+    var id = docIdRef.current;
+    if (id) {
+      updateDoc(doc(db, colName, id), { aiReport: report, aiReportDate: new Date().toISOString() }).catch(function(e) { console.error("Error saving aiReport:", e); });
+    } else if (retries > 0) {
+      setTimeout(function() { tryUpdate(retries - 1); }, 1500);
+    } else {
+      console.error("Could not save aiReport: docId never arrived");
+    }
+  };
+  tryUpdate(5);
+}
+
 export default function NewDISC({ onS, nfy, userId }){
   var _st = useState(0), step = _st[0], setStep = _st[1];
   var _pat = useState(null), patient = _pat[0], setPatient = _pat[1];
@@ -36,6 +50,7 @@ export default function NewDISC({ onS, nfy, userId }){
   var _obs = useState(""), obs = _obs[0], setObs = _obs[1];
   var _saved = useState(false), saved = _saved[0], setSaved = _saved[1];
   var _savedDocId = useState(null), savedDocId = _savedDocId[0], setSavedDocId = _savedDocId[1];
+  var docIdRef = useRef(null);
   var _report = useState(null), report = _report[0], setReport = _report[1];
   var _generating = useState(false), generating = _generating[0], setGenerating = _generating[1];
   var _genError = useState(null), genError = _genError[0], setGenError = _genError[1];
@@ -66,7 +81,7 @@ export default function NewDISC({ onS, nfy, userId }){
         responses: responses, obsMap: obsMap, resultados: res
       };
       fbAdd("disc_evaluaciones", payload).then(function(r){
-        if(r.success){ setSavedDocId(r.id); nfy("Evaluaci\u00f3n guardada","ok"); }
+        if(r.success){ docIdRef.current = r.id; setSavedDocId(r.id); nfy("Evaluaci\u00f3n guardada","ok"); }
         else nfy("Error al guardar: "+r.error,"er");
       });
       setSaved(true);
@@ -89,9 +104,7 @@ export default function NewDISC({ onS, nfy, userId }){
       .then(function(data){
         if(data.success && data.report){
           setReport(data.report);
-          if(savedDocId){
-            updateDoc(doc(db, "disc_evaluaciones", savedDocId), { aiReport: data.report, aiReportDate: new Date().toISOString() }).catch(function(e){ console.error(e); });
-          }
+          saveReportToDoc("disc_evaluaciones", docIdRef, data.report);
         } else setGenError(data.error || "Error al generar informe.");
         setGenerating(false);
       })
