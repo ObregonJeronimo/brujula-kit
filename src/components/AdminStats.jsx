@@ -41,23 +41,27 @@ export default function AdminStats({nfy}){
 
   useEffect(function(){load()},[load]);
 
-  var allEvals=[].concat(
+  // allEvals includes ELDI internally for credit calculations but we hide ELDI from display
+  var allEvalsInternal=[].concat(
     eldi.map(function(e){return Object.assign({},e,{tipo:"ELDI"})}),
     peff.map(function(e){return Object.assign({},e,{tipo:"PEFF"})}),
     rep.map(function(e){return Object.assign({},e,{tipo:"REP"})}),
     disc.map(function(e){return Object.assign({},e,{tipo:"DISC"})}),
     reco.map(function(e){return Object.assign({},e,{tipo:"RECO"})})
   );
+  // Visible evals exclude ELDI
+  var allEvals=allEvalsInternal.filter(function(e){return e.tipo!=="ELDI"});
+
   var nonAdminUsers=users.filter(function(u){return u.role!=="admin"});
   var totalUsers=nonAdminUsers.length;
-  var totalCreditsDeducted=allEvals.length;
+  var totalCreditsDeducted=allEvalsInternal.length;
   var neverPurchased=nonAdminUsers.filter(function(u){
-    var userEvals=allEvals.filter(function(ev){return ev.userId===u._fbId}).length;
+    var userEvals=allEvalsInternal.filter(function(ev){return ev.userId===u._fbId}).length;
     var totalEverHad=(u.creditos||0)+userEvals;
     return totalEverHad<=5;
   });
   var totalCreditsPurchased=nonAdminUsers.reduce(function(sum,u){
-    var userEvals=allEvals.filter(function(ev){return ev.userId===u._fbId}).length;
+    var userEvals=allEvalsInternal.filter(function(ev){return ev.userId===u._fbId}).length;
     var totalEverHad=(u.creditos||0)+userEvals;
     return sum+Math.max(0,totalEverHad-5);
   },0);
@@ -68,7 +72,7 @@ export default function AdminStats({nfy}){
 
   var monthEvals=getMonthEvals(selYear,selMonth);
   var yearEvals=getYearEvals(selYear);
-  var typeCounts=function(evs){return{eldi:evs.filter(function(e){return e.tipo==="ELDI"}).length,peff:evs.filter(function(e){return e.tipo==="PEFF"}).length,rep:evs.filter(function(e){return e.tipo==="REP"}).length,disc:evs.filter(function(e){return e.tipo==="DISC"}).length,reco:evs.filter(function(e){return e.tipo==="RECO"}).length}};
+  var typeCounts=function(evs){return{peff:evs.filter(function(e){return e.tipo==="PEFF"}).length,rep:evs.filter(function(e){return e.tipo==="REP"}).length,disc:evs.filter(function(e){return e.tipo==="DISC"}).length,reco:evs.filter(function(e){return e.tipo==="RECO"}).length}};
   var mc=typeCounts(monthEvals);
   var yc=typeCounts(yearEvals);
 
@@ -79,32 +83,32 @@ export default function AdminStats({nfy}){
   var nextMonth=function(){if(selMonth===11){setSelMonth(0);setSelYear(function(y){return y+1})}else setSelMonth(function(m){return m+1})};
 
   var monthNames=["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
-  var monthlyData=monthNames.map(function(_,m){var mEvals=getMonthEvals(selYear,m);var tc=typeCounts(mEvals);return{m:m,count:mEvals.length,eldi:tc.eldi,peff:tc.peff,rep:tc.rep,disc:tc.disc,reco:tc.reco}});
+  var monthlyData=monthNames.map(function(_,m){var mEvals=getMonthEvals(selYear,m);var tc=typeCounts(mEvals);return{m:m,count:mEvals.length,peff:tc.peff,rep:tc.rep,disc:tc.disc,reco:tc.reco}});
   var maxMonthly=Math.max(1,Math.max.apply(null,monthlyData.map(function(d){return d.count})));
 
-  var typeColors={ELDI:"#0d9488",PEFF:"#7c3aed",REP:"#2563eb",DISC:"#ea580c",RECO:"#d946ef"};
+  var typeColors={PEFF:"#7c3aed",REP:"#2563eb",DISC:"#ea580c",RECO:"#d946ef"};
 
   var Stat=function(props){return <div style={{background:"#fff",borderRadius:12,padding:"18px 20px",border:"1px solid #e2e8f0"}}><div style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}><span style={{fontSize:22}}>{props.icon}</span><span style={{fontSize:12,color:K.mt,fontWeight:600}}>{props.label}</span></div><div style={{fontSize:28,fontWeight:700,color:props.color||"#1e293b"}}>{props.value}</div>{props.sub&&<div style={{fontSize:11,color:K.mt,marginTop:2}}>{props.sub}</div>}</div>};
 
   var TabBtn=function(props){return <button onClick={function(){setTab(props.id)}} style={{padding:"10px 20px",background:tab===props.id?"#0d9488":"#fff",color:tab===props.id?"#fff":"#475569",border:tab===props.id?"none":"1px solid #e2e8f0",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",gap:6}}>{props.icon+" "+props.label}</button>};
 
-  if(ld)return <div style={{animation:"fi .3s ease",textAlign:"center",padding:60}}><div style={{fontSize:36,marginBottom:12}}>{"\uD83D\uDCCA"}</div><div style={{fontSize:16,fontWeight:600,color:K.mt}}>Cargando estad\u00EDsticas...</div></div>;
+  if(ld)return <div style={{animation:"fi .3s ease",textAlign:"center",padding:60}}><div style={{fontSize:36,marginBottom:12}}>{"\ud83d\udcca"}</div><div style={{fontSize:16,fontWeight:600,color:K.mt}}>Cargando estad\u00edsticas...</div></div>;
 
   return <div style={{animation:"fi .3s ease",width:"100%",maxWidth:1000}}>
-    <h1 style={{fontSize:22,fontWeight:700,marginBottom:6}}>{"📊 Estadísticas"}</h1>
-    <p style={{color:K.mt,fontSize:14,marginBottom:20}}>Panel de análisis y métricas del sistema</p>
+    <h1 style={{fontSize:22,fontWeight:700,marginBottom:6}}>{"\ud83d\udcca Estad\u00edsticas"}</h1>
+    <p style={{color:K.mt,fontSize:14,marginBottom:20}}>Panel de an\u00e1lisis y m\u00e9tricas del sistema</p>
 
     <div style={{display:"flex",gap:8,marginBottom:24,flexWrap:"wrap"}}>
-      <TabBtn id="resumen" label="Resumen Global" icon="🌐"/>
-      <TabBtn id="mensual" label="Mensual / Anual" icon="📅"/>
+      <TabBtn id="resumen" label="Resumen Global" icon="\ud83c\udf10"/>
+      <TabBtn id="mensual" label="Mensual / Anual" icon="\ud83d\udcc5"/>
     </div>
 
     {tab==="resumen"&&<div>
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))",gap:14,marginBottom:24}}>
-        <Stat icon="💰" label="Ingresos totales" value={fmt$(totalRevenue)} sub={totalCreditsPurchased+" créditos vendidos"} color="#059669"/>
-        <Stat icon="💳" label="Evaluaciones realizadas" value={totalCreditsDeducted} sub={"ELDI: "+eldi.length+" · PEFF: "+peff.length+" · REP: "+rep.length+" · DISC: "+disc.length+" · RECO: "+reco.length} color="#7c3aed"/>
-        <Stat icon="👥" label="Usuarios registrados" value={totalUsers} sub={neverPurchased.length+" nunca compraron"} color="#0d9488"/>
-        <Stat icon="⚠️" label="Sin comprar" value={neverPurchased.length} sub="terminaron demo sin comprar" color="#f59e0b"/>
+        <Stat icon="\ud83d\udcb0" label="Ingresos totales" value={fmt$(totalRevenue)} sub={totalCreditsPurchased+" cr\u00e9ditos vendidos"} color="#059669"/>
+        <Stat icon="\ud83d\udcb3" label="Evaluaciones realizadas" value={allEvals.length} sub={"PEFF: "+peff.length+" \u00b7 REP: "+rep.length+" \u00b7 DISC: "+disc.length+" \u00b7 RECO: "+reco.length} color="#7c3aed"/>
+        <Stat icon="\ud83d\udc65" label="Usuarios registrados" value={totalUsers} sub={neverPurchased.length+" nunca compraron"} color="#0d9488"/>
+        <Stat icon="\u26a0\ufe0f" label="Sin comprar" value={neverPurchased.length} sub="terminaron demo sin comprar" color="#f59e0b"/>
       </div>
 
       <div style={{background:"#fff",borderRadius:12,padding:24,border:"1px solid #e2e8f0",marginBottom:20}}>
@@ -120,22 +124,22 @@ export default function AdminStats({nfy}){
           {Object.entries(typeColors).map(function(e){return <span key={e[0]} style={{display:"flex",alignItems:"center",gap:4}}><div style={{width:10,height:10,borderRadius:2,background:e[1]}}/>{e[0]}</span>})}
         </div>
         <div style={{display:"flex",justifyContent:"center",gap:12,marginTop:12}}>
-          <button onClick={function(){setSelYear(function(y){return y-1})}} style={{background:"#f1f5f9",border:"none",borderRadius:6,padding:"6px 14px",fontSize:12,cursor:"pointer"}}>{"← "+(selYear-1)}</button>
+          <button onClick={function(){setSelYear(function(y){return y-1})}} style={{background:"#f1f5f9",border:"none",borderRadius:6,padding:"6px 14px",fontSize:12,cursor:"pointer"}}>{"\u2190 "+(selYear-1)}</button>
           <span style={{fontWeight:700,fontSize:14,padding:"6px 0"}}>{selYear}</span>
-          <button onClick={function(){setSelYear(function(y){return y+1})}} style={{background:"#f1f5f9",border:"none",borderRadius:6,padding:"6px 14px",fontSize:12,cursor:"pointer"}}>{(selYear+1)+" →"}</button>
+          <button onClick={function(){setSelYear(function(y){return y+1})}} style={{background:"#f1f5f9",border:"none",borderRadius:6,padding:"6px 14px",fontSize:12,cursor:"pointer"}}>{(selYear+1)+" \u2192"}</button>
         </div>
       </div>
 
-      <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:10,marginBottom:20}}>
-        {[["ELDI",eldi.length,"#0d9488"],["PEFF",peff.length,"#7c3aed"],["REP",rep.length,"#2563eb"],["DISC",disc.length,"#ea580c"],["RECO",reco.length,"#d946ef"]].map(function(t){return <div key={t[0]} style={{background:"#fff",borderRadius:10,padding:16,border:"1px solid #e2e8f0",textAlign:"center"}}><div style={{fontSize:24,fontWeight:700,color:t[2]}}>{t[1]}</div><div style={{fontSize:11,color:K.mt,fontWeight:600}}>{t[0]}</div></div>})}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10,marginBottom:20}}>
+        {[["PEFF",peff.length,"#7c3aed"],["REP",rep.length,"#2563eb"],["DISC",disc.length,"#ea580c"],["RECO",reco.length,"#d946ef"]].map(function(t){return <div key={t[0]} style={{background:"#fff",borderRadius:10,padding:16,border:"1px solid #e2e8f0",textAlign:"center"}}><div style={{fontSize:24,fontWeight:700,color:t[2]}}>{t[1]}</div><div style={{fontSize:11,color:K.mt,fontWeight:600}}>{t[0]}</div></div>})}
       </div>
 
       {neverPurchased.length>0&&<div style={{background:"#fffbeb",border:"1px solid #fde68a",borderRadius:12,padding:20}}>
-        <div style={{fontSize:14,fontWeight:700,color:"#92400e",marginBottom:12}}>{"⚠ Usuarios que no compraron ("+ neverPurchased.length+")"}</div>
+        <div style={{fontSize:14,fontWeight:700,color:"#92400e",marginBottom:12}}>{"\u26a0 Usuarios que no compraron ("+ neverPurchased.length+")"}</div>
         <div style={{maxHeight:200,overflowY:"auto"}}>
           {neverPurchased.map(function(u){return <div key={u._fbId} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 0",borderBottom:"1px solid #fde68a",fontSize:13}}>
             <div><span style={{fontWeight:600}}>{u.nombre} {u.apellido}</span><span style={{color:K.mt,marginLeft:8}}>@{u.username}</span></div>
-            <div style={{fontSize:11,color:K.mt}}>{(u.creditos||0)+" créd."}{u.createdAt?" · "+fmtDate(u.createdAt):""}</div>
+            <div style={{fontSize:11,color:K.mt}}>{(u.creditos||0)+" cr\u00e9d."}{u.createdAt?" \u00b7 "+fmtDate(u.createdAt):""}</div>
           </div>})}
         </div>
       </div>}
@@ -143,26 +147,24 @@ export default function AdminStats({nfy}){
 
     {tab==="mensual"&&<div>
       <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:16,marginBottom:24,background:"#fff",borderRadius:10,padding:"14px 20px",border:"1px solid #e2e8f0"}}>
-        <button onClick={prevMonth} style={{background:"#f1f5f9",border:"none",borderRadius:6,padding:"8px 16px",fontSize:14,cursor:"pointer",fontWeight:600}}>←</button>
+        <button onClick={prevMonth} style={{background:"#f1f5f9",border:"none",borderRadius:6,padding:"8px 16px",fontSize:14,cursor:"pointer",fontWeight:600}}>{"\u2190"}</button>
         <div style={{textAlign:"center",minWidth:200}}><div style={{fontSize:18,fontWeight:700,color:K.sd,textTransform:"capitalize"}}>{fmtMo(selYear,selMonth)}</div></div>
-        <button onClick={nextMonth} style={{background:"#f1f5f9",border:"none",borderRadius:6,padding:"8px 16px",fontSize:14,cursor:"pointer",fontWeight:600}}>→</button>
+        <button onClick={nextMonth} style={{background:"#f1f5f9",border:"none",borderRadius:6,padding:"8px 16px",fontSize:14,cursor:"pointer",fontWeight:600}}>{"\u2192"}</button>
       </div>
 
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",gap:12,marginBottom:20}}>
-        <Stat icon="📝" label="ELDI" value={mc.eldi} color="#0d9488"/>
-        <Stat icon="🔊" label="PEFF" value={mc.peff} color="#7c3aed"/>
-        <Stat icon="📝" label="REP" value={mc.rep} color="#2563eb"/>
-        <Stat icon="👂" label="DISC" value={mc.disc} color="#ea580c"/>
-        <Stat icon="🧠" label="RECO" value={mc.reco} color="#d946ef"/>
-        <Stat icon="💳" label="Total" value={monthEvals.length} sub="evaluaciones" color="#1e293b"/>
-        <Stat icon="👤" label="Nuevos usuarios" value={usersCreatedMonth.length}/>
+        <Stat icon="\ud83d\udd0a" label="PEFF" value={mc.peff} color="#7c3aed"/>
+        <Stat icon="\ud83d\udcdd" label="REP" value={mc.rep} color="#2563eb"/>
+        <Stat icon="\ud83d\udc42" label="DISC" value={mc.disc} color="#ea580c"/>
+        <Stat icon="\ud83e\udde0" label="RECO" value={mc.reco} color="#d946ef"/>
+        <Stat icon="\ud83d\udcb3" label="Total" value={monthEvals.length} sub="evaluaciones" color="#1e293b"/>
+        <Stat icon="\ud83d\udc64" label="Nuevos usuarios" value={usersCreatedMonth.length}/>
       </div>
 
       <div style={{background:"linear-gradient(135deg,#0a3d2f,#0d9488)",borderRadius:14,padding:24,color:"#fff",marginBottom:20}}>
         <div style={{fontSize:14,opacity:.8,marginBottom:12}}>{"Resumen anual "+selYear}</div>
         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(100px,1fr))",gap:16}}>
           <div><div style={{fontSize:32,fontWeight:700}}>{yearEvals.length}</div><div style={{fontSize:12,opacity:.7}}>total</div></div>
-          <div><div style={{fontSize:24,fontWeight:700}}>{yc.eldi}</div><div style={{fontSize:11,opacity:.7}}>ELDI</div></div>
           <div><div style={{fontSize:24,fontWeight:700}}>{yc.peff}</div><div style={{fontSize:11,opacity:.7}}>PEFF</div></div>
           <div><div style={{fontSize:24,fontWeight:700}}>{yc.rep}</div><div style={{fontSize:11,opacity:.7}}>REP</div></div>
           <div><div style={{fontSize:24,fontWeight:700}}>{yc.disc}</div><div style={{fontSize:11,opacity:.7}}>DISC</div></div>
@@ -179,7 +181,7 @@ export default function AdminStats({nfy}){
               <span style={{background:typeColors[ev.tipo]||"#94a3b8",color:"#fff",padding:"3px 8px",borderRadius:4,fontSize:10,fontWeight:700}}>{ev.tipo}</span>
               <span style={{fontWeight:600}}>{ev.paciente}</span>
             </div>
-            <div style={{fontSize:11,color:K.mt}}>{(ev.evaluador||"?") + " · " + (ev.fechaGuardado?fmtDate(ev.fechaGuardado):"")}</div>
+            <div style={{fontSize:11,color:K.mt}}>{(ev.evaluador||"?") + " \u00b7 " + (ev.fechaGuardado?fmtDate(ev.fechaGuardado):"")}</div>
           </div>})}
         </div>
       </div>:<div style={{background:"#f8faf9",borderRadius:10,padding:20,textAlign:"center",color:K.mt,fontSize:14}}>Sin evaluaciones este mes</div>}
