@@ -61,7 +61,6 @@ export default function NewREP({ onS, nfy, userId }){
             <div><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>{"Fecha"}</label><input type="date" value={evalDate} onChange={function(e){setEvalDate(e.target.value)}} style={{width:"100%",padding:"10px 12px",border:"1px solid "+K.bd,borderRadius:8,fontSize:14}} /></div>
             <div><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>{"Derivado por"}</label><input value={derivado} onChange={function(e){setDerivado(e.target.value)}} placeholder="Derivador" style={{width:"100%",padding:"10px 12px",border:"1px solid "+K.bd,borderRadius:8,fontSize:14}} /></div>
           </div>
-          {patientAge>0 && <div style={{marginTop:12,padding:"8px 14px",background:K.al,borderRadius:8,fontSize:13,color:K.sd,fontWeight:600}}>{"Edad: "+ageLabel(patientAge)}</div>}
         </div>}
         <button onClick={function(){ if(!patient){nfy("Seleccion\u00e1 un paciente","er");return;} setStep(1);scrollTop(); }} disabled={!patient} style={{width:"100%",padding:"14px",background:(!patient)?"#94a3b8":K.ac,color:"#fff",border:"none",borderRadius:10,fontSize:15,fontWeight:700,cursor:(!patient)?"not-allowed":"pointer"}}>{"Comenzar evaluaci\u00f3n \u2192"}</button>
       </div>}
