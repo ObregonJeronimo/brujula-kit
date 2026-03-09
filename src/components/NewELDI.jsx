@@ -1,11 +1,24 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { REC, EXP } from "../data/eldiItems.js";
 import { ELDI_IMAGES } from "../data/eldiImages.js";
 import PatientLookup from "./PatientLookup.jsx";
 import { calcScoring, gm, fa, scrollTop } from "./NewELDI_scoring.js";
 import { SequenceGame, ShapesGame } from "./NewELDI_games.jsx";
+import { db, doc, updateDoc } from "../firebase.js";
+import { fbAdd } from "../lib/fb.js";
 
 var K = { mt: "#64748b" };
+
+function renderReportText(text){
+  if(!text) return null;
+  return text.split("\n").map(function(line, i){
+    var trimmed = line.trim();
+    if(!trimmed) return <div key={i} style={{height:8}} />;
+    var isTitle = /^[A-Z\u00c0-\u00dc\s\d\.\:\-]{6,}:?\s*$/.test(trimmed) || /^\d+[\.\)]\s*[A-Z]/.test(trimmed);
+    if(isTitle) return <div key={i} style={{fontSize:14,fontWeight:700,color:"#0a3d2f",marginTop:14,marginBottom:4}}>{trimmed}</div>;
+    return <div key={i} style={{fontSize:13,color:"#334155",lineHeight:1.7,marginBottom:1}}>{trimmed}</div>;
+  });
+}
 
 export default function NewELDI({onS,nfy,userId}){
   var _s=useState(1),step=_s[0],sS=_s[1];
@@ -18,11 +31,18 @@ export default function NewELDI({onS,nfy,userId}){
   var _ee=useState(true),evalExp=_ee[0],setEvalExp=_ee[1];
   var _d=useState(false),dirty=_d[0],setDirty=_d[1];
   var _sp=useState(null),selectedPatient=_sp[0],setSelectedPatient=_sp[1];
+  var _saved = useState(false), saved = _saved[0], setSaved = _saved[1];
+  var _savedDocId = useState(null), savedDocId = _savedDocId[0], setSavedDocId = _savedDocId[1];
+  var _report = useState(null), report = _report[0], setReport = _report[1];
+  var _generating = useState(false), generating = _generating[0], setGenerating = _generating[1];
+  var _genError = useState(null), genError = _genError[0], setGenError = _genError[1];
+  var _showTech = useState(false), showTech = _showTech[0], setShowTech = _showTech[1];
+  var reportRef = useRef(null);
 
   useEffect(function(){scrollTop()},[step]);
   useEffect(function(){
     if(!dirty)return;
-    var handler=function(e){e.preventDefault();e.returnValue=""};
+    var handler=function(e){e.preventDefault();e.returnValue="";};
     window.addEventListener("beforeunload",handler);
     return function(){window.removeEventListener("beforeunload",handler)};
   },[dirty]);
@@ -44,13 +64,12 @@ export default function NewELDI({onS,nfy,userId}){
   var rE=evalExp?calcScoring(EXP,rsp,a):{logrado:0,noLogrado:0,noEvaluado:EXP.map(function(i){return i.id}),total:55,evaluados:0,pctLogrado:null};
 
   var I={width:"100%",padding:"10px 14px",border:"1px solid #e2e8f0",borderRadius:8,fontSize:14,background:"#f8faf9"};
-  var Id={width:"100%",padding:"10px 14px",border:"1px solid #e2e8f0",borderRadius:8,fontSize:14,background:"#f1f5f9",color:"#64748b",cursor:"not-allowed"};
   var Bt=function(props){return <button onClick={props.onClick} style={{background:props.pr?"#0d9488":"#f1f5f9",color:props.pr?"#fff":"#1e293b",border:"none",padding:"10px 22px",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer"}}>{props.children}</button>};
 
   var RI=function(items,prefix){
     var gr={};items.forEach(function(i){if(!gr[i.a])gr[i.a]=[];gr[i.a].push(i)});
     return <div>
-      <h2 style={{fontSize:18,fontWeight:700,marginBottom:4}}>{prefix==="AC"?"\ud83d\udd0a Comprension Auditiva":"\ud83d\udde3\ufe0f Comunicacion Expresiva"}</h2>
+      <h2 style={{fontSize:18,fontWeight:700,marginBottom:4}}>{prefix==="AC"?"\ud83d\udd0a Comprensi\u00f3n Auditiva":"\ud83d\udde3\ufe0f Comunicaci\u00f3n Expresiva"}</h2>
       <p style={{color:K.mt,fontSize:13,marginBottom:16}}>{"1 click = \u2714 Logrado \u00b7 2 clicks = \u2718 No logrado \u00b7 3 clicks = Sin evaluar"}</p>
       {Object.entries(gr).map(function(entry){
         var range=entry[0],gi=entry[1];
@@ -111,38 +130,105 @@ export default function NewELDI({onS,nfy,userId}){
   var getStepContent=function(){var label=steps[step-1];if(label==="Paciente")return"patient";if(label==="Receptivo")return"rec";if(label==="Expresivo")return"exp";return"result"};
   var content=getStepContent();
 
-  var renderNoEval=function(noEvalIds,items){
-    if(noEvalIds.length===0)return null;
-    var groups={};noEvalIds.forEach(function(id){var item=items.find(function(i){return i.id===id});if(item){if(!groups[item.a])groups[item.a]=[];groups[item.a].push(item)}});
-    return <div style={{marginTop:12,padding:12,background:"#fffbeb",border:"1px solid #fde68a",borderRadius:8}}>
-      <div style={{fontSize:12,fontWeight:600,color:"#92400e",marginBottom:8}}>{"Items no evaluados:"}</div>
-      {Object.entries(groups).map(function(e){return <div key={e[0]} style={{marginBottom:6}}>
-        <div style={{fontSize:11,fontWeight:600,color:"#78350f",marginBottom:2}}>{"Edad "+e[0]+":"}</div>
-        {e[1].map(function(it){return <div key={it.id} style={{fontSize:11,color:"#78350f",paddingLeft:8,lineHeight:1.6}}>{"\u2022 "+it.l+" ("+it.id+")"}</div>})}
-      </div>})}
-    </div>;
+  // Auto-save to Firestore when entering result step
+  useEffect(function(){
+    if(content === "result" && !saved){
+      var rspClean = {};
+      if(rsp){ Object.entries(rsp).forEach(function(e){ if(e[1]===true) rspClean[e[0]]=true; else if(e[1]===false) rspClean[e[0]]=false; }); }
+      var recRes = evalRec ? Object.assign({label:"Comprensi\u00f3n Auditiva",evaluated:true},rR) : {label:"Comprensi\u00f3n Auditiva",evaluated:false};
+      var expRes = evalExp ? Object.assign({label:"Comunicaci\u00f3n Expresiva",evaluated:true},rE) : {label:"Comunicaci\u00f3n Expresiva",evaluated:false};
+      var allNoEval = [].concat(evalRec?rR.noEvaluado:[]).concat(evalExp?rE.noEvaluado:[]);
+      var payload = {
+        id: Date.now()+"", userId: userId, paciente: pd.pN, pacienteDni: pd.dni||"",
+        fechaNacimiento: pd.birth, fechaEvaluacion: pd.eD, establecimiento: pd.sch,
+        derivadoPor: pd.ref, edadMeses: a, evalRec: evalRec||false, evalExp: evalExp||false,
+        brutoReceptivo: rR.logrado, brutoExpresivo: rE.logrado,
+        recRes: recRes, expRes: expRes, allNoEval: allNoEval,
+        observaciones: pd.obs||"", evaluador: "",
+        fechaGuardado: new Date().toISOString(), respuestas: rspClean
+      };
+      fbAdd("evaluaciones", payload).then(function(r){
+        if(r.success){ setSavedDocId(r.id); nfy("ELDI guardada","ok"); }
+        else nfy("Error: "+r.error,"er");
+      });
+      setSaved(true);
+      setDirty(false);
+    }
+  }, [content]);
+
+  // Auto-generate AI report
+  useEffect(function(){
+    if(content === "result" && saved && !report && !generating && !genError){
+      setGenerating(true);
+      var evalData = {
+        paciente: pd.pN, pacienteDni: pd.dni||"", edadMeses: a,
+        fechaEvaluacion: pd.eD, derivadoPor: pd.ref, observaciones: pd.obs||"",
+        evalRec: evalRec, evalExp: evalExp,
+        resultados: { recRes: Object.assign({label:"Comprensi\u00f3n Auditiva",evaluated:evalRec},rR), expRes: Object.assign({label:"Comunicaci\u00f3n Expresiva",evaluated:evalExp},rE) }
+      };
+      fetch("/api/generate-report", {
+        method: "POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({ evalData: evalData, evalType: "eldi", reportMode: "clinico" })
+      })
+      .then(function(r){ return r.json(); })
+      .then(function(data){
+        if(data.success && data.report){
+          setReport(data.report);
+          if(savedDocId) updateDoc(doc(db,"evaluaciones",savedDocId),{aiReport:data.report,aiReportDate:new Date().toISOString()}).catch(function(e){console.error(e);});
+        } else setGenError(data.error||"Error al generar informe.");
+        setGenerating(false);
+      })
+      .catch(function(e){ setGenError("Error: "+e.message); setGenerating(false); });
+    }
+  }, [content, saved, savedDocId]);
+
+  var handlePDFReport = function(){
+    if(!reportRef.current) return;
+    reportRef.current.style.paddingBottom = "40px";
+    import("html2canvas").then(function(mod){
+      return mod.default(reportRef.current,{scale:2,useCORS:true,backgroundColor:"#ffffff",scrollY:-window.scrollY,height:reportRef.current.scrollHeight,windowHeight:reportRef.current.scrollHeight+100});
+    }).then(function(canvas){
+      reportRef.current.style.paddingBottom = "";
+      return import("jspdf").then(function(mod){
+        var jsPDF=mod.jsPDF,pdf=new jsPDF("p","mm","a4"),pW=210,pH=297,margin=10,imgW=pW-margin*2,imgH=(canvas.height*imgW)/canvas.width,usableH=pH-margin*2,pos=0,page=0;
+        while(pos<imgH){ if(page>0)pdf.addPage(); var srcY=Math.round((pos/imgH)*canvas.height),srcH=Math.round((Math.min(usableH,imgH-pos)/imgH)*canvas.height); if(srcH<=0)break; var sc=document.createElement("canvas");sc.width=canvas.width;sc.height=srcH;sc.getContext("2d").drawImage(canvas,0,srcY,canvas.width,srcH,0,0,canvas.width,srcH); pdf.addImage(sc.toDataURL("image/png"),"PNG",margin,margin,imgW,(srcH*imgW)/canvas.width); pos+=usableH;page++; }
+        pdf.save("Informe_ELDI_"+((pd.pN||"").replace(/\s/g,"_"))+"_"+(pd.eD||"")+".pdf");
+      });
+    }).catch(function(e){ reportRef.current.style.paddingBottom=""; console.error(e); });
   };
 
   var renderClassification=function(scoring,label){
     if(!scoring||scoring.pctExpected===null||scoring.evaluados===0)return null;
     return <div style={{background:"#fff",border:"1px solid #e2e8f0",borderRadius:10,padding:18,marginBottom:14}}>
-      <div style={{fontWeight:700,fontSize:14,color:"#0a3d2f",marginBottom:12}}>{"Analisis Criterial \u2014 "+label}</div>
+      <div style={{fontWeight:700,fontSize:14,color:"#0a3d2f",marginBottom:12}}>{"\ud83c\udfaf An\u00e1lisis Criterial \u2014 "+label}</div>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
         <div style={{background:"#f0f9ff",padding:12,borderRadius:8}}>
-          <div style={{fontSize:10,color:K.mt,marginBottom:4}}>{"Rendimiento segun edad"}</div>
+          <div style={{fontSize:10,color:K.mt,marginBottom:4}}>{"Rendimiento seg\u00fan edad"}</div>
           <div style={{fontSize:22,fontWeight:700,color:scoring.classColor}}>{scoring.pctExpected+"%"}</div>
-          <div style={{fontSize:11,color:K.mt}}>{"("+scoring.logradoExpected+"/"+scoring.expectedCount+" items esperados logrados)"}</div>
+          <div style={{fontSize:11,color:K.mt}}>{"("+scoring.logradoExpected+"/"+scoring.expectedCount+" \u00edtems esperados logrados)"}</div>
         </div>
         <div style={{background:"#f0f9ff",padding:12,borderRadius:8}}>
-          <div style={{fontSize:10,color:K.mt,marginBottom:4}}>{"Clasificacion"}</div>
+          <div style={{fontSize:10,color:K.mt,marginBottom:4}}>{"Clasificaci\u00f3n"}</div>
           <div style={{fontSize:16,fontWeight:700,color:scoring.classColor}}>{scoring.classification}</div>
         </div>
         {scoring.devAgeLabel&&<div style={{background:"#f0f9ff",padding:12,borderRadius:8,gridColumn:"1/-1"}}>
           <div style={{fontSize:10,color:K.mt,marginBottom:4}}>{"Edad de desarrollo estimada"}</div>
           <div style={{fontSize:18,fontWeight:700,color:"#0d9488"}}>{scoring.devAgeLabel}</div>
-          <div style={{fontSize:11,color:K.mt}}>{"(banda maxima con >=80% de items logrados)"}</div>
+          <div style={{fontSize:11,color:K.mt}}>{"(banda m\u00e1xima con \u226580% de \u00edtems logrados)"}</div>
         </div>}
       </div>
+    </div>;
+  };
+
+  var renderNoEval=function(noEvalIds,items){
+    if(noEvalIds.length===0)return null;
+    var groups={};noEvalIds.forEach(function(id){var item=items.find(function(i){return i.id===id});if(item){if(!groups[item.a])groups[item.a]=[];groups[item.a].push(item)}});
+    return <div style={{marginTop:12,padding:12,background:"#fffbeb",border:"1px solid #fde68a",borderRadius:8}}>
+      <div style={{fontSize:12,fontWeight:600,color:"#92400e",marginBottom:8}}>{"\u00cdtems no evaluados:"}</div>
+      {Object.entries(groups).map(function(e){return <div key={e[0]} style={{marginBottom:6}}>
+        <div style={{fontSize:11,fontWeight:600,color:"#78350f",marginBottom:2}}>{"Edad "+e[0]+":"}</div>
+        {e[1].map(function(it){return <div key={it.id} style={{fontSize:11,color:"#78350f",paddingLeft:8,lineHeight:1.6}}>{"\u2022 "+it.l+" ("+it.id+")"}</div>})}
+      </div>})}
     </div>;
   };
 
@@ -152,83 +238,113 @@ export default function NewELDI({onS,nfy,userId}){
 
       {content==="patient"&&<div>
         <h2 style={{fontSize:18,fontWeight:700,marginBottom:4}}>{"ELDI \u2014 Datos del Paciente"}</h2>
-        <p style={{color:K.mt,fontSize:13,marginBottom:20}}>{"Evaluacion del Lenguaje y Desarrollo Infantil"}</p>
+        <p style={{color:K.mt,fontSize:13,marginBottom:20}}>{"Evaluaci\u00f3n del Lenguaje y Desarrollo Infantil"}</p>
         <PatientLookup userId={userId} onSelect={handlePatientSelect} selected={selectedPatient} color="#0d9488" />
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
-          <div style={{gridColumn:"1/-1"}}><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>Nombre completo</label><input value={pd.pN} readOnly disabled style={Id}/></div>
-          <div><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>DNI</label><input value={pd.dni} readOnly disabled style={Id}/></div>
-          <div><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>Fecha nacimiento</label><input type="date" value={pd.birth} readOnly disabled style={Id}/></div>
-          <div><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>Establecimiento</label><input value={pd.sch} readOnly disabled style={Id}/></div>
-          <div><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>{"Fecha evaluacion"}</label><input type="date" value={pd.eD} onChange={function(e){sPd(function(p){return Object.assign({},p,{eD:e.target.value})})}} style={I}/></div>
-          <div style={{gridColumn:"1/-1"}}><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>Derivado por</label><input value={pd.ref} onChange={function(e){sPd(function(p){return Object.assign({},p,{ref:e.target.value})})}} style={I} placeholder="Profesional"/></div>
-        </div>
-        {a>0&&<div style={{marginTop:14,padding:"10px 16px",background:"#ccfbf1",borderRadius:8,fontSize:14}}><strong>{"Edad:"}</strong>{" "+fa(a)+" ("+a+" meses)"}</div>}
-        <div style={{marginTop:20,padding:16,background:"#f0f9ff",border:"1px solid #bae6fd",borderRadius:10}}>
-          <div style={{fontSize:13,fontWeight:700,color:"#0369a1",marginBottom:10}}>{"Que areas evaluar?"}</div>
-          <div style={{display:"flex",gap:20,flexWrap:"wrap"}}>
-            <label style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer",fontSize:14}}><input type="checkbox" checked={evalRec} onChange={function(e){setEvalRec(e.target.checked)}} style={{width:18,height:18,accentColor:"#0d9488"}}/>{"\ud83d\udd0a Comprension Auditiva (Receptivo)"}</label>
-            <label style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer",fontSize:14}}><input type="checkbox" checked={evalExp} onChange={function(e){setEvalExp(e.target.checked)}} style={{width:18,height:18,accentColor:"#0d9488"}}/>{"\ud83d\udde3\ufe0f Comunicacion Expresiva"}</label>
+        {selectedPatient && <div style={{marginTop:16}}>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
+            <div><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>{"Fecha de evaluaci\u00f3n"}</label><input type="date" value={pd.eD} onChange={function(e){sPd(function(p){return Object.assign({},p,{eD:e.target.value})})}} style={I}/></div>
+            <div><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>Derivado por</label><input value={pd.ref} onChange={function(e){sPd(function(p){return Object.assign({},p,{ref:e.target.value})})}} style={I} placeholder="Profesional"/></div>
           </div>
-          {!evalRec&&!evalExp&&<div style={{marginTop:8,color:"#dc2626",fontSize:12,fontWeight:600}}>{"Debe seleccionar al menos un area"}</div>}
+          {a>0&&<div style={{marginTop:14,padding:"10px 16px",background:"#ccfbf1",borderRadius:8,fontSize:14}}><strong>{"Edad:"}</strong>{" "+fa(a)+" ("+a+" meses)"}</div>}
+        </div>}
+        <div style={{marginTop:20,padding:16,background:"#f0f9ff",border:"1px solid #bae6fd",borderRadius:10}}>
+          <div style={{fontSize:13,fontWeight:700,color:"#0369a1",marginBottom:10}}>{"Qu\u00e9 \u00e1reas evaluar?"}</div>
+          <div style={{display:"flex",gap:20,flexWrap:"wrap"}}>
+            <label style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer",fontSize:14}}><input type="checkbox" checked={evalRec} onChange={function(e){setEvalRec(e.target.checked)}} style={{width:18,height:18,accentColor:"#0d9488"}}/>{"\ud83d\udd0a Comprensi\u00f3n Auditiva (Receptivo)"}</label>
+            <label style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer",fontSize:14}}><input type="checkbox" checked={evalExp} onChange={function(e){setEvalExp(e.target.checked)}} style={{width:18,height:18,accentColor:"#0d9488"}}/>{"\ud83d\udde3\ufe0f Comunicaci\u00f3n Expresiva"}</label>
+          </div>
+          {!evalRec&&!evalExp&&<div style={{marginTop:8,color:"#dc2626",fontSize:12,fontWeight:600}}>{"Debe seleccionar al menos un \u00e1rea"}</div>}
         </div>
-        <div style={{display:"flex",justifyContent:"flex-end",marginTop:20}}><Bt pr={true} onClick={function(){if(!selectedPatient){nfy("Busque y seleccione un paciente por DNI","er");return}if(!evalRec&&!evalExp){nfy("Seleccione al menos un area","er");return}setDirty(true);sS(2)}}>{"Siguiente \u2192"}</Bt></div>
+        <div style={{display:"flex",justifyContent:"flex-end",marginTop:20}}><Bt pr={true} onClick={function(){if(!selectedPatient){nfy("Busque y seleccione un paciente","er");return}if(!evalRec&&!evalExp){nfy("Seleccione al menos un \u00e1rea","er");return}setDirty(true);sS(2)}}>{"Siguiente \u2192"}</Bt></div>
       </div>}
 
-      {content==="rec"&&<div>{RI(REC,"AC")}<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:14,paddingTop:14,borderTop:"1px solid #e2e8f0"}}><span style={{fontSize:13,color:K.mt}}>{"Logrados: "}<b style={{color:"#0d9488"}}>{rR.logrado}</b>{"/55 \u00b7 Sin evaluar: "}<b style={{color:"#f59e0b"}}>{rR.noEvaluado.length}</b></span><div style={{display:"flex",gap:8}}><Bt onClick={function(){sS(step-1)}}>{"\u2190 Atras"}</Bt><Bt pr={true} onClick={function(){sS(step+1)}}>{"Siguiente \u2192"}</Bt></div></div></div>}
+      {content==="rec"&&<div>{RI(REC,"AC")}<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:14,paddingTop:14,borderTop:"1px solid #e2e8f0"}}><span style={{fontSize:13,color:K.mt}}>{"Logrados: "}<b style={{color:"#0d9488"}}>{rR.logrado}</b>{"/55 \u00b7 Sin evaluar: "}<b style={{color:"#f59e0b"}}>{rR.noEvaluado.length}</b></span><div style={{display:"flex",gap:8}}><Bt onClick={function(){sS(step-1)}}>{"\u2190 Atr\u00e1s"}</Bt><Bt pr={true} onClick={function(){sS(step+1)}}>{"Siguiente \u2192"}</Bt></div></div></div>}
 
-      {content==="exp"&&<div>{RI(EXP,"EC")}<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:14,paddingTop:14,borderTop:"1px solid #e2e8f0"}}><span style={{fontSize:13,color:K.mt}}>{"Logrados: "}<b style={{color:"#0d9488"}}>{rE.logrado}</b>{"/55 \u00b7 Sin evaluar: "}<b style={{color:"#f59e0b"}}>{rE.noEvaluado.length}</b></span><div style={{display:"flex",gap:8}}><Bt onClick={function(){sS(step-1)}}>{"\u2190 Atras"}</Bt><Bt pr={true} onClick={function(){sS(step+1)}}>{"Resultados \u2192"}</Bt></div></div></div>}
+      {content==="exp"&&<div>{RI(EXP,"EC")}<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:14,paddingTop:14,borderTop:"1px solid #e2e8f0"}}><span style={{fontSize:13,color:K.mt}}>{"Logrados: "}<b style={{color:"#0d9488"}}>{rE.logrado}</b>{"/55 \u00b7 Sin evaluar: "}<b style={{color:"#f59e0b"}}>{rE.noEvaluado.length}</b></span><div style={{display:"flex",gap:8}}><Bt onClick={function(){sS(step-1)}}>{"\u2190 Atr\u00e1s"}</Bt><Bt pr={true} onClick={function(){sS(step+1)}}>{"Resultados \u2192"}</Bt></div></div></div>}
 
       {content==="result"&&(function(){
-        var recRes={label:"Comprension Auditiva",evaluated:evalRec};Object.assign(recRes,rR);
-        var expRes={label:"Comunicacion Expresiva",evaluated:evalExp};Object.assign(expRes,rE);
+        var recRes={label:"Comprensi\u00f3n Auditiva",evaluated:evalRec};Object.assign(recRes,rR);
+        var expRes={label:"Comunicaci\u00f3n Expresiva",evaluated:evalExp};Object.assign(expRes,rE);
         var allNoEval=[].concat(evalRec?rR.noEvaluado:[]).concat(evalExp?rE.noEvaluado:[]);
 
         return <div>
-          <h2 style={{fontSize:20,fontWeight:700,marginBottom:8}}>{"Resultados ELDI \u2014 "+pd.pN}</h2>
-          <p style={{fontSize:12,color:K.mt,marginBottom:20}}>{"Edad: "+fa(a)+" \u00b7 Evaluacion: "+pd.eD+(pd.dni?" \u00b7 DNI: "+pd.dni:"")}</p>
+          <div style={{background:"#dcfce7",borderRadius:10,padding:"12px 18px",marginBottom:16,display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:18}}>{"\u2705"}</span><span style={{fontSize:13,fontWeight:600,color:"#059669"}}>{"Evaluaci\u00f3n guardada correctamente."}</span></div>
 
-          {evalRec&&rR.evaluados>0&&renderClassification(rR,"Comprension Auditiva")}
-          {evalExp&&rE.evaluados>0&&renderClassification(rE,"Comunicacion Expresiva")}
+          {generating && <div style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",padding:40,textAlign:"center",marginBottom:20}}>
+            <div style={{display:"inline-block",width:40,height:40,border:"4px solid #e2e8f0",borderTopColor:"#0d9488",borderRadius:"50%",animation:"spin 1s linear infinite",marginBottom:16}} />
+            <div style={{fontSize:15,fontWeight:600,color:"#0a3d2f"}}>{"Generando informe con IA..."}</div>
+            <div style={{fontSize:12,color:K.mt,marginTop:6}}>{"Esto puede tardar unos segundos."}</div>
+            <style>{"@keyframes spin { to { transform: rotate(360deg); } }"}</style>
+          </div>}
 
-          <div style={{background:"#f0f9ff",border:"1px solid #bae6fd",borderRadius:10,padding:14,marginBottom:20,fontSize:12,color:"#0369a1"}}>
-            <strong>{"Nota:"}</strong>{" La clasificacion se basa en un analisis criterial (comparacion con hitos esperados por edad), no en baremos normativos. Cortes: >=90% = Normal, 75-89% = En Riesgo, 50-74% = Retraso Moderado, menos de 50% = Retraso Significativo."}
-          </div>
+          {genError && !report && <div style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",padding:28,textAlign:"center",marginBottom:20}}>
+            <div style={{background:"#fef2f2",border:"1px solid #fecaca",borderRadius:8,padding:"10px 14px",marginBottom:14,fontSize:12,color:"#dc2626"}}>{genError}</div>
+            <button onClick={function(){ setGenError(null); }} style={{padding:"10px 24px",background:"#0d9488",color:"#fff",border:"none",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer"}}>{"Reintentar"}</button>
+          </div>}
 
-          {[recRes,expRes].map(function(area,i){
-            var items=i===0?REC:EXP;
-            if(!area.evaluated)return <div key={i} style={{background:"#f1f5f9",borderRadius:10,padding:20,border:"1px solid #e2e8f0",marginBottom:14}}>
-              <div style={{fontWeight:700,fontSize:15}}>{i===0?"\ud83d\udd0a":"\ud83d\udde3\ufe0f"}{" "+area.label}</div>
-              <div style={{fontSize:14,color:"#64748b",fontStyle:"italic",marginTop:6}}>{"No evaluado en esta sesion"}</div>
-            </div>;
-            return <div key={i} style={{background:"#f8faf9",borderRadius:10,padding:20,border:"1px solid #e2e8f0",marginBottom:14}}>
-              <div style={{fontWeight:700,fontSize:15,marginBottom:14}}>{i===0?"\ud83d\udd0a":"\ud83d\udde3\ufe0f"}{" "+area.label}</div>
-              <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12}}>
-                <div><div style={{fontSize:10,color:K.mt,marginBottom:2}}>{"Items logrados"}</div><div style={{fontSize:24,fontWeight:700,color:"#059669"}}>{area.logrado}<span style={{fontSize:14,color:K.mt}}>{"/"+area.total}</span></div></div>
-                <div><div style={{fontSize:10,color:K.mt,marginBottom:2}}>{"No logrados"}</div><div style={{fontSize:24,fontWeight:700,color:"#dc2626"}}>{area.noLogrado}</div></div>
-                <div><div style={{fontSize:10,color:K.mt,marginBottom:2}}>{"Sin evaluar"}</div><div style={{fontSize:24,fontWeight:700,color:"#f59e0b"}}>{area.noEvaluado.length}</div></div>
-              </div>
-              {area.evaluados>0&&<div style={{marginTop:12}}>
-                <div style={{fontSize:10,color:K.mt,marginBottom:4}}>{"Porcentaje de logro (sobre items evaluados)"}</div>
-                <div style={{background:"#e2e8f0",borderRadius:6,height:24,overflow:"hidden",position:"relative"}}>
-                  <div style={{background:area.pctLogrado>=80?"#059669":area.pctLogrado>=50?"#f59e0b":"#dc2626",height:"100%",width:area.pctLogrado+"%",borderRadius:6,transition:"width .5s"}}/>
-                  <span style={{position:"absolute",left:"50%",top:"50%",transform:"translate(-50%,-50%)",fontSize:12,fontWeight:700,color:"#1e293b"}}>{area.pctLogrado+"%"}</span>
-                </div>
-              </div>}
-              {renderNoEval(area.noEvaluado,items)}
-            </div>;
-          })}
-
-          <div style={{background:"linear-gradient(135deg,#0a3d2f,#0d9488)",borderRadius:10,padding:24,color:"#fff",marginBottom:24}}>
-            <div style={{fontSize:13,opacity:.8,marginBottom:8}}>Resumen</div>
-            <div style={{display:"flex",gap:24,flexWrap:"wrap"}}>
-              {evalRec&&<div><span style={{fontSize:36,fontWeight:700}}>{rR.logrado}</span><span style={{fontSize:14,opacity:.7}}>{"/"+rR.evaluados+" Receptivo"}</span></div>}
-              {evalExp&&<div><span style={{fontSize:36,fontWeight:700}}>{rE.logrado}</span><span style={{fontSize:14,opacity:.7}}>{"/"+rE.evaluados+" Expresivo"}</span></div>}
+          {report && <div style={{marginBottom:20}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10,flexWrap:"wrap",gap:8}}>
+              <div style={{fontSize:15,fontWeight:700,color:"#0a3d2f"}}>{"Informe Fonoaudiol\u00f3gico"}</div>
+              <button onClick={handlePDFReport} style={{padding:"7px 14px",background:"#0d9488",color:"#fff",border:"none",borderRadius:8,fontSize:12,fontWeight:600,cursor:"pointer"}}>{"\ud83d\udda8 Imprimir informe"}</button>
             </div>
-            {allNoEval.length>0&&<div style={{marginTop:12,padding:"8px 12px",background:"rgba(255,255,255,.12)",borderRadius:8,fontSize:12}}>{allNoEval.length+" items sin evaluar \u2014 resultados parciales"}</div>}
-          </div>
+            <div ref={reportRef} style={{background:"#fff",borderRadius:12,border:"1px solid #e2e8f0",padding:24}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16,paddingBottom:12,borderBottom:"2px solid #e2e8f0"}}>
+                <div><div style={{fontSize:10,color:K.mt,fontWeight:600,textTransform:"uppercase",letterSpacing:1}}>{"Informe Fonoaudiol\u00f3gico \u2014 ELDI"}</div><div style={{fontSize:17,fontWeight:700,marginTop:3}}>{pd.pN}</div><div style={{fontSize:12,color:K.mt,marginTop:2}}>{"DNI: "+(pd.dni||"N/A")+" \u00b7 Edad: "+(a?fa(a):"")}</div></div>
+                <div style={{textAlign:"right"}}><div style={{fontSize:11,color:K.mt}}>{"Fecha: "+(pd.eD||"")}</div></div>
+              </div>
+              <div>{renderReportText(report)}</div>
+              <div style={{marginTop:20,background:"linear-gradient(135deg,#ccfbf1,#f0fdf4)",borderRadius:10,padding:"14px 18px",border:"1px solid #99f6e4"}}>
+                <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}><div style={{display:"flex",alignItems:"center",gap:6}}><span style={{fontSize:18}}>{"\ud83e\udde0"}</span><span style={{fontSize:11,fontWeight:700,color:"#0a3d2f"}}>{"Generado con IA"}</span></div><div style={{width:1,height:16,background:"#5eead4"}} /><div style={{display:"flex",alignItems:"center",gap:6}}><span style={{fontSize:18}}>{"\u2705"}</span><span style={{fontSize:11,fontWeight:700,color:"#059669"}}>{"Comprobado por profesionales en fonoaudiolog\u00eda de C\u00f3rdoba"}</span></div></div>
+                <div style={{fontSize:10,color:"#0d9488",marginTop:6}}>{"Generado con IA. Validado por profesionales fonoaudi\u00f3logos de C\u00f3rdoba, Argentina. Debe ser revisado por el profesional tratante."}</div>
+              </div>
+              <div style={{marginTop:14,paddingTop:8,borderTop:"1px solid #e2e8f0",fontSize:9,color:"#94a3b8",textAlign:"center"}}>{"Br\u00fajula KIT \u2014 ELDI \u2014 "+new Date().toLocaleDateString("es-AR")}</div>
+            </div>
+          </div>}
 
-          <div style={{marginBottom:20}}><label style={{fontSize:13,fontWeight:600,color:K.mt,display:"block",marginBottom:6}}>{"Observaciones clinicas"}</label><textarea value={pd.obs} onChange={function(e){sPd(function(p){return Object.assign({},p,{obs:e.target.value})})}} rows={4} style={{width:"100%",padding:"12px 14px",border:"1px solid #e2e8f0",borderRadius:8,fontSize:14,resize:"vertical",background:"#f8faf9"}} placeholder="Interpretacion profesional..."/></div>
-          <div style={{display:"flex",justifyContent:"space-between"}}><Bt onClick={function(){sS(step-1)}}>{"\u2190 Atras"}</Bt><button onClick={function(){setDirty(false);onS(Object.assign({},pd,{a:a,rsp:rsp,evalRec:evalRec,evalExp:evalExp,rR:rR.logrado,rE:rE.logrado,recRes:recRes,expRes:expRes,allNoEval:allNoEval,scoringRec:evalRec?rR:null,scoringExp:evalExp?rE:null}))}} style={{background:"#0d9488",color:"#fff",border:"none",padding:"12px 28px",borderRadius:8,fontSize:15,fontWeight:700,cursor:"pointer"}}>Guardar</button></div>
+          <button onClick={function(){ setShowTech(!showTech); }} style={{width:"100%",padding:"14px",background:showTech?"#f1f5f9":"#0a3d2f",color:showTech?"#1e293b":"#fff",border:"1px solid #e2e8f0",borderRadius:10,fontSize:14,fontWeight:600,cursor:"pointer",marginBottom:showTech?16:20}}>{showTech?"\u25b2 Ocultar datos t\u00e9cnicos":"\u25bc Ver datos t\u00e9cnicos de la evaluaci\u00f3n"}</button>
+
+          {showTech && <div>
+            <h2 style={{fontSize:20,fontWeight:700,marginBottom:8}}>{"Resultados ELDI \u2014 "+pd.pN}</h2>
+            <p style={{fontSize:12,color:K.mt,marginBottom:20}}>{"Edad: "+fa(a)+" \u00b7 Evaluaci\u00f3n: "+pd.eD+(pd.dni?" \u00b7 DNI: "+pd.dni:"")}</p>
+
+            {evalRec&&rR.evaluados>0&&renderClassification(rR,"Comprensi\u00f3n Auditiva")}
+            {evalExp&&rE.evaluados>0&&renderClassification(rE,"Comunicaci\u00f3n Expresiva")}
+
+            {[recRes,expRes].map(function(area,i){
+              var items=i===0?REC:EXP;
+              if(!area.evaluated)return <div key={i} style={{background:"#f1f5f9",borderRadius:10,padding:20,border:"1px solid #e2e8f0",marginBottom:14}}>
+                <div style={{fontWeight:700,fontSize:15}}>{i===0?"\ud83d\udd0a":"\ud83d\udde3\ufe0f"}{" "+area.label}</div>
+                <div style={{fontSize:14,color:"#64748b",fontStyle:"italic",marginTop:6}}>{"No evaluado en esta sesi\u00f3n"}</div>
+              </div>;
+              return <div key={i} style={{background:"#f8faf9",borderRadius:10,padding:20,border:"1px solid #e2e8f0",marginBottom:14}}>
+                <div style={{fontWeight:700,fontSize:15,marginBottom:14}}>{i===0?"\ud83d\udd0a":"\ud83d\udde3\ufe0f"}{" "+area.label}</div>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12}}>
+                  <div><div style={{fontSize:10,color:K.mt,marginBottom:2}}>{"\u00cdtems logrados"}</div><div style={{fontSize:24,fontWeight:700,color:"#059669"}}>{area.logrado}<span style={{fontSize:14,color:K.mt}}>{"/"+area.total}</span></div></div>
+                  <div><div style={{fontSize:10,color:K.mt,marginBottom:2}}>{"No logrados"}</div><div style={{fontSize:24,fontWeight:700,color:"#dc2626"}}>{area.noLogrado}</div></div>
+                  <div><div style={{fontSize:10,color:K.mt,marginBottom:2}}>{"Sin evaluar"}</div><div style={{fontSize:24,fontWeight:700,color:"#f59e0b"}}>{area.noEvaluado.length}</div></div>
+                </div>
+                {area.evaluados>0&&<div style={{marginTop:12}}>
+                  <div style={{fontSize:10,color:K.mt,marginBottom:4}}>{"% logro (sobre evaluados)"}</div>
+                  <div style={{background:"#e2e8f0",borderRadius:6,height:24,overflow:"hidden",position:"relative"}}>
+                    <div style={{background:area.pctLogrado>=80?"#059669":area.pctLogrado>=50?"#f59e0b":"#dc2626",height:"100%",width:area.pctLogrado+"%",borderRadius:6,transition:"width .5s"}}/>
+                    <span style={{position:"absolute",left:"50%",top:"50%",transform:"translate(-50%,-50%)",fontSize:12,fontWeight:700}}>{area.pctLogrado+"%"}</span>
+                  </div>
+                </div>}
+                {renderNoEval(area.noEvaluado,items)}
+              </div>;
+            })}
+
+            <div style={{background:"linear-gradient(135deg,#0a3d2f,#0d9488)",borderRadius:10,padding:24,color:"#fff",marginBottom:24}}>
+              <div style={{fontSize:13,opacity:.8,marginBottom:8}}>Resumen</div>
+              <div style={{display:"flex",gap:24,flexWrap:"wrap"}}>
+                {evalRec&&<div><span style={{fontSize:36,fontWeight:700}}>{rR.logrado}</span><span style={{fontSize:14,opacity:.7}}>{"/"+rR.evaluados+" Receptivo"}</span></div>}
+                {evalExp&&<div><span style={{fontSize:36,fontWeight:700}}>{rE.logrado}</span><span style={{fontSize:14,opacity:.7}}>{"/"+rE.evaluados+" Expresivo"}</span></div>}
+              </div>
+              {allNoEval.length>0&&<div style={{marginTop:12,padding:"8px 12px",background:"rgba(255,255,255,.12)",borderRadius:8,fontSize:12}}>{allNoEval.length+" \u00edtems sin evaluar \u2014 parcial"}</div>}
+            </div>
+          </div>}
+
+          <button onClick={function(){sS(step-1);scrollTop();}} style={{width:"100%",padding:"14px",background:"#f1f5f9",border:"1px solid #e2e8f0",borderRadius:10,fontSize:14,fontWeight:600,cursor:"pointer",color:K.mt,marginTop:4}}>{"\u2190 Volver a editar"}</button>
         </div>;
       })()}
     </div>
