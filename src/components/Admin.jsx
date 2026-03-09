@@ -32,32 +32,32 @@ export default function Admin({ nfy }) {
   var addCredits = function(){
     if(!selUser) return;
     var qty = Math.min(Math.max(1, parseInt(amount) || 0), 100);
-    if(qty < 1){ nfy("Cantidad inv\u00e1lida", "er"); return; }
+    if(qty < 1){ nfy("Cantidad inválida", "er"); return; }
     updateDoc(doc(db, "usuarios", selUser._fbId), { creditos: increment(qty) }).then(function(){
       setSelUser(function(p){ return Object.assign({}, p, { creditos: (p.creditos || 0) + qty }); });
       setUsers(function(prev){ return prev.map(function(u){ return u._fbId === selUser._fbId ? Object.assign({}, u, { creditos: (u.creditos || 0) + qty }) : u; }); });
-      nfy("+" + qty + " cr\u00e9ditos agregados a " + selUser.username, "ok");
+      nfy("+" + qty + " créditos agregados a " + selUser.username, "ok");
     }).catch(function(e){ nfy("Error: " + e.message, "er"); });
   };
 
   var removeCredits = function(){
     if(!selUser) return;
     var qty = Math.min(Math.max(1, parseInt(amount) || 0), selUser.creditos || 0);
-    if(qty < 1){ nfy("No hay cr\u00e9ditos para quitar", "er"); return; }
+    if(qty < 1){ nfy("No hay créditos para quitar", "er"); return; }
     updateDoc(doc(db, "usuarios", selUser._fbId), { creditos: increment(-qty) }).then(function(){
       setSelUser(function(p){ return Object.assign({}, p, { creditos: Math.max(0, (p.creditos || 0) - qty) }); });
       setUsers(function(prev){ return prev.map(function(u){ return u._fbId === selUser._fbId ? Object.assign({}, u, { creditos: Math.max(0, (u.creditos || 0) - qty) }) : u; }); });
-      nfy("-" + qty + " cr\u00e9ditos de " + selUser.username, "ok");
+      nfy("-" + qty + " créditos de " + selUser.username, "ok");
     }).catch(function(e){ nfy("Error: " + e.message, "er"); });
   };
 
   var I = { padding: "10px 14px", border: "1px solid #e2e8f0", borderRadius: 8, fontSize: 14, background: "#f8faf9" };
 
-  if(loading) return <div style={{animation:"fi .3s ease",textAlign:"center",padding:60}}><div style={{fontSize:36,marginBottom:12}}>{"\u2699\ufe0f"}</div><div style={{fontSize:16,fontWeight:600,color:K.mt}}>Cargando usuarios...</div></div>;
+  if(loading) return <div style={{animation:"fi .3s ease",textAlign:"center",padding:60}}><div style={{fontSize:36,marginBottom:12}}>⚙️</div><div style={{fontSize:16,fontWeight:600,color:K.mt}}>Cargando usuarios...</div></div>;
 
   return (
     <div style={{ animation: "fi .3s ease", width: "100%", maxWidth: 700 }}>
-      <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 6 }}>{"\u2699\ufe0f Administraci\u00f3n de Usuarios"}</h1>
+      <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 6 }}>⚙️ Administración de Usuarios</h1>
       <p style={{ color: K.mt, fontSize: 14, marginBottom: 24 }}>{nonAdmin.length + " usuarios registrados"}</p>
 
       {!selUser ? <div>
@@ -66,7 +66,7 @@ export default function Admin({ nfy }) {
         </div>
         <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e2e8f0", overflow: "hidden" }}>
           <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 80px 80px", gap: 8, padding: "12px 16px", background: K.sd, color: "#fff", fontSize: 11, fontWeight: 700 }}>
-            <span>Usuario</span><span>Email</span><span style={{textAlign:"center"}}>Cr\u00e9ditos</span><span></span>
+            <span>Usuario</span><span>Email</span><span style={{textAlign:"center"}}>Créditos</span><span></span>
           </div>
           <div style={{ maxHeight: 500, overflowY: "auto" }}>
             {filtered.length === 0 && <div style={{ padding: 20, textAlign: "center", color: K.mt, fontSize: 13 }}>No se encontraron usuarios</div>}
@@ -78,13 +78,13 @@ export default function Admin({ nfy }) {
                 </div>
                 <div style={{ fontSize: 11, color: K.mt, overflow: "hidden", textOverflow: "ellipsis" }}>{u.email}</div>
                 <div style={{ textAlign: "center", fontWeight: 700, color: (u.creditos||0) > 0 ? "#059669" : "#dc2626" }}>{u.creditos || 0}</div>
-                <div style={{ textAlign: "center", fontSize: 11, color: K.ac, fontWeight: 600 }}>{"Ver \u2192"}</div>
+                <div style={{ textAlign: "center", fontSize: 11, color: K.ac, fontWeight: 600 }}>Ver →</div>
               </div>;
             })}
           </div>
         </div>
       </div> : <div>
-        <button onClick={function(){ setSelUser(null); }} style={{ background: "#f1f5f9", border: "none", borderRadius: 8, padding: "8px 18px", fontSize: 13, cursor: "pointer", fontWeight: 600, marginBottom: 16 }}>{"\u2190 Volver a lista"}</button>
+        <button onClick={function(){ setSelUser(null); }} style={{ background: "#f1f5f9", border: "none", borderRadius: 8, padding: "8px 18px", fontSize: 13, cursor: "pointer", fontWeight: 600, marginBottom: 16 }}>← Volver a lista</button>
 
         <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 12, padding: 20, marginBottom: 20 }}>
           <div style={{ fontSize: 18, fontWeight: 700, color: K.sd, marginBottom: 10 }}>
@@ -94,27 +94,27 @@ export default function Admin({ nfy }) {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, fontSize: 13, color: "#475569" }}>
             <div><span style={{ color: K.mt }}>Usuario: </span><strong>@{selUser.username}</strong></div>
             <div><span style={{ color: K.mt }}>Email: </span>{selUser.email}</div>
-            <div><span style={{ color: K.mt }}>DNI: </span>{selUser.dni || "\u2014"}</div>
+            <div><span style={{ color: K.mt }}>DNI: </span>{selUser.dni || "—"}</div>
             <div>
-              <span style={{ color: K.mt }}>{"Cr\u00e9ditos: "}</span>
+              <span style={{ color: K.mt }}>Créditos: </span>
               <strong style={{ color: selUser.role === "admin" ? K.ac : (selUser.creditos || 0) > 0 ? "#059669" : "#dc2626", fontSize: 18 }}>
-                {selUser.role === "admin" ? "\u221e" : (selUser.creditos || 0)}
+                {selUser.role === "admin" ? "∞" : (selUser.creditos || 0)}
               </strong>
             </div>
           </div>
         </div>
 
         {selUser.role !== "admin" && <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 12, padding: 20 }}>
-          <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 12 }}>{"\ud83d\udcb3 Gestionar cr\u00e9ditos"}</div>
+          <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 12 }}>💳 Gestionar créditos</div>
           <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
             <input type="number" min={1} max={100} value={amount} onChange={function(e){ setAmount(e.target.value); }} style={Object.assign({}, I, { width: 80, textAlign: "center" })} />
-            <button onClick={addCredits} style={{ background: "#059669", color: "#fff", border: "none", padding: "10px 20px", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer" }}>{"+ Agregar"}</button>
-            <button onClick={removeCredits} style={{ background: "#dc2626", color: "#fff", border: "none", padding: "10px 20px", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer" }}>{"- Quitar"}</button>
+            <button onClick={addCredits} style={{ background: "#059669", color: "#fff", border: "none", padding: "10px 20px", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer" }}>+ Agregar</button>
+            <button onClick={removeCredits} style={{ background: "#dc2626", color: "#fff", border: "none", padding: "10px 20px", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer" }}>- Quitar</button>
           </div>
         </div>}
 
         {selUser.role === "admin" && <div style={{ background: "#f0f9ff", border: "1px solid #bae6fd", borderRadius: 8, padding: 14, fontSize: 13, color: "#0369a1" }}>
-          {"Los administradores tienen cr\u00e9ditos ilimitados."}
+          Los administradores tienen créditos ilimitados.
         </div>}
       </div>}
     </div>
