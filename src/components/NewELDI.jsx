@@ -20,6 +20,20 @@ function renderReportText(text){
   });
 }
 
+function saveReportToDoc(colName, docIdRef, report) {
+  var tryUpdate = function(retries) {
+    var id = docIdRef.current;
+    if (id) {
+      updateDoc(doc(db, colName, id), { aiReport: report, aiReportDate: new Date().toISOString() }).catch(function(e) { console.error("Error saving aiReport:", e); });
+    } else if (retries > 0) {
+      setTimeout(function() { tryUpdate(retries - 1); }, 1500);
+    } else {
+      console.error("Could not save aiReport: docId never arrived");
+    }
+  };
+  tryUpdate(5);
+}
+
 export default function NewELDI({onS,nfy,userId}){
   var _s=useState(1),step=_s[0],sS=_s[1];
   var _pd=useState({pN:"",birth:"",eD:new Date().toISOString().split("T")[0],sch:"",ref:"",obs:"",dni:""}),pd=_pd[0],sPd=_pd[1];
@@ -33,6 +47,7 @@ export default function NewELDI({onS,nfy,userId}){
   var _sp=useState(null),selectedPatient=_sp[0],setSelectedPatient=_sp[1];
   var _saved = useState(false), saved = _saved[0], setSaved = _saved[1];
   var _savedDocId = useState(null), savedDocId = _savedDocId[0], setSavedDocId = _savedDocId[1];
+  var docIdRef = useRef(null);
   var _report = useState(null), report = _report[0], setReport = _report[1];
   var _generating = useState(false), generating = _generating[0], setGenerating = _generating[1];
   var _genError = useState(null), genError = _genError[0], setGenError = _genError[1];
@@ -148,7 +163,7 @@ export default function NewELDI({onS,nfy,userId}){
         fechaGuardado: new Date().toISOString(), respuestas: rspClean
       };
       fbAdd("evaluaciones", payload).then(function(r){
-        if(r.success){ setSavedDocId(r.id); nfy("ELDI guardada","ok"); }
+        if(r.success){ docIdRef.current = r.id; setSavedDocId(r.id); nfy("ELDI guardada","ok"); }
         else nfy("Error: "+r.error,"er");
       });
       setSaved(true);
@@ -174,7 +189,7 @@ export default function NewELDI({onS,nfy,userId}){
       .then(function(data){
         if(data.success && data.report){
           setReport(data.report);
-          if(savedDocId) updateDoc(doc(db,"evaluaciones",savedDocId),{aiReport:data.report,aiReportDate:new Date().toISOString()}).catch(function(e){console.error(e);});
+          saveReportToDoc("evaluaciones", docIdRef, data.report);
         } else setGenError(data.error||"Error al generar informe.");
         setGenerating(false);
       })
