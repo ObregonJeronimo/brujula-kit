@@ -154,7 +154,7 @@ export default function NewELDI({onS,nfy,userId}){
       var expRes = evalExp ? Object.assign({label:"Comunicaci\u00f3n Expresiva",evaluated:true},rE) : {label:"Comunicaci\u00f3n Expresiva",evaluated:false};
       var allNoEval = [].concat(evalRec?rR.noEvaluado:[]).concat(evalExp?rE.noEvaluado:[]);
       var payload = {
-        id: Date.now()+"", userId: userId, paciente: pd.pN, pacienteDni: pd.dni||"",
+        id: Date.now()+"", userId: userId, tipo: "eldi", paciente: pd.pN, pacienteDni: pd.dni||"",
         fechaNacimiento: pd.birth, fechaEvaluacion: pd.eD, establecimiento: pd.sch,
         derivadoPor: pd.ref, edadMeses: a, evalRec: evalRec||false, evalExp: evalExp||false,
         brutoReceptivo: rR.logrado, brutoExpresivo: rE.logrado,
