@@ -19,10 +19,24 @@ function renderReportText(text){
   return text.split("\n").map(function(line, i){
     var trimmed = line.trim();
     if(!trimmed) return <div key={i} style={{height:8}} />;
-    var isTitle = /^[A-Z\u00c0-\u00dc\s\d\.\:\-]{6,}:?\s*$/.test(trimmed) || /^\d+[\.\)]\s*[A-Z]/.test(trimmed);
+    var isTitle = /^[A-Z\u00c0-\u00dc\s\d\.\:\-]{6,}:?\s*$/.test(trimmed) || /^\d+[\.\\)]\s*[A-Z]/.test(trimmed);
     if(isTitle) return <div key={i} style={{fontSize:14,fontWeight:700,color:K.sd,marginTop:14,marginBottom:4}}>{trimmed}</div>;
     return <div key={i} style={{fontSize:13,color:"#334155",lineHeight:1.7,marginBottom:1}}>{trimmed}</div>;
   });
+}
+
+function saveReportToDoc(colName, docIdRef, report) {
+  var tryUpdate = function(retries) {
+    var id = docIdRef.current;
+    if (id) {
+      updateDoc(doc(db, colName, id), { aiReport: report, aiReportDate: new Date().toISOString() }).catch(function(e) { console.error("Error saving aiReport:", e); });
+    } else if (retries > 0) {
+      setTimeout(function() { tryUpdate(retries - 1); }, 1500);
+    } else {
+      console.error("Could not save aiReport: docId never arrived");
+    }
+  };
+  tryUpdate(5);
 }
 
 export default function NewRECO({ onS, nfy, userId }){
@@ -36,6 +50,7 @@ export default function NewRECO({ onS, nfy, userId }){
   var _obs = useState(""), obs = _obs[0], setObs = _obs[1];
   var _saved = useState(false), saved = _saved[0], setSaved = _saved[1];
   var _savedDocId = useState(null), savedDocId = _savedDocId[0], setSavedDocId = _savedDocId[1];
+  var docIdRef = useRef(null);
   var _report = useState(null), report = _report[0], setReport = _report[1];
   var _generating = useState(false), generating = _generating[0], setGenerating = _generating[1];
   var _genError = useState(null), genError = _genError[0], setGenError = _genError[1];
@@ -55,7 +70,6 @@ export default function NewRECO({ onS, nfy, userId }){
   var totalItems = 36;
   var results = step === 2 ? computeRecoResults(responses) : null;
 
-  // Direct save to Firestore
   useEffect(function(){
     if(step === 2 && !saved){
       var res = computeRecoResults(responses);
@@ -68,14 +82,13 @@ export default function NewRECO({ onS, nfy, userId }){
         responses: responses, stimResp: stimResp, obsMap: obsMap, resultados: res
       };
       fbAdd("reco_evaluaciones", payload).then(function(r){
-        if(r.success){ setSavedDocId(r.id); nfy("Evaluaci\u00f3n guardada","ok"); }
+        if(r.success){ docIdRef.current = r.id; setSavedDocId(r.id); nfy("Evaluaci\u00f3n guardada","ok"); }
         else nfy("Error: "+r.error,"er");
       });
       setSaved(true);
     }
   }, [step]);
 
-  // Auto-generate AI report
   useEffect(function(){
     if(step === 2 && saved && !report && !generating && !genError){
       setGenerating(true);
@@ -92,7 +105,7 @@ export default function NewRECO({ onS, nfy, userId }){
       .then(function(data){
         if(data.success && data.report){
           setReport(data.report);
-          if(savedDocId) updateDoc(doc(db,"reco_evaluaciones",savedDocId),{aiReport:data.report,aiReportDate:new Date().toISOString()}).catch(function(e){console.error(e);});
+          saveReportToDoc("reco_evaluaciones", docIdRef, data.report);
         } else setGenError(data.error||"Error al generar informe.");
         setGenerating(false);
       })
