@@ -74,14 +74,14 @@ export default function NewRECO({ onS, nfy, userId }){
     if(step === 2 && !saved){
       var res = computeRecoResults(responses);
       var payload = {
-        id: Date.now()+"", userId: userId, tipo: "reco_fonologico",
+        id: Date.now()+"", userId: userId, tipo: "reco",
         paciente: patient.nombre, pacienteDni: patient.dni||"",
         fechaNacimiento: patient.fechaNac||"", edadMeses: patientAge,
         fechaEvaluacion: evalDate, derivadoPor: derivado, observaciones: obs,
         evaluador: "", fechaGuardado: new Date().toISOString(),
         responses: responses, stimResp: stimResp, obsMap: obsMap, resultados: res
       };
-      fbAdd("reco_evaluaciones", payload).then(function(r){
+      fbAdd("evaluaciones", payload).then(function(r){
         if(r.success){ docIdRef.current = r.id; setSavedDocId(r.id); nfy("Evaluaci\u00f3n guardada","ok"); }
         else nfy("Error: "+r.error,"er");
       });
@@ -105,7 +105,7 @@ export default function NewRECO({ onS, nfy, userId }){
       .then(function(data){
         if(data.success && data.report){
           setReport(data.report);
-          saveReportToDoc("reco_evaluaciones", docIdRef, data.report);
+          saveReportToDoc("evaluaciones", docIdRef, data.report);
         } else setGenError(data.error||"Error al generar informe.");
         setGenerating(false);
       })
