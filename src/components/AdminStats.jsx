@@ -10,11 +10,7 @@ function fmtDate(d){return new Date(d).toLocaleDateString("es-AR",{day:"numeric"
 
 export default function AdminStats({nfy}){
   var _u=useState([]),users=_u[0],setUsers=_u[1];
-  var _eldi=useState([]),eldi=_eldi[0],setEldi=_eldi[1];
-  var _peff=useState([]),peff=_peff[0],setPeff=_peff[1];
-  var _rep=useState([]),rep=_rep[0],setRep=_rep[1];
-  var _disc=useState([]),disc=_disc[0],setDisc=_disc[1];
-  var _reco=useState([]),reco=_reco[0],setReco=_reco[1];
+  var _ae=useState([]),allEvals=_ae[0],setAllEvals=_ae[1];
   var _ld=useState(true),ld=_ld[0],setLd=_ld[1];
   var _tab=useState("resumen"),tab=_tab[0],setTab=_tab[1];
   var _sy=useState(new Date().getFullYear()),selYear=_sy[0],setSelYear=_sy[1];
@@ -24,57 +20,45 @@ export default function AdminStats({nfy}){
     setLd(true);
     Promise.all([
       getDocs(collection(db,"usuarios")),
-      getDocs(collection(db,"evaluaciones")),
-      getDocs(collection(db,"peff_evaluaciones")),
-      getDocs(collection(db,"rep_evaluaciones")),
-      getDocs(collection(db,"disc_evaluaciones")),
-      getDocs(collection(db,"reco_evaluaciones"))
+      getDocs(collection(db,"evaluaciones"))
     ]).then(function(res){
       setUsers(res[0].docs.map(function(d){return Object.assign({_fbId:d.id},d.data())}));
-      setEldi(res[1].docs.map(function(d){return Object.assign({_fbId:d.id},d.data())}));
-      setPeff(res[2].docs.map(function(d){return Object.assign({_fbId:d.id},d.data())}));
-      setRep(res[3].docs.map(function(d){return Object.assign({_fbId:d.id},d.data())}));
-      setDisc(res[4].docs.map(function(d){return Object.assign({_fbId:d.id},d.data())}));
-      setReco(res[5].docs.map(function(d){return Object.assign({_fbId:d.id},d.data())}));
+      setAllEvals(res[1].docs.map(function(d){return Object.assign({_fbId:d.id},d.data())}));
     }).catch(function(e){nfy("Error cargando datos: "+e.message,"er")}).finally(function(){setLd(false)});
   },[nfy]);
 
   useEffect(function(){load()},[load]);
 
-  // allEvals includes ELDI internally for credit calculations but we hide ELDI from display
-  var allEvalsInternal=[].concat(
-    eldi.map(function(e){return Object.assign({},e,{tipo:"ELDI"})}),
-    peff.map(function(e){return Object.assign({},e,{tipo:"PEFF"})}),
-    rep.map(function(e){return Object.assign({},e,{tipo:"REP"})}),
-    disc.map(function(e){return Object.assign({},e,{tipo:"DISC"})}),
-    reco.map(function(e){return Object.assign({},e,{tipo:"RECO"})})
-  );
-  // Visible evals exclude ELDI
-  var allEvals=allEvalsInternal.filter(function(e){return e.tipo!=="ELDI"});
-
+  // Filter out ELDI from visible stats
+  var visibleEvals=allEvals.filter(function(e){return e.tipo && e.tipo!=="eldi"});
   var nonAdminUsers=users.filter(function(u){return u.role!=="admin"});
   var totalUsers=nonAdminUsers.length;
-  var totalCreditsDeducted=allEvalsInternal.length;
+  // Use ALL evals (including eldi) for credit calculations
+  var totalCreditsDeducted=allEvals.length;
   var neverPurchased=nonAdminUsers.filter(function(u){
-    var userEvals=allEvalsInternal.filter(function(ev){return ev.userId===u._fbId}).length;
+    var userEvals=allEvals.filter(function(ev){return ev.userId===u._fbId}).length;
     var totalEverHad=(u.creditos||0)+userEvals;
     return totalEverHad<=5;
   });
   var totalCreditsPurchased=nonAdminUsers.reduce(function(sum,u){
-    var userEvals=allEvalsInternal.filter(function(ev){return ev.userId===u._fbId}).length;
+    var userEvals=allEvals.filter(function(ev){return ev.userId===u._fbId}).length;
     var totalEverHad=(u.creditos||0)+userEvals;
     return sum+Math.max(0,totalEverHad-5);
   },0);
   var totalRevenue=totalCreditsPurchased*PRICE_PER_CREDIT;
 
-  var getMonthEvals=function(y,m){return allEvals.filter(function(ev){if(!ev.fechaGuardado)return false;var d=new Date(ev.fechaGuardado);return d.getFullYear()===y&&d.getMonth()===m})};
-  var getYearEvals=function(y){return allEvals.filter(function(ev){if(!ev.fechaGuardado)return false;return new Date(ev.fechaGuardado).getFullYear()===y})};
+  var getMonthEvals=function(y,m){return visibleEvals.filter(function(ev){if(!ev.fechaGuardado)return false;var d=new Date(ev.fechaGuardado);return d.getFullYear()===y&&d.getMonth()===m})};
+  var getYearEvals=function(y){return visibleEvals.filter(function(ev){if(!ev.fechaGuardado)return false;return new Date(ev.fechaGuardado).getFullYear()===y})};
 
   var monthEvals=getMonthEvals(selYear,selMonth);
   var yearEvals=getYearEvals(selYear);
-  var typeCounts=function(evs){return{peff:evs.filter(function(e){return e.tipo==="PEFF"}).length,rep:evs.filter(function(e){return e.tipo==="REP"}).length,disc:evs.filter(function(e){return e.tipo==="DISC"}).length,reco:evs.filter(function(e){return e.tipo==="RECO"}).length}};
+  var typeCounts=function(evs){return{peff:evs.filter(function(e){return e.tipo==="peff"}).length,rep:evs.filter(function(e){return e.tipo==="rep"}).length,disc:evs.filter(function(e){return e.tipo==="disc"}).length,reco:evs.filter(function(e){return e.tipo==="reco"}).length}};
   var mc=typeCounts(monthEvals);
   var yc=typeCounts(yearEvals);
+  var peffCount=visibleEvals.filter(function(e){return e.tipo==="peff"}).length;
+  var repCount=visibleEvals.filter(function(e){return e.tipo==="rep"}).length;
+  var discCount=visibleEvals.filter(function(e){return e.tipo==="disc"}).length;
+  var recoCount=visibleEvals.filter(function(e){return e.tipo==="reco"}).length;
 
   var usersCreatedMonth=nonAdminUsers.filter(function(u){if(!u.createdAt)return false;var d=new Date(u.createdAt);return d.getFullYear()===selYear&&d.getMonth()===selMonth});
   var usersCreatedYear=nonAdminUsers.filter(function(u){if(!u.createdAt)return false;return new Date(u.createdAt).getFullYear()===selYear});
@@ -83,7 +67,7 @@ export default function AdminStats({nfy}){
   var nextMonth=function(){if(selMonth===11){setSelMonth(0);setSelYear(function(y){return y+1})}else setSelMonth(function(m){return m+1})};
 
   var monthNames=["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
-  var monthlyData=monthNames.map(function(_,m){var mEvals=getMonthEvals(selYear,m);var tc=typeCounts(mEvals);return{m:m,count:mEvals.length,peff:tc.peff,rep:tc.rep,disc:tc.disc,reco:tc.reco}});
+  var monthlyData=monthNames.map(function(_,m){var mEvals=getMonthEvals(selYear,m);return{m:m,count:mEvals.length}});
   var maxMonthly=Math.max(1,Math.max.apply(null,monthlyData.map(function(d){return d.count})));
 
   var typeColors={PEFF:"#7c3aed",REP:"#2563eb",DISC:"#ea580c",RECO:"#d946ef"};
@@ -106,7 +90,7 @@ export default function AdminStats({nfy}){
     {tab==="resumen"&&<div>
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))",gap:14,marginBottom:24}}>
         <Stat icon="\ud83d\udcb0" label="Ingresos totales" value={fmt$(totalRevenue)} sub={totalCreditsPurchased+" cr\u00e9ditos vendidos"} color="#059669"/>
-        <Stat icon="\ud83d\udcb3" label="Evaluaciones realizadas" value={allEvals.length} sub={"PEFF: "+peff.length+" \u00b7 REP: "+rep.length+" \u00b7 DISC: "+disc.length+" \u00b7 RECO: "+reco.length} color="#7c3aed"/>
+        <Stat icon="\ud83d\udcb3" label="Evaluaciones realizadas" value={visibleEvals.length} sub={"PEFF: "+peffCount+" \u00b7 REP: "+repCount+" \u00b7 DISC: "+discCount+" \u00b7 RECO: "+recoCount} color="#7c3aed"/>
         <Stat icon="\ud83d\udc65" label="Usuarios registrados" value={totalUsers} sub={neverPurchased.length+" nunca compraron"} color="#0d9488"/>
         <Stat icon="\u26a0\ufe0f" label="Sin comprar" value={neverPurchased.length} sub="terminaron demo sin comprar" color="#f59e0b"/>
       </div>
@@ -131,7 +115,7 @@ export default function AdminStats({nfy}){
       </div>
 
       <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10,marginBottom:20}}>
-        {[["PEFF",peff.length,"#7c3aed"],["REP",rep.length,"#2563eb"],["DISC",disc.length,"#ea580c"],["RECO",reco.length,"#d946ef"]].map(function(t){return <div key={t[0]} style={{background:"#fff",borderRadius:10,padding:16,border:"1px solid #e2e8f0",textAlign:"center"}}><div style={{fontSize:24,fontWeight:700,color:t[2]}}>{t[1]}</div><div style={{fontSize:11,color:K.mt,fontWeight:600}}>{t[0]}</div></div>})}
+        {[["PEFF",peffCount,"#7c3aed"],["REP",repCount,"#2563eb"],["DISC",discCount,"#ea580c"],["RECO",recoCount,"#d946ef"]].map(function(t){return <div key={t[0]} style={{background:"#fff",borderRadius:10,padding:16,border:"1px solid #e2e8f0",textAlign:"center"}}><div style={{fontSize:24,fontWeight:700,color:t[2]}}>{t[1]}</div><div style={{fontSize:11,color:K.mt,fontWeight:600}}>{t[0]}</div></div>})}
       </div>
 
       {neverPurchased.length>0&&<div style={{background:"#fffbeb",border:"1px solid #fde68a",borderRadius:12,padding:20}}>
@@ -178,7 +162,7 @@ export default function AdminStats({nfy}){
         <div style={{maxHeight:300,overflowY:"auto"}}>
           {monthEvals.sort(function(a,b){return(b.fechaGuardado||"").localeCompare(a.fechaGuardado||"")}).map(function(ev,i){return <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 0",borderBottom:"1px solid #f1f5f9",fontSize:13}}>
             <div style={{display:"flex",alignItems:"center",gap:10}}>
-              <span style={{background:typeColors[ev.tipo]||"#94a3b8",color:"#fff",padding:"3px 8px",borderRadius:4,fontSize:10,fontWeight:700}}>{ev.tipo}</span>
+              <span style={{background:typeColors[(ev.tipo||"").toUpperCase()]||"#94a3b8",color:"#fff",padding:"3px 8px",borderRadius:4,fontSize:10,fontWeight:700}}>{(ev.tipo||"").toUpperCase()}</span>
               <span style={{fontWeight:600}}>{ev.paciente}</span>
             </div>
             <div style={{fontSize:11,color:K.mt}}>{(ev.evaluador||"?") + " \u00b7 " + (ev.fechaGuardado?fmtDate(ev.fechaGuardado):"")}</div>
