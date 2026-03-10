@@ -54,11 +54,8 @@ export default function App() {
   var _au = useState(undefined), authUser = _au[0], setAuthUser = _au[1];
   var _pr = useState(null), profile = _pr[0], setProfile = _pr[1];
   var _vw = useState("dash"), view = _vw[0], sV = _vw[1];
-  var _ev = useState([]), evals = _ev[0], sE = _ev[1];
-  var _pe = useState([]), peffEvals = _pe[0], sPE = _pe[1];
-  var _re = useState([]), repEvals = _re[0], sRE = _re[1];
-  var _de = useState([]), discEvals = _de[0], sDE = _de[1];
-  var _rce = useState([]), recoEvals = _rce[0], sRCE = _rce[1];
+  // UNIFIED: single allEvals array, filtered by tipo in components
+  var _ae = useState([]), allEvals = _ae[0], setAllEvals = _ae[1];
   var _sl = useState(null), sel = _sl[0], sS = _sl[1];
   var _tt = useState(null), toast = _tt[0], sT = _tt[1];
   var _ld = useState(false), loading = _ld[0], sL = _ld[1];
@@ -77,14 +74,12 @@ export default function App() {
     if(_paymentFlag === "success"){
       nfy("\u2705 \u00a1Pago aprobado! Acreditando cr\u00e9ditos...","ok");
       if(_paymentId){
-        console.log("[payment] Verifying payment_id:", _paymentId, "for uid:", authUser.uid);
         fetch("/api/verify-payment", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ uid: authUser.uid, payment_id: _paymentId }) }).then(function(r){ return r.json(); }).then(function(data){
-          console.log("[payment] verify-payment response:", data);
           if(data.success){ nfy("\u2705 \u00a1"+(data.credits_added||"")+" cr\u00e9ditos acreditados!","ok"); }
           else if(data.already_processed){ nfy("\u2705 Cr\u00e9ditos ya acreditados","ok"); }
           else { nfy("Error verificando pago: "+(data.error||data.status||"desconocido"),"er"); }
           getUserProfile(authUser.uid).then(function(prof){ if(prof) setProfile(prof); });
-        }).catch(function(e){ console.error("[payment] verify-payment error:", e); nfy("Error de conexi\u00f3n al verificar pago","er"); setTimeout(function(){ getUserProfile(authUser.uid).then(function(prof){ if(prof) setProfile(prof); }); },5000); });
+        }).catch(function(e){ nfy("Error de conexi\u00f3n al verificar pago","er"); setTimeout(function(){ getUserProfile(authUser.uid).then(function(prof){ if(prof) setProfile(prof); }); },5000); });
       } else { [3000, 8000, 15000].forEach(function(delay){ setTimeout(function(){ getUserProfile(authUser.uid).then(function(prof){ if(prof) setProfile(prof); }); }, delay); }); }
     } else if(_paymentFlag === "failure"){ nfy("El pago no se complet\u00f3. Intent\u00e1 nuevamente.","er"); }
     else if(_paymentFlag === "pending"){ nfy("\u23f3 Pago pendiente. Los cr\u00e9ditos se acreditar\u00e1n cuando se confirme.","ok"); }
@@ -96,13 +91,23 @@ export default function App() {
     }); return unsub;
   },[]);
 
+  // UNIFIED: load all evals from single collection
   var loadEvals = useCallback(function(){
     if(!profile) return; sL(true);
-    var doLoad = function(){ var p1, p2, p3, p4, p5; if(profile.role==="admin"){ p1=fbGetAll("evaluaciones"); p2=fbGetAll("peff_evaluaciones"); p3=fbGetAll("rep_evaluaciones"); p4=fbGetAll("disc_evaluaciones"); p5=fbGetAll("reco_evaluaciones"); } else { p1=fbGetFiltered("evaluaciones",authUser.uid); p2=fbGetFiltered("peff_evaluaciones",authUser.uid); p3=fbGetFiltered("rep_evaluaciones",authUser.uid); p4=fbGetFiltered("disc_evaluaciones",authUser.uid); p5=fbGetFiltered("reco_evaluaciones",authUser.uid); } return Promise.all([p1,p2,p3,p4,p5]); };
-    doLoad().then(function(res){ var sortFn = function(a,b){return(b.fechaGuardado||"").localeCompare(a.fechaGuardado||"")}; sE(res[0].sort(sortFn)); sPE(res[1].sort(sortFn)); sRE(res[2].sort(sortFn)); sDE(res[3].sort(sortFn)); sRCE(res[4].sort(sortFn)); }).catch(function(e){console.error(e)}).finally(function(){sL(false)});
+    var p = profile.role==="admin" ? fbGetAll("evaluaciones") : fbGetFiltered("evaluaciones",authUser.uid);
+    p.then(function(res){
+      var sortFn = function(a,b){return(b.fechaGuardado||"").localeCompare(a.fechaGuardado||"")};
+      setAllEvals(res.sort(sortFn));
+    }).catch(function(e){console.error(e)}).finally(function(){sL(false)});
   },[profile,authUser]);
 
   useEffect(function(){ if(profile && !sessionBlocked) loadEvals(); },[profile,loadEvals,sessionBlocked]);
+
+  // Derived filtered arrays for components that need them
+  var peffEvals = allEvals.filter(function(e){return e.tipo==="peff"});
+  var repEvals = allEvals.filter(function(e){return e.tipo==="rep"});
+  var discEvals = allEvals.filter(function(e){return e.tipo==="disc"});
+  var recoEvals = allEvals.filter(function(e){return e.tipo==="reco"});
 
   var goToPremium = function(){ sV("premium"); sS(null); window.scrollTo({top:0,behavior:"smooth"}); };
   var navTo = function(v){ if((view==="newELDI"||view==="newPEFF"||view==="newREP"||view==="newDISC"||view==="newRECO") && v!==view){ if(!window.confirm("\u00bfSalir de la evaluaci\u00f3n?\n\nLa evaluaci\u00f3n no se guarda a medias y el cr\u00e9dito consumido no se recupera.")) return; } sV(v); sS(null); window.scrollTo({top:0,behavior:"smooth"}); };
@@ -110,15 +115,17 @@ export default function App() {
   var deductCredit = function(){ if(!profile || profile.role==="admin") return Promise.resolve(true); var userRef = doc(db,"usuarios",authUser.uid); return updateDoc(userRef,{creditos:increment(-1)}).then(function(){ return getDoc(userRef); }).then(function(fresh){ if(fresh.exists()){ var newCredits = fresh.data().creditos; setProfile(function(p){return Object.assign({},p,{creditos:newCredits})}); } return true; }).catch(function(e){ nfy("Error al descontar cr\u00e9dito: " + e.message, "er"); return false; }); };
   var startEval = function(toolId){ if(!checkCredits()) return; if(!isAdmin){ var ok = window.confirm("\u00bfIniciar evaluaci\u00f3n?\n\nSe consumir\u00e1 1 cr\u00e9dito de tu cuenta. Esta acci\u00f3n no se puede deshacer."); if(!ok) return; deductCredit().then(function(success){ if(success){ sV(toolId); } }); } else { sV(toolId); } };
 
-  var saveEval = function(ev){ if(ev === "tools"){ sV("tools"); sS(null); loadEvals(); window.scrollTo({top:0,behavior:"smooth"}); return; } var rspClean = {}; if(ev.rsp){ Object.entries(ev.rsp).forEach(function(e){ if(e[1]===true)rspClean[e[0]]=true; else if(e[1]===false)rspClean[e[0]]=false; }); } var newEv = { id:Date.now()+"", userId:authUser.uid, paciente:ev.pN, pacienteDni:ev.dni||"", fechaNacimiento:ev.birth, fechaEvaluacion:ev.eD, establecimiento:ev.sch, derivadoPor:ev.ref, edadMeses:ev.a, evalRec:ev.evalRec||false, evalExp:ev.evalExp||false, brutoReceptivo:ev.rR, brutoExpresivo:ev.rE, recRes:ev.recRes||null, expRes:ev.expRes||null, allNoEval:ev.allNoEval||[], observaciones:ev.obs||"", evaluador:profile?.nombre?(profile.nombre+" "+profile.apellido):(profile?.username||""), fechaGuardado:new Date().toISOString(), respuestas:rspClean }; fbAdd("evaluaciones",newEv).then(function(res){ if(res.success){ nfy("ELDI guardada","ok"); loadEvals(); } else nfy("Error: "+res.error,"er"); sV("dash"); }); };
-  var savePeff = function(data){ if(data === "tools"){ sV("tools"); sS(null); loadEvals(); window.scrollTo({top:0,behavior:"smooth"}); return; } var payload = Object.assign({ id:Date.now()+"", userId:authUser.uid, evaluador:profile?.nombre?(profile.nombre+" "+profile.apellido):(profile?.username||""), fechaGuardado:new Date().toISOString() }, data); fbAdd("peff_evaluaciones",payload).then(function(res){ if(res.success){ nfy("PEFF guardada","ok"); loadEvals(); } else nfy("Error: "+res.error,"er"); sV("dash"); }); };
-  var saveRep = function(data){ if(data === "tools"){ sV("tools"); sS(null); loadEvals(); window.scrollTo({top:0,behavior:"smooth"}); return; } var payload = Object.assign({ id:Date.now()+"", userId:authUser.uid, evaluador:profile?.nombre?(profile.nombre+" "+profile.apellido):(profile?.username||""), fechaGuardado:new Date().toISOString() }, data); fbAdd("rep_evaluaciones",payload).then(function(res){ if(res.success){ nfy("Rep. Palabras guardada","ok"); loadEvals(); } else nfy("Error: "+res.error,"er"); sV("dash"); }); };
-  var saveDisc = function(data){ if(data === "tools"){ sV("tools"); sS(null); loadEvals(); window.scrollTo({top:0,behavior:"smooth"}); return; } var payload = Object.assign({ id:Date.now()+"", userId:authUser.uid, evaluador:profile?.nombre?(profile.nombre+" "+profile.apellido):(profile?.username||""), fechaGuardado:new Date().toISOString() }, data); fbAdd("disc_evaluaciones",payload).then(function(res){ if(res.success){ nfy("Disc. Fonol\u00f3gica guardada","ok"); loadEvals(); } else nfy("Error: "+res.error,"er"); sV("dash"); }); };
-  var saveReco = function(data){ if(data === "tools"){ sV("tools"); sS(null); loadEvals(); window.scrollTo({top:0,behavior:"smooth"}); return; } var payload = Object.assign({ id:Date.now()+"", userId:authUser.uid, evaluador:profile?.nombre?(profile.nombre+" "+profile.apellido):(profile?.username||""), fechaGuardado:new Date().toISOString() }, data); fbAdd("reco_evaluaciones",payload).then(function(res){ if(res.success){ nfy("Reco. Fonol\u00f3gico guardada","ok"); loadEvals(); } else nfy("Error: "+res.error,"er"); sV("dash"); }); };
+  // UNIFIED: all save functions just navigate to tools (New* components save directly to 'evaluaciones')
+  var navToTools = function(data){ if(data === "tools"){ sV("tools"); sS(null); loadEvals(); window.scrollTo({top:0,behavior:"smooth"}); return; } };
+  var saveEval = navToTools;
+  var savePeff = navToTools;
+  var saveRep = navToTools;
+  var saveDisc = navToTools;
+  var saveReco = navToTools;
 
-  var deleteEval = function(fbId, colName){
-    colName = colName || "evaluaciones";
-    fbDelete(colName,fbId).then(function(res){
+  // UNIFIED: always delete from 'evaluaciones'
+  var deleteEval = function(fbId){
+    fbDelete("evaluaciones",fbId).then(function(res){
       if(res.success){ nfy("Evaluaci\u00f3n eliminada","ok"); loadEvals(); } else nfy("Error: "+res.error,"er");
       sS(null); sV("hist");
     });
@@ -146,21 +153,20 @@ export default function App() {
       </aside>
       <main id="main-scroll" style={{flex:1,overflowY:"auto",overflowX:"hidden",padding:mobile?"16px":"28px 36px",height:"100vh"}}>
         {toast&&<div style={{position:"fixed",top:16,right:16,zIndex:999,background:toast.t==="ok"?"#059669":"#dc2626",color:"#fff",padding:"10px 18px",borderRadius:8,fontSize:13,fontWeight:500,boxShadow:"0 4px 16px rgba(0,0,0,.15)",animation:"fi .3s ease"}}>{toast.m}</div>}
-        {view==="dash"&&<Dashboard es={evals} pe={peffEvals} re={repEvals} de={discEvals} rce={recoEvals} onT={function(){navTo("tools")}} onV={function(e){sS(e);sV("rpt")}} onVP={function(e){sS(e);sV("rptP")}} ld={loading} profile={profile} isAdmin={isAdmin} userId={authUser?.uid} nfy={nfy} onCalendar={function(){navTo("calendario")}} onStartEval={startEval} onBuyCredits={goToPremium} />}
+        {view==="dash"&&<Dashboard allEvals={allEvals} onT={function(){navTo("tools")}} onView={function(e){ sS(e); var t=e.tipo||"peff"; if(t==="peff")sV("rptP"); else if(t==="rep")sV("rptR"); else if(t==="disc")sV("rptD"); else if(t==="reco")sV("rptRC"); else sV("rptP"); }} ld={loading} profile={profile} isAdmin={isAdmin} userId={authUser?.uid} nfy={nfy} onCalendar={function(){navTo("calendario")}} onStartEval={startEval} onBuyCredits={goToPremium} />}
         {view==="tools"&&<Tools onSel={startEval} credits={isAdmin?999:(profile.creditos||0)} onBuy={goToPremium} />}
         {view==="newELDI"&&<NewELDI onS={saveEval} nfy={nfy} userId={authUser?.uid} />}
         {view==="newPEFF"&&<NewPEFF onS={savePeff} nfy={nfy} userId={authUser?.uid} />}
         {view==="newREP"&&<NewREP onS={saveRep} nfy={nfy} userId={authUser?.uid} />}
         {view==="newDISC"&&<NewDISC onS={saveDisc} nfy={nfy} userId={authUser?.uid} />}
         {view==="newRECO"&&<NewRECO onS={saveReco} nfy={nfy} userId={authUser?.uid} />}
-        {view==="hist"&&<Hist es={evals} pe={peffEvals} re={repEvals} de={discEvals} rce={recoEvals} onV={function(e){sS(e);sV("rpt")}} onVP={function(e){sS(e);sV("rptP")}} onVR={function(e){sS(e);sV("rptR")}} onVD={function(e){sS(e);sV("rptD")}} onVRC={function(e){sS(e);sV("rptRC")}} isA={isAdmin} onD={deleteEval} />}
-        {view==="rpt"&&sel&&<RptELDI ev={sel} onD={deleteEval} />}
+        {view==="hist"&&<Hist allEvals={allEvals} onView={function(e){ sS(e); var t=e.tipo||"peff"; if(t==="peff")sV("rptP"); else if(t==="rep")sV("rptR"); else if(t==="disc")sV("rptD"); else if(t==="reco")sV("rptRC"); else sV("rptP"); }} isA={isAdmin} onD={deleteEval} />}
         {view==="rptP"&&sel&&<RptPEFF ev={sel} onD={deleteEval} />}
         {view==="rptR"&&sel&&<RptREP ev={sel} onD={deleteEval} />}
         {view==="rptD"&&sel&&<RptDISC ev={sel} onD={deleteEval} />}
         {view==="rptRC"&&sel&&<RptRECO ev={sel} onD={deleteEval} />}
         {view==="profile"&&<ProfilePage profile={profile} authUser={authUser} nfy={nfy} onBuyCredits={goToPremium} />}
-        {view==="pacientes"&&<PacientesPage userId={authUser?.uid} nfy={nfy} evals={evals} peffEvals={peffEvals} repEvals={repEvals} discEvals={discEvals} recoEvals={recoEvals} />}
+        {view==="pacientes"&&<PacientesPage userId={authUser?.uid} nfy={nfy} allEvals={allEvals} />}
         {view==="calendario"&&<CalendarPage userId={authUser?.uid} nfy={nfy} />}
         {view==="premium"&&<PremiumPage profile={profile} authUser={authUser} nfy={nfy} onBack={function(){sV("dash")}} />}
         {view==="adm"&&isAdmin&&<Admin nfy={nfy} />}

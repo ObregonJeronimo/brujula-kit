@@ -2,27 +2,28 @@ import { useState } from "react";
 var K = { mt: "#64748b" };
 var fa = function(m){ return Math.floor(m/12)+" años, "+(m%12)+" meses"; };
 
-export default function Hist({ es, pe, re, de, rce, onV, onVP, onVR, onVD, onVRC, isA, onD }) {
+export default function Hist({ allEvals, onView, isA, onD }) {
   var _q = useState(""), q = _q[0], sQ = _q[1];
   var _tab = useState("all"), tab = _tab[0], sTab = _tab[1];
   var _cf = useState(null), cf = _cf[0], sC = _cf[1];
-  var discEvals = (de || []).map(function(e){ return Object.assign({}, e, { _t: "disc" }); });
-  var repEvals = (re || []).map(function(e){ return Object.assign({}, e, { _t: "rep" }); });
-  var recoEvals = (rce || []).map(function(e){ return Object.assign({}, e, { _t: "reco" }); });
-  var all = [].concat(
-    pe.map(function(e){ return Object.assign({}, e, { _t: "peff" }); }),
-    repEvals,
-    discEvals,
-    recoEvals
-  ).sort(function(a, b){ return (b.fechaGuardado || "").localeCompare(a.fechaGuardado || ""); });
+
+  // Filter out ELDI (hidden) and sort
+  var all = (allEvals || []).filter(function(e){ return e.tipo && e.tipo !== "eldi"; })
+    .sort(function(a, b){ return (b.fechaGuardado || "").localeCompare(a.fechaGuardado || ""); });
+
   var f = all.filter(function(e){
     if(q && !(e.paciente || "").toLowerCase().includes(q.toLowerCase())) return false;
-    if(tab === "peff" && e._t !== "peff") return false;
-    if(tab === "rep" && e._t !== "rep") return false;
-    if(tab === "disc" && e._t !== "disc") return false;
-    if(tab === "reco" && e._t !== "reco") return false;
+    if(tab !== "all" && e.tipo !== tab) return false;
     return true;
   });
+
+  var typeStyle = function(tipo){
+    if(tipo==="reco") return { b:"#f3e8ff", c:"#9333ea", l:"RECO" };
+    if(tipo==="disc") return { b:"#fef3c7", c:"#d97706", l:"DISC" };
+    if(tipo==="rep") return { b:"#dbeafe", c:"#2563eb", l:"REP" };
+    return { b:"#ede9fe", c:"#7c3aed", l:"PEFF" };
+  };
+
   return (
     <div style={{width:"100%",animation:"fi .3s ease"}}>
       <h1 style={{fontSize:22,fontWeight:700,marginBottom:6}}>Historial</h1>
@@ -37,16 +38,10 @@ export default function Hist({ es, pe, re, de, rce, onV, onVP, onVR, onVD, onVRC
       {f.length === 0 ? <div style={{background:"#fff",borderRadius:12,padding:40,textAlign:"center",border:"1px solid #e2e8f0",color:K.mt}}>Sin resultados.</div> :
         <div style={{display:"flex",flexDirection:"column",gap:6}}>
           {f.map(function(ev){
-            var isP = ev._t === "peff";
-            var isR = ev._t === "rep";
-            var isD = ev._t === "disc";
-            var isRC = ev._t === "reco";
-            var bg = isRC ? { b:"#f3e8ff", c:"#9333ea", l:"RECO" } : isD ? { b:"#fef3c7", c:"#d97706", l:"DISC" } : isR ? { b:"#dbeafe", c:"#2563eb", l:"REP" } : { b:"#ede9fe", c:"#7c3aed", l:"PEFF" };
-            var colName = isRC ? "reco_evaluaciones" : isD ? "disc_evaluaciones" : isR ? "rep_evaluaciones" : "peff_evaluaciones";
-            var viewFn = isRC ? onVRC : isD ? onVD : isR ? onVR : onVP;
+            var bg = typeStyle(ev.tipo);
             return (
               <div key={ev._fbId||ev.id} style={{background:"#fff",borderRadius:10,padding:"14px 20px",border:"1px solid #e2e8f0",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-                <div onClick={function(){if(viewFn)viewFn(ev)}} style={{cursor:"pointer",flex:1}}>
+                <div onClick={function(){if(onView)onView(ev)}} style={{cursor:"pointer",flex:1}}>
                   <div style={{display:"flex",alignItems:"center",gap:8}}>
                     <span style={{padding:"2px 8px",borderRadius:4,background:bg.b,color:bg.c,fontSize:10,fontWeight:700}}>{bg.l}</span>
                     <span style={{fontWeight:600,fontSize:15}}>{ev.paciente}</span>
@@ -56,14 +51,14 @@ export default function Hist({ es, pe, re, de, rce, onV, onVP, onVR, onVD, onVRC
                   </div>
                 </div>
                 <div style={{display:"flex",alignItems:"center",gap:10}}>
-                  {(isP||isR||isD||isRC) && ev.resultados && <span style={{padding:"3px 10px",borderRadius:14,background:bg.b,color:bg.c,fontSize:12,fontWeight:600}}>{ev.resultados.severity||(ev.resultados.pct+"%")}</span>}
+                  {ev.resultados && <span style={{padding:"3px 10px",borderRadius:14,background:bg.b,color:bg.c,fontSize:12,fontWeight:600}}>{ev.resultados.severity||(ev.resultados.pct+"%")}</span>}
                   {isA && (cf === (ev._fbId||ev.id) ?
                     <div style={{display:"flex",gap:4}}>
-                      <button onClick={function(){onD(ev._fbId, colName); sC(null);}} style={{background:"#dc2626",color:"#fff",border:"none",padding:"5px 10px",borderRadius:5,fontSize:11,cursor:"pointer",fontWeight:600}}>¿Sí?</button>
+                      <button onClick={function(){onD(ev._fbId); sC(null);}} style={{background:"#dc2626",color:"#fff",border:"none",padding:"5px 10px",borderRadius:5,fontSize:11,cursor:"pointer",fontWeight:600}}>¿Sí?</button>
                       <button onClick={function(){sC(null)}} style={{background:"#f1f5f9",border:"none",padding:"5px 10px",borderRadius:5,fontSize:11,cursor:"pointer"}}>No</button>
                     </div> :
                     <button onClick={function(){sC(ev._fbId||ev.id)}} style={{background:"#fef2f2",color:"#dc2626",border:"1px solid #fecaca",padding:"5px 10px",borderRadius:6,cursor:"pointer",fontSize:11}}>🗑</button>)}
-                  <span onClick={function(){if(viewFn)viewFn(ev)}} style={{color:"#94a3b8",cursor:"pointer"}}>→</span>
+                  <span onClick={function(){if(onView)onView(ev)}} style={{color:"#94a3b8",cursor:"pointer"}}>→</span>
                 </div>
               </div>);
           })}
