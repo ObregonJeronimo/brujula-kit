@@ -3,7 +3,7 @@ import { DISC_PAIRS, CONTRASTS } from "../data/discFonData.js";
 import AIReportPanel from "./AIReportPanel.jsx";
 
 var K = { sd:"#0a3d2f", ac:"#0d9488", mt:"#64748b", bd:"#e2e8f0" };
-function ageLabel(m){ return Math.floor(m/12)+" a\u00f1os, "+(m%12)+" meses"; }
+function ageLabel(m){ return Math.floor(m/12)+" años, "+(m%12)+" meses"; }
 
 export default function RptDISC({ ev, onD }){
   var _cd = useState(false), cd = _cd[0], sCD = _cd[1];
@@ -51,14 +51,14 @@ export default function RptDISC({ ev, onD }){
   return (
     <div style={{animation:"fi .3s ease",maxWidth:900,margin:"0 auto"}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20,flexWrap:"wrap",gap:12}}>
-        <h1 style={{fontSize:20,fontWeight:700}}>{"\ud83d\udc42 Discriminaci\u00f3n Fonol\u00f3gica"}</h1>
+        <h1 style={{fontSize:20,fontWeight:700}}>{"\ud83d\udc42 Discriminación Fonológica"}</h1>
         <div style={{display:"flex",gap:8}}>
           {cd
             ?<div style={{background:"#fef2f2",border:"1px solid #fecaca",borderRadius:10,padding:"14px 20px",display:"flex",flexDirection:"column",alignItems:"center",gap:10}}>
-              <div style={{fontSize:13,fontWeight:600,color:"#dc2626",textAlign:"center"}}>{"\u00bfEst\u00e1 seguro que desea eliminar?"}</div>
-              <div style={{fontSize:12,color:"#64748b",textAlign:"center"}}>{"Esta acci\u00f3n es irreversible"}</div>
+              <div style={{fontSize:13,fontWeight:600,color:"#dc2626",textAlign:"center"}}>{"¿Está seguro que desea eliminar?"}</div>
+              <div style={{fontSize:12,color:"#64748b",textAlign:"center"}}>{"Esta acción es irreversible"}</div>
               <div style={{display:"flex",gap:8}}>
-                <button onClick={function(){onD(ev._fbId,"disc_evaluaciones")}} style={{background:"#dc2626",color:"#fff",border:"none",padding:"8px 20px",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer"}}>{"S\u00ed, eliminar"}</button>
+                <button onClick={function(){onD(ev._fbId)}} style={{background:"#dc2626",color:"#fff",border:"none",padding:"8px 20px",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer"}}>{"Sí, eliminar"}</button>
                 <button onClick={function(){sCD(false)}} style={{background:"#f1f5f9",border:"1px solid #e2e8f0",padding:"8px 20px",borderRadius:8,fontSize:13,cursor:"pointer",color:"#64748b"}}>Cancelar</button>
               </div>
             </div>
@@ -68,23 +68,23 @@ export default function RptDISC({ ev, onD }){
       </div>
 
       {/* AI Report Panel */}
-      <AIReportPanel ev={ev} evalType="disc" collectionName="disc_evaluaciones" evalLabel="Disc. Fonol\u00f3gica (PEFF-R 3.4)" />
+      <AIReportPanel ev={ev} evalType="disc" collectionName="evaluaciones" evalLabel="Disc. Fonológica (PEFF-R 3.4)" />
 
       {/* Technical Data Toggle */}
       <button onClick={function(){ setShowTech(!showTech); }} style={{width:"100%",padding:"14px",background:showTech?"#f1f5f9":"#0a3d2f",color:showTech?"#1e293b":"#fff",border:"1px solid #e2e8f0",borderRadius:10,fontSize:14,fontWeight:600,cursor:"pointer",marginBottom:showTech?16:20}}>
-        {showTech ? "\u25b2 Ocultar datos t\u00e9cnicos" : "\u25bc Ver datos t\u00e9cnicos de la evaluaci\u00f3n"}
+        {showTech ? "\u25b2 Ocultar datos técnicos" : "\u25bc Ver datos técnicos de la evaluación"}
       </button>
 
       {showTech && <div ref={printRef} style={{background:"#fff",borderRadius:12,border:"1px solid "+K.bd,padding:28}}>
         <div style={{display:"flex",justifyContent:"flex-end",marginBottom:16}}>
-          <button onClick={handlePDF} style={{padding:"9px 18px",background:K.ac,color:"#fff",border:"none",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer"}}>{"\ud83d\udcc4 PDF datos t\u00e9cnicos"}</button>
+          <button onClick={handlePDF} style={{padding:"9px 18px",background:K.ac,color:"#fff",border:"none",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer"}}>{"\ud83d\udcc4 PDF datos técnicos"}</button>
         </div>
         {/* Patient info */}
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:20,paddingBottom:16,borderBottom:"2px solid "+K.bd}}>
           <div>
-            <div style={{fontSize:10,color:K.mt,fontWeight:600,textTransform:"uppercase",letterSpacing:1}}>{"Discriminaci\u00f3n Fonol\u00f3gica \u2014 PEFF-R 3.4"}</div>
+            <div style={{fontSize:10,color:K.mt,fontWeight:600,textTransform:"uppercase",letterSpacing:1}}>{"Discriminación Fonológica — PEFF-R 3.4"}</div>
             <div style={{fontSize:18,fontWeight:700,marginTop:4}}>{ev.paciente}</div>
-            <div style={{fontSize:13,color:K.mt,marginTop:2}}>{"DNI: "+(ev.pacienteDni||"N/A")+" \u00b7 Edad: "+ageLabel(ev.edadMeses||0)}</div>
+            <div style={{fontSize:13,color:K.mt,marginTop:2}}>{"DNI: "+(ev.pacienteDni||"N/A")+" · Edad: "+ageLabel(ev.edadMeses||0)}</div>
             {ev.derivadoPor && <div style={{fontSize:12,color:K.mt,marginTop:2}}>{"Derivado por: "+ev.derivadoPor}</div>}
           </div>
           <div style={{textAlign:"right"}}>
@@ -114,8 +114,8 @@ export default function RptDISC({ ev, onD }){
         <h3 style={{fontSize:14,fontWeight:700,marginBottom:8}}>{"Detalle de respuestas"}</h3>
         <table style={{width:"100%",borderCollapse:"collapse",fontSize:12,marginBottom:20}}>
           <thead><tr style={{borderBottom:"2px solid "+K.bd,background:"#f8fafc"}}>
-            <th style={{textAlign:"center",padding:"6px 8px",color:K.mt,width:36}}>{"N\u00b0"}</th>
-            <th style={{textAlign:"left",padding:"6px 8px",color:K.mt}}>{"Oposici\u00f3n"}</th>
+            <th style={{textAlign:"center",padding:"6px 8px",color:K.mt,width:36}}>{"N°"}</th>
+            <th style={{textAlign:"left",padding:"6px 8px",color:K.mt}}>{"Oposición"}</th>
             <th style={{textAlign:"center",padding:"6px",color:K.mt,width:50}}>{"Clave"}</th>
             <th style={{textAlign:"center",padding:"6px",color:K.mt,width:50}}>{"Resp."}</th>
             <th style={{textAlign:"center",padding:"6px",color:K.mt,width:70}}>{"Resultado"}</th>
@@ -129,7 +129,7 @@ export default function RptDISC({ ev, onD }){
               var noResp = r === undefined;
               return <tr key={pair.id} style={{borderBottom:"1px solid #f1f5f9",background:noResp?"#fffbeb":isCorrect?"#f0fdf4":"#fef2f2"}}>
                 <td style={{textAlign:"center",padding:"6px 8px",fontWeight:700,color:K.mt}}>{pair.id}</td>
-                <td style={{padding:"6px 8px",fontWeight:500}}>{pair.word1+" \u2014 "+pair.word2}</td>
+                <td style={{padding:"6px 8px",fontWeight:500}}>{pair.word1+" — "+pair.word2}</td>
                 <td style={{textAlign:"center",padding:"6px",fontWeight:700,color:pair.clave==="I"?"#2563eb":"#be185d"}}>{pair.clave}</td>
                 <td style={{textAlign:"center",padding:"6px",fontWeight:700,color:r==="I"?"#2563eb":r==="D"?"#be185d":"#94a3b8"}}>{r||"\u2014"}</td>
                 <td style={{textAlign:"center",padding:"6px"}}>
@@ -145,7 +145,7 @@ export default function RptDISC({ ev, onD }){
 
         {/* Error analysis */}
         {res.errors && res.errors.length > 0 && <div style={{marginBottom:20}}>
-          <h3 style={{fontSize:14,fontWeight:700,color:"#dc2626",marginBottom:8}}>{"\u26a0 An\u00e1lisis de errores ("+res.errors.length+")"}</h3>
+          <h3 style={{fontSize:14,fontWeight:700,color:"#dc2626",marginBottom:8}}>{"\u26a0 Análisis de errores ("+res.errors.length+")"}</h3>
           <table style={{width:"100%",borderCollapse:"collapse",fontSize:11}}>
             <thead><tr style={{borderBottom:"2px solid "+K.bd,background:"#fef2f2"}}>
               <th style={{textAlign:"left",padding:"5px 8px",color:K.mt}}>{"Par"}</th>
@@ -156,7 +156,7 @@ export default function RptDISC({ ev, onD }){
             <tbody>
               {res.errors.map(function(e){
                 return <tr key={e.id} style={{borderBottom:"1px solid #f1f5f9"}}>
-                  <td style={{padding:"5px 8px",fontWeight:600}}>{e.word1+" \u2014 "+e.word2}</td>
+                  <td style={{padding:"5px 8px",fontWeight:600}}>{e.word1+" — "+e.word2}</td>
                   <td style={{textAlign:"center",padding:"5px",fontWeight:700}}>{e.clave}</td>
                   <td style={{textAlign:"center",padding:"5px",fontWeight:700,color:"#dc2626"}}>{e.respuesta}</td>
                   <td style={{padding:"5px 8px",color:K.mt}}>{e.contrast ? e.contrast.f1+" vs "+e.contrast.f2+" ("+e.contrast.desc+")" : "\u2014"}</td>
@@ -168,7 +168,7 @@ export default function RptDISC({ ev, onD }){
 
         {/* Perceptive-phonological profile */}
         {res.errorsByContrast && Object.keys(res.errorsByContrast).length > 0 && <div style={{marginBottom:20}}>
-          <h3 style={{fontSize:14,fontWeight:700,color:"#7c3aed",marginBottom:8}}>{"Perfil perceptivo-fonol\u00f3gico"}</h3>
+          <h3 style={{fontSize:14,fontWeight:700,color:"#7c3aed",marginBottom:8}}>{"Perfil perceptivo-fonológico"}</h3>
           <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
             {Object.entries(res.errorsByContrast).map(function(entry){
               var key=entry[0], data=entry[1];
@@ -182,12 +182,12 @@ export default function RptDISC({ ev, onD }){
 
         {res.errors && res.errors.length === 0 && <div style={{background:"#dcfce7",borderRadius:12,padding:20,marginBottom:16,textAlign:"center"}}>
           <span style={{fontSize:24}}>{"\u2705"}</span>
-          <p style={{fontSize:14,fontWeight:600,color:"#059669",marginTop:8}}>{"Discriminaci\u00f3n fonol\u00f3gica adecuada."}</p>
+          <p style={{fontSize:14,fontWeight:600,color:"#059669",marginTop:8}}>{"Discriminación fonológica adecuada."}</p>
         </div>}
 
         {/* Clinical interpretation */}
         <div style={{background:"#f0f9ff",border:"1px solid #bae6fd",borderRadius:10,padding:14,marginBottom:20,fontSize:12,color:"#0369a1",lineHeight:1.6}}>
-          <strong>{"\u2139\ufe0f Criterios de clasificaci\u00f3n:"}</strong><br/>
+          <strong>{"\u2139\ufe0f Criterios de clasificación:"}</strong><br/>
           {"Adecuado: \u226595% \u00b7 Leve: 80-94% \u00b7 Moderado: 60-79% \u00b7 Severo: <60%"}
         </div>
 
@@ -197,7 +197,7 @@ export default function RptDISC({ ev, onD }){
         </div>}
 
         <div style={{marginTop:24,paddingTop:12,borderTop:"1px solid "+K.bd,fontSize:10,color:"#94a3b8",textAlign:"center"}}>
-          {"Br\u00fajula KIT \u2014 Disc. Fonol\u00f3gica (PEFF-R 3.4) \u2014 Generado el "+new Date().toLocaleDateString("es-AR")}
+          {"Brújula KIT — Disc. Fonológica (PEFF-R 3.4) — Generado el "+new Date().toLocaleDateString("es-AR")}
         </div>
       </div>}
     </div>

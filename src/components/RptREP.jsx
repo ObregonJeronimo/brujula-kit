@@ -2,9 +2,9 @@ import { useState, useRef } from "react";
 import AIReportPanel from "./AIReportPanel.jsx";
 
 var K = { sd:"#0a3d2f", ac:"#0d9488", mt:"#64748b", bd:"#e2e8f0" };
-function ageLabel(m){ return Math.floor(m/12)+" a\u00f1os, "+(m%12)+" meses"; }
+function ageLabel(m){ return Math.floor(m/12)+" años, "+(m%12)+" meses"; }
 var posLabels = {ISPP:"ISPP",ISIP:"ISIP",CSIP:"CSIP",CSFP:"CSFP"};
-var posFull = {ISPP:"Inicio s\u00edl. \u2014 Pos. palabra",ISIP:"Inicio s\u00edl. \u2014 Int. palabra",CSIP:"Coda s\u00edl. \u2014 Int. palabra",CSFP:"Coda s\u00edl. \u2014 Final palabra"};
+var posFull = {ISPP:"Inicio síl. — Pos. palabra",ISIP:"Inicio síl. — Int. palabra",CSIP:"Coda síl. — Int. palabra",CSFP:"Coda síl. — Final palabra"};
 
 export default function RptREP({ ev, onD }){
   var _cf = useState(false), confirmDel = _cf[0], sCf = _cf[1];
@@ -60,10 +60,10 @@ export default function RptREP({ ev, onD }){
         <div style={{display:"flex",gap:8}}>
           {confirmDel
             ?<div style={{background:"#fef2f2",border:"1px solid #fecaca",borderRadius:10,padding:"14px 20px",display:"flex",flexDirection:"column",alignItems:"center",gap:10}}>
-              <div style={{fontSize:13,fontWeight:600,color:"#dc2626",textAlign:"center"}}>{"\u00bfEst\u00e1 seguro que desea eliminar?"}</div>
-              <div style={{fontSize:12,color:"#64748b",textAlign:"center"}}>{"Esta acci\u00f3n es irreversible"}</div>
+              <div style={{fontSize:13,fontWeight:600,color:"#dc2626",textAlign:"center"}}>{"¿Está seguro que desea eliminar?"}</div>
+              <div style={{fontSize:12,color:"#64748b",textAlign:"center"}}>{"Esta acción es irreversible"}</div>
               <div style={{display:"flex",gap:8}}>
-                <button onClick={function(){onD(ev._fbId,"rep_evaluaciones")}} style={{background:"#dc2626",color:"#fff",border:"none",padding:"8px 20px",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer"}}>{"S\u00ed, eliminar"}</button>
+                <button onClick={function(){onD(ev._fbId)}} style={{background:"#dc2626",color:"#fff",border:"none",padding:"8px 20px",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer"}}>{"Sí, eliminar"}</button>
                 <button onClick={function(){sCf(false)}} style={{background:"#f1f5f9",border:"1px solid #e2e8f0",padding:"8px 20px",borderRadius:8,fontSize:13,cursor:"pointer",color:"#64748b"}}>Cancelar</button>
               </div>
             </div>
@@ -73,23 +73,23 @@ export default function RptREP({ ev, onD }){
       </div>
 
       {/* AI REPORT (auto-generates) */}
-      <AIReportPanel ev={ev} evalType="rep" collectionName="rep_evaluaciones" evalLabel="Rep. Palabras (PEFF 3.2)" />
+      <AIReportPanel ev={ev} evalType="rep" collectionName="evaluaciones" evalLabel="Rep. Palabras (PEFF 3.2)" />
 
       {/* TECHNICAL DATA TOGGLE */}
       <button onClick={function(){ setShowTech(!showTech); }} style={{width:"100%",padding:"14px",background:showTech?"#f1f5f9":"#0a3d2f",color:showTech?"#1e293b":"#fff",border:"1px solid #e2e8f0",borderRadius:10,fontSize:14,fontWeight:600,cursor:"pointer",marginBottom:showTech?16:20}}>
-        {showTech ? "\u25b2 Ocultar datos t\u00e9cnicos" : "\u25bc Ver datos t\u00e9cnicos de la evaluaci\u00f3n"}
+        {showTech ? "\u25b2 Ocultar datos técnicos" : "\u25bc Ver datos técnicos de la evaluación"}
       </button>
 
       {/* TECHNICAL DETAILS */}
       {showTech && <div ref={printRef} style={{background:"#fff",borderRadius:12,border:"1px solid "+K.bd,padding:28,marginBottom:20}}>
         <div style={{display:"flex",justifyContent:"flex-end",marginBottom:16}}>
-          <button onClick={handlePDF} style={{padding:"9px 18px",background:K.ac,color:"#fff",border:"none",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer"}}>{"\ud83d\udcc4 PDF datos t\u00e9cnicos"}</button>
+          <button onClick={handlePDF} style={{padding:"9px 18px",background:K.ac,color:"#fff",border:"none",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer"}}>{"\ud83d\udcc4 PDF datos técnicos"}</button>
         </div>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:20,paddingBottom:16,borderBottom:"2px solid "+K.bd}}>
           <div>
-            <div style={{fontSize:10,color:K.mt,fontWeight:600,textTransform:"uppercase",letterSpacing:1}}>{"Repetici\u00f3n de Palabras \u2014 PEFF 3.2"}</div>
+            <div style={{fontSize:10,color:K.mt,fontWeight:600,textTransform:"uppercase",letterSpacing:1}}>{"Repetición de Palabras — PEFF 3.2"}</div>
             <div style={{fontSize:18,fontWeight:700,marginTop:4}}>{ev.paciente}</div>
-            <div style={{fontSize:13,color:K.mt,marginTop:2}}>{"DNI: "+(ev.pacienteDni||"N/A")+" \u00b7 Edad: "+ageLabel(patientAge)}</div>
+            <div style={{fontSize:13,color:K.mt,marginTop:2}}>{"DNI: "+(ev.pacienteDni||"N/A")+" · Edad: "+ageLabel(patientAge)}</div>
             {ev.derivadoPor && <div style={{fontSize:12,color:K.mt,marginTop:2}}>{"Derivado por: "+ev.derivadoPor}</div>}
           </div>
           <div style={{textAlign:"right"}}>
@@ -114,7 +114,7 @@ export default function RptREP({ ev, onD }){
           </div>
         </div>
 
-        <h3 style={{fontSize:14,fontWeight:700,marginBottom:8}}>{"Distribuci\u00f3n por posici\u00f3n"}</h3>
+        <h3 style={{fontSize:14,fontWeight:700,marginBottom:8}}>{"Distribución por posición"}</h3>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:8,marginBottom:20}}>
           {["ISPP","ISIP","CSIP","CSFP"].map(function(posId){
             var p = byPosition[posId] || {ok:0,err:0,total:0};
@@ -123,15 +123,15 @@ export default function RptREP({ ev, onD }){
             return <div key={posId} style={{background:"#f8faf9",borderRadius:8,padding:12,textAlign:"center",border:"1px solid "+K.bd}}>
               <div style={{fontSize:12,fontWeight:700,color:K.ac}}>{posLabels[posId]}</div>
               <div style={{fontSize:9,color:K.mt,marginBottom:4}}>{posFull[posId]}</div>
-              {p.total > 0 ? <div><div style={{fontSize:18,fontWeight:700,color:clr}}>{pct+"%"}</div><div style={{fontSize:10,color:K.mt}}>{p.ok+"/"+p.total}</div></div> : <div style={{fontSize:10,color:"#cbd5e1"}}>{"Sin \u00edtems"}</div>}
+              {p.total > 0 ? <div><div style={{fontSize:18,fontWeight:700,color:clr}}>{pct+"%"}</div><div style={{fontSize:10,color:K.mt}}>{p.ok+"/"+p.total}</div></div> : <div style={{fontSize:10,color:"#cbd5e1"}}>{"Sin ítems"}</div>}
             </div>;
           })}
         </div>
 
-        <h3 style={{fontSize:14,fontWeight:700,marginBottom:8}}>{"Resumen por categor\u00eda"}</h3>
+        <h3 style={{fontSize:14,fontWeight:700,marginBottom:8}}>{"Resumen por categoría"}</h3>
         <table style={{width:"100%",borderCollapse:"collapse",fontSize:12,marginBottom:20}}>
           <thead><tr style={{borderBottom:"2px solid "+K.bd,background:"#f8fafc"}}>
-            <th style={{textAlign:"left",padding:"6px 8px",color:K.mt}}>{"Categor\u00eda"}</th>
+            <th style={{textAlign:"left",padding:"6px 8px",color:K.mt}}>{"Categoría"}</th>
             <th style={{textAlign:"center",padding:"6px",color:K.mt}}>{"\u2713"}</th>
             <th style={{textAlign:"center",padding:"6px",color:K.mt}}>Errores</th>
             <th style={{textAlign:"center",padding:"6px",color:K.mt}}>Total</th>
@@ -189,7 +189,7 @@ export default function RptREP({ ev, onD }){
               <th style={{textAlign:"left",padding:"5px 8px",color:K.mt}}>Fonema</th>
               <th style={{textAlign:"left",padding:"5px 8px",color:K.mt}}>Palabra</th>
               <th style={{textAlign:"center",padding:"5px",color:K.mt}}>Pos.</th>
-              <th style={{textAlign:"left",padding:"5px 8px",color:K.mt}}>{"Producci\u00f3n"}</th>
+              <th style={{textAlign:"left",padding:"5px 8px",color:K.mt}}>{"Producción"}</th>
             </tr></thead>
             <tbody>
               {errorList.map(function(err,i){
@@ -209,7 +209,7 @@ export default function RptREP({ ev, onD }){
           var alt = Object.entries(byPhoneme).filter(function(e){ var ph=e[1]; return ph.errors>0&&(patientAge/12)>=ph.age; });
           if(alt.length===0) return <div style={{background:"#dcfce7",borderRadius:12,padding:20,marginBottom:16,textAlign:"center"}}>
             <span style={{fontSize:24}}>{"\u2705"}</span>
-            <p style={{fontSize:14,fontWeight:600,color:"#059669",marginTop:8}}>{"Todos los fonemas esperados est\u00e1n adecuados."}</p>
+            <p style={{fontSize:14,fontWeight:600,color:"#059669",marginTop:8}}>{"Todos los fonemas esperados están adecuados."}</p>
           </div>;
           return <div style={{background:"#fef2f2",borderRadius:12,border:"1px solid #fecaca",padding:20,marginBottom:16}}>
             <h3 style={{fontSize:15,fontWeight:700,color:"#dc2626",marginBottom:8}}>{"\u26a0 Fonemas alterados (esperados para la edad)"}</h3>
@@ -233,7 +233,7 @@ export default function RptREP({ ev, onD }){
         </div>}
 
         <div style={{marginTop:24,paddingTop:12,borderTop:"1px solid "+K.bd,fontSize:10,color:"#94a3b8",textAlign:"center"}}>
-          {"Br\u00fajula KIT \u2014 Rep. Palabras (PEFF 3.2) \u2014 Generado el "+new Date().toLocaleDateString("es-AR")}
+          {"Brújula KIT — Rep. Palabras (PEFF 3.2) — Generado el "+new Date().toLocaleDateString("es-AR")}
         </div>
       </div>}
     </div>

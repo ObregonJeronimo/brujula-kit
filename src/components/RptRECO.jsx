@@ -3,7 +3,7 @@ import { RECO_GROUPS } from "../data/recoFonData.js";
 import AIReportPanel from "./AIReportPanel.jsx";
 
 var K = { sd:"#0a3d2f", ac:"#9333ea", mt:"#64748b", bd:"#e2e8f0" };
-function ageLabel(m){ return Math.floor(m/12)+" a\u00f1os, "+(m%12)+" meses"; }
+function ageLabel(m){ return Math.floor(m/12)+" años, "+(m%12)+" meses"; }
 
 export default function RptRECO({ ev, onD }){
   var _cd = useState(false), cd = _cd[0], sCD = _cd[1];
@@ -52,14 +52,14 @@ export default function RptRECO({ ev, onD }){
     <div style={{animation:"fi .3s ease",maxWidth:900,margin:"0 auto"}}>
       {/* Header */}
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20,flexWrap:"wrap",gap:12}}>
-        <h1 style={{fontSize:20,fontWeight:700}}>{"\ud83e\udde0 Reconocimiento Fonol\u00f3gico"}</h1>
+        <h1 style={{fontSize:20,fontWeight:700}}>{"\ud83e\udde0 Reconocimiento Fonológico"}</h1>
         <div style={{display:"flex",gap:8}}>
           {cd
             ?<div style={{background:"#fef2f2",border:"1px solid #fecaca",borderRadius:10,padding:"14px 20px",display:"flex",flexDirection:"column",alignItems:"center",gap:10}}>
-              <div style={{fontSize:13,fontWeight:600,color:"#dc2626",textAlign:"center"}}>{"\u00bfEst\u00e1 seguro que desea eliminar?"}</div>
-              <div style={{fontSize:12,color:"#64748b",textAlign:"center"}}>{"Esta acci\u00f3n es irreversible"}</div>
+              <div style={{fontSize:13,fontWeight:600,color:"#dc2626",textAlign:"center"}}>{"¿Está seguro que desea eliminar?"}</div>
+              <div style={{fontSize:12,color:"#64748b",textAlign:"center"}}>{"Esta acción es irreversible"}</div>
               <div style={{display:"flex",gap:8}}>
-                <button onClick={function(){onD(ev._fbId,"reco_evaluaciones")}} style={{background:"#dc2626",color:"#fff",border:"none",padding:"8px 20px",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer"}}>{"S\u00ed, eliminar"}</button>
+                <button onClick={function(){onD(ev._fbId)}} style={{background:"#dc2626",color:"#fff",border:"none",padding:"8px 20px",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer"}}>{"Sí, eliminar"}</button>
                 <button onClick={function(){sCD(false)}} style={{background:"#f1f5f9",border:"1px solid #e2e8f0",padding:"8px 20px",borderRadius:8,fontSize:13,cursor:"pointer",color:"#64748b"}}>Cancelar</button>
               </div>
             </div>
@@ -69,23 +69,23 @@ export default function RptRECO({ ev, onD }){
       </div>
 
       {/* AI Report Panel */}
-      <AIReportPanel ev={ev} evalType="reco" collectionName="reco_evaluaciones" evalLabel="Reco. Fonol\u00f3gico (PEFF-R 3.5)" />
+      <AIReportPanel ev={ev} evalType="reco" collectionName="evaluaciones" evalLabel="Reco. Fonológico (PEFF-R 3.5)" />
 
       {/* Technical Data Toggle */}
       <button onClick={function(){ setShowTech(!showTech); }} style={{width:"100%",padding:"14px",background:showTech?"#f1f5f9":"#0a3d2f",color:showTech?"#1e293b":"#fff",border:"1px solid #e2e8f0",borderRadius:10,fontSize:14,fontWeight:600,cursor:"pointer",marginBottom:showTech?16:20}}>
-        {showTech ? "\u25b2 Ocultar datos t\u00e9cnicos" : "\u25bc Ver datos t\u00e9cnicos de la evaluaci\u00f3n"}
+        {showTech ? "\u25b2 Ocultar datos técnicos" : "\u25bc Ver datos técnicos de la evaluación"}
       </button>
 
       {/* Technical Details */}
       {showTech && <div ref={printRef} style={{background:"#fff",borderRadius:12,border:"1px solid "+K.bd,padding:28,marginBottom:20}}>
         <div style={{display:"flex",justifyContent:"flex-end",marginBottom:16}}>
-          <button onClick={handlePDF} style={{padding:"9px 18px",background:K.ac,color:"#fff",border:"none",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer"}}>{"\ud83d\udcc4 PDF datos t\u00e9cnicos"}</button>
+          <button onClick={handlePDF} style={{padding:"9px 18px",background:K.ac,color:"#fff",border:"none",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer"}}>{"\ud83d\udcc4 PDF datos técnicos"}</button>
         </div>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:20,paddingBottom:16,borderBottom:"2px solid "+K.bd}}>
           <div>
-            <div style={{fontSize:10,color:K.mt,fontWeight:600,textTransform:"uppercase",letterSpacing:1}}>{"Reconocimiento Fonol\u00f3gico \u2014 PEFF-R 3.5"}</div>
+            <div style={{fontSize:10,color:K.mt,fontWeight:600,textTransform:"uppercase",letterSpacing:1}}>{"Reconocimiento Fonológico — PEFF-R 3.5"}</div>
             <div style={{fontSize:18,fontWeight:700,marginTop:4}}>{ev.paciente}</div>
-            <div style={{fontSize:13,color:K.mt,marginTop:2}}>{"DNI: "+(ev.pacienteDni||"N/A")+" \u00b7 Edad: "+ageLabel(ev.edadMeses||0)}</div>
+            <div style={{fontSize:13,color:K.mt,marginTop:2}}>{"DNI: "+(ev.pacienteDni||"N/A")+" · Edad: "+ageLabel(ev.edadMeses||0)}</div>
             {ev.derivadoPor && <div style={{fontSize:12,color:K.mt,marginTop:2}}>{"Derivado por: "+ev.derivadoPor}</div>}
           </div>
           <div style={{textAlign:"right"}}>
@@ -112,8 +112,8 @@ export default function RptRECO({ ev, onD }){
           <thead><tr style={{borderBottom:"2px solid "+K.bd,background:"#f8fafc"}}>
             <th style={{textAlign:"center",padding:"6px 8px",color:K.mt,width:36}}>{"Gr."}</th>
             <th style={{textAlign:"left",padding:"6px 8px",color:K.mt}}>{"Tipo de contraste"}</th>
-            <th style={{textAlign:"center",padding:"6px",color:K.mt,width:50}}>{"L\u00e1m."}</th>
-            <th style={{textAlign:"left",padding:"6px 8px",color:K.mt}}>{"Est\u00edmulos"}</th>
+            <th style={{textAlign:"center",padding:"6px",color:K.mt,width:50}}>{"Lám."}</th>
+            <th style={{textAlign:"left",padding:"6px 8px",color:K.mt}}>{"Estímulos"}</th>
             <th style={{textAlign:"center",padding:"6px",color:K.mt,width:70}}>{"Reconoce"}</th>
             <th style={{textAlign:"left",padding:"6px 8px",color:K.mt}}>{"Obs."}</th>
           </tr></thead>
@@ -132,7 +132,7 @@ export default function RptRECO({ ev, onD }){
                   <td style={{padding:"6px 8px",fontSize:11}}>{item.est.join(", ")}</td>
                   <td style={{textAlign:"center",padding:"6px"}}>
                     {noResp && <span style={{fontSize:10,color:"#92400e",fontWeight:600}}>{"Sin resp."}</span>}
-                    {reconoce && <span style={{fontSize:10,color:"#059669",fontWeight:700}}>{"\u2714 S\u00ed"}</span>}
+                    {reconoce && <span style={{fontSize:10,color:"#059669",fontWeight:700}}>{"\u2714 Sí"}</span>}
                     {noReconoce && <span style={{fontSize:10,color:"#dc2626",fontWeight:700}}>{"\u2718 No"}</span>}
                   </td>
                   <td style={{padding:"6px 8px",fontSize:11,color:K.mt}}>{obsMap[item.lam]||""}</td>
@@ -163,17 +163,17 @@ export default function RptRECO({ ev, onD }){
             return <div key={g.id} style={{padding:"10px 14px",background:"#fef2f2",borderRadius:8,marginBottom:6,border:"1px solid #fecaca"}}>
               <div style={{fontSize:12,fontWeight:700,color:"#dc2626"}}>{g.id+" - "+g.label}</div>
               <div style={{fontSize:11,color:"#7f1d1d",marginTop:2}}>
-                {"Items no reconocidos: "+failedItems.map(function(it){return "L\u00e1m. "+it.lam}).join(", ")}
+                {"Items no reconocidos: "+failedItems.map(function(it){return "Lám. "+it.lam}).join(", ")}
               </div>
             </div>;
           })}
         </div>}
         {res.errorGroups && res.errorGroups.length === 0 && <div style={{background:"#dcfce7",borderRadius:12,padding:20,marginBottom:16,textAlign:"center"}}>
           <span style={{fontSize:24}}>{"\u2705"}</span>
-          <p style={{fontSize:14,fontWeight:600,color:"#059669",marginTop:8}}>{"Reconocimiento fonol\u00f3gico adecuado."}</p>
+          <p style={{fontSize:14,fontWeight:600,color:"#059669",marginTop:8}}>{"Reconocimiento fonológico adecuado."}</p>
         </div>}
         <div style={{background:"#f3e8ff",border:"1px solid #d8b4fe",borderRadius:10,padding:14,marginBottom:20,fontSize:12,color:"#6b21a8",lineHeight:1.6}}>
-          <strong>{"\u2139\ufe0f Criterios de clasificaci\u00f3n:"}</strong><br/>
+          <strong>{"\u2139\ufe0f Criterios de clasificación:"}</strong><br/>
           {"Adecuado: \u226595% \u00b7 Leve: 80-94% \u00b7 Moderado: 60-79% \u00b7 Severo: <60%"}
         </div>
         {ev.observaciones && <div style={{marginTop:12,padding:12,background:"#f8fafc",borderRadius:8}}>
@@ -181,7 +181,7 @@ export default function RptRECO({ ev, onD }){
           <p style={{fontSize:12,color:K.mt,marginTop:4}}>{ev.observaciones}</p>
         </div>}
         <div style={{marginTop:24,paddingTop:12,borderTop:"1px solid "+K.bd,fontSize:10,color:"#94a3b8",textAlign:"center"}}>
-          {"Br\u00fajula KIT \u2014 Reco. Fonol\u00f3gico (PEFF-R 3.5) \u2014 Generado el "+new Date().toLocaleDateString("es-AR")}
+          {"Brújula KIT — Reco. Fonológico (PEFF-R 3.5) — Generado el "+new Date().toLocaleDateString("es-AR")}
         </div>
       </div>}
     </div>

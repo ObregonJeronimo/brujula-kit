@@ -6,7 +6,7 @@ import { fbAdd } from "../lib/fb.js";
 
 var K = { sd:"#0a3d2f", ac:"#0d9488", mt:"#64748b", bd:"#e2e8f0" };
 var posLabels = {ISPP:"ISPP",ISIP:"ISIP",CSIP:"CSIP",CSFP:"CSFP"};
-var posFull = {ISPP:"Inicio s\u00edl. \u2014 Pos. palabra",ISIP:"Inicio s\u00edl. \u2014 Int. palabra",CSIP:"Coda s\u00edl. \u2014 Int. palabra",CSFP:"Coda s\u00edl. \u2014 Final palabra"};
+var posFull = {ISPP:"Inicio síl. — Pos. palabra",ISIP:"Inicio síl. — Int. palabra",CSIP:"Coda síl. — Int. palabra",CSFP:"Coda síl. — Final palabra"};
 
 function renderReportText(text){
   if(!text) return null;
@@ -49,15 +49,15 @@ export default function NewREPResults({ results, patientAge, obs, onBack, onFini
   useEffect(function(){
     if(!saved){
       var payload = {
-        id: Date.now()+"", userId: userId, tipo: "rep_palabras",
+        id: Date.now()+"", userId: userId, tipo: "rep",
         paciente: patient ? patient.nombre : "", pacienteDni: patient ? (patient.dni||"") : "",
         fechaNacimiento: patient ? (patient.fechaNac||"") : "", edadMeses: patientAge,
         fechaEvaluacion: evalDate||"", derivadoPor: derivado||"", observaciones: obs||"",
         evaluador: "", fechaGuardado: new Date().toISOString(),
         resultados: results
       };
-      fbAdd("rep_evaluaciones", payload).then(function(r){
-        if(r.success){ docIdRef.current = r.id; setSavedDocId(r.id); if(nfy) nfy("Evaluaci\u00f3n guardada","ok"); }
+      fbAdd("evaluaciones", payload).then(function(r){
+        if(r.success){ docIdRef.current = r.id; setSavedDocId(r.id); if(nfy) nfy("Evaluación guardada","ok"); }
         else if(nfy) nfy("Error: "+(r.error||""),"er");
       });
       setSaved(true);
@@ -81,7 +81,7 @@ export default function NewREPResults({ results, patientAge, obs, onBack, onFini
       .then(function(data){
         if(data.success && data.report){
           setReport(data.report);
-          saveReportToDoc("rep_evaluaciones", docIdRef, data.report);
+          saveReportToDoc("evaluaciones", docIdRef, data.report);
         } else setGenError(data.error||"Error al generar informe.");
         setGenerating(false);
       })
@@ -108,7 +108,7 @@ export default function NewREPResults({ results, patientAge, obs, onBack, onFini
 
   return (
     <div>
-      <div style={{background:"#dcfce7",borderRadius:10,padding:"12px 18px",marginBottom:16,display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:18}}>{"\u2705"}</span><span style={{fontSize:13,fontWeight:600,color:"#059669"}}>{"Evaluaci\u00f3n guardada correctamente."}</span></div>
+      <div style={{background:"#dcfce7",borderRadius:10,padding:"12px 18px",marginBottom:16,display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:18}}>{"\u2705"}</span><span style={{fontSize:13,fontWeight:600,color:"#059669"}}>{"Evaluación guardada correctamente."}</span></div>
 
       {generating && <div style={{background:"#fff",borderRadius:14,border:"1px solid "+K.bd,padding:40,textAlign:"center",marginBottom:20}}>
         <div style={{display:"inline-block",width:40,height:40,border:"4px solid #e2e8f0",borderTopColor:"#9333ea",borderRadius:"50%",animation:"spin 1s linear infinite",marginBottom:16}} />
@@ -124,24 +124,24 @@ export default function NewREPResults({ results, patientAge, obs, onBack, onFini
 
       {report && <div style={{marginBottom:20}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10,flexWrap:"wrap",gap:8}}>
-          <div style={{fontSize:15,fontWeight:700,color:K.sd}}>{"Informe Fonoaudiol\u00f3gico"}</div>
+          <div style={{fontSize:15,fontWeight:700,color:K.sd}}>{"Informe Fonoaudiológico"}</div>
           <button onClick={handlePDFReport} style={{padding:"7px 14px",background:"#9333ea",color:"#fff",border:"none",borderRadius:8,fontSize:12,fontWeight:600,cursor:"pointer"}}>{"\ud83d\udda8 Imprimir informe"}</button>
         </div>
         <div ref={reportRef} style={{background:"#fff",borderRadius:12,border:"1px solid "+K.bd,padding:24}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16,paddingBottom:12,borderBottom:"2px solid "+K.bd}}>
-            <div><div style={{fontSize:10,color:K.mt,fontWeight:600,textTransform:"uppercase",letterSpacing:1}}>{"Informe Fonoaudiol\u00f3gico \u2014 Rep. Palabras (PEFF 3.2)"}</div><div style={{fontSize:17,fontWeight:700,marginTop:3}}>{patient?patient.nombre:""}</div><div style={{fontSize:12,color:K.mt,marginTop:2}}>{"DNI: "+(patient?patient.dni||"N/A":"N/A")+" \u00b7 Edad: "+(patientAge?Math.floor(patientAge/12)+" a\u00f1os, "+(patientAge%12)+" meses":"")}</div></div>
+            <div><div style={{fontSize:10,color:K.mt,fontWeight:600,textTransform:"uppercase",letterSpacing:1}}>{"Informe Fonoaudiológico — Rep. Palabras (PEFF 3.2)"}</div><div style={{fontSize:17,fontWeight:700,marginTop:3}}>{patient?patient.nombre:""}</div><div style={{fontSize:12,color:K.mt,marginTop:2}}>{"DNI: "+(patient?patient.dni||"N/A":"N/A")+" · Edad: "+(patientAge?Math.floor(patientAge/12)+" años, "+(patientAge%12)+" meses":"")}</div></div>
             <div style={{textAlign:"right"}}><div style={{fontSize:11,color:K.mt}}>{"Fecha: "+(evalDate||"")}</div></div>
           </div>
           <div>{renderReportText(report)}</div>
           <div style={{marginTop:20,background:"linear-gradient(135deg,#f3e8ff,#ede9fe)",borderRadius:10,padding:"14px 18px",border:"1px solid #d8b4fe"}}>
-            <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}><div style={{display:"flex",alignItems:"center",gap:6}}><span style={{fontSize:18}}>{"\ud83e\udde0"}</span><span style={{fontSize:11,fontWeight:700,color:"#6b21a8"}}>{"Generado con IA"}</span></div><div style={{width:1,height:16,background:"#c4b5fd"}} /><div style={{display:"flex",alignItems:"center",gap:6}}><span style={{fontSize:18}}>{"\u2705"}</span><span style={{fontSize:11,fontWeight:700,color:"#059669"}}>{"Comprobado por profesionales en fonoaudiolog\u00eda de C\u00f3rdoba"}</span></div></div>
-            <div style={{fontSize:10,color:"#7c3aed",marginTop:6}}>{"Generado con IA. Validado por profesionales fonoaudi\u00f3logos de C\u00f3rdoba, Argentina. Debe ser revisado por el profesional tratante."}</div>
+            <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}><div style={{display:"flex",alignItems:"center",gap:6}}><span style={{fontSize:18}}>{"\ud83e\udde0"}</span><span style={{fontSize:11,fontWeight:700,color:"#6b21a8"}}>{"Generado con IA"}</span></div><div style={{width:1,height:16,background:"#c4b5fd"}} /><div style={{display:"flex",alignItems:"center",gap:6}}><span style={{fontSize:18}}>{"\u2705"}</span><span style={{fontSize:11,fontWeight:700,color:"#059669"}}>{"Comprobado por profesionales en fonoaudiología de Córdoba"}</span></div></div>
+            <div style={{fontSize:10,color:"#7c3aed",marginTop:6}}>{"Generado con IA. Validado por profesionales fonoaudiólogos de Córdoba, Argentina. Debe ser revisado por el profesional tratante."}</div>
           </div>
-          <div style={{marginTop:14,paddingTop:8,borderTop:"1px solid "+K.bd,fontSize:9,color:"#94a3b8",textAlign:"center"}}>{"Br\u00fajula KIT \u2014 Rep. Palabras (PEFF 3.2) \u2014 "+new Date().toLocaleDateString("es-AR")}</div>
+          <div style={{marginTop:14,paddingTop:8,borderTop:"1px solid "+K.bd,fontSize:9,color:"#94a3b8",textAlign:"center"}}>{"Brújula KIT — Rep. Palabras (PEFF 3.2) — "+new Date().toLocaleDateString("es-AR")}</div>
         </div>
       </div>}
 
-      <button onClick={function(){ setShowTech(!showTech); }} style={{width:"100%",padding:"14px",background:showTech?"#f1f5f9":"#0a3d2f",color:showTech?"#1e293b":"#fff",border:"1px solid #e2e8f0",borderRadius:10,fontSize:14,fontWeight:600,cursor:"pointer",marginBottom:showTech?16:20}}>{showTech?"\u25b2 Ocultar datos t\u00e9cnicos":"\u25bc Ver datos t\u00e9cnicos de la evaluaci\u00f3n"}</button>
+      <button onClick={function(){ setShowTech(!showTech); }} style={{width:"100%",padding:"14px",background:showTech?"#f1f5f9":"#0a3d2f",color:showTech?"#1e293b":"#fff",border:"1px solid #e2e8f0",borderRadius:10,fontSize:14,fontWeight:600,cursor:"pointer",marginBottom:showTech?16:20}}>{showTech?"\u25b2 Ocultar datos técnicos":"\u25bc Ver datos técnicos de la evaluación"}</button>
 
       {showTech && <div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12,marginBottom:20}}>
@@ -150,12 +150,12 @@ export default function NewREPResults({ results, patientAge, obs, onBack, onFini
           <div style={{background:"#fff",borderRadius:12,border:"1px solid "+K.bd,padding:20,textAlign:"center"}}><div style={{fontSize:24,fontWeight:700,color:K.sd}}>{results.totalCorrect+"/"+results.totalEvaluated}</div><div style={{fontSize:12,color:K.mt,fontWeight:600}}>Correctos</div><div style={{fontSize:11,color:K.mt}}>{results.totalErrors+" errores"}</div></div>
         </div>
         <div style={{background:"#fff",borderRadius:12,border:"1px solid "+K.bd,padding:20,marginBottom:16}}>
-          <h3 style={{fontSize:15,fontWeight:700,marginBottom:12}}>{"Distribuci\u00f3n por posici\u00f3n"}</h3>
+          <h3 style={{fontSize:15,fontWeight:700,marginBottom:12}}>{"Distribución por posición"}</h3>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:10}}>{["ISPP","ISIP","CSIP","CSFP"].map(function(posId){ var p=results.byPosition[posId]||{ok:0,err:0,total:0},pct=p.total>0?Math.round((p.ok/p.total)*100):0,clr=p.total===0?"#cbd5e1":pct>=85?"#059669":pct>=65?"#d97706":"#dc2626"; return <div key={posId} style={{background:"#f8faf9",borderRadius:10,padding:14,textAlign:"center",border:"1px solid "+K.bd}}><div style={{fontSize:13,fontWeight:700,color:K.ac,marginBottom:4}}>{posLabels[posId]}</div><div style={{fontSize:9,color:K.mt,marginBottom:8}}>{posFull[posId]}</div>{p.total>0?<div><div style={{fontSize:22,fontWeight:700,color:clr}}>{pct+"%"}</div><div style={{fontSize:11,color:K.mt}}>{p.ok+"/"+p.total}</div></div>:<div style={{fontSize:11,color:"#cbd5e1"}}>{"Sin items"}</div>}</div>; })}</div>
         </div>
         <div style={{background:"#fff",borderRadius:12,border:"1px solid "+K.bd,padding:20,marginBottom:16}}>
-          <h3 style={{fontSize:15,fontWeight:700,marginBottom:12}}>{"Por categor\u00eda"}</h3>
-          <table style={{width:"100%",borderCollapse:"collapse",fontSize:13}}><thead><tr style={{borderBottom:"2px solid "+K.bd}}><th style={{textAlign:"left",padding:8,color:K.mt,fontSize:11}}>{"Categor\u00eda"}</th><th style={{textAlign:"center",padding:8,color:K.mt,fontSize:11}}>OK</th><th style={{textAlign:"center",padding:8,color:K.mt,fontSize:11}}>Err</th><th style={{textAlign:"center",padding:8,color:K.mt,fontSize:11}}>Total</th><th style={{textAlign:"center",padding:8,color:K.mt,fontSize:11}}>%</th></tr></thead><tbody>{Object.values(results.byCat).map(function(c){ var pct=c.total>0?Math.round((c.ok/c.total)*100):0; return <tr key={c.title} style={{borderBottom:"1px solid #f1f5f9"}}><td style={{padding:8,fontWeight:600}}>{c.title}</td><td style={{textAlign:"center",padding:8,color:"#059669",fontWeight:600}}>{c.ok}</td><td style={{textAlign:"center",padding:8,color:c.errors>0?"#dc2626":"#059669",fontWeight:600}}>{c.errors}</td><td style={{textAlign:"center",padding:8}}>{c.total}</td><td style={{textAlign:"center",padding:8}}><span style={{padding:"2px 8px",borderRadius:10,fontSize:12,fontWeight:600,background:pct>=85?"#dcfce7":pct>=65?"#fef3c7":"#fef2f2",color:pct>=85?"#059669":pct>=65?"#d97706":"#dc2626"}}>{pct+"%"}</span></td></tr>; })}</tbody></table>
+          <h3 style={{fontSize:15,fontWeight:700,marginBottom:12}}>{"Por categoría"}</h3>
+          <table style={{width:"100%",borderCollapse:"collapse",fontSize:13}}><thead><tr style={{borderBottom:"2px solid "+K.bd}}><th style={{textAlign:"left",padding:8,color:K.mt,fontSize:11}}>{"Categoría"}</th><th style={{textAlign:"center",padding:8,color:K.mt,fontSize:11}}>OK</th><th style={{textAlign:"center",padding:8,color:K.mt,fontSize:11}}>Err</th><th style={{textAlign:"center",padding:8,color:K.mt,fontSize:11}}>Total</th><th style={{textAlign:"center",padding:8,color:K.mt,fontSize:11}}>%</th></tr></thead><tbody>{Object.values(results.byCat).map(function(c){ var pct=c.total>0?Math.round((c.ok/c.total)*100):0; return <tr key={c.title} style={{borderBottom:"1px solid #f1f5f9"}}><td style={{padding:8,fontWeight:600}}>{c.title}</td><td style={{textAlign:"center",padding:8,color:"#059669",fontWeight:600}}>{c.ok}</td><td style={{textAlign:"center",padding:8,color:c.errors>0?"#dc2626":"#059669",fontWeight:600}}>{c.errors}</td><td style={{textAlign:"center",padding:8}}>{c.total}</td><td style={{textAlign:"center",padding:8}}><span style={{padding:"2px 8px",borderRadius:10,fontSize:12,fontWeight:600,background:pct>=85?"#dcfce7":pct>=65?"#fef3c7":"#fef2f2",color:pct>=85?"#059669":pct>=65?"#d97706":"#dc2626"}}>{pct+"%"}</span></td></tr>; })}</tbody></table>
         </div>
         <div style={{background:"#fff",borderRadius:12,border:"1px solid "+K.bd,padding:20,marginBottom:16}}>
           <h3 style={{fontSize:15,fontWeight:700,marginBottom:12}}>{"Por fonema"}</h3>
