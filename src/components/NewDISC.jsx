@@ -20,7 +20,7 @@ function renderReportText(text){
   return text.split("\n").map(function(line, i){
     var trimmed = line.trim();
     if(!trimmed) return <div key={i} style={{height:8}} />;
-    var isTitle = /^[A-Z\u00c0-\u00dc\s\d\.\:\-]{6,}:?\s*$/.test(trimmed) || /^\d+[\.\\)]\s*[A-Z]/.test(trimmed);
+    var isTitle = /^[A-Z\u00c0-\u00dc\s\d\.\:\-]{6,}:?\s*$/.test(trimmed) || /^\\d+[\\.\\)]\\s*[A-Z]/.test(trimmed);
     if(isTitle) return <div key={i} style={{fontSize:14,fontWeight:700,color:K.sd,marginTop:14,marginBottom:4}}>{trimmed}</div>;
     return <div key={i} style={{fontSize:13,color:"#334155",lineHeight:1.7,marginBottom:1}}>{trimmed}</div>;
   });
@@ -73,14 +73,14 @@ export default function NewDISC({ onS, nfy, userId }){
     if(step === 2 && !saved){
       var res = computeDiscResults(responses, obsMap);
       var payload = {
-        id: Date.now()+"", userId: userId, tipo: "disc_fonologica",
+        id: Date.now()+"", userId: userId, tipo: "disc",
         paciente: patient.nombre, pacienteDni: patient.dni || "",
         fechaNacimiento: patient.fechaNac || "", edadMeses: patientAge,
         fechaEvaluacion: evalDate, derivadoPor: derivado, observaciones: obs,
         evaluador: "", fechaGuardado: new Date().toISOString(),
         responses: responses, obsMap: obsMap, resultados: res
       };
-      fbAdd("disc_evaluaciones", payload).then(function(r){
+      fbAdd("evaluaciones", payload).then(function(r){
         if(r.success){ docIdRef.current = r.id; setSavedDocId(r.id); nfy("Evaluaci\u00f3n guardada","ok"); }
         else nfy("Error al guardar: "+r.error,"er");
       });
@@ -104,7 +104,7 @@ export default function NewDISC({ onS, nfy, userId }){
       .then(function(data){
         if(data.success && data.report){
           setReport(data.report);
-          saveReportToDoc("disc_evaluaciones", docIdRef, data.report);
+          saveReportToDoc("evaluaciones", docIdRef, data.report);
         } else setGenError(data.error || "Error al generar informe.");
         setGenerating(false);
       })
