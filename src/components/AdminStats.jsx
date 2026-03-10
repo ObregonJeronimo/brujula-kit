@@ -29,11 +29,9 @@ export default function AdminStats({nfy}){
 
   useEffect(function(){load()},[load]);
 
-  // Filter out ELDI from visible stats
   var visibleEvals=allEvals.filter(function(e){return e.tipo && e.tipo!=="eldi"});
   var nonAdminUsers=users.filter(function(u){return u.role!=="admin"});
   var totalUsers=nonAdminUsers.length;
-  // Use ALL evals (including eldi) for credit calculations
   var totalCreditsDeducted=allEvals.length;
   var neverPurchased=nonAdminUsers.filter(function(u){
     var userEvals=allEvals.filter(function(ev){return ev.userId===u._fbId}).length;
@@ -76,23 +74,23 @@ export default function AdminStats({nfy}){
 
   var TabBtn=function(props){return <button onClick={function(){setTab(props.id)}} style={{padding:"10px 20px",background:tab===props.id?"#0d9488":"#fff",color:tab===props.id?"#fff":"#475569",border:tab===props.id?"none":"1px solid #e2e8f0",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",gap:6}}>{props.icon+" "+props.label}</button>};
 
-  if(ld)return <div style={{animation:"fi .3s ease",textAlign:"center",padding:60}}><div style={{fontSize:36,marginBottom:12}}>{"\ud83d\udcca"}</div><div style={{fontSize:16,fontWeight:600,color:K.mt}}>Cargando estad\u00edsticas...</div></div>;
+  if(ld)return <div style={{animation:"fi .3s ease",textAlign:"center",padding:60}}><div style={{fontSize:36,marginBottom:12}}>{"📊"}</div><div style={{fontSize:16,fontWeight:600,color:K.mt}}>{"Cargando estadísticas..."}</div></div>;
 
   return <div style={{animation:"fi .3s ease",width:"100%",maxWidth:1000}}>
-    <h1 style={{fontSize:22,fontWeight:700,marginBottom:6}}>{"\ud83d\udcca Estad\u00edsticas"}</h1>
-    <p style={{color:K.mt,fontSize:14,marginBottom:20}}>Panel de an\u00e1lisis y m\u00e9tricas del sistema</p>
+    <h1 style={{fontSize:22,fontWeight:700,marginBottom:6}}>{"📊 Estadísticas"}</h1>
+    <p style={{color:K.mt,fontSize:14,marginBottom:20}}>{"Panel de análisis y métricas del sistema"}</p>
 
     <div style={{display:"flex",gap:8,marginBottom:24,flexWrap:"wrap"}}>
-      <TabBtn id="resumen" label="Resumen Global" icon="\ud83c\udf10"/>
-      <TabBtn id="mensual" label="Mensual / Anual" icon="\ud83d\udcc5"/>
+      <TabBtn id="resumen" label="Resumen Global" icon="🌐"/>
+      <TabBtn id="mensual" label="Mensual / Anual" icon="📅"/>
     </div>
 
     {tab==="resumen"&&<div>
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))",gap:14,marginBottom:24}}>
-        <Stat icon="\ud83d\udcb0" label="Ingresos totales" value={fmt$(totalRevenue)} sub={totalCreditsPurchased+" cr\u00e9ditos vendidos"} color="#059669"/>
-        <Stat icon="\ud83d\udcb3" label="Evaluaciones realizadas" value={visibleEvals.length} sub={"PEFF: "+peffCount+" \u00b7 REP: "+repCount+" \u00b7 DISC: "+discCount+" \u00b7 RECO: "+recoCount} color="#7c3aed"/>
-        <Stat icon="\ud83d\udc65" label="Usuarios registrados" value={totalUsers} sub={neverPurchased.length+" nunca compraron"} color="#0d9488"/>
-        <Stat icon="\u26a0\ufe0f" label="Sin comprar" value={neverPurchased.length} sub="terminaron demo sin comprar" color="#f59e0b"/>
+        <Stat icon="💰" label="Ingresos totales" value={fmt$(totalRevenue)} sub={totalCreditsPurchased+" créditos vendidos"} color="#059669"/>
+        <Stat icon="💳" label="Evaluaciones realizadas" value={visibleEvals.length} sub={"PEFF: "+peffCount+" · REP: "+repCount+" · DISC: "+discCount+" · RECO: "+recoCount} color="#7c3aed"/>
+        <Stat icon="👥" label="Usuarios registrados" value={totalUsers} sub={neverPurchased.length+" nunca compraron"} color="#0d9488"/>
+        <Stat icon="⚠️" label="Sin comprar" value={neverPurchased.length} sub="terminaron demo sin comprar" color="#f59e0b"/>
       </div>
 
       <div style={{background:"#fff",borderRadius:12,padding:24,border:"1px solid #e2e8f0",marginBottom:20}}>
@@ -108,9 +106,9 @@ export default function AdminStats({nfy}){
           {Object.entries(typeColors).map(function(e){return <span key={e[0]} style={{display:"flex",alignItems:"center",gap:4}}><div style={{width:10,height:10,borderRadius:2,background:e[1]}}/>{e[0]}</span>})}
         </div>
         <div style={{display:"flex",justifyContent:"center",gap:12,marginTop:12}}>
-          <button onClick={function(){setSelYear(function(y){return y-1})}} style={{background:"#f1f5f9",border:"none",borderRadius:6,padding:"6px 14px",fontSize:12,cursor:"pointer"}}>{"\u2190 "+(selYear-1)}</button>
+          <button onClick={function(){setSelYear(function(y){return y-1})}} style={{background:"#f1f5f9",border:"none",borderRadius:6,padding:"6px 14px",fontSize:12,cursor:"pointer"}}>{"← "+(selYear-1)}</button>
           <span style={{fontWeight:700,fontSize:14,padding:"6px 0"}}>{selYear}</span>
-          <button onClick={function(){setSelYear(function(y){return y+1})}} style={{background:"#f1f5f9",border:"none",borderRadius:6,padding:"6px 14px",fontSize:12,cursor:"pointer"}}>{(selYear+1)+" \u2192"}</button>
+          <button onClick={function(){setSelYear(function(y){return y+1})}} style={{background:"#f1f5f9",border:"none",borderRadius:6,padding:"6px 14px",fontSize:12,cursor:"pointer"}}>{(selYear+1)+" →"}</button>
         </div>
       </div>
 
@@ -119,11 +117,11 @@ export default function AdminStats({nfy}){
       </div>
 
       {neverPurchased.length>0&&<div style={{background:"#fffbeb",border:"1px solid #fde68a",borderRadius:12,padding:20}}>
-        <div style={{fontSize:14,fontWeight:700,color:"#92400e",marginBottom:12}}>{"\u26a0 Usuarios que no compraron ("+ neverPurchased.length+")"}</div>
+        <div style={{fontSize:14,fontWeight:700,color:"#92400e",marginBottom:12}}>{"⚠ Usuarios que no compraron ("+ neverPurchased.length+")"}</div>
         <div style={{maxHeight:200,overflowY:"auto"}}>
           {neverPurchased.map(function(u){return <div key={u._fbId} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 0",borderBottom:"1px solid #fde68a",fontSize:13}}>
             <div><span style={{fontWeight:600}}>{u.nombre} {u.apellido}</span><span style={{color:K.mt,marginLeft:8}}>@{u.username}</span></div>
-            <div style={{fontSize:11,color:K.mt}}>{(u.creditos||0)+" cr\u00e9d."}{u.createdAt?" \u00b7 "+fmtDate(u.createdAt):""}</div>
+            <div style={{fontSize:11,color:K.mt}}>{(u.creditos||0)+" créd."}{u.createdAt?" · "+fmtDate(u.createdAt):""}</div>
           </div>})}
         </div>
       </div>}
@@ -131,18 +129,18 @@ export default function AdminStats({nfy}){
 
     {tab==="mensual"&&<div>
       <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:16,marginBottom:24,background:"#fff",borderRadius:10,padding:"14px 20px",border:"1px solid #e2e8f0"}}>
-        <button onClick={prevMonth} style={{background:"#f1f5f9",border:"none",borderRadius:6,padding:"8px 16px",fontSize:14,cursor:"pointer",fontWeight:600}}>{"\u2190"}</button>
+        <button onClick={prevMonth} style={{background:"#f1f5f9",border:"none",borderRadius:6,padding:"8px 16px",fontSize:14,cursor:"pointer",fontWeight:600}}>{"←"}</button>
         <div style={{textAlign:"center",minWidth:200}}><div style={{fontSize:18,fontWeight:700,color:K.sd,textTransform:"capitalize"}}>{fmtMo(selYear,selMonth)}</div></div>
-        <button onClick={nextMonth} style={{background:"#f1f5f9",border:"none",borderRadius:6,padding:"8px 16px",fontSize:14,cursor:"pointer",fontWeight:600}}>{"\u2192"}</button>
+        <button onClick={nextMonth} style={{background:"#f1f5f9",border:"none",borderRadius:6,padding:"8px 16px",fontSize:14,cursor:"pointer",fontWeight:600}}>{"→"}</button>
       </div>
 
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",gap:12,marginBottom:20}}>
-        <Stat icon="\ud83d\udd0a" label="PEFF" value={mc.peff} color="#7c3aed"/>
-        <Stat icon="\ud83d\udcdd" label="REP" value={mc.rep} color="#2563eb"/>
-        <Stat icon="\ud83d\udc42" label="DISC" value={mc.disc} color="#ea580c"/>
-        <Stat icon="\ud83e\udde0" label="RECO" value={mc.reco} color="#d946ef"/>
-        <Stat icon="\ud83d\udcb3" label="Total" value={monthEvals.length} sub="evaluaciones" color="#1e293b"/>
-        <Stat icon="\ud83d\udc64" label="Nuevos usuarios" value={usersCreatedMonth.length}/>
+        <Stat icon="🔊" label="PEFF" value={mc.peff} color="#7c3aed"/>
+        <Stat icon="📝" label="REP" value={mc.rep} color="#2563eb"/>
+        <Stat icon="👂" label="DISC" value={mc.disc} color="#ea580c"/>
+        <Stat icon="🧠" label="RECO" value={mc.reco} color="#d946ef"/>
+        <Stat icon="💳" label="Total" value={monthEvals.length} sub="evaluaciones" color="#1e293b"/>
+        <Stat icon="👤" label="Nuevos usuarios" value={usersCreatedMonth.length}/>
       </div>
 
       <div style={{background:"linear-gradient(135deg,#0a3d2f,#0d9488)",borderRadius:14,padding:24,color:"#fff",marginBottom:20}}>
@@ -165,7 +163,7 @@ export default function AdminStats({nfy}){
               <span style={{background:typeColors[(ev.tipo||"").toUpperCase()]||"#94a3b8",color:"#fff",padding:"3px 8px",borderRadius:4,fontSize:10,fontWeight:700}}>{(ev.tipo||"").toUpperCase()}</span>
               <span style={{fontWeight:600}}>{ev.paciente}</span>
             </div>
-            <div style={{fontSize:11,color:K.mt}}>{(ev.evaluador||"?") + " \u00b7 " + (ev.fechaGuardado?fmtDate(ev.fechaGuardado):"")}</div>
+            <div style={{fontSize:11,color:K.mt}}>{(ev.evaluador||"?") + " · " + (ev.fechaGuardado?fmtDate(ev.fechaGuardado):"")}</div>
           </div>})}
         </div>
       </div>:<div style={{background:"#f8faf9",borderRadius:10,padding:20,textAlign:"center",color:K.mt,fontSize:14}}>Sin evaluaciones este mes</div>}
