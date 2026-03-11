@@ -12,19 +12,25 @@ function fmtDate(d){return new Date(d).toLocaleDateString("es-AR",{day:"numeric"
 export default function AdminStats({nfy}){
   var _u=useState([]),users=_u[0],setUsers=_u[1];
   var _ae=useState([]),allEvals=_ae[0],setAllEvals=_ae[1];
+  var _pg=useState([]),allPagos=_pg[0],setAllPagos=_pg[1];
   var _ld=useState(true),ld=_ld[0],setLd=_ld[1];
   var _tab=useState("resumen"),tab=_tab[0],setTab=_tab[1];
   var _sy=useState(new Date().getFullYear()),selYear=_sy[0],setSelYear=_sy[1];
   var _sm=useState(new Date().getMonth()),selMonth=_sm[0],setSelMonth=_sm[1];
+  var _payFilter=useState("month"),payFilter=_payFilter[0],setPayFilter=_payFilter[1];
+  var _payYear=useState(new Date().getFullYear()),payYear=_payYear[0],setPayYear=_payYear[1];
+  var _payMonth=useState(new Date().getMonth()),payMonth=_payMonth[0],setPayMonth=_payMonth[1];
 
   var load=useCallback(function(){
     setLd(true);
     Promise.all([
       getDocs(collection(db,"usuarios")),
-      getDocs(collection(db,"evaluaciones"))
+      getDocs(collection(db,"evaluaciones")),
+      getDocs(collection(db,"pagos"))
     ]).then(function(res){
       setUsers(res[0].docs.map(function(d){return Object.assign({_fbId:d.id},d.data())}));
       setAllEvals(res[1].docs.map(function(d){return Object.assign({_fbId:d.id},d.data())}));
+      setAllPagos(res[2].docs.map(function(d){return Object.assign({_fbId:d.id},d.data())}).sort(function(a,b){return(b.processedAt||"").localeCompare(a.processedAt||"")}));
     }).catch(function(e){nfy("Error cargando datos: "+e.message,"er")}).finally(function(){setLd(false)});
   },[nfy]);
 
@@ -84,6 +90,7 @@ export default function AdminStats({nfy}){
     <div style={{display:"flex",gap:8,marginBottom:24,flexWrap:"wrap"}}>
       <TabBtn id="resumen" label="Resumen Global" icon="🌐"/>
       <TabBtn id="mensual" label="Mensual / Anual" icon="📅"/>
+      <TabBtn id="pagos" label="Pagos" icon="💰"/>
     </div>
 
     {tab==="resumen"&&<div>
@@ -163,5 +170,66 @@ export default function AdminStats({nfy}){
         </div>
       </div>:<div style={{background:"#f8faf9",borderRadius:10,padding:20,textAlign:"center",color:K.mt,fontSize:14}}>Sin evaluaciones este mes</div>}
     </div>}
+
+    {tab==="pagos"&&(function(){
+      // Filter pagos by selected period
+      var filteredPagos = allPagos.filter(function(p){
+        if(!p.processedAt) return false;
+        var d = new Date(p.processedAt);
+        if(payFilter === "month") return d.getFullYear() === payYear && d.getMonth() === payMonth;
+        if(payFilter === "year") return d.getFullYear() === payYear;
+        return true; // "all"
+      });
+      var totalFiltered = filteredPagos.reduce(function(s,p){ return s + (p.amount || 0); }, 0);
+      var totalCredits = filteredPagos.reduce(function(s,p){ return s + (p.creditosAgregados || 0); }, 0);
+      var userMap = {};
+      users.forEach(function(u){ userMap[u._fbId] = u; });
+      var monthNames2 = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+
+      return <div>
+        {/* Filter controls */}
+        <div style={{display:"flex",gap:8,marginBottom:16,flexWrap:"wrap",alignItems:"center"}}>
+          {[["month","Este mes"],["year","Este año"],["all","Todos"]].map(function(f){
+            return <button key={f[0]} onClick={function(){setPayFilter(f[0]);if(f[0]==="month"){setPayYear(new Date().getFullYear());setPayMonth(new Date().getMonth())}else if(f[0]==="year"){setPayYear(new Date().getFullYear())}}} style={{padding:"6px 14px",borderRadius:6,border:payFilter===f[0]?"2px solid "+K.ac:"1px solid #e2e8f0",background:payFilter===f[0]?"#ccfbf1":"#fff",color:payFilter===f[0]?K.ac:K.mt,fontSize:12,fontWeight:600,cursor:"pointer"}}>{f[1]}</button>;
+          })}
+          {payFilter==="month" && <div style={{display:"flex",alignItems:"center",gap:6}}>
+            <button onClick={function(){if(payMonth===0){setPayMonth(11);setPayYear(function(y){return y-1})}else setPayMonth(function(m){return m-1})}} style={{background:"#f1f5f9",border:"none",borderRadius:6,padding:"6px 10px",cursor:"pointer",fontSize:12}}>{"←"}</button>
+            <span style={{fontSize:13,fontWeight:600,minWidth:130,textAlign:"center"}}>{monthNames2[payMonth]+" "+payYear}</span>
+            <button onClick={function(){if(payMonth===11){setPayMonth(0);setPayYear(function(y){return y+1})}else setPayMonth(function(m){return m+1})}} style={{background:"#f1f5f9",border:"none",borderRadius:6,padding:"6px 10px",cursor:"pointer",fontSize:12}}>{"→"}</button>
+          </div>}
+          {payFilter==="year" && <div style={{display:"flex",alignItems:"center",gap:6}}>
+            <button onClick={function(){setPayYear(function(y){return y-1})}} style={{background:"#f1f5f9",border:"none",borderRadius:6,padding:"6px 10px",cursor:"pointer",fontSize:12}}>{"←"}</button>
+            <span style={{fontSize:13,fontWeight:600}}>{payYear}</span>
+            <button onClick={function(){setPayYear(function(y){return y+1})}} style={{background:"#f1f5f9",border:"none",borderRadius:6,padding:"6px 10px",cursor:"pointer",fontSize:12}}>{"→"}</button>
+          </div>}
+        </div>
+
+        {/* Summary cards */}
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12,marginBottom:20}}>
+          <Stat icon="💰" label="Ingresos" value={fmt$(totalFiltered)} color="#059669"/>
+          <Stat icon="💳" label="Créditos vendidos" value={totalCredits} color="#7c3aed"/>
+          <Stat icon="📋" label="Transacciones" value={filteredPagos.length} color={K.sd}/>
+        </div>
+
+        {/* Payments table */}
+        {filteredPagos.length > 0 ? <div style={{background:"#fff",borderRadius:12,border:"1px solid #e2e8f0",overflow:"hidden"}}>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 80px 100px 120px",gap:8,padding:"10px 16px",background:K.sd,color:"#fff",fontSize:11,fontWeight:700}}>
+            <span>Usuario</span><span>Email</span><span style={{textAlign:"center"}}>Créditos</span><span style={{textAlign:"right"}}>Monto</span><span style={{textAlign:"right"}}>Fecha</span>
+          </div>
+          <div style={{maxHeight:400,overflowY:"auto"}}>
+            {filteredPagos.map(function(p,i){
+              var u = userMap[p.uid] || {};
+              return <div key={p._fbId||i} style={{display:"grid",gridTemplateColumns:"1fr 1fr 80px 100px 120px",gap:8,padding:"10px 16px",borderBottom:"1px solid #f1f5f9",alignItems:"center",fontSize:13}}>
+                <div style={{fontWeight:600,color:K.sd}}>{u.nombre ? u.nombre+" "+(u.apellido||"") : p.uid ? p.uid.substring(0,8)+"..." : "?"}</div>
+                <div style={{fontSize:11,color:K.mt,overflow:"hidden",textOverflow:"ellipsis"}}>{p.email || u.email || "—"}</div>
+                <div style={{textAlign:"center",fontWeight:700,color:"#7c3aed"}}>{p.creditosAgregados || "?"}</div>
+                <div style={{textAlign:"right",fontWeight:600,color:"#059669"}}>{fmt$(p.amount || 0)}</div>
+                <div style={{textAlign:"right",fontSize:11,color:K.mt}}>{p.processedAt ? fmtDate(p.processedAt) : "—"}</div>
+              </div>;
+            })}
+          </div>
+        </div> : <div style={{background:"#f8faf9",borderRadius:10,padding:20,textAlign:"center",color:K.mt,fontSize:14}}>{"Sin pagos en este período"}</div>}
+      </div>;
+    })()}
   </div>;
 }
