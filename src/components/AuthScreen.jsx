@@ -35,7 +35,7 @@ export default function AuthScreen({ onDone }) {
   var strength = mode === "register" ? getPasswordStrength(pass) : null;
 
   // After Google sign-in, check if user profile exists, if not create stub
-  var handleGoogleResult = async function(user) {
+  var handleGoogleResult = async function(user, isRegisterMode) {
     var prof = await getUserProfile(user.uid);
     if (prof && prof.profileComplete) {
       // Check if this account was created with email/password
@@ -44,10 +44,22 @@ export default function AuthScreen({ onDone }) {
         setLd(false);
         return;
       }
+      // If user is trying to REGISTER but account already exists
+      if (isRegisterMode) {
+        setErr("Ya existe una cuenta con este email de Google. Usá 'Iniciar sesión' y luego 'Continuar con Google'.");
+        setLd(false);
+        return;
+      }
       var canLogin = await acquireSessionLock(user.uid, prof.role === "admin");
       if (!canLogin) { setErr("Sesión ocupada. Intentá en unos minutos."); setLd(false); return; }
       onDone(user, prof);
     } else if (!prof) {
+      // New user — only allow in register mode
+      if (!isRegisterMode) {
+        setErr("No existe una cuenta con este email. Creá una cuenta primero con 'Crear cuenta' y 'Registrarse con Google'.");
+        setLd(false);
+        return;
+      }
       // Create user profile for Google user
       await setDoc(doc(db, "usuarios", user.uid), {
         email: user.email,
@@ -62,6 +74,9 @@ export default function AuthScreen({ onDone }) {
         createdAt: new Date().toISOString()
       });
       // Will redirect to CompleteProfile
+    } else if (prof && !prof.profileComplete) {
+      // Profile exists but incomplete — let them continue regardless of mode
+      // Will redirect to CompleteProfile
     }
     setLd(false);
   };
@@ -70,7 +85,7 @@ export default function AuthScreen({ onDone }) {
     setLd(true); setErr(""); setInfo("");
     try {
       var result = await signInWithPopup(auth, googleProvider);
-      await handleGoogleResult(result.user);
+      await handleGoogleResult(result.user, mode === "register");
     } catch (e) {
       if (e.code === "auth/popup-closed-by-user") { setLd(false); return; }
       if (e.code === "auth/account-exists-with-different-credential") {
