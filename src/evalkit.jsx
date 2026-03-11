@@ -75,6 +75,7 @@ export default function App() {
   var _sb = useState(false), sessionBlocked = _sb[0], setSessionBlocked = _sb[1];
   var _nc = useState(false), showNoCredits = _nc[0], setShowNoCredits = _nc[1];
   var _pp = useState(false), paymentProcessed = _pp[0], setPaymentProcessed = _pp[1];
+  var _pl = useState(true), profileLoading = _pl[0], setProfileLoading = _pl[1];
   var nfy = useCallback(function(m,t){ sT({m:m,t:t}); setTimeout(function(){sT(null)},4500); },[]);
   var isAdmin = profile?.role === "admin";
   useSessionHeartbeat(authUser?.uid, isAdmin);
@@ -99,7 +100,7 @@ export default function App() {
 
   useEffect(function(){
     var unsub = onAuthStateChanged(auth, function(u){
-      if(u){ if(u.emailVerified){ getUserProfile(u.uid).then(function(prof){ if(prof && prof.profileComplete){ acquireSessionLock(u.uid, prof.role==="admin").then(function(canLogin){ if(!canLogin){ setSessionBlocked(true); setAuthUser(u); setProfile(prof); return; } setSessionBlocked(false); setProfile(prof); }); } else setProfile(null); }); } setAuthUser(u); } else { setAuthUser(null); setProfile(null); }
+      if(u){ setAuthUser(u); if(u.emailVerified){ setProfileLoading(true); getUserProfile(u.uid).then(function(prof){ if(prof && prof.profileComplete){ acquireSessionLock(u.uid, prof.role==="admin").then(function(canLogin){ if(!canLogin){ setSessionBlocked(true); setAuthUser(u); setProfile(prof); return; } setSessionBlocked(false); setProfile(prof); }); } else setProfile(null); }).finally(function(){ setProfileLoading(false); }); } else { setProfileLoading(false); } } else { setAuthUser(null); setProfile(null); setProfileLoading(false); }
     }); return unsub;
   },[]);
 
@@ -144,6 +145,8 @@ export default function App() {
   if(authUser===undefined) return (<div style={{width:"100vw",height:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#0a3d2f",color:"#fff",fontFamily:"'DM Sans',system-ui,sans-serif"}}><div style={{textAlign:"center"}}><img src="/img/logo_sin_fondo.png" alt="Br\u00fajula KIT" style={{width:48,height:48,marginBottom:16}} /><div style={{fontSize:20,fontWeight:700}}>Cargando...</div></div></div>);
   if(!authUser) return <AuthScreen onDone={function(u,p){setAuthUser(u);setProfile(p)}} />;
   if(authUser && !authUser.emailVerified) return <VerifyEmailScreen user={authUser} onLogout={handleLogout} />;
+  // Show loading screen while profile is being fetched (prevents CompleteProfile flash)
+  if(authUser && authUser.emailVerified && profileLoading) return (<div style={{width:"100vw",height:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#0a3d2f",color:"#fff",fontFamily:"'DM Sans',system-ui,sans-serif"}}><div style={{textAlign:"center"}}><img src="/img/logo_sin_fondo.png" alt="Br\u00fajula KIT" style={{width:48,height:48,marginBottom:16}} /><div style={{fontSize:20,fontWeight:700}}>Cargando...</div></div></div>);
   if(authUser && authUser.emailVerified && !profile) return <CompleteProfileScreen uid={authUser.uid} email={authUser.email} onDone={function(p){setProfile(p)}} />;
 
   if(sessionBlocked) return (<div style={{width:"100vw",height:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"linear-gradient(145deg,#0a3d2f,#0d7363)",fontFamily:"'DM Sans',system-ui,sans-serif"}}><div style={{background:"rgba(255,255,255,.97)",borderRadius:16,padding:"44px 36px",width:440,maxWidth:"92vw",boxShadow:"0 20px 50px rgba(0,0,0,.3)",textAlign:"center"}}><div style={{fontSize:48,marginBottom:16}}>{"\ud83d\udd12"}</div><h2 style={{fontSize:20,fontWeight:700,color:"#0a3d2f",marginBottom:12}}>{"\u00bfSesi\u00f3n ocupada?"}</h2><p style={{color:"#64748b",fontSize:14,lineHeight:1.7,marginBottom:20}}>{"Otro usuario ya est\u00e1 conectado en este momento."}</p><p style={{color:"#94a3b8",fontSize:12,marginBottom:24}}>{"Si cree que es un error, espere unos minutos e intente nuevamente."}</p><div style={{display:"flex",gap:10,justifyContent:"center",flexWrap:"wrap"}}><button onClick={function(){acquireSessionLock(authUser.uid,false).then(function(canLogin){if(canLogin){setSessionBlocked(false);window.location.reload()}else{nfy("La sesi\u00f3n sigue ocupada","er")}})}} style={{background:"#0d9488",color:"#fff",border:"none",padding:"12px 24px",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer"}}>Reintentar</button><button onClick={handleLogout} style={{background:"#f1f5f9",border:"none",padding:"12px 24px",borderRadius:8,fontSize:14,cursor:"pointer",color:"#64748b"}}>{"Cerrar sesi\u00f3n"}</button></div></div></div>);
