@@ -77,7 +77,7 @@ export default function Hist({ allEvals, onView, isA, onD }) {
                       <button onClick={function(){onD(ev._fbId); sC(null);}} style={{background:"#dc2626",color:"#fff",border:"none",padding:"5px 10px",borderRadius:5,fontSize:11,cursor:"pointer",fontWeight:600}}>¿Sí?</button>
                       <button onClick={function(){sC(null)}} style={{background:"#f1f5f9",border:"none",padding:"5px 10px",borderRadius:5,fontSize:11,cursor:"pointer"}}>No</button>
                     </div> :
-                    <button onClick={function(){sC(ev._fbId||ev.id)}} style={{background:"#fef2f2",color:"#dc2626",border:"1px solid #fecaca",padding:"5px 10px",borderRadius:6,cursor:"pointer",fontSize:11}}>🗑</button>)}
+                    <button onClick={function(){sC(ev._fbId||ev.id)}} style={{background:"#fef2f2",color:"#dc2626",border:"1px solid #fecaca",padding:"5px 12px",borderRadius:6,cursor:"pointer",fontSize:11,fontWeight:600}}>Eliminar</button>)}
                   <span onClick={function(){if(onView)onView(ev)}} style={{color:"#94a3b8",cursor:"pointer"}}>→</span>
                 </div>
               </div>);
