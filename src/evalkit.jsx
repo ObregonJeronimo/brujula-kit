@@ -13,24 +13,41 @@ import Tools from "./components/Tools.jsx";
 import NoCreditsModal from "./components/NoCreditsModal.jsx";
 
 // Lazy-loaded components — only downloaded when user navigates to them
-var Hist = lazy(function(){ return import("./components/Hist.jsx"); });
-var ProfilePage = lazy(function(){ return import("./components/ProfilePage.jsx"); });
-var PremiumPage = lazy(function(){ return import("./components/PremiumPage.jsx"); });
-var CalendarPage = lazy(function(){ return import("./components/CalendarPage.jsx"); });
-var PacientesPage = lazy(function(){ return import("./components/PacientesPage.jsx"); });
-var AdminPanel = lazy(function(){ return import("./components/AdminPanel.jsx"); });
-var AdminStats = lazy(function(){ return import("./components/AdminStats.jsx"); });
+// Retry wrapper: if dynamic import fails (stale cache after deploy), reload page once
+function lazyRetry(fn){
+  return lazy(function(){
+    return fn().catch(function(err){
+      // Only auto-reload once per session to avoid infinite loop
+      var reloaded = sessionStorage.getItem("lazyReload");
+      if(!reloaded){
+        sessionStorage.setItem("lazyReload","1");
+        window.location.reload();
+        return new Promise(function(){}); // never resolves, page reloads
+      }
+      sessionStorage.removeItem("lazyReload");
+      throw err; // let ErrorBoundary handle it
+    });
+  });
+}
+
+var Hist = lazyRetry(function(){ return import("./components/Hist.jsx"); });
+var ProfilePage = lazyRetry(function(){ return import("./components/ProfilePage.jsx"); });
+var PremiumPage = lazyRetry(function(){ return import("./components/PremiumPage.jsx"); });
+var CalendarPage = lazyRetry(function(){ return import("./components/CalendarPage.jsx"); });
+var PacientesPage = lazyRetry(function(){ return import("./components/PacientesPage.jsx"); });
+var AdminPanel = lazyRetry(function(){ return import("./components/AdminPanel.jsx"); });
+var AdminStats = lazyRetry(function(){ return import("./components/AdminStats.jsx"); });
 
 // Eval components — heaviest, lazy-loaded
-var NewELDI = lazy(function(){ return import("./components/NewELDI.jsx"); });
-var NewPEFF = lazy(function(){ return import("./components/NewPEFF.jsx"); });
-var NewREP = lazy(function(){ return import("./components/NewREP.jsx"); });
-var NewDISC = lazy(function(){ return import("./components/NewDISC.jsx"); });
-var NewRECO = lazy(function(){ return import("./components/NewRECO.jsx"); });
-var RptPEFF = lazy(function(){ return import("./components/RptPEFF.jsx"); });
-var RptREP = lazy(function(){ return import("./components/RptREP.jsx"); });
-var RptDISC = lazy(function(){ return import("./components/RptDISC.jsx"); });
-var RptRECO = lazy(function(){ return import("./components/RptRECO.jsx"); });
+var NewELDI = lazyRetry(function(){ return import("./components/NewELDI.jsx"); });
+var NewPEFF = lazyRetry(function(){ return import("./components/NewPEFF.jsx"); });
+var NewREP = lazyRetry(function(){ return import("./components/NewREP.jsx"); });
+var NewDISC = lazyRetry(function(){ return import("./components/NewDISC.jsx"); });
+var NewRECO = lazyRetry(function(){ return import("./components/NewRECO.jsx"); });
+var RptPEFF = lazyRetry(function(){ return import("./components/RptPEFF.jsx"); });
+var RptREP = lazyRetry(function(){ return import("./components/RptREP.jsx"); });
+var RptDISC = lazyRetry(function(){ return import("./components/RptDISC.jsx"); });
+var RptRECO = lazyRetry(function(){ return import("./components/RptRECO.jsx"); });
 
 // Suspense fallback for lazy components
 var LazyFallback = <div style={{display:"flex",alignItems:"center",justifyContent:"center",padding:60,color:"#64748b",fontSize:14,fontWeight:500}}>Cargando...</div>;
