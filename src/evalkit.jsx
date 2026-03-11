@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, lazy, Suspense } from "react";
+import { useState, useEffect, useCallback, lazy, Suspense, Component } from "react";
 import { db, auth, doc, updateDoc, getDoc, increment, onAuthStateChanged, signOut } from "./firebase.js";
 import { fbGetAll, fbGetFiltered, fbAdd, fbDelete, getUserProfile, K } from "./lib/fb.js";
 import { acquireSessionLock, releaseSessionLock, useSessionHeartbeat } from "./lib/sessionLock.js";
@@ -34,6 +34,25 @@ var RptRECO = lazy(function(){ return import("./components/RptRECO.jsx"); });
 
 // Suspense fallback for lazy components
 var LazyFallback = <div style={{display:"flex",alignItems:"center",justifyContent:"center",padding:60,color:"#64748b",fontSize:14,fontWeight:500}}>Cargando...</div>;
+
+// Error Boundary to prevent white screens
+class ErrorBoundary extends Component {
+  constructor(props){ super(props); this.state = { hasError: false, error: null }; }
+  static getDerivedStateFromError(error){ return { hasError: true, error: error }; }
+  componentDidCatch(error, info){ console.error("ErrorBoundary caught:", error, info); }
+  render(){
+    if(this.state.hasError){
+      var self = this;
+      return <div style={{padding:40,textAlign:"center"}}>
+        <div style={{fontSize:48,marginBottom:16}}>{"⚠️"}</div>
+        <h2 style={{fontSize:18,fontWeight:700,color:"#0a3d2f",marginBottom:8}}>Algo salió mal</h2>
+        <p style={{fontSize:13,color:"#64748b",marginBottom:20}}>{this.state.error ? this.state.error.message : "Error inesperado"}</p>
+        <button onClick={function(){ self.setState({hasError:false,error:null}); if(self.props.onReset) self.props.onReset(); }} style={{padding:"12px 24px",background:"#0d9488",color:"#fff",border:"none",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer"}}>{"Volver al Panel"}</button>
+      </div>;
+    }
+    return this.props.children;
+  }
+}
 
 // Component registry: maps view names to components
 // To add a new eval: add entry in evalTypes.js + import + add here
@@ -180,6 +199,7 @@ export default function App() {
         {toast&&<div style={{position:"fixed",top:16,right:16,zIndex:999,background:toast.t==="ok"?"#059669":"#dc2626",color:"#fff",padding:"10px 18px",borderRadius:8,fontSize:13,fontWeight:500,boxShadow:"0 4px 16px rgba(0,0,0,.15)",animation:"fi .3s ease"}}>{toast.m}</div>}
         {view==="dash"&&<Dashboard allEvals={allEvals} onT={function(){navTo("tools")}} onView={viewReport} ld={loading} profile={profile} isAdmin={isAdmin} userId={authUser?.uid} nfy={nfy} onCalendar={function(){navTo("calendario")}} onStartEval={startEval} onBuyCredits={goToPremium} />}
         {view==="tools"&&<Tools onSel={startEval} credits={isAdmin?999:(profile.creditos||0)} onBuy={goToPremium} enabledTools={enabledTools} />}
+        <ErrorBoundary onReset={function(){ sV("dash"); sS(null); }}>
         <Suspense fallback={LazyFallback}>
           {/* Dynamic New* components from registry */}
           {NEW_COMPONENTS[view] && (function(){ var C = NEW_COMPONENTS[view]; return <C onS={onEvalDone} nfy={nfy} userId={authUser?.uid} />; })()}
@@ -193,6 +213,7 @@ export default function App() {
           {view==="adm"&&isAdmin&&<AdminPanel nfy={nfy} />}
           {view==="stats"&&isAdmin&&<AdminStats nfy={nfy} />}
         </Suspense>
+        </ErrorBoundary>
       </main>
     </div>
   );
