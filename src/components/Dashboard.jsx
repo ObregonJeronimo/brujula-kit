@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { K } from "../lib/fb.js";
 import { db, collection, getDocs, query, where } from "../firebase.js";
+import { typeLabel, isVisibleType } from "../config/evalTypes.js";
 
 var MESES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 var DIAS = ["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"];
@@ -51,8 +52,8 @@ function computeAlerts(citasArr, todayDate){
 }
 
 export default function Dashboard({ allEvals, onT, onView, ld, profile, isAdmin, userId, nfy, onCalendar, onStartEval, onBuyCredits }) {
-  // Filter out ELDI from visible evals
-  var visibleEvals = (allEvals || []).filter(function(e){ return e.tipo && e.tipo !== "eldi"; });
+  // Filter out hidden types (ELDI etc.)
+  var visibleEvals = (allEvals || []).filter(function(e){ return isVisibleType(e.tipo); });
   visibleEvals.sort(function(a,b){ return (b.fechaGuardado || "").localeCompare(a.fechaGuardado || ""); });
   var rc = visibleEvals.slice(0, 5);
   var evalsThisMonth = countThisMonth(visibleEvals);
@@ -102,7 +103,7 @@ export default function Dashboard({ allEvals, onT, onView, ld, profile, isAdmin,
   var todayStr = dateKey(now.getFullYear(), now.getMonth(), now.getDate());
   var upcoming = citas.filter(function(c){ return c.fecha >= todayStr && c.estado !== "cancelada"; }).sort(function(a,b){ return (a.fecha+(a.hora||"")).localeCompare(b.fecha+(b.hora||"")); }).slice(0, 3);
 
-  var typeLabel = function(tipo){ if(tipo==="peff") return "PEFF"; if(tipo==="rep") return "REP"; if(tipo==="disc") return "DISC"; if(tipo==="reco") return "RECO"; return (tipo||"").toUpperCase(); };
+  // typeLabel imported from evalTypes.js
 
   return (
     <div style={{animation:"fi .3s ease",width:"100%"}}>

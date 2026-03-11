@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { db, auth, doc, updateDoc, getDoc, increment, onAuthStateChanged, signOut } from "./firebase.js";
 import { fbGetAll, fbGetFiltered, fbAdd, fbDelete, getUserProfile, K } from "./lib/fb.js";
 import { acquireSessionLock, releaseSessionLock, useSessionHeartbeat } from "./lib/sessionLock.js";
+import { VISIBLE_TYPES, rptViewFor } from "./config/evalTypes.js";
 
 import AuthScreen from "./components/AuthScreen.jsx";
 import VerifyEmailScreen from "./components/VerifyEmail.jsx";
@@ -28,6 +29,12 @@ import NewDISC from "./components/NewDISC.jsx";
 import NewRECO from "./components/NewRECO.jsx";
 import CalendarPage from "./components/CalendarPage.jsx";
 import PacientesPage from "./components/PacientesPage.jsx";
+
+// Component registry: maps view names to components
+// To add a new eval: add entry in evalTypes.js + import + add here
+var NEW_COMPONENTS = { newELDI: NewELDI, newPEFF: NewPEFF, newREP: NewREP, newDISC: NewDISC, newRECO: NewRECO };
+var RPT_COMPONENTS = { rptP: RptPEFF, rptR: RptREP, rptD: RptDISC, rptRC: RptRECO };
+var ALL_NEW_VIEWS = Object.keys(NEW_COMPONENTS);
 
 var isMobile = function(){ return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) && window.innerWidth < 900; };
 
@@ -103,25 +110,19 @@ export default function App() {
 
   useEffect(function(){ if(profile && !sessionBlocked) loadEvals(); },[profile,loadEvals,sessionBlocked]);
 
-  // Derived filtered arrays for components that need them
-  var peffEvals = allEvals.filter(function(e){return e.tipo==="peff"});
-  var repEvals = allEvals.filter(function(e){return e.tipo==="rep"});
-  var discEvals = allEvals.filter(function(e){return e.tipo==="disc"});
-  var recoEvals = allEvals.filter(function(e){return e.tipo==="reco"});
+  // Derived filtered arrays removed — components filter from allEvals directly
 
   var goToPremium = function(){ sV("premium"); sS(null); window.scrollTo({top:0,behavior:"smooth"}); };
-  var navTo = function(v){ if((view==="newELDI"||view==="newPEFF"||view==="newREP"||view==="newDISC"||view==="newRECO") && v!==view){ if(!window.confirm("\u00bfSalir de la evaluaci\u00f3n?\n\nLa evaluaci\u00f3n no se guarda a medias y el cr\u00e9dito consumido no se recupera.")) return; } sV(v); sS(null); window.scrollTo({top:0,behavior:"smooth"}); };
+  var navTo = function(v){ if(ALL_NEW_VIEWS.indexOf(view) !== -1 && v!==view){ if(!window.confirm("\u00bfSalir de la evaluaci\u00f3n?\n\nLa evaluaci\u00f3n no se guarda a medias y el cr\u00e9dito consumido no se recupera.")) return; } sV(v); sS(null); window.scrollTo({top:0,behavior:"smooth"}); };
   var checkCredits = function(){ if(!profile) return false; if(profile.role==="admin") return true; if((profile.creditos||0)<1){ setShowNoCredits(true); return false; } return true; };
   var deductCredit = function(){ if(!profile || profile.role==="admin") return Promise.resolve(true); var userRef = doc(db,"usuarios",authUser.uid); return updateDoc(userRef,{creditos:increment(-1)}).then(function(){ return getDoc(userRef); }).then(function(fresh){ if(fresh.exists()){ var newCredits = fresh.data().creditos; setProfile(function(p){return Object.assign({},p,{creditos:newCredits})}); } return true; }).catch(function(e){ nfy("Error al descontar cr\u00e9dito: " + e.message, "er"); return false; }); };
   var startEval = function(toolId){ if(!checkCredits()) return; if(!isAdmin){ var ok = window.confirm("\u00bfIniciar evaluaci\u00f3n?\n\nSe consumir\u00e1 1 cr\u00e9dito de tu cuenta. Esta acci\u00f3n no se puede deshacer."); if(!ok) return; deductCredit().then(function(success){ if(success){ sV(toolId); } }); } else { sV(toolId); } };
 
-  // UNIFIED: all save functions just navigate to tools (New* components save directly to 'evaluaciones')
-  var navToTools = function(data){ if(data === "tools"){ sV("tools"); sS(null); loadEvals(); window.scrollTo({top:0,behavior:"smooth"}); return; } };
-  var saveEval = navToTools;
-  var savePeff = navToTools;
-  var saveRep = navToTools;
-  var saveDisc = navToTools;
-  var saveReco = navToTools;
+  // Single callback for all New* components
+  var onEvalDone = function(data){ if(data === "tools"){ sV("tools"); sS(null); loadEvals(); window.scrollTo({top:0,behavior:"smooth"}); return; } };
+
+  // Navigate to report view for an eval (used by Dashboard + Hist)
+  var viewReport = function(ev){ sS(ev); var rv = rptViewFor(ev.tipo); if(rv) sV(rv); };
 
   // UNIFIED: always delete from 'evaluaciones'
   var deleteEval = function(fbId){
@@ -153,18 +154,13 @@ export default function App() {
       </aside>
       <main id="main-scroll" style={{flex:1,overflowY:"auto",overflowX:"hidden",padding:mobile?"16px":"28px 36px",height:"100vh"}}>
         {toast&&<div style={{position:"fixed",top:16,right:16,zIndex:999,background:toast.t==="ok"?"#059669":"#dc2626",color:"#fff",padding:"10px 18px",borderRadius:8,fontSize:13,fontWeight:500,boxShadow:"0 4px 16px rgba(0,0,0,.15)",animation:"fi .3s ease"}}>{toast.m}</div>}
-        {view==="dash"&&<Dashboard allEvals={allEvals} onT={function(){navTo("tools")}} onView={function(e){ sS(e); var t=e.tipo||"peff"; if(t==="peff")sV("rptP"); else if(t==="rep")sV("rptR"); else if(t==="disc")sV("rptD"); else if(t==="reco")sV("rptRC"); else sV("rptP"); }} ld={loading} profile={profile} isAdmin={isAdmin} userId={authUser?.uid} nfy={nfy} onCalendar={function(){navTo("calendario")}} onStartEval={startEval} onBuyCredits={goToPremium} />}
+        {view==="dash"&&<Dashboard allEvals={allEvals} onT={function(){navTo("tools")}} onView={viewReport} ld={loading} profile={profile} isAdmin={isAdmin} userId={authUser?.uid} nfy={nfy} onCalendar={function(){navTo("calendario")}} onStartEval={startEval} onBuyCredits={goToPremium} />}
         {view==="tools"&&<Tools onSel={startEval} credits={isAdmin?999:(profile.creditos||0)} onBuy={goToPremium} />}
-        {view==="newELDI"&&<NewELDI onS={saveEval} nfy={nfy} userId={authUser?.uid} />}
-        {view==="newPEFF"&&<NewPEFF onS={savePeff} nfy={nfy} userId={authUser?.uid} />}
-        {view==="newREP"&&<NewREP onS={saveRep} nfy={nfy} userId={authUser?.uid} />}
-        {view==="newDISC"&&<NewDISC onS={saveDisc} nfy={nfy} userId={authUser?.uid} />}
-        {view==="newRECO"&&<NewRECO onS={saveReco} nfy={nfy} userId={authUser?.uid} />}
-        {view==="hist"&&<Hist allEvals={allEvals} onView={function(e){ sS(e); var t=e.tipo||"peff"; if(t==="peff")sV("rptP"); else if(t==="rep")sV("rptR"); else if(t==="disc")sV("rptD"); else if(t==="reco")sV("rptRC"); else sV("rptP"); }} isA={isAdmin} onD={deleteEval} />}
-        {view==="rptP"&&sel&&<RptPEFF ev={sel} onD={deleteEval} />}
-        {view==="rptR"&&sel&&<RptREP ev={sel} onD={deleteEval} />}
-        {view==="rptD"&&sel&&<RptDISC ev={sel} onD={deleteEval} />}
-        {view==="rptRC"&&sel&&<RptRECO ev={sel} onD={deleteEval} />}
+        {/* Dynamic New* components from registry */}
+        {NEW_COMPONENTS[view] && (function(){ var C = NEW_COMPONENTS[view]; return <C onS={onEvalDone} nfy={nfy} userId={authUser?.uid} />; })()}
+        {view==="hist"&&<Hist allEvals={allEvals} onView={viewReport} isA={isAdmin} onD={deleteEval} />}
+        {/* Dynamic Rpt* components from registry */}
+        {RPT_COMPONENTS[view] && sel && (function(){ var C = RPT_COMPONENTS[view]; return <C ev={sel} onD={deleteEval} />; })()}
         {view==="profile"&&<ProfilePage profile={profile} authUser={authUser} nfy={nfy} onBuyCredits={goToPremium} />}
         {view==="pacientes"&&<PacientesPage userId={authUser?.uid} nfy={nfy} allEvals={allEvals} />}
         {view==="calendario"&&<CalendarPage userId={authUser?.uid} nfy={nfy} />}

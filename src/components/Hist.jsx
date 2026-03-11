@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { isVisibleType, typeBadge, HIST_TABS } from "../config/evalTypes.js";
 var K = { mt: "#64748b" };
 var fa = function(m){ return Math.floor(m/12)+" años, "+(m%12)+" meses"; };
 
@@ -7,8 +8,7 @@ export default function Hist({ allEvals, onView, isA, onD }) {
   var _tab = useState("all"), tab = _tab[0], sTab = _tab[1];
   var _cf = useState(null), cf = _cf[0], sC = _cf[1];
 
-  // Filter out ELDI (hidden) and sort
-  var all = (allEvals || []).filter(function(e){ return e.tipo && e.tipo !== "eldi"; })
+  var all = (allEvals || []).filter(function(e){ return isVisibleType(e.tipo); })
     .sort(function(a, b){ return (b.fechaGuardado || "").localeCompare(a.fechaGuardado || ""); });
 
   var f = all.filter(function(e){
@@ -17,19 +17,12 @@ export default function Hist({ allEvals, onView, isA, onD }) {
     return true;
   });
 
-  var typeStyle = function(tipo){
-    if(tipo==="reco") return { b:"#f3e8ff", c:"#9333ea", l:"RECO" };
-    if(tipo==="disc") return { b:"#fef3c7", c:"#d97706", l:"DISC" };
-    if(tipo==="rep") return { b:"#dbeafe", c:"#2563eb", l:"REP" };
-    return { b:"#ede9fe", c:"#7c3aed", l:"PEFF" };
-  };
-
   return (
     <div style={{width:"100%",animation:"fi .3s ease"}}>
       <h1 style={{fontSize:22,fontWeight:700,marginBottom:6}}>Historial</h1>
       <p style={{color:K.mt,fontSize:14,marginBottom:14}}>{all.length+" evaluaciones"}</p>
       <div style={{display:"flex",gap:8,marginBottom:14,flexWrap:"wrap"}}>
-        {[["all","Todas"],["peff","PEFF"],["rep","Rep.Palabras"],["disc","Disc.Fonol."],["reco","Reco.Fonol."]].map(function(x){
+        {HIST_TABS.map(function(x){
           var id=x[0], lb=x[1];
           return <button key={id} onClick={function(){sTab(id)}} style={{padding:"6px 14px",borderRadius:6,border:tab===id?"2px solid #0d9488":"1px solid #e2e8f0",background:tab===id?"#ccfbf1":"#fff",color:tab===id?"#0d9488":"#64748b",fontSize:13,fontWeight:600,cursor:"pointer"}}>{lb}</button>;
         })}
@@ -38,7 +31,7 @@ export default function Hist({ allEvals, onView, isA, onD }) {
       {f.length === 0 ? <div style={{background:"#fff",borderRadius:12,padding:40,textAlign:"center",border:"1px solid #e2e8f0",color:K.mt}}>Sin resultados.</div> :
         <div style={{display:"flex",flexDirection:"column",gap:6}}>
           {f.map(function(ev){
-            var bg = typeStyle(ev.tipo);
+            var bg = typeBadge(ev.tipo);
             return (
               <div key={ev._fbId||ev.id} style={{background:"#fff",borderRadius:10,padding:"14px 20px",border:"1px solid #e2e8f0",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
                 <div onClick={function(){if(onView)onView(ev)}} style={{cursor:"pointer",flex:1}}>

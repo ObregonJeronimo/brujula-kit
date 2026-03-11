@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { db, collection, getDocs } from "../firebase.js";
+import { VISIBLE_TYPES, TYPE_COLORS, isVisibleType } from "../config/evalTypes.js";
 
 var K={mt:"#64748b",ac:"#0d9488",sd:"#0a3d2f"};
 var PRICE_PER_CREDIT=1650;
@@ -29,7 +30,7 @@ export default function AdminStats({nfy}){
 
   useEffect(function(){load()},[load]);
 
-  var visibleEvals=allEvals.filter(function(e){return e.tipo && e.tipo!=="eldi"});
+  var visibleEvals=allEvals.filter(function(e){return isVisibleType(e.tipo)});
   var nonAdminUsers=users.filter(function(u){return u.role!=="admin"});
   var totalUsers=nonAdminUsers.length;
   var totalCreditsDeducted=allEvals.length;
@@ -50,13 +51,15 @@ export default function AdminStats({nfy}){
 
   var monthEvals=getMonthEvals(selYear,selMonth);
   var yearEvals=getYearEvals(selYear);
-  var typeCounts=function(evs){return{peff:evs.filter(function(e){return e.tipo==="peff"}).length,rep:evs.filter(function(e){return e.tipo==="rep"}).length,disc:evs.filter(function(e){return e.tipo==="disc"}).length,reco:evs.filter(function(e){return e.tipo==="reco"}).length}};
+
+  // Dynamic type counts from registry
+  var typeCounts=function(evs){var c={};VISIBLE_TYPES.forEach(function(t){c[t.id]=evs.filter(function(e){return e.tipo===t.id}).length});return c};
   var mc=typeCounts(monthEvals);
   var yc=typeCounts(yearEvals);
-  var peffCount=visibleEvals.filter(function(e){return e.tipo==="peff"}).length;
-  var repCount=visibleEvals.filter(function(e){return e.tipo==="rep"}).length;
-  var discCount=visibleEvals.filter(function(e){return e.tipo==="disc"}).length;
-  var recoCount=visibleEvals.filter(function(e){return e.tipo==="reco"}).length;
+  var globalCounts=typeCounts(visibleEvals);
+
+  // Build sub string dynamically: "PEFF: 5 · REP: 3 · ..."
+  var evalCountsSub=VISIBLE_TYPES.map(function(t){return t.label+": "+globalCounts[t.id]}).join(" · ");
 
   var usersCreatedMonth=nonAdminUsers.filter(function(u){if(!u.createdAt)return false;var d=new Date(u.createdAt);return d.getFullYear()===selYear&&d.getMonth()===selMonth});
   var usersCreatedYear=nonAdminUsers.filter(function(u){if(!u.createdAt)return false;return new Date(u.createdAt).getFullYear()===selYear});
@@ -67,8 +70,6 @@ export default function AdminStats({nfy}){
   var monthNames=["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
   var monthlyData=monthNames.map(function(_,m){var mEvals=getMonthEvals(selYear,m);return{m:m,count:mEvals.length}});
   var maxMonthly=Math.max(1,Math.max.apply(null,monthlyData.map(function(d){return d.count})));
-
-  var typeColors={PEFF:"#7c3aed",REP:"#2563eb",DISC:"#ea580c",RECO:"#d946ef"};
 
   var Stat=function(props){return <div style={{background:"#fff",borderRadius:12,padding:"18px 20px",border:"1px solid #e2e8f0"}}><div style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}><span style={{fontSize:22}}>{props.icon}</span><span style={{fontSize:12,color:K.mt,fontWeight:600}}>{props.label}</span></div><div style={{fontSize:28,fontWeight:700,color:props.color||"#1e293b"}}>{props.value}</div>{props.sub&&<div style={{fontSize:11,color:K.mt,marginTop:2}}>{props.sub}</div>}</div>};
 
@@ -88,7 +89,7 @@ export default function AdminStats({nfy}){
     {tab==="resumen"&&<div>
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))",gap:14,marginBottom:24}}>
         <Stat icon="💰" label="Ingresos totales" value={fmt$(totalRevenue)} sub={totalCreditsPurchased+" créditos vendidos"} color="#059669"/>
-        <Stat icon="💳" label="Evaluaciones realizadas" value={visibleEvals.length} sub={"PEFF: "+peffCount+" · REP: "+repCount+" · DISC: "+discCount+" · RECO: "+recoCount} color="#7c3aed"/>
+        <Stat icon="💳" label="Evaluaciones realizadas" value={visibleEvals.length} sub={evalCountsSub} color="#7c3aed"/>
         <Stat icon="👥" label="Usuarios registrados" value={totalUsers} sub={neverPurchased.length+" nunca compraron"} color="#0d9488"/>
         <Stat icon="⚠️" label="Sin comprar" value={neverPurchased.length} sub="terminaron demo sin comprar" color="#f59e0b"/>
       </div>
@@ -103,7 +104,7 @@ export default function AdminStats({nfy}){
           </div>})}
         </div>
         <div style={{display:"flex",gap:12,marginTop:12,justifyContent:"center",fontSize:11,flexWrap:"wrap"}}>
-          {Object.entries(typeColors).map(function(e){return <span key={e[0]} style={{display:"flex",alignItems:"center",gap:4}}><div style={{width:10,height:10,borderRadius:2,background:e[1]}}/>{e[0]}</span>})}
+          {Object.entries(TYPE_COLORS).map(function(e){return <span key={e[0]} style={{display:"flex",alignItems:"center",gap:4}}><div style={{width:10,height:10,borderRadius:2,background:e[1]}}/>{e[0]}</span>})}
         </div>
         <div style={{display:"flex",justifyContent:"center",gap:12,marginTop:12}}>
           <button onClick={function(){setSelYear(function(y){return y-1})}} style={{background:"#f1f5f9",border:"none",borderRadius:6,padding:"6px 14px",fontSize:12,cursor:"pointer"}}>{"← "+(selYear-1)}</button>
@@ -112,8 +113,8 @@ export default function AdminStats({nfy}){
         </div>
       </div>
 
-      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10,marginBottom:20}}>
-        {[["PEFF",peffCount,"#7c3aed"],["REP",repCount,"#2563eb"],["DISC",discCount,"#ea580c"],["RECO",recoCount,"#d946ef"]].map(function(t){return <div key={t[0]} style={{background:"#fff",borderRadius:10,padding:16,border:"1px solid #e2e8f0",textAlign:"center"}}><div style={{fontSize:24,fontWeight:700,color:t[2]}}>{t[1]}</div><div style={{fontSize:11,color:K.mt,fontWeight:600}}>{t[0]}</div></div>})}
+      <div style={{display:"grid",gridTemplateColumns:"repeat("+VISIBLE_TYPES.length+",1fr)",gap:10,marginBottom:20}}>
+        {VISIBLE_TYPES.map(function(t){return <div key={t.id} style={{background:"#fff",borderRadius:10,padding:16,border:"1px solid #e2e8f0",textAlign:"center"}}><div style={{fontSize:24,fontWeight:700,color:t.color}}>{globalCounts[t.id]}</div><div style={{fontSize:11,color:K.mt,fontWeight:600}}>{t.label}</div></div>})}
       </div>
 
       {neverPurchased.length>0&&<div style={{background:"#fffbeb",border:"1px solid #fde68a",borderRadius:12,padding:20}}>
@@ -135,10 +136,7 @@ export default function AdminStats({nfy}){
       </div>
 
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",gap:12,marginBottom:20}}>
-        <Stat icon="🔊" label="PEFF" value={mc.peff} color="#7c3aed"/>
-        <Stat icon="📝" label="REP" value={mc.rep} color="#2563eb"/>
-        <Stat icon="👂" label="DISC" value={mc.disc} color="#ea580c"/>
-        <Stat icon="🧠" label="RECO" value={mc.reco} color="#d946ef"/>
+        {VISIBLE_TYPES.map(function(t){return <Stat key={t.id} icon={t.icon} label={t.label} value={mc[t.id]} color={t.color}/>})}
         <Stat icon="💳" label="Total" value={monthEvals.length} sub="evaluaciones" color="#1e293b"/>
         <Stat icon="👤" label="Nuevos usuarios" value={usersCreatedMonth.length}/>
       </div>
@@ -147,10 +145,7 @@ export default function AdminStats({nfy}){
         <div style={{fontSize:14,opacity:.8,marginBottom:12}}>{"Resumen anual "+selYear}</div>
         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(100px,1fr))",gap:16}}>
           <div><div style={{fontSize:32,fontWeight:700}}>{yearEvals.length}</div><div style={{fontSize:12,opacity:.7}}>total</div></div>
-          <div><div style={{fontSize:24,fontWeight:700}}>{yc.peff}</div><div style={{fontSize:11,opacity:.7}}>PEFF</div></div>
-          <div><div style={{fontSize:24,fontWeight:700}}>{yc.rep}</div><div style={{fontSize:11,opacity:.7}}>REP</div></div>
-          <div><div style={{fontSize:24,fontWeight:700}}>{yc.disc}</div><div style={{fontSize:11,opacity:.7}}>DISC</div></div>
-          <div><div style={{fontSize:24,fontWeight:700}}>{yc.reco}</div><div style={{fontSize:11,opacity:.7}}>RECO</div></div>
+          {VISIBLE_TYPES.map(function(t){return <div key={t.id}><div style={{fontSize:24,fontWeight:700}}>{yc[t.id]}</div><div style={{fontSize:11,opacity:.7}}>{t.label}</div></div>})}
           <div><div style={{fontSize:24,fontWeight:700}}>{usersCreatedYear.length}</div><div style={{fontSize:11,opacity:.7}}>nuevos</div></div>
         </div>
       </div>
@@ -160,7 +155,7 @@ export default function AdminStats({nfy}){
         <div style={{maxHeight:300,overflowY:"auto"}}>
           {monthEvals.sort(function(a,b){return(b.fechaGuardado||"").localeCompare(a.fechaGuardado||"")}).map(function(ev,i){return <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 0",borderBottom:"1px solid #f1f5f9",fontSize:13}}>
             <div style={{display:"flex",alignItems:"center",gap:10}}>
-              <span style={{background:typeColors[(ev.tipo||"").toUpperCase()]||"#94a3b8",color:"#fff",padding:"3px 8px",borderRadius:4,fontSize:10,fontWeight:700}}>{(ev.tipo||"").toUpperCase()}</span>
+              <span style={{background:TYPE_COLORS[(ev.tipo||"").toUpperCase()]||"#94a3b8",color:"#fff",padding:"3px 8px",borderRadius:4,fontSize:10,fontWeight:700}}>{(ev.tipo||"").toUpperCase()}</span>
               <span style={{fontWeight:600}}>{ev.paciente}</span>
             </div>
             <div style={{fontSize:11,color:K.mt}}>{(ev.evaluador||"?") + " · " + (ev.fechaGuardado?fmtDate(ev.fechaGuardado):"")}</div>
