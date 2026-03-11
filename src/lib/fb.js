@@ -1,11 +1,21 @@
 import { db, collection, addDoc, getDocs, deleteDoc, doc, query, where, getDoc, orderBy, limit } from "../firebase.js";
 
 export async function fbGetFiltered(c, userId, maxResults) {
-  var q2 = maxResults
-    ? query(collection(db, c), where("userId", "==", userId), orderBy("fechaGuardado", "desc"), limit(maxResults))
-    : query(collection(db, c), where("userId", "==", userId), orderBy("fechaGuardado", "desc"));
-  const s = await getDocs(q2);
-  return s.docs.map(d => ({ _fbId: d.id, ...d.data() }));
+  try {
+    var q2 = maxResults
+      ? query(collection(db, c), where("userId", "==", userId), orderBy("fechaGuardado", "desc"), limit(maxResults))
+      : query(collection(db, c), where("userId", "==", userId), orderBy("fechaGuardado", "desc"));
+    const s = await getDocs(q2);
+    return s.docs.map(d => ({ _fbId: d.id, ...d.data() }));
+  } catch(e) {
+    // Fallback: query without orderBy (in case composite index is missing)
+    console.warn("fbGetFiltered: falling back to simple query:", e.message);
+    var q3 = query(collection(db, c), where("userId", "==", userId));
+    const s2 = await getDocs(q3);
+    var results = s2.docs.map(d => ({ _fbId: d.id, ...d.data() }));
+    results.sort(function(a,b){ return (b.fechaGuardado||"").localeCompare(a.fechaGuardado||""); });
+    return results;
+  }
 }
 
 export async function fbGetAll(c) {

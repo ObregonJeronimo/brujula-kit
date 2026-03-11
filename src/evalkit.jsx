@@ -147,10 +147,9 @@ export default function App() {
     // fbGetFiltered now returns pre-sorted by fechaGuardado desc from Firestore
     var p = profile.role==="admin" ? fbGetAll("evaluaciones") : fbGetFiltered("evaluaciones",authUser.uid);
     p.then(function(res){
-      // Only sort if admin (fbGetAll doesn't sort server-side)
       if(profile.role==="admin") res.sort(function(a,b){return(b.fechaGuardado||"").localeCompare(a.fechaGuardado||"")});
       setAllEvals(res);
-    }).catch(function(e){console.error(e)}).finally(function(){sL(false)});
+    }).catch(function(e){console.error("loadEvals error:",e); setAllEvals([]);}).finally(function(){sL(false)});
   },[profile,authUser]);
 
   useEffect(function(){ if(profile && !sessionBlocked) loadEvals(); },[profile,loadEvals,sessionBlocked]);
