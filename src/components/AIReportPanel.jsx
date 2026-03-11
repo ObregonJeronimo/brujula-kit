@@ -61,8 +61,10 @@ export default function AIReportPanel({ ev, evalType, collectionName, evalLabel,
   var reportRef = useRef(null);
   var cudRef = useRef(null);
 
-  if(existingReport && !report) setReport(existingReport);
-  if(existingCUD && !cudReport) setCudReport(existingCUD);
+  useEffect(function(){
+    if(existingReport && !report) setReport(existingReport);
+    if(existingCUD && !cudReport) setCudReport(existingCUD);
+  }, [existingReport, existingCUD]);
 
   var buildEvalData = function(){
     var evalData = {
@@ -118,10 +120,13 @@ export default function AIReportPanel({ ev, evalType, collectionName, evalLabel,
 
   // Auto-generate report on mount if autoGenerate=true and no existing report
   useEffect(function(){
-    if(autoGenerate && !existingReport && !report && !generating && !genError && !autoTriggered){
+    if(!autoGenerate || existingReport || report || generating || genError || autoTriggered) return;
+    // Small delay to let Firestore save complete and _fbId be set
+    var timer = setTimeout(function(){
       setAutoTriggered(true);
-      handleGenerate("clinico");
-    }
+      try { handleGenerate("clinico"); } catch(e){ console.error("Auto-generate error:",e); }
+    }, 1500);
+    return function(){ clearTimeout(timer); };
   }, [autoGenerate]);
 
   // No report at all
