@@ -100,19 +100,16 @@ export default function AuthScreen({ onDone }) {
   var handleLogin = async function(ev) {
     ev.preventDefault(); setLd(true); setErr(""); setInfo("");
     try {
-      // Check provider in Firestore BEFORE attempting login
-      var usersSnap = await getDocs(query(collection(db, "usuarios"), where("email", "==", email.trim())));
-      if (!usersSnap.empty) {
-        var existingProf = usersSnap.docs[0].data();
-        if (existingProf.authProvider === "google") {
-          setErr("Esta cuenta fue creada con Google. Usá el botón 'Continuar con Google' para iniciar sesión.");
-          setLd(false); return;
-        }
-      }
       var cred = await signInWithEmailAndPassword(auth, email.trim(), pass);
       var u = cred.user;
       if (!u.emailVerified) { setLd(false); return; }
       var prof = await getUserProfile(u.uid);
+      if (prof && prof.authProvider === "google") {
+        // Sign out immediately — they shouldn't be logged in with password
+        await auth.signOut();
+        setErr("Esta cuenta fue creada con Google. Usá el botón 'Continuar con Google' para iniciar sesión.");
+        setLd(false); return;
+      }
       if (prof && prof.profileComplete) {
         var canLogin = await acquireSessionLock(u.uid, prof.role === "admin");
         if (!canLogin) { setErr("Sesión ocupada. Intentá en unos minutos."); setLd(false); return; }
