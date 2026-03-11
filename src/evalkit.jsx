@@ -17,15 +17,15 @@ import NoCreditsModal from "./components/NoCreditsModal.jsx";
 function lazyRetry(fn){
   return lazy(function(){
     return fn().catch(function(err){
-      // Only auto-reload once per session to avoid infinite loop
-      var reloaded = sessionStorage.getItem("lazyReload");
-      if(!reloaded){
-        sessionStorage.setItem("lazyReload","1");
+      // Only auto-reload if last reload was more than 10 seconds ago (prevents loop)
+      var lastReload = parseInt(sessionStorage.getItem("lazyReload")||"0");
+      var now = Date.now();
+      if(now - lastReload > 10000){
+        sessionStorage.setItem("lazyReload", now+"");
         window.location.reload();
-        return new Promise(function(){}); // never resolves, page reloads
+        return new Promise(function(){}); 
       }
-      sessionStorage.removeItem("lazyReload");
-      throw err; // let ErrorBoundary handle it
+      throw err;
     });
   });
 }
