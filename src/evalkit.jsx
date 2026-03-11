@@ -101,10 +101,12 @@ export default function App() {
   // UNIFIED: load all evals from single collection
   var loadEvals = useCallback(function(){
     if(!profile) return; sL(true);
+    // fbGetFiltered now returns pre-sorted by fechaGuardado desc from Firestore
     var p = profile.role==="admin" ? fbGetAll("evaluaciones") : fbGetFiltered("evaluaciones",authUser.uid);
     p.then(function(res){
-      var sortFn = function(a,b){return(b.fechaGuardado||"").localeCompare(a.fechaGuardado||"")};
-      setAllEvals(res.sort(sortFn));
+      // Only sort if admin (fbGetAll doesn't sort server-side)
+      if(profile.role==="admin") res.sort(function(a,b){return(b.fechaGuardado||"").localeCompare(a.fechaGuardado||"")});
+      setAllEvals(res);
     }).catch(function(e){console.error(e)}).finally(function(){sL(false)});
   },[profile,authUser]);
 

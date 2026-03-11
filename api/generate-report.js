@@ -74,12 +74,35 @@ function buildEvalSummary(ev, evalType) {
   return { header: header, data: data, obs: obs };
 }
 
+// Simple in-memory rate limiter (per serverless instance)
+var rateLimitMap = {};
+var RATE_LIMIT_WINDOW = 60000; // 1 minute
+var RATE_LIMIT_MAX = 5; // max 5 requests per minute per IP
+
+function checkRateLimit(ip) {
+  var now = Date.now();
+  if (!rateLimitMap[ip]) rateLimitMap[ip] = [];
+  // Clean old entries
+  rateLimitMap[ip] = rateLimitMap[ip].filter(function(t) { return now - t < RATE_LIMIT_WINDOW; });
+  if (rateLimitMap[ip].length >= RATE_LIMIT_MAX) return false;
+  rateLimitMap[ip].push(now);
+  // Clean map periodically to prevent memory leak
+  if (Object.keys(rateLimitMap).length > 1000) rateLimitMap = {};
+  return true;
+}
+
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
   if (req.method === "OPTIONS") return res.status(200).end();
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
+
+  // Rate limit check
+  var clientIp = req.headers["x-forwarded-for"] || req.headers["x-real-ip"] || "unknown";
+  if (!checkRateLimit(clientIp)) {
+    return res.status(429).json({ error: "Demasiadas solicitudes. Esperá un momento antes de intentar de nuevo." });
+  }
 
   var GROQ_KEY = process.env.GROQ_API_KEY;
   if (!GROQ_KEY) {

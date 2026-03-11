@@ -1,7 +1,9 @@
-import { db, collection, addDoc, getDocs, deleteDoc, doc, query, where, getDoc } from "../firebase.js";
+import { db, collection, addDoc, getDocs, deleteDoc, doc, query, where, getDoc, orderBy, limit } from "../firebase.js";
 
-export async function fbGetFiltered(c, userId) {
-  const q2 = query(collection(db, c), where("userId", "==", userId));
+export async function fbGetFiltered(c, userId, maxResults) {
+  var q2 = maxResults
+    ? query(collection(db, c), where("userId", "==", userId), orderBy("fechaGuardado", "desc"), limit(maxResults))
+    : query(collection(db, c), where("userId", "==", userId), orderBy("fechaGuardado", "desc"));
   const s = await getDocs(q2);
   return s.docs.map(d => ({ _fbId: d.id, ...d.data() }));
 }
@@ -28,8 +30,10 @@ export async function getUserProfile(uid) {
 
 export async function generateUsername(nombre, apellido) {
   const base = (nombre.charAt(0) + apellido).toLowerCase().replace(/[^a-z0-9]/g, "").substring(0, 12);
-  const existing = await fbGetAll("usuarios");
-  const usernames = existing.map(u => u.username || "");
+  // Instead of downloading ALL users, query for matching usernames only
+  const q2 = query(collection(db, "usuarios"), where("username", ">=", base), where("username", "<=", base + "\uf8ff"));
+  const snap = await getDocs(q2);
+  const usernames = snap.docs.map(d => d.data().username || "");
   let candidate = base;
   let n = 1;
   while (usernames.includes(candidate)) { candidate = base + n; n++; }
