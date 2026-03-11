@@ -48,7 +48,7 @@ export default function RptRECO({ ev, onD }){
   var sevBg = res.severity==="Adecuado"?"#f0fdf4":res.severity==="Leve"?"#fffbeb":"#fef2f2";
 
   return (
-    <div style={{animation:"fi .3s ease",maxWidth:900,margin:"0 auto"}}>
+    <div style={{animation:"fi .3s ease",maxWidth:1200,margin:"0 auto"}}>
       {/* Header */}
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20,flexWrap:"wrap",gap:12}}>
         <h1 style={{fontSize:20,fontWeight:700}}>{"\ud83e\udde0 Reconocimiento Fonológico"}</h1>

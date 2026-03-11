@@ -108,7 +108,7 @@ export default function RptELDI({ev,onD}){
     </div>;
   };
 
-  return <div style={{width:"100%",maxWidth:900,animation:"fi .3s ease"}}>
+  return <div style={{width:"100%",maxWidth:1200,margin:"0 auto",animation:"fi .3s ease"}}>
     <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:24,flexWrap:"wrap",gap:12}}>
       <div><h1 style={{fontSize:24,fontWeight:700}}>{"Informe ELDI"}</h1><p style={{color:K.mt,fontSize:15,marginTop:2}}>{ev.paciente+" \u2014 "+fa(ev.edadMeses)}</p></div>
       <div style={{display:"flex",gap:8}}>
