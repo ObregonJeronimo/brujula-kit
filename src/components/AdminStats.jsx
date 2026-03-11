@@ -26,7 +26,7 @@ export default function AdminStats({nfy}){
     Promise.all([
       getDocs(collection(db,"usuarios")),
       getDocs(collection(db,"evaluaciones")),
-      getDocs(collection(db,"pagos"))
+      getDocs(collection(db,"pagos")).catch(function(){ return { docs: [] }; })
     ]).then(function(res){
       setUsers(res[0].docs.map(function(d){return Object.assign({_fbId:d.id},d.data())}));
       setAllEvals(res[1].docs.map(function(d){return Object.assign({_fbId:d.id},d.data())}));
