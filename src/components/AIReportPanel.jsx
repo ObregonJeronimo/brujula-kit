@@ -60,6 +60,9 @@ export default function AIReportPanel({ ev, evalType, collectionName, evalLabel,
   var _autoTriggered = useState(false), autoTriggered = _autoTriggered[0], setAutoTriggered = _autoTriggered[1];
   var reportRef = useRef(null);
   var cudRef = useRef(null);
+  // Track latest _fbId via ref so save works even if prop was null initially
+  var fbIdRef = useRef(ev._fbId);
+  useEffect(function(){ fbIdRef.current = ev._fbId; }, [ev._fbId]);
 
   useEffect(function(){
     if(existingReport && !report) setReport(existingReport);
@@ -92,16 +95,22 @@ export default function AIReportPanel({ ev, evalType, collectionName, evalLabel,
     .then(function(r){ return r.json(); })
     .then(function(data){
       if(data.success && data.report){
+        // Save to Firestore with retry (fbId might not be ready yet)
+        var saveToFirestore = function(field, value, retries){
+          var id = fbIdRef.current || ev._fbId;
+          if(id && collectionName){
+            var upd = {}; upd[field] = value; upd[field+"Date"] = new Date().toISOString();
+            updateDoc(doc(db, collectionName, id), upd).catch(function(e){console.error("Save report error:",e);});
+          } else if(retries > 0){
+            setTimeout(function(){ saveToFirestore(field, value, retries-1); }, 2000);
+          }
+        };
         if(isClinico){
           setReport(data.report);
-          if(ev._fbId && collectionName){
-            updateDoc(doc(db, collectionName, ev._fbId), {aiReport: data.report, aiReportDate: new Date().toISOString()}).catch(function(e){console.error(e);});
-          }
+          saveToFirestore("aiReport", data.report, 5);
         } else {
           setCudReport(data.report);
-          if(ev._fbId && collectionName){
-            updateDoc(doc(db, collectionName, ev._fbId), {aiCudReport: data.report, aiCudReportDate: new Date().toISOString()}).catch(function(e){console.error(e);});
-          }
+          saveToFirestore("aiCudReport", data.report, 5);
         }
       } else {
         var err = data.error || "Error al generar informe.";

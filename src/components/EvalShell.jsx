@@ -74,7 +74,7 @@ export default function EvalShell({ onS, nfy, userId, config, renderEval, comput
   var results = step === RESULT_STEP ? computeResults(responses, obsMap) : null;
 
   return (
-    <div style={{animation:"fi .3s ease",maxWidth:900,margin:"0 auto"}}>
+    <div style={{animation:"fi .3s ease",maxWidth:1200,margin:"0 auto"}}>
       {/* Header */}
       <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20}}>
         <span style={{fontSize:32}}>{config.icon}</span>

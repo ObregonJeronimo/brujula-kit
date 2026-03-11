@@ -178,7 +178,7 @@ export default function NewELDI({onS,nfy,userId}){
     </div>;
   };
 
-  return <div style={{width:"100%",maxWidth:800,animation:"fi .3s ease"}}>
+  return <div style={{width:"100%",maxWidth:1200,animation:"fi .3s ease"}}>
     <div style={{display:"flex",gap:4,marginBottom:22}}>{steps.map(function(s,i){return <div key={i} style={{flex:1,textAlign:"center"}}><div style={{height:4,borderRadius:2,marginBottom:5,background:step>i+1?"#0d9488":step===i+1?"#b2dfdb":"#e2e8f0"}}/><span style={{fontSize:11,color:step===i+1?"#0d9488":"#64748b",fontWeight:step===i+1?600:400}}>{s}</span></div>})}</div>
     <div style={{background:"#fff",borderRadius:12,padding:28,border:"1px solid #e2e8f0"}}>
 
