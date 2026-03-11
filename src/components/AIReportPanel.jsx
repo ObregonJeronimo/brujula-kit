@@ -18,13 +18,13 @@ function textPDF(title, evalLabel, ev, reportText, filename){
     pdf.text(title+" \u2014 "+(evalLabel||""), margin, y); 
     pdf.text("Fecha: "+(ev.fechaEvaluacion||""), pW-margin, y, {align:"right"});
     y+=lineH+2;
-    pdf.setDrawColor(200); pdf.line(margin, y, pW-margin, y); y+=4;
+    pdf.setDrawColor(200); pdf.line(margin, y, pW-margin, y); y+=8;
 
     // Patient info
     pdf.setFontSize(14); pdf.setTextColor(10,61,47); pdf.setFont(undefined,"bold");
-    pdf.text(ev.paciente||"", margin, y); y+=6;
+    pdf.text(ev.paciente||"", margin, y); y+=7;
     pdf.setFontSize(9); pdf.setTextColor(100); pdf.setFont(undefined,"normal");
-    pdf.text("DNI: "+(ev.pacienteDni||"N/A")+" \u00b7 Edad: "+ageLabel(ev.edadMeses||0), margin, y); y+=8;
+    pdf.text("DNI: "+(ev.pacienteDni||"N/A")+" \u00b7 Edad: "+ageLabel(ev.edadMeses||0), margin, y); y+=10;
 
     // Report body
     if(reportText){
