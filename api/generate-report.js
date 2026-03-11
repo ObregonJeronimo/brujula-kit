@@ -126,14 +126,18 @@ export default async function handler(req, res) {
     var userPrompt = "";
 
     if (reportMode === "cud") {
-      userPrompt = "Con estos datos de una evaluacion fonoaudiologica, redacta un INFORME PARA CUD (Certificado Unico de Discapacidad) con lenguaje clinico formal.\n\n"
-        + "Estructura:\n"
-        + "INFORME FONOAUDIOLOGICO (PARA CUD)\n"
-        + "Datos del paciente (nombre, DNI, edad, fecha)\n"
-        + "Evaluacion realizada (que se evaluo y resultados principales)\n"
-        + "Conclusion diagnostica (compatible con que trastorno)\n"
-        + "Recomendacion (intervencion sugerida)\n\n"
-        + "Maximo 15 lineas. Sin porcentajes.\n\n"
+      userPrompt = "Con estos datos de una evaluacion fonoaudiologica, redacta un INFORME FONOAUDIOLOGICO PARA PRESENTAR ANTE JUNTA EVALUADORA DE DISCAPACIDAD (CUD - Certificado Unico de Discapacidad, Argentina).\n\n"
+        + "Estructura EXACTA:\n"
+        + "INFORME FONOAUDIOLOGICO PARA CUD\n\n"
+        + "DATOS DEL PACIENTE: nombre, DNI, edad, fecha de evaluacion\n\n"
+        + "MOTIVO DE EVALUACION: descripcion del motivo de la consulta y derivacion\n\n"
+        + "EVALUACION REALIZADA: pruebas aplicadas y hallazgos principales (sin porcentajes, solo descripcion clinica de las dificultades observadas)\n\n"
+        + "DIAGNOSTICO FONOAUDIOLOGICO: diagnostico compatible con CIE-10 si corresponde. Describir el tipo de trastorno y su severidad en terminos funcionales.\n\n"
+        + "IMPACTO FUNCIONAL: como afecta la comunicacion, la participacion social, el aprendizaje y la vida diaria del paciente. Esto es FUNDAMENTAL para la Junta Evaluadora.\n\n"
+        + "NECESIDADES DE APOYO: tratamiento fonoaudiologico recomendado (frecuencia, duracion estimada), necesidad de acompanante terapeutico, maestra integradora, u otros apoyos.\n\n"
+        + "PRONOSTICO: con tratamiento adecuado.\n\n"
+        + "Lenguaje clinico formal, sin porcentajes, sin markdown. Maximo 25 lineas. Espanol rioplatense profesional.\n"
+        + "IMPORTANTE: El informe debe dejar claro el impacto en la vida diaria y las necesidades de apoyo, ya que la Junta Evaluadora valora las limitaciones funcionales.\n\n"
         + summary.header + "\n" + summary.data + "\nOBS: " + summary.obs;
     } else {
       userPrompt = "Con estos datos de una evaluacion fonoaudiologica, redacta un INFORME FONOAUDIOLOGICO BREVE Y CLINICO.\n\n"

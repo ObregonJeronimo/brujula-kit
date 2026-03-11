@@ -63,7 +63,11 @@ export default function EvalShell({ onS, nfy, userId, config, renderEval, comput
   var _generating = useState(false), generating = _generating[0], setGenerating = _generating[1];
   var _genError = useState(null), genError = _genError[0], setGenError = _genError[1];
   var _showTech = useState(false), showTech = _showTech[0], setShowTech = _showTech[1];
+  var _cudReport = useState(null), cudReport = _cudReport[0], setCudReport = _cudReport[1];
+  var _cudGenerating = useState(false), cudGenerating = _cudGenerating[0], setCudGenerating = _cudGenerating[1];
+  var _cudError = useState(null), cudError = _cudError[0], setCudError = _cudError[1];
   var reportRef = useRef(null);
+  var cudReportRef = useRef(null);
 
   var patientAge = patient ? ageMo(patient.fechaNac) : 0;
   var accentColor = config.color || K.ac;
@@ -146,6 +150,48 @@ export default function EvalShell({ onS, nfy, userId, config, renderEval, comput
 
   var results = step === RESULT_STEP ? computeResults(responses, obsMap) : null;
 
+  var generateCUD = function(){
+    setCudGenerating(true); setCudError(null);
+    var res = computeResults(responses, obsMap);
+    var evalData = {
+      paciente: patient ? patient.nombre : "", pacienteDni: patient ? (patient.dni||"") : "",
+      edadMeses: patientAge, fechaEvaluacion: evalDate, derivadoPor: derivado, observaciones: obs, resultados: res
+    };
+    fetch("/api/generate-report", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ evalData: evalData, evalType: config.evalType, reportMode: "cud" })
+    })
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      if(data.success && data.report) setCudReport(data.report);
+      else setCudError(data.error || "Error al generar informe CUD.");
+      setCudGenerating(false);
+    })
+    .catch(function(e){ setCudError("Error: " + e.message); setCudGenerating(false); });
+  };
+
+  var handleCUDPDF = function(){
+    if(!cudReportRef.current) return;
+    handlePDFCUD(cudReportRef);
+  };
+  var handlePDFCUD = function(ref){
+    if(!ref.current) return;
+    ref.current.style.paddingBottom = "40px";
+    import("html2canvas").then(function(mod){
+      return mod.default(ref.current,{scale:2,useCORS:true,backgroundColor:"#ffffff",scrollY:-window.scrollY,height:ref.current.scrollHeight,windowHeight:ref.current.scrollHeight+100});
+    }).then(function(canvas){
+      ref.current.style.paddingBottom = "";
+      return import("jspdf").then(function(mod){
+        var jsPDF = mod.jsPDF; var pdf = new jsPDF("p","mm","a4");
+        var pW=210,pH=297,margin=10,imgW=pW-margin*2,imgH=(canvas.height*imgW)/canvas.width;
+        var usableH=pH-margin*2,pos=0,page=0;
+        while(pos<imgH){ if(page>0) pdf.addPage(); var srcY=Math.round((pos/imgH)*canvas.height); var srcH=Math.round((Math.min(usableH,imgH-pos)/imgH)*canvas.height); if(srcH<=0)break; var sc=document.createElement("canvas");sc.width=canvas.width;sc.height=srcH; sc.getContext("2d").drawImage(canvas,0,srcY,canvas.width,srcH,0,0,canvas.width,srcH); pdf.addImage(sc.toDataURL("image/png"),"PNG",margin,margin,imgW,(srcH*imgW)/canvas.width); pos+=usableH;page++; }
+        var name = (patient?patient.nombre:"").replace(/\s/g,"_");
+        pdf.save("CUD_"+config.evalType.toUpperCase()+"_"+name+"_"+(evalDate||"")+".pdf");
+      });
+    }).catch(function(e){ ref.current.style.paddingBottom=""; console.error(e); });
+  };
+
   return (
     <div style={{animation:"fi .3s ease",maxWidth:900,margin:"0 auto"}}>
       {/* Header */}
@@ -216,6 +262,30 @@ export default function EvalShell({ onS, nfy, userId, config, renderEval, comput
               <div style={{fontSize:10,color:"#7c3aed",marginTop:6}}>{"Debe ser revisado por el profesional tratante."}</div>
             </div>
             <div style={{marginTop:14,paddingTop:8,borderTop:"1px solid "+K.bd,fontSize:9,color:"#94a3b8",textAlign:"center"}}>{"Brújula KIT \u2014 "+config.title+" \u2014 "+new Date().toLocaleDateString("es-AR")}</div>
+          </div>
+        </div>}
+
+        {/* CUD Report section */}
+        {report && !cudReport && !cudGenerating && <button onClick={generateCUD} style={{width:"100%",padding:"14px",background:"linear-gradient(135deg,#7c3aed,#6d28d9)",color:"#fff",border:"none",borderRadius:10,fontSize:14,fontWeight:600,cursor:"pointer",marginBottom:16,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+          <span style={{fontSize:16}}>{"📋"}</span>{"Generar Informe para CUD (Certificado Único de Discapacidad)"}
+        </button>}
+        {cudGenerating && <div style={{background:"#fff",borderRadius:14,border:"1px solid "+K.bd,padding:30,textAlign:"center",marginBottom:16}}>
+          <div style={{display:"inline-block",width:36,height:36,border:"4px solid #e2e8f0",borderTopColor:"#7c3aed",borderRadius:"50%",animation:"spin 1s linear infinite",marginBottom:12}} />
+          <div style={{fontSize:14,fontWeight:600,color:K.sd}}>{"Generando informe CUD..."}</div>
+        </div>}
+        {cudError && <div style={{background:"#fef2f2",border:"1px solid #fecaca",borderRadius:8,padding:"10px 14px",marginBottom:16,fontSize:12,color:"#dc2626"}}>{cudError}<button onClick={generateCUD} style={{marginLeft:10,padding:"4px 12px",background:"#7c3aed",color:"#fff",border:"none",borderRadius:6,fontSize:11,cursor:"pointer"}}>Reintentar</button></div>}
+        {cudReport && <div style={{marginBottom:16}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10,flexWrap:"wrap",gap:8}}>
+            <div style={{fontSize:15,fontWeight:700,color:"#7c3aed"}}>{"Informe para CUD"}</div>
+            <button onClick={handleCUDPDF} style={{padding:"7px 14px",background:"#7c3aed",color:"#fff",border:"none",borderRadius:8,fontSize:12,fontWeight:600,cursor:"pointer"}}>{"\ud83d\udda8 Imprimir CUD"}</button>
+          </div>
+          <div ref={cudReportRef} style={{background:"#fff",borderRadius:12,border:"2px solid #7c3aed",padding:24}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16,paddingBottom:12,borderBottom:"2px solid #ede9fe"}}>
+              <div><div style={{fontSize:10,color:"#7c3aed",fontWeight:700,textTransform:"uppercase",letterSpacing:1}}>{"Informe Fonoaudiológico para CUD"}</div><div style={{fontSize:17,fontWeight:700,marginTop:3}}>{patient?patient.nombre:""}</div><div style={{fontSize:12,color:K.mt,marginTop:2}}>{"DNI: "+(patient?patient.dni||"N/A":"N/A")+" \u00b7 Edad: "+(patientAge?ageLabel(patientAge):"")}</div></div>
+              <div style={{textAlign:"right"}}><div style={{fontSize:11,color:K.mt}}>{"Fecha: "+(evalDate||"")}</div></div>
+            </div>
+            <div>{renderReportText(cudReport)}</div>
+            <div style={{marginTop:16,paddingTop:10,borderTop:"2px solid #ede9fe",fontSize:9,color:"#7c3aed",textAlign:"center"}}>{"Brújula KIT \u2014 Informe para CUD \u2014 "+config.title+" \u2014 "+new Date().toLocaleDateString("es-AR")}</div>
           </div>
         </div>}
 
