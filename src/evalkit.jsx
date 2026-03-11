@@ -1,34 +1,39 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, lazy, Suspense } from "react";
 import { db, auth, doc, updateDoc, getDoc, increment, onAuthStateChanged, signOut } from "./firebase.js";
 import { fbGetAll, fbGetFiltered, fbAdd, fbDelete, getUserProfile, K } from "./lib/fb.js";
 import { acquireSessionLock, releaseSessionLock, useSessionHeartbeat } from "./lib/sessionLock.js";
 import { VISIBLE_TYPES, rptViewFor } from "./config/evalTypes.js";
 
+// Core components — always loaded (needed on first render)
 import AuthScreen from "./components/AuthScreen.jsx";
 import VerifyEmailScreen from "./components/VerifyEmail.jsx";
 import CompleteProfileScreen from "./components/CompleteProfile.jsx";
-
 import Dashboard from "./components/Dashboard.jsx";
 import Tools from "./components/Tools.jsx";
-import ProfilePage from "./components/ProfilePage.jsx";
-import PremiumPage from "./components/PremiumPage.jsx";
 import NoCreditsModal from "./components/NoCreditsModal.jsx";
 
-import Hist from "./components/Hist.jsx";
-import RptELDI from "./components/RptELDI.jsx";
-import RptPEFF from "./components/RptPEFF.jsx";
-import RptREP from "./components/RptREP.jsx";
-import RptDISC from "./components/RptDISC.jsx";
-import RptRECO from "./components/RptRECO.jsx";
-import Admin from "./components/Admin.jsx";
-import AdminStats from "./components/AdminStats.jsx";
-import NewELDI from "./components/NewELDI.jsx";
-import NewPEFF from "./components/NewPEFF.jsx";
-import NewREP from "./components/NewREP.jsx";
-import NewDISC from "./components/NewDISC.jsx";
-import NewRECO from "./components/NewRECO.jsx";
-import CalendarPage from "./components/CalendarPage.jsx";
-import PacientesPage from "./components/PacientesPage.jsx";
+// Lazy-loaded components — only downloaded when user navigates to them
+var Hist = lazy(function(){ return import("./components/Hist.jsx"); });
+var ProfilePage = lazy(function(){ return import("./components/ProfilePage.jsx"); });
+var PremiumPage = lazy(function(){ return import("./components/PremiumPage.jsx"); });
+var CalendarPage = lazy(function(){ return import("./components/CalendarPage.jsx"); });
+var PacientesPage = lazy(function(){ return import("./components/PacientesPage.jsx"); });
+var Admin = lazy(function(){ return import("./components/Admin.jsx"); });
+var AdminStats = lazy(function(){ return import("./components/AdminStats.jsx"); });
+
+// Eval components — heaviest, lazy-loaded
+var NewELDI = lazy(function(){ return import("./components/NewELDI.jsx"); });
+var NewPEFF = lazy(function(){ return import("./components/NewPEFF.jsx"); });
+var NewREP = lazy(function(){ return import("./components/NewREP.jsx"); });
+var NewDISC = lazy(function(){ return import("./components/NewDISC.jsx"); });
+var NewRECO = lazy(function(){ return import("./components/NewRECO.jsx"); });
+var RptPEFF = lazy(function(){ return import("./components/RptPEFF.jsx"); });
+var RptREP = lazy(function(){ return import("./components/RptREP.jsx"); });
+var RptDISC = lazy(function(){ return import("./components/RptDISC.jsx"); });
+var RptRECO = lazy(function(){ return import("./components/RptRECO.jsx"); });
+
+// Suspense fallback for lazy components
+var LazyFallback = <div style={{display:"flex",alignItems:"center",justifyContent:"center",padding:60,color:"#64748b",fontSize:14,fontWeight:500}}>Cargando...</div>;
 
 // Component registry: maps view names to components
 // To add a new eval: add entry in evalTypes.js + import + add here
@@ -158,17 +163,19 @@ export default function App() {
         {toast&&<div style={{position:"fixed",top:16,right:16,zIndex:999,background:toast.t==="ok"?"#059669":"#dc2626",color:"#fff",padding:"10px 18px",borderRadius:8,fontSize:13,fontWeight:500,boxShadow:"0 4px 16px rgba(0,0,0,.15)",animation:"fi .3s ease"}}>{toast.m}</div>}
         {view==="dash"&&<Dashboard allEvals={allEvals} onT={function(){navTo("tools")}} onView={viewReport} ld={loading} profile={profile} isAdmin={isAdmin} userId={authUser?.uid} nfy={nfy} onCalendar={function(){navTo("calendario")}} onStartEval={startEval} onBuyCredits={goToPremium} />}
         {view==="tools"&&<Tools onSel={startEval} credits={isAdmin?999:(profile.creditos||0)} onBuy={goToPremium} />}
-        {/* Dynamic New* components from registry */}
-        {NEW_COMPONENTS[view] && (function(){ var C = NEW_COMPONENTS[view]; return <C onS={onEvalDone} nfy={nfy} userId={authUser?.uid} />; })()}
-        {view==="hist"&&<Hist allEvals={allEvals} onView={viewReport} isA={isAdmin} onD={deleteEval} />}
-        {/* Dynamic Rpt* components from registry */}
-        {RPT_COMPONENTS[view] && sel && (function(){ var C = RPT_COMPONENTS[view]; return <C ev={sel} onD={deleteEval} />; })()}
-        {view==="profile"&&<ProfilePage profile={profile} authUser={authUser} nfy={nfy} onBuyCredits={goToPremium} />}
-        {view==="pacientes"&&<PacientesPage userId={authUser?.uid} nfy={nfy} allEvals={allEvals} />}
-        {view==="calendario"&&<CalendarPage userId={authUser?.uid} nfy={nfy} />}
-        {view==="premium"&&<PremiumPage profile={profile} authUser={authUser} nfy={nfy} onBack={function(){sV("dash")}} />}
-        {view==="adm"&&isAdmin&&<Admin nfy={nfy} />}
-        {view==="stats"&&isAdmin&&<AdminStats nfy={nfy} />}
+        <Suspense fallback={LazyFallback}>
+          {/* Dynamic New* components from registry */}
+          {NEW_COMPONENTS[view] && (function(){ var C = NEW_COMPONENTS[view]; return <C onS={onEvalDone} nfy={nfy} userId={authUser?.uid} />; })()}
+          {view==="hist"&&<Hist allEvals={allEvals} onView={viewReport} isA={isAdmin} onD={deleteEval} />}
+          {/* Dynamic Rpt* components from registry */}
+          {RPT_COMPONENTS[view] && sel && (function(){ var C = RPT_COMPONENTS[view]; return <C ev={sel} onD={deleteEval} />; })()}
+          {view==="profile"&&<ProfilePage profile={profile} authUser={authUser} nfy={nfy} onBuyCredits={goToPremium} />}
+          {view==="pacientes"&&<PacientesPage userId={authUser?.uid} nfy={nfy} allEvals={allEvals} />}
+          {view==="calendario"&&<CalendarPage userId={authUser?.uid} nfy={nfy} />}
+          {view==="premium"&&<PremiumPage profile={profile} authUser={authUser} nfy={nfy} onBack={function(){sV("dash")}} />}
+          {view==="adm"&&isAdmin&&<Admin nfy={nfy} />}
+          {view==="stats"&&isAdmin&&<AdminStats nfy={nfy} />}
+        </Suspense>
       </main>
     </div>
   );
