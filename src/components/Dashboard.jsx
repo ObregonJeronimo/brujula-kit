@@ -108,7 +108,7 @@ export default function Dashboard({ allEvals, onT, onView, ld, profile, isAdmin,
     <div style={{animation:"fi .3s ease",width:"100%"}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6,flexWrap:"wrap",gap:10}}>
         <div>
-          <h1 style={{fontSize:22,fontWeight:700,marginBottom:6}}>🧭 Panel Principal</h1>
+          <h1 style={{fontSize:22,fontWeight:700,marginBottom:6,display:"flex",alignItems:"center",gap:8}}><img src="/img/logo_sin_fondo.png" style={{width:28,height:28}} alt="logo" /> Panel Principal</h1>
           <p style={{color:K.mt,fontSize:14,marginBottom:0}}>Bienvenido/a, {profile && profile.nombre ? profile.nombre : (profile && profile.username ? profile.username : "")}{ld ? " — cargando..." : ""}</p>
         </div>
         <button onClick={function(){ setShowAlerts(!showAlerts); }} style={{display:"flex",alignItems:"center",gap:8,background:alertCount > 0 ? "#fff7ed" : "#f8fafc",border:alertCount > 0 ? "1px solid #fed7aa" : "1px solid #e2e8f0",borderRadius:10,padding:"10px 16px",cursor:"pointer",fontSize:13,fontWeight:600,color:alertCount > 0 ? "#c2410c" : "#64748b"}}>
