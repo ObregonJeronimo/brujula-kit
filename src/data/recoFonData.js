@@ -118,17 +118,19 @@ export function computeRecoResults(responses) {
     group.items.forEach(function(item) {
       var key = item.lam;
       var r = responses[key];
-      gTotal++;
-      totalEvaluated++;
       if (r === true || r === "si") {
+        gTotal++;
+        totalEvaluated++;
         gCorrect++;
         totalCorrect++;
         gItems.push({ lam: key, reconoce: true });
       } else if (r === false || r === "no") {
+        gTotal++;
+        totalEvaluated++;
         gItems.push({ lam: key, reconoce: false });
       } else {
-        // Sin respuesta se cuenta como no reconocido
-        gItems.push({ lam: key, reconoce: false });
+        // Not evaluated — skip entirely
+        gItems.push({ lam: key, reconoce: null, notEvaluated: true });
       }
     });
 
