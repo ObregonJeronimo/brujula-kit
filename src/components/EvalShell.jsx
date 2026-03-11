@@ -130,7 +130,7 @@ export default function EvalShell({ onS, nfy, userId, config, renderEval, comput
           }}
           evalType={config.evalType}
           collectionName="evaluaciones"
-          evalLabel={config.title}
+          evalLabel={config.title} autoGenerate={true}
         />
 
         <button onClick={function(){ setShowTech(!showTech); }} style={{width:"100%",padding:"14px",background:showTech?"#f1f5f9":"#0a3d2f",color:showTech?"#1e293b":"#fff",border:"1px solid #e2e8f0",borderRadius:10,fontSize:14,fontWeight:600,cursor:"pointer",marginBottom:showTech?16:20}}>{showTech ? "\u25b2 Ocultar datos técnicos" : "\u25bc Ver datos técnicos"}</button>

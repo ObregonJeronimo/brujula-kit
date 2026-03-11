@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { db, doc, updateDoc } from "../firebase.js";
 import { K as _K, ageLabel } from "../lib/fb.js";
 import { renderReportText } from "../lib/evalUtils.jsx";
@@ -48,7 +48,7 @@ function ReportCard({ title, titleColor, borderColor, report, ev, evalLabel, ref
   </div>;
 }
 
-export default function AIReportPanel({ ev, evalType, collectionName, evalLabel }){
+export default function AIReportPanel({ ev, evalType, collectionName, evalLabel, autoGenerate }){
   var existingReport = ev.aiReport || null;
   var existingCUD = ev.aiCudReport || null;
   var _report = useState(existingReport), report = _report[0], setReport = _report[1];
@@ -57,6 +57,7 @@ export default function AIReportPanel({ ev, evalType, collectionName, evalLabel 
   var _cudReport = useState(existingCUD), cudReport = _cudReport[0], setCudReport = _cudReport[1];
   var _cudGen = useState(false), cudGenerating = _cudGen[0], setCudGenerating = _cudGen[1];
   var _cudError = useState(null), cudError = _cudError[0], setCudError = _cudError[1];
+  var _autoTriggered = useState(false), autoTriggered = _autoTriggered[0], setAutoTriggered = _autoTriggered[1];
   var reportRef = useRef(null);
   var cudRef = useRef(null);
 
@@ -114,6 +115,14 @@ export default function AIReportPanel({ ev, evalType, collectionName, evalLabel 
   };
 
   var pdfName = function(prefix){ return prefix+"_"+evalType.toUpperCase()+"_"+((ev.paciente||"").replace(/\s/g,"_"))+"_"+(ev.fechaEvaluacion||"")+".pdf"; };
+
+  // Auto-generate report on mount if autoGenerate=true and no existing report
+  useEffect(function(){
+    if(autoGenerate && !existingReport && !report && !generating && !genError && !autoTriggered){
+      setAutoTriggered(true);
+      handleGenerate("clinico");
+    }
+  }, [autoGenerate]);
 
   // No report at all
   if(!report && !generating && !genError) return <div style={{background:"#fffbeb",borderRadius:10,padding:"14px 18px",marginBottom:16,fontSize:13,color:"#92400e",border:"1px solid #fde68a",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:10}}>
