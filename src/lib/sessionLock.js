@@ -14,8 +14,8 @@ export async function acquireSessionLock(uid, isAdmin) {
       var data = snap.data();
       var lockTime = data.timestamp ? new Date(data.timestamp).getTime() : 0;
       var diff = Date.now() - lockTime;
-      // If lock is stale (>5 min without heartbeat), allow takeover
-      if (diff < 5 * 60 * 1000 && data.active) {
+      // If lock is stale (>2 min without heartbeat), allow takeover
+      if (diff < 2 * 60 * 1000 && data.active) {
         return false; // Another active session exists
       }
     }
@@ -35,10 +35,10 @@ export function useSessionHeartbeat(uid, isAdmin) {
   useEffect(function() {
     if (!uid || isAdmin) return;
     var lockRef = doc(db, "sessions", uid);
-    // Heartbeat every 3 minutes instead of 1 (reduces Firestore writes by 66%)
+    // Heartbeat every 90 seconds (must be less than the 2 min lock timeout)
     var interval = setInterval(function() {
       setDoc(lockRef, { uid: uid, timestamp: new Date().toISOString(), active: true }).catch(function(){});
-    }, 180000);
+    }, 90000);
     return function() { clearInterval(interval); };
   }, [uid, isAdmin]);
 }
