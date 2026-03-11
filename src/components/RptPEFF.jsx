@@ -101,7 +101,7 @@ export default function RptPEFF({ev,onD}){
     </div>
 
     {/* AI Report Panel */}
-    <AIReportPanel ev={ev} evalType="peff" collectionName="evaluaciones" evalLabel="PEFF \u2014 Protocolo Fon\u00e9tico-Fonol\u00f3gico" />
+    <AIReportPanel ev={ev} evalType="peff" collectionName="evaluaciones" evalLabel="Protocolo Fonético-Fonológico" />
 
     {/* Technical Data Toggle */}
     <button onClick={function(){ setShowTech(!showTech); }} style={{width:"100%",padding:"14px",background:showTech?"#f1f5f9":"#0a3d2f",color:showTech?"#1e293b":"#fff",border:"1px solid #e2e8f0",borderRadius:10,fontSize:14,fontWeight:600,cursor:"pointer",marginBottom:showTech?16:20}}>

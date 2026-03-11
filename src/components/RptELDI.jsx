@@ -127,7 +127,7 @@ export default function RptELDI({ev,onD}){
     </div>
 
     {/* AI Report Panel */}
-    <AIReportPanel ev={ev} evalType="eldi" collectionName="evaluaciones" evalLabel="ELDI \u2014 Evaluaci\u00f3n del Lenguaje" />
+    <AIReportPanel ev={ev} evalType="eldi" collectionName="evaluaciones" evalLabel="Evaluación del Lenguaje (ELDI)" />
 
     {/* Technical Data Toggle */}
     <button onClick={function(){ setShowTech(!showTech); }} style={{width:"100%",padding:"14px",background:showTech?"#f1f5f9":"#0a3d2f",color:showTech?"#1e293b":"#fff",border:"1px solid #e2e8f0",borderRadius:10,fontSize:14,fontWeight:600,cursor:"pointer",marginBottom:showTech?16:20}}>
