@@ -100,18 +100,40 @@ export var EVAL_TYPES = {
         { label: "Utilidad clínica", text: "Permite identificar el perfil perceptivo-fonológico del paciente, diferenciando dificultades según tipo de contraste. Orienta el diagnóstico y la planificación terapéutica comparando con normas de edad y desarrollo." }
       ]
     }
+  },
+  eldi: {
+    id: "eldi",
+    label: "ELDI",
+    fullName: "Escala de Lenguaje y Desarrollo Infantil",
+    icon: "🧒",
+    color: "#0d9488",
+    badgeBg: "#ccfbf1",
+    age: "0-3 años",
+    time: "~30-40 min",
+    desc: "Evaluación del desarrollo de comprensión auditiva y comunicación expresiva en infantes.",
+    newView: "newELDI",
+    rptView: "rptEL",
+    histTab: "ELDI",
+    info: {
+      title: "Escala de Lenguaje y Desarrollo Infantil",
+      sections: [
+        { label: "Qué evalúa", text: "Evalúa el desarrollo del lenguaje en niños de 0 a 3 años en dos áreas: Comprensión Auditiva y Comunicación Expresiva. Basada en hitos evolutivos esperados por edad." },
+        { label: "Cómo funciona", text: "El profesional presenta ítems organizados por mes de vida y registra si el niño logra, no logra, o no se evalúa cada hito. Se puede evaluar una o ambas áreas." },
+        { label: "Resultados", text: "Se calcula un perfil criterial comparando los logros del niño con los hitos esperados para su edad, clasificando el rendimiento en categorías (adecuado, riesgo, retraso)." },
+        { label: "Utilidad clínica", text: "Permite detección temprana de retrasos en el desarrollo del lenguaje y orienta la intervención precoz." }
+      ]
+    }
   }
 };
 
-// Tipos ocultos (existen en DB pero no se muestran en UI)
-export var HIDDEN_TYPES = ["eldi"];
+// Tipos ocultos por defecto (overridden by Firestore toolsConfig)
+export var HIDDEN_TYPES = [];
 
-// =====================================================
-// HELPERS — usan EVAL_TYPES para evitar hardcodeo
-// =====================================================
+// All types (including ELDI)
+export var ALL_EVAL_TYPES = Object.values(EVAL_TYPES);
 
-// Array ordenado de tipos visibles (para iterar en Tools, AdminStats, etc.)
-export var VISIBLE_TYPES = Object.values(EVAL_TYPES);
+// Array ordenado de tipos visibles (for backward compat, excludes nothing by default)
+export var VISIBLE_TYPES = ALL_EVAL_TYPES;
 
 // Lookup: tipo string -> config object
 export function getEvalType(tipo) {

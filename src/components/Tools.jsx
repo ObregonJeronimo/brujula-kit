@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { K } from "../lib/fb.js";
-import { VISIBLE_TYPES } from "../config/evalTypes.js";
+import { ALL_EVAL_TYPES } from "../config/evalTypes.js";
 
-export default function Tools({ onSel, credits, onBuy }) {
+export default function Tools({ onSel, credits, onBuy, enabledTools }) {
   var _info = useState(null), showInfo = _info[0], setShowInfo = _info[1];
   var noCredits = credits < 1;
+  var tools = ALL_EVAL_TYPES.filter(function(t){ return !enabledTools || enabledTools[t.id] !== false; });
 
   return (
     <div style={{animation:"fi .3s ease",width:"100%"}}>
@@ -18,7 +19,7 @@ export default function Tools({ onSel, credits, onBuy }) {
         <button onClick={onBuy} style={{padding:"10px 24px",background:"linear-gradient(135deg,#f59e0b,#d97706)",color:"#fff",border:"none",borderRadius:10,fontSize:14,fontWeight:700,cursor:"pointer",boxShadow:"0 4px 12px rgba(245,158,11,.3)",letterSpacing:".3px",whiteSpace:"nowrap"}}>COMPRAR CRÉDITOS →</button>
       </div>}
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20}}>
-        {VISIBLE_TYPES.map(function(t){
+        {tools.map(function(t){
           var infoOpen = showInfo === t.newView;
           var info = t.info;
           return <div key={t.id} style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",overflow:"hidden",opacity:noCredits?0.5:1,transition:"opacity .2s"}}>

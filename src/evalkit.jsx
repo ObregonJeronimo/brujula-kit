@@ -18,7 +18,7 @@ var ProfilePage = lazy(function(){ return import("./components/ProfilePage.jsx")
 var PremiumPage = lazy(function(){ return import("./components/PremiumPage.jsx"); });
 var CalendarPage = lazy(function(){ return import("./components/CalendarPage.jsx"); });
 var PacientesPage = lazy(function(){ return import("./components/PacientesPage.jsx"); });
-var Admin = lazy(function(){ return import("./components/Admin.jsx"); });
+var AdminPanel = lazy(function(){ return import("./components/AdminPanel.jsx"); });
 var AdminStats = lazy(function(){ return import("./components/AdminStats.jsx"); });
 
 // Eval components — heaviest, lazy-loaded
@@ -76,6 +76,7 @@ export default function App() {
   var _nc = useState(false), showNoCredits = _nc[0], setShowNoCredits = _nc[1];
   var _pp = useState(false), paymentProcessed = _pp[0], setPaymentProcessed = _pp[1];
   var _pl = useState(true), profileLoading = _pl[0], setProfileLoading = _pl[1];
+  var _et = useState(null), enabledTools = _et[0], setEnabledTools = _et[1];
   var nfy = useCallback(function(m,t){ sT({m:m,t:t}); setTimeout(function(){sT(null)},4500); },[]);
   var isAdmin = profile?.role === "admin";
   useSessionHeartbeat(authUser?.uid, isAdmin);
@@ -118,6 +119,19 @@ export default function App() {
 
   useEffect(function(){ if(profile && !sessionBlocked) loadEvals(); },[profile,loadEvals,sessionBlocked]);
 
+  // Load tools config (which tools are enabled)
+  useEffect(function(){
+    if(!profile) return;
+    getDoc(doc(db,"config","tools")).then(function(snap){
+      if(snap.exists()){
+        var cfg = snap.data();
+        var enabled = {};
+        Object.keys(cfg).forEach(function(k){ enabled[k] = cfg[k].enabled !== false; });
+        setEnabledTools(enabled);
+      }
+    }).catch(function(){});
+  },[profile]);
+
   // Derived filtered arrays removed — components filter from allEvals directly
 
   var goToPremium = function(){ sV("premium"); sS(null); window.scrollTo({top:0,behavior:"smooth"}); };
@@ -152,7 +166,7 @@ export default function App() {
   if(sessionBlocked) return (<div style={{width:"100vw",height:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"linear-gradient(145deg,#0a3d2f,#0d7363)",fontFamily:"'DM Sans',system-ui,sans-serif"}}><div style={{background:"rgba(255,255,255,.97)",borderRadius:16,padding:"44px 36px",width:440,maxWidth:"92vw",boxShadow:"0 20px 50px rgba(0,0,0,.3)",textAlign:"center"}}><div style={{fontSize:48,marginBottom:16}}>{"\ud83d\udd12"}</div><h2 style={{fontSize:20,fontWeight:700,color:"#0a3d2f",marginBottom:12}}>{"\u00bfSesi\u00f3n ocupada?"}</h2><p style={{color:"#64748b",fontSize:14,lineHeight:1.7,marginBottom:20}}>{"Otro usuario ya est\u00e1 conectado en este momento."}</p><p style={{color:"#94a3b8",fontSize:12,marginBottom:24}}>{"Si cree que es un error, espere unos minutos e intente nuevamente."}</p><div style={{display:"flex",gap:10,justifyContent:"center",flexWrap:"wrap"}}><button onClick={function(){acquireSessionLock(authUser.uid,false).then(function(canLogin){if(canLogin){setSessionBlocked(false);window.location.reload()}else{nfy("La sesi\u00f3n sigue ocupada","er")}})}} style={{background:"#0d9488",color:"#fff",border:"none",padding:"12px 24px",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer"}}>Reintentar</button><button onClick={handleLogout} style={{background:"#f1f5f9",border:"none",padding:"12px 24px",borderRadius:8,fontSize:14,cursor:"pointer",color:"#64748b"}}>{"Cerrar sesi\u00f3n"}</button></div></div></div>);
 
   var nav = [["dash","dash","Panel"],["tools","tools","Herramientas"],["hist","hist","Historial"],["pacientes","pacientes","Pacientes"],["calendario","calendario","Calendario"],["premium","premium","Cr\u00e9ditos"],["profile","profile","Perfil"]];
-  if(isAdmin){ nav.push(["stats","stats","Estad\u00edsticas"]); nav.push(["adm","adm","Usuarios"]); }
+  if(isAdmin){ nav.push(["stats","stats","Estad\u00edsticas"]); nav.push(["adm","adm","Administrar"]); }
 
   return (
     <div style={{display:"flex",height:"100vh",width:"100vw",fontFamily:"'DM Sans',system-ui,sans-serif",background:K.bg,color:"#1e293b",overflow:"hidden"}}>
@@ -165,7 +179,7 @@ export default function App() {
       <main id="main-scroll" style={{flex:1,overflowY:"auto",overflowX:"hidden",padding:mobile?"16px":"28px 36px",height:"100vh"}}>
         {toast&&<div style={{position:"fixed",top:16,right:16,zIndex:999,background:toast.t==="ok"?"#059669":"#dc2626",color:"#fff",padding:"10px 18px",borderRadius:8,fontSize:13,fontWeight:500,boxShadow:"0 4px 16px rgba(0,0,0,.15)",animation:"fi .3s ease"}}>{toast.m}</div>}
         {view==="dash"&&<Dashboard allEvals={allEvals} onT={function(){navTo("tools")}} onView={viewReport} ld={loading} profile={profile} isAdmin={isAdmin} userId={authUser?.uid} nfy={nfy} onCalendar={function(){navTo("calendario")}} onStartEval={startEval} onBuyCredits={goToPremium} />}
-        {view==="tools"&&<Tools onSel={startEval} credits={isAdmin?999:(profile.creditos||0)} onBuy={goToPremium} />}
+        {view==="tools"&&<Tools onSel={startEval} credits={isAdmin?999:(profile.creditos||0)} onBuy={goToPremium} enabledTools={enabledTools} />}
         <Suspense fallback={LazyFallback}>
           {/* Dynamic New* components from registry */}
           {NEW_COMPONENTS[view] && (function(){ var C = NEW_COMPONENTS[view]; return <C onS={onEvalDone} nfy={nfy} userId={authUser?.uid} />; })()}
@@ -176,7 +190,7 @@ export default function App() {
           {view==="pacientes"&&<PacientesPage userId={authUser?.uid} nfy={nfy} allEvals={allEvals} />}
           {view==="calendario"&&<CalendarPage userId={authUser?.uid} nfy={nfy} />}
           {view==="premium"&&<PremiumPage profile={profile} authUser={authUser} nfy={nfy} onBack={function(){sV("dash")}} />}
-          {view==="adm"&&isAdmin&&<Admin nfy={nfy} />}
+          {view==="adm"&&isAdmin&&<AdminPanel nfy={nfy} />}
           {view==="stats"&&isAdmin&&<AdminStats nfy={nfy} />}
         </Suspense>
       </main>
