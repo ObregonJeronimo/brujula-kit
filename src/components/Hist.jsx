@@ -2,7 +2,7 @@ import { useState } from "react";
 import { isVisibleType, typeBadge, HIST_TABS } from "../config/evalTypes.js";
 import { K, ageLabel } from "../lib/fb.js";
 
-export default function Hist({ allEvals, onView, isA, onD }) {
+export default function Hist({ allEvals, onView, isA, onD, enabledTools }) {
   var _q = useState(""), q = _q[0], sQ = _q[1];
   var _tab = useState("all"), tab = _tab[0], sTab = _tab[1];
   var _cf = useState(null), cf = _cf[0], sC = _cf[1];
@@ -29,7 +29,7 @@ export default function Hist({ allEvals, onView, isA, onD }) {
       <h1 style={{fontSize:22,fontWeight:700,marginBottom:6}}>Historial</h1>
       <p style={{color:K.mt,fontSize:14,marginBottom:14}}>{all.length+" evaluaciones"}</p>
       <div style={{display:"flex",gap:8,marginBottom:14,flexWrap:"wrap"}}>
-        {HIST_TABS.map(function(x){
+        {HIST_TABS.filter(function(x){ return x[0]==="all" || !enabledTools || enabledTools[x[0]]!==false; }).map(function(x){
           var id=x[0], lb=x[1];
           return <button key={id} onClick={function(){sTab(id)}} style={{padding:"6px 14px",borderRadius:6,border:tab===id?"2px solid #0d9488":"1px solid #e2e8f0",background:tab===id?"#ccfbf1":"#fff",color:tab===id?"#0d9488":"#64748b",fontSize:13,fontWeight:600,cursor:"pointer"}}>{lb}</button>;
         })}
