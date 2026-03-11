@@ -5,6 +5,7 @@ import { HelpTip, OptionHelpTip, renderGroupedCoord, TeethButton } from "./NewPE
 import PatientLookup from "./PatientLookup.jsx";
 import { db, doc, updateDoc } from "../firebase.js";
 import { fbAdd } from "../lib/fb.js";
+import { renderReportText, saveReportToDoc, handlePDFExport } from "../lib/evalUtils.jsx";
 const K={mt:"#64748b"};
 const gm=(b,e)=>{const B=new Date(b),E=new Date(e);let m=(E.getFullYear()-B.getFullYear())*12+E.getMonth()-B.getMonth();if(E.getDate()<B.getDate())m--;return Math.max(0,m)};
 const fa=m=>`${Math.floor(m/12)} a\u00f1os, ${m%12} meses`;
@@ -12,20 +13,6 @@ const sevDesc={"Adecuado":"PCC = 100%: El ni\u00f1o/a produce correctamente todo
 const sevColor={"Adecuado":"#059669","Leve":"#84cc16","Leve-Moderado":"#f59e0b","Moderado-Severo":"#ea580c","Severo":"#dc2626"};
 const speak=(text)=>{if(!window.speechSynthesis)return;window.speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang="es-AR";u.rate=0.68;u.pitch=1.08;u.volume=1;const voices=window.speechSynthesis.getVoices();const pick=voices.find(v=>/es[-_]AR/i.test(v.lang)&&/female|Google|Microsoft/i.test(v.name))||voices.find(v=>/es[-_]AR/i.test(v.lang))||voices.find(v=>/es[-_]MX/i.test(v.lang))||voices.find(v=>/es[-_]ES/i.test(v.lang))||voices.find(v=>v.lang.startsWith("es"));if(pick)u.voice=pick;window.speechSynthesis.speak(u)};
 const scrollTop=()=>{const el=document.getElementById("main-scroll");if(el)el.scrollTo({top:0,behavior:"smooth"});else window.scrollTo({top:0,behavior:"smooth"})};
-function renderReportText(text){if(!text)return null;return text.split("\n").map(function(line,i){var trimmed=line.trim();if(!trimmed)return <div key={i} style={{height:8}}/>;var isTitle=/^[A-Z\u00c0-\u00dc\s\d\.\:\-]{6,}:?\s*$/.test(trimmed)||/^\d+[\.\\)]\s*[A-Z]/.test(trimmed);if(isTitle)return <div key={i} style={{fontSize:14,fontWeight:700,color:"#5b21b6",marginTop:14,marginBottom:4}}>{trimmed}</div>;return <div key={i} style={{fontSize:13,color:"#334155",lineHeight:1.7,marginBottom:1}}>{trimmed}</div>})}
-function saveReportToDoc(colName, docIdRef, report) {
-  var tryUpdate = function(retries) {
-    var id = docIdRef.current;
-    if (id) {
-      updateDoc(doc(db, colName, id), { aiReport: report, aiReportDate: new Date().toISOString() }).catch(function(e) { console.error("Error saving aiReport:", e); });
-    } else if (retries > 0) {
-      setTimeout(function() { tryUpdate(retries - 1); }, 1500);
-    } else {
-      console.error("Could not save aiReport: docId never arrived");
-    }
-  };
-  tryUpdate(5);
-}
 const RESULT_STEP=PEFF_SECTIONS.length+1;
 export default function NewPEFF({onS,nfy,userId}){
 const[step,setStep]=useState(0),[pd,sPd]=useState({pN:"",birth:"",eD:new Date().toISOString().split("T")[0],sch:"",ref:"",obs:"",dni:""}),[data,setD]=useState({}),[procData,setProcData]=useState({});
@@ -42,7 +29,7 @@ useEffect(()=>{scrollTop()},[step]);
 useEffect(()=>{if(window.speechSynthesis){window.speechSynthesis.getVoices();window.speechSynthesis.onvoiceschanged=()=>window.speechSynthesis.getVoices()}},[]);
 useEffect(function(){if(step===RESULT_STEP&&!saved){var r=calc();var payload={id:Date.now()+"",userId:userId,tipo:"peff",paciente:pd.pN,pacienteDni:pd.dni||"",fechaNacimiento:pd.birth,fechaEvaluacion:pd.eD,establecimiento:pd.sch,derivadoPor:pd.ref,edadMeses:a,observaciones:pd.obs||"",evaluador:"",fechaGuardado:new Date().toISOString(),seccionData:data,procesosData:procData,resultados:r};fbAdd("evaluaciones",payload).then(function(res){if(res.success){docIdRef.current=res.id;setSavedDocId(res.id);nfy("PEFF guardada","ok")}else nfy("Error: "+res.error,"er")});setSaved(true)}},[step]);
 useEffect(function(){if(step===RESULT_STEP&&saved&&!report&&!generating&&!genError){setGenerating(true);var r=calc();var evalData={paciente:pd.pN,pacienteDni:pd.dni||"",edadMeses:a,fechaEvaluacion:pd.eD,derivadoPor:pd.ref,observaciones:pd.obs||"",resultados:r};fetch("/api/generate-report",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({evalData:evalData,evalType:"peff",reportMode:"clinico"})}).then(function(r){return r.json()}).then(function(d){if(d.success&&d.report){setReport(d.report);saveReportToDoc("evaluaciones",docIdRef,d.report)}else setGenError(d.error||"Error al generar informe.");setGenerating(false)}).catch(function(e){setGenError("Error: "+e.message);setGenerating(false)})}},[step,saved,savedDocId]);
-var handlePDFReport=function(){if(!reportRef.current)return;reportRef.current.style.paddingBottom="40px";import("html2canvas").then(function(mod){return mod.default(reportRef.current,{scale:2,useCORS:true,backgroundColor:"#ffffff",scrollY:-window.scrollY,height:reportRef.current.scrollHeight,windowHeight:reportRef.current.scrollHeight+100})}).then(function(canvas){reportRef.current.style.paddingBottom="";return import("jspdf").then(function(mod){var jsPDF=mod.jsPDF,pdf=new jsPDF("p","mm","a4"),pW=210,pH=297,margin=10,imgW=pW-margin*2,imgH=(canvas.height*imgW)/canvas.width,usableH=pH-margin*2,pos=0,page=0;while(pos<imgH){if(page>0)pdf.addPage();var srcY=Math.round((pos/imgH)*canvas.height),srcH=Math.round((Math.min(usableH,imgH-pos)/imgH)*canvas.height);if(srcH<=0)break;var sc=document.createElement("canvas");sc.width=canvas.width;sc.height=srcH;sc.getContext("2d").drawImage(canvas,0,srcY,canvas.width,srcH,0,0,canvas.width,srcH);pdf.addImage(sc.toDataURL("image/png"),"PNG",margin,margin,imgW,(srcH*imgW)/canvas.width);pos+=usableH;page++}pdf.save("Informe_PEFF_"+((pd.pN||"").replace(/\s/g,"_"))+"_"+(pd.eD||"")+".pdf")})}).catch(function(e){reportRef.current.style.paddingBottom="";console.error(e)})};
+var handlePDFReport=function(){handlePDFExport(reportRef,"PEFF",pd.pN||"",pd.eD||"");};
 const goStep=(s)=>{setStep(s)};
 const rField=(f,opts)=>{const hideHelp=opts?.hideHelp;if(f.type==="text")return <div key={f.id} style={{marginBottom:14}}><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>{f.label}{!hideHelp&&<HelpTip text={f.help} searchTerm={f.label}/>}{f.showTeethImg&&<TeethButton arch={f.showTeethImg}/>}</label><input value={data[f.id]||""} onChange={e=>sf(f.id,e.target.value)} style={I}/></div>;const cur=data[f.id]||"";return <div key={f.id} style={{marginBottom:14}}><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:6}}>{f.label}{!hideHelp&&<HelpTip text={f.help} searchTerm={f.label}/>}</label>{f.desc&&<div style={{fontSize:11,color:"#7c3aed",marginBottom:6,fontStyle:"italic"}}>{f.desc}</div>}<div style={{display:"flex",gap:8,flexWrap:"wrap"}}>{f.options.map(o=><span key={o} style={{display:"inline-flex",alignItems:"center"}}><button onClick={()=>sf(f.id,cur===o?"":o)} style={{padding:"8px 14px",borderRadius:8,border:cur===o?"2px solid #7c3aed":"1px solid #e2e8f0",background:cur===o?"#ede9fe":"#fff",color:cur===o?"#5b21b6":"#475569",fontSize:13,fontWeight:cur===o?700:400,cursor:"pointer",transition:"all .15s",textAlign:"left"}}>{cur===o&&"\u2713 "}{o}</button>{f.optionHelp&&f.optionHelp[o]&&<OptionHelpTip text={f.optionHelp[o]} label={o}/>}</span>)}</div></div>};
 const legendItems=[{v:"\u2713",bg:"#059669",t:"Correcto",d:"Producci\u00f3n adecuada"},{v:"D",bg:"#f59e0b",t:"Distorsi\u00f3n",d:"Sonido alterado"},{v:"O",bg:"#dc2626",t:"Omisi\u00f3n",d:"No produce"},{v:"S",bg:"#7c3aed",t:"Sustituci\u00f3n",d:"Reemplaza"}];
