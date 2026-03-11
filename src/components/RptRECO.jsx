@@ -68,7 +68,7 @@ export default function RptRECO({ ev, onD }){
       </div>
 
       {/* AI Report Panel */}
-      <AIReportPanel ev={ev} evalType="reco" collectionName="evaluaciones" evalLabel="Reco. Fonológico (PEFF-R 3.5)" />
+      <AIReportPanel ev={ev} evalType="reco" collectionName="evaluaciones" evalLabel="Reconocimiento Fonológico" />
 
       {/* Technical Data Toggle */}
       <button onClick={function(){ setShowTech(!showTech); }} style={{width:"100%",padding:"14px",background:showTech?"#f1f5f9":"#0a3d2f",color:showTech?"#1e293b":"#fff",border:"1px solid #e2e8f0",borderRadius:10,fontSize:14,fontWeight:600,cursor:"pointer",marginBottom:showTech?16:20}}>
@@ -82,7 +82,7 @@ export default function RptRECO({ ev, onD }){
         </div>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:20,paddingBottom:16,borderBottom:"2px solid "+K.bd}}>
           <div>
-            <div style={{fontSize:10,color:K.mt,fontWeight:600,textTransform:"uppercase",letterSpacing:1}}>{"Reconocimiento Fonológico — PEFF-R 3.5"}</div>
+            <div style={{fontSize:10,color:K.mt,fontWeight:600,textTransform:"uppercase",letterSpacing:1}}>{"Reconocimiento Fonológico"}</div>
             <div style={{fontSize:18,fontWeight:700,marginTop:4}}>{ev.paciente}</div>
             <div style={{fontSize:13,color:K.mt,marginTop:2}}>{"DNI: "+(ev.pacienteDni||"N/A")+" · Edad: "+ageLabel(ev.edadMeses||0)}</div>
             {ev.derivadoPor && <div style={{fontSize:12,color:K.mt,marginTop:2}}>{"Derivado por: "+ev.derivadoPor}</div>}
@@ -180,7 +180,7 @@ export default function RptRECO({ ev, onD }){
           <p style={{fontSize:12,color:K.mt,marginTop:4}}>{ev.observaciones}</p>
         </div>}
         <div style={{marginTop:24,paddingTop:12,borderTop:"1px solid "+K.bd,fontSize:10,color:"#94a3b8",textAlign:"center"}}>
-          {"Brújula KIT — Reco. Fonológico (PEFF-R 3.5) — Generado el "+new Date().toLocaleDateString("es-AR")}
+          {"Brújula KIT — Reconocimiento Fonológico — Generado el "+new Date().toLocaleDateString("es-AR")}
         </div>
       </div>}
     </div>

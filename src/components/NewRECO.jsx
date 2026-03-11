@@ -126,7 +126,7 @@ export default function NewRECO({ onS, nfy, userId }){
     <div style={{animation:"fi .3s ease",maxWidth:900,margin:"0 auto"}}>
       <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20}}>
         <span style={{fontSize:32}}>{"\ud83e\udde0"}</span>
-        <div><h1 style={{fontSize:20,fontWeight:700,margin:0}}>{"Reconocimiento Fonol\u00f3gico"}</h1><p style={{fontSize:12,color:K.mt,margin:0}}>{"PEFF-R \u2014 Secci\u00f3n 3.5"}</p></div>
+        <div><h1 style={{fontSize:20,fontWeight:700,margin:0}}>{"Reconocimiento Fonol\u00f3gico"}</h1><p style={{fontSize:12,color:K.mt,margin:0}}>{"Evaluación de reconocimiento de contrastes fonológicos"}</p></div>
       </div>
       <div style={{display:"flex",gap:4,marginBottom:24}}>
         {["Paciente","Evaluaci\u00f3n","Resultados"].map(function(lb,i){ var active=step===i,done=step>i; return <div key={i} style={{flex:1,textAlign:"center",padding:"8px 0",borderRadius:8,fontSize:13,fontWeight:active?700:500,background:active?K.ac:done?"#7c3aed":"#f1f5f9",color:active||done?"#fff":K.mt}}>{(i+1)+". "+lb}</div>; })}
@@ -196,7 +196,7 @@ export default function NewRECO({ onS, nfy, userId }){
           </div>
           <div ref={reportRef} style={{background:"#fff",borderRadius:12,border:"1px solid "+K.bd,padding:24}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16,paddingBottom:12,borderBottom:"2px solid "+K.bd}}>
-              <div><div style={{fontSize:10,color:K.mt,fontWeight:600,textTransform:"uppercase",letterSpacing:1}}>{"Informe Fonoaudiol\u00f3gico \u2014 Reco. Fonol\u00f3gico (PEFF-R 3.5)"}</div><div style={{fontSize:17,fontWeight:700,marginTop:3}}>{patient?patient.nombre:""}</div><div style={{fontSize:12,color:K.mt,marginTop:2}}>{"DNI: "+(patient?patient.dni||"N/A":"N/A")+" \u00b7 Edad: "+(patientAge?ageLabel(patientAge):"")}</div></div>
+              <div><div style={{fontSize:10,color:K.mt,fontWeight:600,textTransform:"uppercase",letterSpacing:1}}>{"Informe Fonoaudiol\u00f3gico \u2014 Reconocimiento Fonológico"}</div><div style={{fontSize:17,fontWeight:700,marginTop:3}}>{patient?patient.nombre:""}</div><div style={{fontSize:12,color:K.mt,marginTop:2}}>{"DNI: "+(patient?patient.dni||"N/A":"N/A")+" \u00b7 Edad: "+(patientAge?ageLabel(patientAge):"")}</div></div>
               <div style={{textAlign:"right"}}><div style={{fontSize:11,color:K.mt}}>{"Fecha: "+(evalDate||"")}</div></div>
             </div>
             <div>{renderReportText(report)}</div>
@@ -204,7 +204,7 @@ export default function NewRECO({ onS, nfy, userId }){
               <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}><div style={{display:"flex",alignItems:"center",gap:6}}><span style={{fontSize:18}}>{"\ud83e\udde0"}</span><span style={{fontSize:11,fontWeight:700,color:"#6b21a8"}}>{"Generado con IA"}</span></div><div style={{width:1,height:16,background:"#c4b5fd"}} /><div style={{display:"flex",alignItems:"center",gap:6}}><span style={{fontSize:18}}>{"\u2705"}</span><span style={{fontSize:11,fontWeight:700,color:"#059669"}}>{"Comprobado por profesionales en fonoaudiolog\u00eda de C\u00f3rdoba"}</span></div></div>
               <div style={{fontSize:10,color:"#7c3aed",marginTop:6}}>{"Generado con IA. Validado por profesionales fonoaudi\u00f3logos de C\u00f3rdoba, Argentina. Debe ser revisado por el profesional tratante."}</div>
             </div>
-            <div style={{marginTop:14,paddingTop:8,borderTop:"1px solid "+K.bd,fontSize:9,color:"#94a3b8",textAlign:"center"}}>{"Br\u00fajula KIT \u2014 Reco. Fonol\u00f3gico (PEFF-R 3.5) \u2014 "+new Date().toLocaleDateString("es-AR")}</div>
+            <div style={{marginTop:14,paddingTop:8,borderTop:"1px solid "+K.bd,fontSize:9,color:"#94a3b8",textAlign:"center"}}>{"Br\u00fajula KIT \u2014 Reconocimiento Fonológico \u2014 "+new Date().toLocaleDateString("es-AR")}</div>
           </div>
         </div>}
 

@@ -23,9 +23,9 @@ export var EVAL_TYPES = {
     rptView: "rptP",
     histTab: "PEFF",
     info: {
-      title: "PEFF — Protocolo Fonético-Fonológico",
+      title: "Protocolo Fonético-Fonológico",
       sections: [
-        { label: "Qué evalúa", text: "El PEFF es un protocolo clínico estandarizado que integra varias pruebas para evaluar los Trastornos de los Sonidos del Habla. Incluye examen clínico OFA, repetición de sílabas, discriminación y reconocimiento fonológico." },
+        { label: "Qué evalúa", text: "Protocolo clínico estandarizado que integra varias pruebas para evaluar los Trastornos de los Sonidos del Habla. Incluye examen clínico OFA, repetición de sílabas, discriminación y reconocimiento fonológico." },
         { label: "Cómo funciona", text: "Cada sección aporta información complementaria: examen clínico de órganos fonoarticulatorios, producción fonética, percepción y reconocimiento auditivo. El sistema calcula porcentajes de aciertos y perfiles." },
         { label: "Interpretación", text: "La interpretación clínica se hace comparando los resultados con normas de edad y desarrollo, lo que orienta el diagnóstico y la planificación terapéutica." },
         { label: "Población objetivo", text: "Niños de 2;6 a 6;11 años con sospecha de trastornos fonético-fonológicos o dificultades en la producción del habla." }
@@ -35,7 +35,7 @@ export var EVAL_TYPES = {
   rep: {
     id: "rep",
     label: "REP",
-    fullName: "Repetición de Palabras (PEFF 3.2)",
+    fullName: "Repetición de Palabras",
     icon: "📝",
     color: "#2563eb",
     badgeBg: "#dbeafe",
@@ -46,7 +46,7 @@ export var EVAL_TYPES = {
     rptView: "rptR",
     histTab: "Rep.Palabras",
     info: {
-      title: "Rep. Palabras — PEFF 3.2",
+      title: "Repetición de Palabras",
       sections: [
         { label: "Qué evalúa", text: "Esta evaluación mide la producción fonética y fonológica mediante repetición de palabras. El profesional presenta una lista organizada por segmentos contrastivos (ej. /p/, /t/, /k/), y el paciente debe repetirlas." },
         { label: "Cómo se registra", text: "La respuesta se registra en una tabla con cuatro columnas: ISPP, ISIP, CSIP y CSFP, según el tipo de error observado. Si la palabra es correcta, se marca ✓ o se deja vacío." },
@@ -58,7 +58,7 @@ export var EVAL_TYPES = {
   disc: {
     id: "disc",
     label: "DISC",
-    fullName: "Discriminación Fonológica (PEFF-R 3.4)",
+    fullName: "Discriminación Fonológica",
     icon: "👂",
     color: "#d97706",
     badgeBg: "#fef3c7",
@@ -69,7 +69,7 @@ export var EVAL_TYPES = {
     rptView: "rptD",
     histTab: "Disc.Fonol.",
     info: {
-      title: "Disc. Fonológica — PEFF-R 3.4",
+      title: "Discriminación Fonológica",
       sections: [
         { label: "Qué evalúa", text: "Esta prueba evalúa la capacidad del paciente para discriminar auditivamente fonemas. Se presentan pares de palabras, algunas iguales y otras diferentes (pares mínimos). El paciente debe indicar si las palabras son iguales o diferentes." },
         { label: "Cómo se registra", text: "El registro se hace marcando si la respuesta fue correcta o incorrecta, y anotando observaciones sobre patrones de error." },
@@ -81,7 +81,7 @@ export var EVAL_TYPES = {
   reco: {
     id: "reco",
     label: "RECO",
-    fullName: "Reconocimiento Fonológico (PEFF-R 3.5)",
+    fullName: "Reconocimiento Fonológico",
     icon: "🎯",
     color: "#9333ea",
     badgeBg: "#f3e8ff",
@@ -92,7 +92,7 @@ export var EVAL_TYPES = {
     rptView: "rptRC",
     histTab: "Reco.Fonol.",
     info: {
-      title: "Reco. Fonológico — PEFF-R 3.5",
+      title: "Reconocimiento Fonológico",
       sections: [
         { label: "Qué evalúa", text: "Esta prueba mide la capacidad del paciente para reconocer contrastes fonológicos entre distintos grupos de sonidos (oclusivas, fricativas, nasales, líquidas, etc.). Se presentan secuencias de palabras que difieren en un rasgo fonológico." },
         { label: "Cómo se registra", text: "El profesional presenta los 5 estímulos de cada ítem y registra la respuesta del paciente. En la columna final se marca si el paciente reconoció o no el contraste. Se pueden anotar observaciones por ítem." },

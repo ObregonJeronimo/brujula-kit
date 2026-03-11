@@ -66,7 +66,7 @@ export default function RptDISC({ ev, onD }){
       </div>
 
       {/* AI Report Panel */}
-      <AIReportPanel ev={ev} evalType="disc" collectionName="evaluaciones" evalLabel="Disc. Fonológica (PEFF-R 3.4)" />
+      <AIReportPanel ev={ev} evalType="disc" collectionName="evaluaciones" evalLabel="Discriminación Fonológica" />
 
       {/* Technical Data Toggle */}
       <button onClick={function(){ setShowTech(!showTech); }} style={{width:"100%",padding:"14px",background:showTech?"#f1f5f9":"#0a3d2f",color:showTech?"#1e293b":"#fff",border:"1px solid #e2e8f0",borderRadius:10,fontSize:14,fontWeight:600,cursor:"pointer",marginBottom:showTech?16:20}}>
@@ -80,7 +80,7 @@ export default function RptDISC({ ev, onD }){
         {/* Patient info */}
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:20,paddingBottom:16,borderBottom:"2px solid "+K.bd}}>
           <div>
-            <div style={{fontSize:10,color:K.mt,fontWeight:600,textTransform:"uppercase",letterSpacing:1}}>{"Discriminación Fonológica — PEFF-R 3.4"}</div>
+            <div style={{fontSize:10,color:K.mt,fontWeight:600,textTransform:"uppercase",letterSpacing:1}}>{"Discriminación Fonológica"}</div>
             <div style={{fontSize:18,fontWeight:700,marginTop:4}}>{ev.paciente}</div>
             <div style={{fontSize:13,color:K.mt,marginTop:2}}>{"DNI: "+(ev.pacienteDni||"N/A")+" · Edad: "+ageLabel(ev.edadMeses||0)}</div>
             {ev.derivadoPor && <div style={{fontSize:12,color:K.mt,marginTop:2}}>{"Derivado por: "+ev.derivadoPor}</div>}
@@ -195,7 +195,7 @@ export default function RptDISC({ ev, onD }){
         </div>}
 
         <div style={{marginTop:24,paddingTop:12,borderTop:"1px solid "+K.bd,fontSize:10,color:"#94a3b8",textAlign:"center"}}>
-          {"Brújula KIT — Disc. Fonológica (PEFF-R 3.4) — Generado el "+new Date().toLocaleDateString("es-AR")}
+          {"Brújula KIT — Discriminación Fonológica — Generado el "+new Date().toLocaleDateString("es-AR")}
         </div>
       </div>}
     </div>

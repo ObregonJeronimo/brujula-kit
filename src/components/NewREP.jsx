@@ -50,7 +50,7 @@ export default function NewREP({ onS, nfy, userId }){
 
   return (
     <div ref={mainRef} style={{animation:"fi .3s ease",maxWidth:960,margin:"0 auto"}}>
-      <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20}}><span style={{fontSize:32}}>{"\ud83d\udcdd"}</span><div><h1 style={{fontSize:20,fontWeight:700,margin:0}}>{"Repetici\u00f3n de Palabras"}</h1><p style={{fontSize:12,color:K.mt,margin:0}}>{"PEFF 3.2 \u2014 An\u00e1lisis fon\u00e9tico-fonol\u00f3gico"}</p></div></div>
+      <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20}}><span style={{fontSize:32}}>{"\ud83d\udcdd"}</span><div><h1 style={{fontSize:20,fontWeight:700,margin:0}}>{"Repetici\u00f3n de Palabras"}</h1><p style={{fontSize:12,color:K.mt,margin:0}}>{"Análisis fonético-fonológico mediante repetición"}</p></div></div>
       <div style={{display:"flex",gap:4,marginBottom:24}}>{["Paciente","Evaluaci\u00f3n","Resultados"].map(function(lb,i){ var active=step===i,done=step>i; return <div key={i} style={{flex:1,textAlign:"center",padding:"8px 0",borderRadius:8,fontSize:13,fontWeight:active?700:500,background:active?K.ac:done?"#059669":"#f1f5f9",color:active||done?"#fff":K.mt}}>{(i+1)+". "+lb}</div>; })}</div>
 
       {step===0 && <div>

@@ -146,7 +146,7 @@ export default function Dashboard({ allEvals, onT, onView, ld, profile, isAdmin,
 
       <div style={{marginBottom:28}}>
         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))",gap:16}}>
-          {cards.map(function(c,i){ return <div key={i} style={{background:"#fff",borderRadius:12,padding:22,border:"1px solid #e2e8f0"}}><div style={{fontSize:28,marginBottom:6}}>{c.ic}</div><div style={{fontSize:28,fontWeight:700}}>{c.value}</div><div style={{fontSize:13,color:K.mt,marginTop:2}}>{c.label}</div>{c.sublabel && <div style={{fontSize:11,color:"#94a3b8",marginTop:1}}>{c.sublabel}</div>}</div>; })}
+          {cards.map(function(c,i){ return <div key={i} style={{background:"#fff",borderRadius:12,padding:"14px 18px",border:"1px solid #e2e8f0",display:"flex",alignItems:"center",gap:14}}><div style={{fontSize:24}}>{c.ic}</div><div><div style={{fontSize:22,fontWeight:700,lineHeight:1}}>{c.value}</div><div style={{fontSize:12,color:K.mt,marginTop:2}}>{c.label}</div>{c.sublabel && <div style={{fontSize:10,color:"#94a3b8"}}>{c.sublabel}</div>}</div></div>; })}
         </div>
       </div>
 

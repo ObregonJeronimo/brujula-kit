@@ -130,7 +130,7 @@ export default function NewDISC({ onS, nfy, userId }){
     <div style={{animation:"fi .3s ease",maxWidth:800,margin:"0 auto"}}>
       <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20}}>
         <span style={{fontSize:32}}>{"\ud83d\udc42"}</span>
-        <div><h1 style={{fontSize:20,fontWeight:700,margin:0}}>{"Discriminaci\u00f3n Fonol\u00f3gica"}</h1><p style={{fontSize:12,color:K.mt,margin:0}}>{"PEFF-R \u2014 Secci\u00f3n 3.4"}</p></div>
+        <div><h1 style={{fontSize:20,fontWeight:700,margin:0}}>{"Discriminaci\u00f3n Fonol\u00f3gica"}</h1><p style={{fontSize:12,color:K.mt,margin:0}}>{"Evaluación de discriminación auditiva de fonemas"}</p></div>
       </div>
       <div style={{display:"flex",gap:4,marginBottom:24}}>
         {["Paciente","Evaluaci\u00f3n","Resultados"].map(function(lb,i){ var active=step===i,done=step>i; return <div key={i} style={{flex:1,textAlign:"center",padding:"8px 0",borderRadius:8,fontSize:13,fontWeight:active?700:500,background:active?K.ac:done?"#059669":"#f1f5f9",color:active||done?"#fff":K.mt}}>{(i+1)+". "+lb}</div>; })}
@@ -151,23 +151,19 @@ export default function NewDISC({ onS, nfy, userId }){
       </div>}
 
       {step===1 && <div>
-        <div style={{background:"#f0f9ff",border:"1px solid #bae6fd",borderRadius:8,padding:"12px 16px",marginBottom:20,fontSize:12,color:"#0369a1",lineHeight:1.6}}>
-          <strong>{"\u2139\ufe0f Instrucciones:"}</strong>{" Presente cada par. El paciente indica si son "}<strong>{"iguales (I)"}</strong>{" o "}<strong>{"diferentes (D)"}</strong>{"."}
-        </div>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
           <div style={{fontSize:13,color:K.mt,fontWeight:600}}>{"Progreso: "+answeredCount+"/"+DISC_PAIRS.length}</div>
           <div style={{width:120,height:6,background:"#e2e8f0",borderRadius:3,overflow:"hidden"}}><div style={{width:Math.round(answeredCount/DISC_PAIRS.length*100)+"%",height:"100%",background:K.ac,borderRadius:3,transition:"width .3s"}}></div></div>
         </div>
         <div style={{background:"#fff",borderRadius:12,border:"1px solid "+K.bd,overflow:"hidden"}}>
-          <div style={{display:"grid",gridTemplateColumns:"44px 1fr 100px 100px 1fr",gap:0,background:K.sd,color:"#fff",padding:"10px 16px",fontSize:12,fontWeight:700}}><span>{"N\u00b0"}</span><span>{"Oposici\u00f3n"}</span><span style={{textAlign:"center"}}>{"Clave"}</span><span style={{textAlign:"center"}}>{"Respuesta"}</span><span>{"Obs."}</span></div>
+          <div style={{display:"grid",gridTemplateColumns:"44px 1fr 180px 1fr",gap:0,background:K.sd,color:"#fff",padding:"10px 16px",fontSize:12,fontWeight:700}}><span>{"N\u00b0"}</span><span>{"Oposici\u00f3n"}</span><span style={{textAlign:"center"}}>{"Respuesta"}</span><span>{"Observaci\u00f3n"}</span></div>
           {DISC_PAIRS.map(function(pair){ var r=responses[pair.id],isCorrect=r===pair.clave,isIncorrect=r!==undefined&&r!==pair.clave,bgRow=r===undefined?"#fff":isCorrect?"#f0fdf4":"#fef2f2";
-            return <div key={pair.id} style={{display:"grid",gridTemplateColumns:"44px 1fr 100px 100px 1fr",gap:0,padding:"10px 16px",borderTop:"1px solid #f1f5f9",background:bgRow,alignItems:"center"}}>
+            return <div key={pair.id} style={{display:"grid",gridTemplateColumns:"44px 1fr 180px 1fr",gap:0,padding:"10px 16px",borderTop:"1px solid #f1f5f9",background:bgRow,alignItems:"center"}}>
               <span style={{fontSize:13,fontWeight:700,color:K.mt}}>{pair.id}</span>
               <span style={{fontSize:14,fontWeight:500}}>{pair.word1+" \u2014 "+pair.word2}</span>
-              <span style={{textAlign:"center"}}><span style={{padding:"3px 12px",borderRadius:6,fontSize:12,fontWeight:700,background:pair.clave==="I"?"#dbeafe":"#fce7f3",color:pair.clave==="I"?"#2563eb":"#be185d"}}>{pair.clave}</span></span>
               <div style={{display:"flex",gap:4,justifyContent:"center"}}>
-                <button onClick={function(){setResponse(pair.id,"I")}} style={{width:36,height:32,borderRadius:6,border:r==="I"?"2px solid #2563eb":"1px solid "+K.bd,background:r==="I"?"#dbeafe":"#fff",color:r==="I"?"#2563eb":K.mt,fontSize:12,fontWeight:700,cursor:"pointer"}}>I</button>
-                <button onClick={function(){setResponse(pair.id,"D")}} style={{width:36,height:32,borderRadius:6,border:r==="D"?"2px solid #be185d":"1px solid "+K.bd,background:r==="D"?"#fce7f3":"#fff",color:r==="D"?"#be185d":K.mt,fontSize:12,fontWeight:700,cursor:"pointer"}}>D</button>
+                <button onClick={function(){setResponse(pair.id,"I")}} style={{padding:"6px 12px",borderRadius:6,border:r==="I"?"2px solid #2563eb":"1px solid "+K.bd,background:r==="I"?"#dbeafe":"#fff",color:r==="I"?"#2563eb":K.mt,fontSize:11,fontWeight:700,cursor:"pointer"}}>IGUALES</button>
+                <button onClick={function(){setResponse(pair.id,"D")}} style={{padding:"6px 12px",borderRadius:6,border:r==="D"?"2px solid #be185d":"1px solid "+K.bd,background:r==="D"?"#fce7f3":"#fff",color:r==="D"?"#be185d":K.mt,fontSize:11,fontWeight:700,cursor:"pointer"}}>DIFERENTES</button>
               </div>
               <input value={obsMap[pair.id]||""} onChange={function(e){setOb(pair.id,e.target.value)}} placeholder="..." style={{padding:"5px 8px",border:"1px solid "+K.bd,borderRadius:6,fontSize:11,background:"#fff",width:"100%"}} />
               {r!==undefined && <div style={{gridColumn:"1/-1",paddingTop:4}}>{isCorrect && <span style={{fontSize:10,color:"#059669",fontWeight:600}}>{"\u2714 Correcto"}</span>}{isIncorrect && <span style={{fontSize:10,color:"#dc2626",fontWeight:600}}>{"\u2718 Incorrecto"}</span>}</div>}
@@ -203,7 +199,7 @@ export default function NewDISC({ onS, nfy, userId }){
           </div>
           <div ref={reportRef} style={{background:"#fff",borderRadius:12,border:"1px solid "+K.bd,padding:24}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16,paddingBottom:12,borderBottom:"2px solid "+K.bd}}>
-              <div><div style={{fontSize:10,color:K.mt,fontWeight:600,textTransform:"uppercase",letterSpacing:1}}>{"Informe Fonoaudiol\u00f3gico \u2014 Disc. Fonol\u00f3gica (PEFF-R 3.4)"}</div><div style={{fontSize:17,fontWeight:700,marginTop:3}}>{patient?patient.nombre:""}</div><div style={{fontSize:12,color:K.mt,marginTop:2}}>{"DNI: "+(patient?patient.dni||"N/A":"N/A")+" \u00b7 Edad: "+(patientAge?ageLabel(patientAge):"")}</div></div>
+              <div><div style={{fontSize:10,color:K.mt,fontWeight:600,textTransform:"uppercase",letterSpacing:1}}>{"Informe Fonoaudiol\u00f3gico \u2014 Discriminación Fonológica"}</div><div style={{fontSize:17,fontWeight:700,marginTop:3}}>{patient?patient.nombre:""}</div><div style={{fontSize:12,color:K.mt,marginTop:2}}>{"DNI: "+(patient?patient.dni||"N/A":"N/A")+" \u00b7 Edad: "+(patientAge?ageLabel(patientAge):"")}</div></div>
               <div style={{textAlign:"right"}}><div style={{fontSize:11,color:K.mt}}>{"Fecha: "+(evalDate||"")}</div></div>
             </div>
             <div>{renderReportText(report)}</div>
@@ -211,7 +207,7 @@ export default function NewDISC({ onS, nfy, userId }){
               <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}><div style={{display:"flex",alignItems:"center",gap:6}}><span style={{fontSize:18}}>{"\ud83e\udde0"}</span><span style={{fontSize:11,fontWeight:700,color:"#6b21a8"}}>{"Generado con IA"}</span></div><div style={{width:1,height:16,background:"#c4b5fd"}} /><div style={{display:"flex",alignItems:"center",gap:6}}><span style={{fontSize:18}}>{"\u2705"}</span><span style={{fontSize:11,fontWeight:700,color:"#059669"}}>{"Comprobado por profesionales en fonoaudiolog\u00eda de C\u00f3rdoba"}</span></div></div>
               <div style={{fontSize:10,color:"#7c3aed",marginTop:6}}>{"Generado con IA. Validado por profesionales fonoaudi\u00f3logos de C\u00f3rdoba, Argentina. Debe ser revisado por el profesional tratante."}</div>
             </div>
-            <div style={{marginTop:14,paddingTop:8,borderTop:"1px solid "+K.bd,fontSize:9,color:"#94a3b8",textAlign:"center"}}>{"Br\u00fajula KIT \u2014 Disc. Fonol\u00f3gica (PEFF-R 3.4) \u2014 "+new Date().toLocaleDateString("es-AR")}</div>
+            <div style={{marginTop:14,paddingTop:8,borderTop:"1px solid "+K.bd,fontSize:9,color:"#94a3b8",textAlign:"center"}}>{"Br\u00fajula KIT \u2014 Discriminación Fonológica \u2014 "+new Date().toLocaleDateString("es-AR")}</div>
           </div>
         </div>}
 

@@ -23,8 +23,7 @@ export default function Tools({ onSel, credits, onBuy }) {
           var info = t.info;
           return <div key={t.id} style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",overflow:"hidden",opacity:noCredits?0.5:1,transition:"opacity .2s"}}>
             <div style={{background:"linear-gradient(135deg,"+t.color+","+t.color+"aa)",padding:"24px 24px 20px",color:"#fff"}}>
-              <div style={{fontSize:36,marginBottom:8}}>{t.icon}</div><div style={{fontSize:22,fontWeight:700}}>{t.label}</div>
-              <div style={{fontSize:12,opacity:.85,marginTop:2}}>{t.fullName}</div>
+              <div style={{fontSize:36,marginBottom:8}}>{t.icon}</div><div style={{fontSize:18,fontWeight:700}}>{t.fullName}</div>
             </div>
             <div style={{padding:"20px 24px"}}>
               <p style={{fontSize:13,color:"#475569",lineHeight:1.6,marginBottom:16}}>{t.desc}</p>
