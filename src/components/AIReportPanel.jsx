@@ -117,7 +117,7 @@ export default function AIReportPanel({ ev, evalType, collectionName, evalLabel 
 
   // No report at all
   if(!report && !generating && !genError) return <div style={{background:"#fffbeb",borderRadius:10,padding:"14px 18px",marginBottom:16,fontSize:13,color:"#92400e",border:"1px solid #fde68a",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:10}}>
-    <span>{"\u26a0"} No se gener\u00f3 informe IA para esta evaluaci\u00f3n.</span>
+    <span>{"⚠ No se generó informe IA para esta evaluación."}</span>
     <button onClick={function(){handleGenerate("clinico")}} style={{padding:"8px 18px",background:"#9333ea",color:"#fff",border:"none",borderRadius:8,fontSize:12,fontWeight:600,cursor:"pointer"}}>Generar informe ahora</button>
   </div>;
 
@@ -137,7 +137,7 @@ export default function AIReportPanel({ ev, evalType, collectionName, evalLabel 
 
   return <div style={{marginBottom:20}}>
     <div style={{display:hasCUD?"flex":"block",gap:16,alignItems:"flex-start"}}>
-      <ReportCard title="Informe Fonoaudiol\u00f3gico" titleColor={K.sd} borderColor={K.bd} report={report} ev={ev} evalLabel={evalLabel||evalType.toUpperCase()} refObj={reportRef} onPDF={function(){ if(reportRef.current) doPDF(reportRef.current, pdfName("Informe")); }} />
+      <ReportCard title="Informe Fonoaudiológico" titleColor={K.sd} borderColor={K.bd} report={report} ev={ev} evalLabel={evalLabel||evalType.toUpperCase()} refObj={reportRef} onPDF={function(){ if(reportRef.current) doPDF(reportRef.current, pdfName("Informe")); }} />
       {hasCUD && <ReportCard title="Informe para CUD" titleColor="#7c3aed" borderColor="#7c3aed" report={cudReport} ev={ev} evalLabel={evalLabel||evalType.toUpperCase()} refObj={cudRef} onPDF={function(){ if(cudRef.current) doPDF(cudRef.current, pdfName("CUD")); }} />}
     </div>
 
