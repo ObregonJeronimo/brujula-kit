@@ -9,8 +9,18 @@ export default function CompleteProfileScreen({ uid, email, onDone }) {
   const [ld, setLd] = useState(false);
   const [err, setErr] = useState("");
   const [genUser, setGenUser] = useState("");
+  const [existingProvider, setExistingProvider] = useState(null);
   const I = { width: "100%", padding: "12px 14px", border: "1px solid #e2e8f0", borderRadius: 8, fontSize: 14, background: "#f8faf9" };
-  useEffect(() => { (async () => { const existing = await getUserProfile(uid); if (existing && existing.profileComplete) onDone(existing); })(); }, [uid]);
+  useEffect(() => { (async () => {
+    const existing = await getUserProfile(uid);
+    if (existing && existing.profileComplete) { onDone(existing); return; }
+    // Pre-fill from existing partial profile (Google users get nombre/apellido)
+    if (existing) {
+      if (existing.nombre) setNombre(existing.nombre);
+      if (existing.apellido) setApellido(existing.apellido);
+      if (existing.authProvider) setExistingProvider(existing.authProvider);
+    }
+  })(); }, [uid]);
   const handleSubmit = async (ev) => {
     ev.preventDefault(); setLd(true); setErr("");
     if (!nombre.trim() || !apellido.trim() || !dni.trim()) { setErr("Complete todos los campos."); setLd(false); return; }
@@ -20,7 +30,7 @@ export default function CompleteProfileScreen({ uid, email, onDone }) {
     try {
       const isAdminUser = email === ADMIN_EMAIL;
       let username = isAdminUser ? "CalaAdmin976" : await generateUsername(nombre.trim(), apellido.trim());
-      const profileData = { uid, email, nombre: nombre.trim(), apellido: apellido.trim(), dni: dni.trim(), username, creditos: 5, plan: "Plan Demo", role: isAdminUser ? "admin" : "user", profileComplete: true, createdAt: new Date().toISOString() };
+      const profileData = { uid, email, nombre: nombre.trim(), apellido: apellido.trim(), dni: dni.trim(), username, creditos: 5, plan: "Plan Demo", role: isAdminUser ? "admin" : "user", profileComplete: true, authProvider: existingProvider || "email", createdAt: new Date().toISOString() };
       await setDoc(doc(db, "usuarios", uid), profileData);
       setGenUser(username);
       setTimeout(() => onDone(profileData), 2500);
