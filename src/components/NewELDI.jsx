@@ -5,7 +5,7 @@ import PatientLookup from "./PatientLookup.jsx";
 import { calcScoring, gm, fa, scrollTop } from "./NewELDI_scoring.js";
 import { SequenceGame, ShapesGame } from "./NewELDI_games.jsx";
 import { fbAdd, K } from "../lib/fb.js";
-import { renderReportText, saveReportToDoc, handlePDFExport } from "../lib/evalUtils.jsx";
+import AIReportPanel from "./AIReportPanel.jsx";
 
 export default function NewELDI({onS,nfy,userId}){
   var _s=useState(1),step=_s[0],sS=_s[1];
@@ -22,8 +22,6 @@ export default function NewELDI({onS,nfy,userId}){
   var _savedDocId = useState(null), savedDocId = _savedDocId[0], setSavedDocId = _savedDocId[1];
   var docIdRef = useRef(null);
   var _report = useState(null), report = _report[0], setReport = _report[1];
-  var _generating = useState(false), generating = _generating[0], setGenerating = _generating[1];
-  var _genError = useState(null), genError = _genError[0], setGenError = _genError[1];
   var _showTech = useState(false), showTech = _showTech[0], setShowTech = _showTech[1];
   var reportRef = useRef(null);
 
@@ -145,33 +143,6 @@ export default function NewELDI({onS,nfy,userId}){
   }, [content]);
 
   // Auto-generate AI report
-  useEffect(function(){
-    if(content === "result" && saved && !report && !generating && !genError){
-      setGenerating(true);
-      var evalData = {
-        paciente: pd.pN, pacienteDni: pd.dni||"", edadMeses: a,
-        fechaEvaluacion: pd.eD, derivadoPor: pd.ref, observaciones: pd.obs||"",
-        evalRec: evalRec, evalExp: evalExp,
-        resultados: { recRes: Object.assign({label:"Comprensi\u00f3n Auditiva",evaluated:evalRec},rR), expRes: Object.assign({label:"Comunicaci\u00f3n Expresiva",evaluated:evalExp},rE) }
-      };
-      fetch("/api/generate-report", {
-        method: "POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({ evalData: evalData, evalType: "eldi", reportMode: "clinico" })
-      })
-      .then(function(r){ return r.json(); })
-      .then(function(data){
-        if(data.success && data.report){
-          setReport(data.report);
-          saveReportToDoc("evaluaciones", docIdRef, data.report);
-        } else setGenError(data.error||"Error al generar informe.");
-        setGenerating(false);
-      })
-      .catch(function(e){ setGenError("Error: "+e.message); setGenerating(false); });
-    }
-  }, [content, saved, savedDocId]);
-
-  var handlePDFReport = function(){ handlePDFExport(reportRef, "ELDI", pd.pN || "", pd.eD || ""); };
-
   var renderClassification=function(scoring,label){
     if(!scoring||scoring.pctExpected===null||scoring.evaluados===0)return null;
     return <div style={{background:"#fff",border:"1px solid #e2e8f0",borderRadius:10,padding:18,marginBottom:14}}>
@@ -242,40 +213,11 @@ export default function NewELDI({onS,nfy,userId}){
         var allNoEval=[].concat(evalRec?rR.noEvaluado:[]).concat(evalExp?rE.noEvaluado:[]);
 
         return <div>
-          <div style={{background:"#dcfce7",borderRadius:10,padding:"12px 18px",marginBottom:16,display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:18}}>{"\u2705"}</span><span style={{fontSize:13,fontWeight:600,color:"#059669"}}>{"Evaluaci\u00f3n guardada correctamente."}</span></div>
+          <div style={{background:"#dcfce7",borderRadius:10,padding:"12px 18px",marginBottom:16,display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:18}}>{"\u2705"}</span><span style={{fontSize:13,fontWeight:600,color:"#059669"}}>{"Evaluación guardada correctamente."}</span></div>
 
-          {generating && <div style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",padding:40,textAlign:"center",marginBottom:20}}>
-            <div style={{display:"inline-block",width:40,height:40,border:"4px solid #e2e8f0",borderTopColor:"#0d9488",borderRadius:"50%",animation:"spin 1s linear infinite",marginBottom:16}} />
-            <div style={{fontSize:15,fontWeight:600,color:"#0a3d2f"}}>{"Generando informe con IA..."}</div>
-            <div style={{fontSize:12,color:K.mt,marginTop:6}}>{"Esto puede tardar unos segundos."}</div>
-            <style>{"@keyframes spin { to { transform: rotate(360deg); } }"}</style>
-          </div>}
+          <AIReportPanel ev={{_fbId:docIdRef.current,paciente:pd.pN,pacienteDni:pd.dni||"",edadMeses:a,fechaEvaluacion:pd.eD,derivadoPor:pd.ref||"",observaciones:pd.obs||"",resultados:{recRes:rR,expRes:rE},evalRec:evalRec,evalExp:evalExp,aiReport:report}} evalType="eldi" collectionName="evaluaciones" evalLabel="ELDI" />
 
-          {genError && !report && <div style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",padding:28,textAlign:"center",marginBottom:20}}>
-            <div style={{background:"#fef2f2",border:"1px solid #fecaca",borderRadius:8,padding:"10px 14px",marginBottom:14,fontSize:12,color:"#dc2626"}}>{genError}</div>
-            <button onClick={function(){ setGenError(null); }} style={{padding:"10px 24px",background:"#0d9488",color:"#fff",border:"none",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer"}}>{"Reintentar"}</button>
-          </div>}
-
-          {report && <div style={{marginBottom:20}}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10,flexWrap:"wrap",gap:8}}>
-              <div style={{fontSize:15,fontWeight:700,color:"#0a3d2f"}}>{"Informe Fonoaudiol\u00f3gico"}</div>
-              <button onClick={handlePDFReport} style={{padding:"7px 14px",background:"#0d9488",color:"#fff",border:"none",borderRadius:8,fontSize:12,fontWeight:600,cursor:"pointer"}}>{"\ud83d\udda8 Imprimir informe"}</button>
-            </div>
-            <div ref={reportRef} style={{background:"#fff",borderRadius:12,border:"1px solid #e2e8f0",padding:24}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16,paddingBottom:12,borderBottom:"2px solid #e2e8f0"}}>
-                <div><div style={{fontSize:10,color:K.mt,fontWeight:600,textTransform:"uppercase",letterSpacing:1}}>{"Informe Fonoaudiol\u00f3gico \u2014 ELDI"}</div><div style={{fontSize:17,fontWeight:700,marginTop:3}}>{pd.pN}</div><div style={{fontSize:12,color:K.mt,marginTop:2}}>{"DNI: "+(pd.dni||"N/A")+" \u00b7 Edad: "+(a?fa(a):"")}</div></div>
-                <div style={{textAlign:"right"}}><div style={{fontSize:11,color:K.mt}}>{"Fecha: "+(pd.eD||"")}</div></div>
-              </div>
-              <div>{renderReportText(report)}</div>
-              <div style={{marginTop:20,background:"linear-gradient(135deg,#ccfbf1,#f0fdf4)",borderRadius:10,padding:"14px 18px",border:"1px solid #99f6e4"}}>
-                <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}><div style={{display:"flex",alignItems:"center",gap:6}}><span style={{fontSize:18}}>{"\ud83e\udde0"}</span><span style={{fontSize:11,fontWeight:700,color:"#0a3d2f"}}>{"Generado con IA"}</span></div><div style={{width:1,height:16,background:"#5eead4"}} /><div style={{display:"flex",alignItems:"center",gap:6}}><span style={{fontSize:18}}>{"\u2705"}</span><span style={{fontSize:11,fontWeight:700,color:"#059669"}}>{"Comprobado por profesionales en fonoaudiolog\u00eda de C\u00f3rdoba"}</span></div></div>
-                <div style={{fontSize:10,color:"#0d9488",marginTop:6}}>{"Generado con IA. Validado por profesionales fonoaudi\u00f3logos de C\u00f3rdoba, Argentina. Debe ser revisado por el profesional tratante."}</div>
-              </div>
-              <div style={{marginTop:14,paddingTop:8,borderTop:"1px solid #e2e8f0",fontSize:9,color:"#94a3b8",textAlign:"center"}}>{"Br\u00fajula KIT \u2014 ELDI \u2014 "+new Date().toLocaleDateString("es-AR")}</div>
-            </div>
-          </div>}
-
-          <button onClick={function(){ setShowTech(!showTech); }} style={{width:"100%",padding:"14px",background:showTech?"#f1f5f9":"#0a3d2f",color:showTech?"#1e293b":"#fff",border:"1px solid #e2e8f0",borderRadius:10,fontSize:14,fontWeight:600,cursor:"pointer",marginBottom:showTech?16:20}}>{showTech?"\u25b2 Ocultar datos t\u00e9cnicos":"\u25bc Ver datos t\u00e9cnicos de la evaluaci\u00f3n"}</button>
+          <button onClick={function(){ setShowTech(!showTech); }} style={{width:"100%",padding:"14px",background:showTech?"#f1f5f9":"#0a3d2f",color:showTech?"#1e293b":"#fff",border:"1px solid #e2e8f0",borderRadius:10,fontSize:14,fontWeight:600,cursor:"pointer",marginBottom:showTech?16:20}}>{showTech?"\u25b2 Ocultar datos técnicos":"\u25bc Ver datos técnicos de la evaluación"}</button>
 
           {showTech && <div>
             <h2 style={{fontSize:20,fontWeight:700,marginBottom:8}}>{"Resultados ELDI \u2014 "+pd.pN}</h2>

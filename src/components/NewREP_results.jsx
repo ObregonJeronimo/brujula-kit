@@ -1,8 +1,8 @@
-// NewREP Results — saves directly to Firestore, generates AI report, stays on page
+// NewREP Results — saves directly to Firestore, shows AI report via AIReportPanel
 import { useState, useEffect, useRef } from "react";
 import { ageLabel } from "./NewREP_logic.js";
 import { fbAdd, K } from "../lib/fb.js";
-import { renderReportText, saveReportToDoc, handlePDFExport } from "../lib/evalUtils.jsx";
+import AIReportPanel from "./AIReportPanel.jsx";
 
 var posLabels = {ISPP:"ISPP",ISIP:"ISIP",CSIP:"CSIP",CSFP:"CSFP"};
 var posFull = {ISPP:"Inicio síl. — Pos. palabra",ISIP:"Inicio síl. — Int. palabra",CSIP:"Coda síl. — Int. palabra",CSFP:"Coda síl. — Final palabra"};
@@ -11,15 +11,11 @@ export default function NewREPResults({ results, patientAge, obs, onBack, onFini
   var _saved = useState(false), saved = _saved[0], setSaved = _saved[1];
   var _savedDocId = useState(null), savedDocId = _savedDocId[0], setSavedDocId = _savedDocId[1];
   var docIdRef = useRef(null);
-  var _report = useState(null), report = _report[0], setReport = _report[1];
-  var _generating = useState(false), generating = _generating[0], setGenerating = _generating[1];
-  var _genError = useState(null), genError = _genError[0], setGenError = _genError[1];
   var _showTech = useState(false), showTech = _showTech[0], setShowTech = _showTech[1];
-  var reportRef = useRef(null);
 
   if(!results) return null;
 
-  // Direct save to Firestore on mount (no navigation)
+  // Direct save to Firestore on mount
   useEffect(function(){
     if(!saved){
       var payload = {
@@ -38,69 +34,13 @@ export default function NewREPResults({ results, patientAge, obs, onBack, onFini
     }
   }, []);
 
-  // Auto-generate AI report after save
-  useEffect(function(){
-    if(saved && !report && !generating && !genError){
-      setGenerating(true);
-      var evalData = {
-        paciente: patient ? patient.nombre : "", pacienteDni: patient ? (patient.dni||"") : "",
-        edadMeses: patientAge||0, fechaEvaluacion: evalDate||"", derivadoPor: derivado||"",
-        observaciones: obs||"", resultados: results
-      };
-      fetch("/api/generate-report", {
-        method: "POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({ evalData: evalData, evalType: "rep", reportMode: "clinico" })
-      })
-      .then(function(r){ return r.json(); })
-      .then(function(data){
-        if(data.success && data.report){
-          setReport(data.report);
-          saveReportToDoc("evaluaciones", docIdRef, data.report);
-        } else setGenError(data.error||"Error al generar informe.");
-        setGenerating(false);
-      })
-      .catch(function(e){ setGenError("Error: "+e.message); setGenerating(false); });
-    }
-  }, [saved, savedDocId]);
-
-  var handlePDFReport = function(){ handlePDFExport(reportRef, "REP", patient ? patient.nombre : "", evalDate); };
-
   var sevColor = results.pcc===100?"#059669":results.pcc>=85?"#059669":results.pcc>=65?"#d97706":results.pcc>=50?"#ea580c":"#dc2626";
 
   return (
     <div>
       <div style={{background:"#dcfce7",borderRadius:10,padding:"12px 18px",marginBottom:16,display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:18}}>{"\u2705"}</span><span style={{fontSize:13,fontWeight:600,color:"#059669"}}>{"Evaluación guardada correctamente."}</span></div>
 
-      {generating && <div style={{background:"#fff",borderRadius:14,border:"1px solid "+K.bd,padding:40,textAlign:"center",marginBottom:20}}>
-        <div style={{display:"inline-block",width:40,height:40,border:"4px solid #e2e8f0",borderTopColor:"#9333ea",borderRadius:"50%",animation:"spin 1s linear infinite",marginBottom:16}} />
-        <div style={{fontSize:15,fontWeight:600,color:K.sd}}>{"Generando informe con IA..."}</div>
-        <div style={{fontSize:12,color:K.mt,marginTop:6}}>{"Esto puede tardar unos segundos."}</div>
-        <style>{"@keyframes spin { to { transform: rotate(360deg); } }"}</style>
-      </div>}
-
-      {genError && !report && <div style={{background:"#fff",borderRadius:14,border:"1px solid "+K.bd,padding:28,textAlign:"center",marginBottom:20}}>
-        <div style={{background:"#fef2f2",border:"1px solid #fecaca",borderRadius:8,padding:"10px 14px",marginBottom:14,fontSize:12,color:"#dc2626"}}>{genError}</div>
-        <button onClick={function(){ setGenError(null); }} style={{padding:"10px 24px",background:"#9333ea",color:"#fff",border:"none",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer"}}>{"Reintentar"}</button>
-      </div>}
-
-      {report && <div style={{marginBottom:20}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10,flexWrap:"wrap",gap:8}}>
-          <div style={{fontSize:15,fontWeight:700,color:K.sd}}>{"Informe Fonoaudiológico"}</div>
-          <button onClick={handlePDFReport} style={{padding:"7px 14px",background:"#9333ea",color:"#fff",border:"none",borderRadius:8,fontSize:12,fontWeight:600,cursor:"pointer"}}>{"\ud83d\udda8 Imprimir informe"}</button>
-        </div>
-        <div ref={reportRef} style={{background:"#fff",borderRadius:12,border:"1px solid "+K.bd,padding:24}}>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16,paddingBottom:12,borderBottom:"2px solid "+K.bd}}>
-            <div><div style={{fontSize:10,color:K.mt,fontWeight:600,textTransform:"uppercase",letterSpacing:1}}>{"Informe Fonoaudiológico — Rep. Palabras (PEFF 3.2)"}</div><div style={{fontSize:17,fontWeight:700,marginTop:3}}>{patient?patient.nombre:""}</div><div style={{fontSize:12,color:K.mt,marginTop:2}}>{"DNI: "+(patient?patient.dni||"N/A":"N/A")+" · Edad: "+(patientAge?Math.floor(patientAge/12)+" años, "+(patientAge%12)+" meses":"")}</div></div>
-            <div style={{textAlign:"right"}}><div style={{fontSize:11,color:K.mt}}>{"Fecha: "+(evalDate||"")}</div></div>
-          </div>
-          <div>{renderReportText(report)}</div>
-          <div style={{marginTop:20,background:"linear-gradient(135deg,#f3e8ff,#ede9fe)",borderRadius:10,padding:"14px 18px",border:"1px solid #d8b4fe"}}>
-            <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}><div style={{display:"flex",alignItems:"center",gap:6}}><span style={{fontSize:18}}>{"\ud83e\udde0"}</span><span style={{fontSize:11,fontWeight:700,color:"#6b21a8"}}>{"Generado con IA"}</span></div><div style={{width:1,height:16,background:"#c4b5fd"}} /><div style={{display:"flex",alignItems:"center",gap:6}}><span style={{fontSize:18}}>{"\u2705"}</span><span style={{fontSize:11,fontWeight:700,color:"#059669"}}>{"Comprobado por profesionales en fonoaudiología de Córdoba"}</span></div></div>
-            <div style={{fontSize:10,color:"#7c3aed",marginTop:6}}>{"Generado con IA. Validado por profesionales fonoaudiólogos de Córdoba, Argentina. Debe ser revisado por el profesional tratante."}</div>
-          </div>
-          <div style={{marginTop:14,paddingTop:8,borderTop:"1px solid "+K.bd,fontSize:9,color:"#94a3b8",textAlign:"center"}}>{"Brújula KIT — Rep. Palabras (PEFF 3.2) — "+new Date().toLocaleDateString("es-AR")}</div>
-        </div>
-      </div>}
+      <AIReportPanel ev={{_fbId:docIdRef.current,paciente:patient?patient.nombre:"",pacienteDni:patient?(patient.dni||""):"",edadMeses:patientAge||0,fechaEvaluacion:evalDate||"",derivadoPor:derivado||"",observaciones:obs||"",resultados:results}} evalType="rep" collectionName="evaluaciones" evalLabel="Repetición de Palabras" />
 
       <button onClick={function(){ setShowTech(!showTech); }} style={{width:"100%",padding:"14px",background:showTech?"#f1f5f9":"#0a3d2f",color:showTech?"#1e293b":"#fff",border:"1px solid #e2e8f0",borderRadius:10,fontSize:14,fontWeight:600,cursor:"pointer",marginBottom:showTech?16:20}}>{showTech?"\u25b2 Ocultar datos técnicos":"\u25bc Ver datos técnicos de la evaluación"}</button>
 
