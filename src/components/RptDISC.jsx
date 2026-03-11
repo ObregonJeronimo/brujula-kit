@@ -13,34 +13,12 @@ export default function RptDISC({ ev, onD }){
 
   var handlePDF = function(){
     if(!printRef.current) return;
-    import("html2canvas").then(function(mod){
-      return mod.default(printRef.current,{scale:2,useCORS:true,backgroundColor:"#ffffff",scrollY:-window.scrollY,windowHeight:printRef.current.scrollHeight});
-    }).then(function(canvas){
-      return import("jspdf").then(function(mod){
-        var jsPDF = mod.jsPDF;
-        var pdf = new jsPDF("p","mm","a4");
-        var pW=210, pH=297, margin=10;
-        var imgW=pW-margin*2;
-        var imgH=(canvas.height*imgW)/canvas.width;
-        var usableH=pH-margin*2;
-        var pos=0, page=0;
-        while(pos<imgH){
-          if(page>0) pdf.addPage();
-          var srcY=Math.round((pos/imgH)*canvas.height);
-          var srcH=Math.round((Math.min(usableH,imgH-pos)/imgH)*canvas.height);
-          if(srcH<=0) break;
-          var sliceCanvas=document.createElement("canvas");
-          sliceCanvas.width=canvas.width; sliceCanvas.height=srcH;
-          var ctx=sliceCanvas.getContext("2d");
-          ctx.drawImage(canvas,0,srcY,canvas.width,srcH,0,0,canvas.width,srcH);
-          var sliceH=(srcH*imgW)/canvas.width;
-          if(sliceH<1) break;
-          pdf.addImage(sliceCanvas.toDataURL("image/png"),"PNG",margin,margin,imgW,sliceH);
-          pos+=usableH; page++;
-        }
-        pdf.save("DISC_"+((ev.paciente||"").replace(/\s/g,"_"))+"_"+ev.fechaEvaluacion+".pdf");
-      });
-    });
+    var w = window.open("","_blank");
+    w.document.write("<html><head><title>DISC "+ev.paciente+"</title><style>body{font-family:system-ui,sans-serif;padding:20px;font-size:12px;color:#1e293b}table{width:100%;border-collapse:collapse}th,td{padding:5px 8px;border:1px solid #ddd;text-align:left;font-size:11px}th{background:#f1f5f9;font-weight:700}h3{margin:16px 0 8px}@media print{body{padding:0}}</style></head><body>");
+    w.document.write(printRef.current.innerHTML);
+    w.document.write("</body></html>");
+    w.document.close();
+    setTimeout(function(){ w.print(); }, 300);
   };
 
   var sevColor = res.severity==="Adecuado"?"#059669":res.severity==="Leve"?"#d97706":"#dc2626";
