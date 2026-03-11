@@ -2,16 +2,14 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import { RECO_GROUPS, computeRecoResults } from "../data/recoFonData.js";
 import PatientLookup from "./PatientLookup.jsx";
 import { db, doc, updateDoc } from "../firebase.js";
-import { fbAdd } from "../lib/fb.js";
-
-var K = { sd:"#0a3d2f", ac:"#9333ea", al:"#f3e8ff", mt:"#64748b", bd:"#e2e8f0" };
+import { fbAdd, K as _K, ageLabel } from "../lib/fb.js";
+var K = Object.assign({}, _K, { ac: "#9333ea", al: "#f3e8ff" });
 
 function ageMo(birth){
   if(!birth) return 0;
   var b=new Date(birth), n=new Date();
   return (n.getFullYear()-b.getFullYear())*12+(n.getMonth()-b.getMonth())-(n.getDate()<b.getDate()?1:0);
 }
-function ageLabel(m){ return Math.floor(m/12)+" a\u00f1os, "+(m%12)+" meses"; }
 function scrollTop(){ var el=document.getElementById("main-scroll"); if(el) el.scrollTo({top:0,behavior:"smooth"}); }
 
 function renderReportText(text){

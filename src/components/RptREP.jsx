@@ -1,8 +1,6 @@
 import { useState, useRef } from "react";
 import AIReportPanel from "./AIReportPanel.jsx";
-
-var K = { sd:"#0a3d2f", ac:"#0d9488", mt:"#64748b", bd:"#e2e8f0" };
-function ageLabel(m){ return Math.floor(m/12)+" años, "+(m%12)+" meses"; }
+import { K, ageLabel } from "../lib/fb.js";
 var posLabels = {ISPP:"ISPP",ISIP:"ISIP",CSIP:"CSIP",CSFP:"CSFP"};
 var posFull = {ISPP:"Inicio síl. — Pos. palabra",ISIP:"Inicio síl. — Int. palabra",CSIP:"Coda síl. — Int. palabra",CSFP:"Coda síl. — Final palabra"};
 

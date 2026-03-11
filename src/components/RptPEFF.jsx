@@ -3,9 +3,7 @@ import { ALL_PROCESSES } from "../data/peffProcesos.js";
 import { PEFF_SECTIONS } from "../data/peffSections.js";
 import { openDetailPdf, openSummaryPdf } from "./RptPEFF_pdf.js";
 import AIReportPanel from "./AIReportPanel.jsx";
-
-var K = { mt: "#64748b" };
-var fa = function(m){ return Math.floor(m/12)+" a\u00f1os, "+(m%12)+" meses"; };
+import { K, ageLabel } from "../lib/fb.js";
 
 var sevDesc = {
   "Adecuado":"El ni\u00f1o/a produce correctamente todos o casi todos los fonemas esperados para su edad.",
@@ -57,8 +55,8 @@ export default function RptPEFF({ev,onD}){
         })}
       </div>}
       {ageExpected.length>0&&<div style={{background:"#fef3c7",border:"1px solid #fde68a",borderRadius:10,padding:16,marginBottom:16}}>
-        <div style={{fontSize:13,fontWeight:700,color:"#92400e",marginBottom:6}}>{"\u26a0 No esperados ("+fa(ev.edadMeses)+")"}</div>
-        <div style={{fontSize:12,color:"#78350f"}}>{ageExpected.map(function(e){return e.procesoName+" (esperable hasta "+fa(e.expectedAge)+")"}).filter(function(v,i,a){return a.indexOf(v)===i}).join("; ")}</div>
+        <div style={{fontSize:13,fontWeight:700,color:"#92400e",marginBottom:6}}>{"\u26a0 No esperados ("+ageLabel(ev.edadMeses)+")"}</div>
+        <div style={{fontSize:12,color:"#78350f"}}>{ageExpected.map(function(e){return e.procesoName+" (esperable hasta "+ageLabel(e.expectedAge)+")"}).filter(function(v,i,a){return a.indexOf(v)===i}).join("; ")}</div>
       </div>}
       {pa.byProcess&&(function(){
         var sorted = Object.entries(pa.byProcess).sort(function(a,b){return b[1]-a[1]});
@@ -85,7 +83,7 @@ export default function RptPEFF({ev,onD}){
     <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:24,flexWrap:"wrap",gap:12}}>
       <div>
         <h1 style={{fontSize:24,fontWeight:700,color:"#7c3aed"}}>{"Informe PEFF"}</h1>
-        <p style={{color:K.mt,fontSize:15,marginTop:2}}>{ev.paciente+" \u2014 "+fa(ev.edadMeses)}</p>
+        <p style={{color:K.mt,fontSize:15,marginTop:2}}>{ev.paciente+" \u2014 "+ageLabel(ev.edadMeses)}</p>
       </div>
       <div style={{display:"flex",gap:8}}>
         {cd

@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { db, collection, getDocs, query, where } from "../firebase.js";
-
-var K = {mt:"#64748b"};
+import { K } from "../lib/fb.js";
 var I = {width:"100%",padding:"10px 14px",border:"1px solid #e2e8f0",borderRadius:8,fontSize:14,background:"#f8faf9"};
 
 function calcAge(birthStr){

@@ -1,9 +1,8 @@
 import { useState, useRef } from "react";
 import { RECO_GROUPS } from "../data/recoFonData.js";
 import AIReportPanel from "./AIReportPanel.jsx";
-
-var K = { sd:"#0a3d2f", ac:"#9333ea", mt:"#64748b", bd:"#e2e8f0" };
-function ageLabel(m){ return Math.floor(m/12)+" años, "+(m%12)+" meses"; }
+import { K as _K, ageLabel } from "../lib/fb.js";
+var K = Object.assign({}, _K, { ac: "#9333ea" });
 
 export default function RptRECO({ ev, onD }){
   var _cd = useState(false), cd = _cd[0], sCD = _cd[1];

@@ -1,7 +1,6 @@
 // NewPEFF — Results view (RESULT_STEP)
 import { ALL_PROCESSES } from "../data/peffProcesos.js";
-
-var K = { mt: "#64748b" };
+import { K } from "../lib/fb.js";
 
 var sevDesc = {
   "Adecuado":"PCC = 100%: El ni\u00f1o/a produce correctamente todos los fonemas evaluados. No se observan dificultades articulatorias.",

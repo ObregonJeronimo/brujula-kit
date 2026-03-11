@@ -3,8 +3,7 @@ import { REP_CATEGORIES, POSITIONS } from "../data/repWordsData.js";
 import PatientLookup from "./PatientLookup.jsx";
 import { ageMo, ageLabel, ALL_ITEMS, buildCatGroups, wordKey, catProgress, computeResults, scrollTop } from "./NewREP_logic.js";
 import NewREPResults from "./NewREP_results.jsx";
-
-var K = { sd:"#0a3d2f", ac:"#0d9488", al:"#ccfbf1", mt:"#64748b", bd:"#e2e8f0", bg:"#f0f5f3" };
+import { K } from "../lib/fb.js";
 var catGroups = buildCatGroups();
 
 export default function NewREP({ onS, nfy, userId }){

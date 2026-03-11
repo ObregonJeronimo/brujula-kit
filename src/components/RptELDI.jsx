@@ -3,8 +3,9 @@ import { REC, EXP } from "../data/eldiItems.js";
 import { calcScoring, fa, noEvalGrouped } from "./NewELDI_scoring.js";
 import { openDetailPdf, openSummaryPdf } from "./RptELDI_pdf.js";
 import AIReportPanel from "./AIReportPanel.jsx";
+import { K } from "../lib/fb.js";
 
-var K = { mt: "#64748b" };
+
 
 export default function RptELDI({ev,onD}){
   var _cd = useState(false), cd = _cd[0], sCD = _cd[1];

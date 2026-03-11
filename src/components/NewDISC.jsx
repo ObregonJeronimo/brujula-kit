@@ -2,9 +2,7 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import { DISC_PAIRS, computeDiscResults } from "../data/discFonData.js";
 import PatientLookup from "./PatientLookup.jsx";
 import { db, doc, updateDoc } from "../firebase.js";
-import { fbAdd } from "../lib/fb.js";
-
-var K = { sd:"#0a3d2f", ac:"#0d9488", al:"#ccfbf1", mt:"#64748b", bd:"#e2e8f0" };
+import { fbAdd, K, ageLabel } from "../lib/fb.js";
 var todayStr = new Date().toISOString().split("T")[0];
 
 function ageMo(birth){
@@ -12,7 +10,6 @@ function ageMo(birth){
   var b=new Date(birth), n=new Date();
   return (n.getFullYear()-b.getFullYear())*12+(n.getMonth()-b.getMonth())-(n.getDate()<b.getDate()?1:0);
 }
-function ageLabel(m){ return Math.floor(m/12)+" a\u00f1os, "+(m%12)+" meses"; }
 function scrollTop(){ var el=document.getElementById("main-scroll"); if(el) el.scrollTo({top:0,behavior:"smooth"}); }
 
 function renderReportText(text){

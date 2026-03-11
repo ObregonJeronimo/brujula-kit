@@ -42,3 +42,22 @@ export async function generateUsername(nombre, apellido) {
 
 export const ADMIN_EMAIL = "valkyriumsolutions@gmail.com";
 export const K = { sd: "#0a3d2f", ac: "#0d9488", al: "#ccfbf1", mt: "#64748b", bd: "#e2e8f0", bg: "#f0f5f3" };
+
+// =====================================================
+// SHARED HELPERS — import from here, don't redefine
+// =====================================================
+
+// Format age in months to "X años, Y meses"
+export function ageLabel(m) {
+  return Math.floor(m / 12) + " años, " + (m % 12) + " meses";
+}
+
+// Format ISO date string to locale date
+export function fmtDate(d) {
+  return new Date(d).toLocaleDateString("es-AR", { day: "numeric", month: "short", year: "numeric" });
+}
+
+// Format ISO date string to short date
+export function fmtDateShort(d) {
+  return new Date(d).toLocaleDateString("es-CL");
+}

@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { db, collection, getDocs, updateDoc, doc, increment } from "../firebase.js";
-
-var K = { mt: "#64748b", ac: "#0d9488", sd: "#0a3d2f" };
+import { K } from "../lib/fb.js";
 
 export default function Admin({ nfy }) {
   var _users = useState([]), users = _users[0], setUsers = _users[1];

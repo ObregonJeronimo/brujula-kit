@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { isVisibleType, typeBadge, HIST_TABS } from "../config/evalTypes.js";
-var K = { mt: "#64748b" };
-var fa = function(m){ return Math.floor(m/12)+" años, "+(m%12)+" meses"; };
+import { K, ageLabel } from "../lib/fb.js";
 
 export default function Hist({ allEvals, onView, isA, onD }) {
   var _q = useState(""), q = _q[0], sQ = _q[1];
@@ -40,7 +39,7 @@ export default function Hist({ allEvals, onView, isA, onD }) {
                     <span style={{fontWeight:600,fontSize:15}}>{ev.paciente}</span>
                   </div>
                   <div style={{fontSize:12,color:K.mt,marginTop:2}}>
-                    {new Date(ev.fechaGuardado).toLocaleDateString("es-CL")+" · "+fa(ev.edadMeses)}{ev.evaluador?(" · "+ev.evaluador):""}
+                    {new Date(ev.fechaGuardado).toLocaleDateString("es-CL")+" · "+ageLabel(ev.edadMeses)}{ev.evaluador?(" · "+ev.evaluador):""}
                   </div>
                 </div>
                 <div style={{display:"flex",alignItems:"center",gap:10}}>

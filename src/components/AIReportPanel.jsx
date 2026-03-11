@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { db, doc, updateDoc } from "../firebase.js";
-
-var K = { sd:"#0a3d2f", ac:"#9333ea", mt:"#64748b", bd:"#e2e8f0" };
+import { K as _K } from "../lib/fb.js";
+var K = Object.assign({}, _K, { ac: "#9333ea" });
 
 function renderReportText(text){
   if(!text) return null;

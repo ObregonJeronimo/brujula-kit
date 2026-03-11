@@ -5,9 +5,7 @@ import PatientLookup from "./PatientLookup.jsx";
 import { calcScoring, gm, fa, scrollTop } from "./NewELDI_scoring.js";
 import { SequenceGame, ShapesGame } from "./NewELDI_games.jsx";
 import { db, doc, updateDoc } from "../firebase.js";
-import { fbAdd } from "../lib/fb.js";
-
-var K = { mt: "#64748b" };
+import { fbAdd, K } from "../lib/fb.js";
 
 function renderReportText(text){
   if(!text) return null;
