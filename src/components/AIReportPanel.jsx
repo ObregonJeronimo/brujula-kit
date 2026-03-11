@@ -4,46 +4,83 @@ import { K as _K, ageLabel } from "../lib/fb.js";
 import { renderReportText } from "../lib/evalUtils.jsx";
 var K = Object.assign({}, _K, { ac: "#9333ea" });
 
-function doPDF(el, filename){
-  el.style.paddingBottom = "40px";
-  import("html2canvas").then(function(mod){
-    return mod.default(el,{scale:2,useCORS:true,backgroundColor:"#ffffff",scrollY:-window.scrollY,height:el.scrollHeight,windowHeight:el.scrollHeight+100});
-  }).then(function(canvas){
-    el.style.paddingBottom = "";
-    return import("jspdf").then(function(mod){
-      var jsPDF = mod.jsPDF; var pdf = new jsPDF("p","mm","a4");
-      var pW=210,pH=297,margin=10,imgW=pW-margin*2,imgH=(canvas.height*imgW)/canvas.width,usableH=pH-margin*2,pos=0,page=0;
-      while(pos<imgH){ if(page>0) pdf.addPage(); var srcY=Math.round((pos/imgH)*canvas.height); var srcH=Math.round((Math.min(usableH,imgH-pos)/imgH)*canvas.height); if(srcH<=0) break; var sc=document.createElement("canvas");sc.width=canvas.width;sc.height=srcH; sc.getContext("2d").drawImage(canvas,0,srcY,canvas.width,srcH,0,0,canvas.width,srcH); var sliceH=(srcH*imgW)/canvas.width; if(sliceH<1) break; pdf.addImage(sc.toDataURL("image/png"),"PNG",margin,margin,imgW,sliceH); pos+=usableH;page++; }
-      pdf.save(filename);
-    });
-  }).catch(function(e){ el.style.paddingBottom = ""; console.error(e); });
+// Text-based PDF generation (no html2canvas — pure text, always fits 1 page)
+function textPDF(title, evalLabel, ev, reportText, filename){
+  import("jspdf").then(function(mod){
+    var jsPDF = mod.jsPDF;
+    var pdf = new jsPDF("p","mm","a4");
+    var pW=210, margin=14, maxW=pW-margin*2, y=margin;
+    var lineH=5, titleH=7;
+    var pageH=297-margin*2;
+
+    // Header
+    pdf.setFontSize(8); pdf.setTextColor(120);
+    pdf.text(title+" \u2014 "+(evalLabel||""), margin, y); 
+    pdf.text("Fecha: "+(ev.fechaEvaluacion||""), pW-margin, y, {align:"right"});
+    y+=lineH+2;
+    pdf.setDrawColor(200); pdf.line(margin, y, pW-margin, y); y+=4;
+
+    // Patient info
+    pdf.setFontSize(14); pdf.setTextColor(10,61,47); pdf.setFont(undefined,"bold");
+    pdf.text(ev.paciente||"", margin, y); y+=6;
+    pdf.setFontSize(9); pdf.setTextColor(100); pdf.setFont(undefined,"normal");
+    pdf.text("DNI: "+(ev.pacienteDni||"N/A")+" \u00b7 Edad: "+ageLabel(ev.edadMeses||0), margin, y); y+=8;
+
+    // Report body
+    if(reportText){
+      var lines = reportText.split("\n");
+      for(var i=0; i<lines.length; i++){
+        var line = lines[i].trim();
+        if(!line){ y+=3; continue; }
+        // Check if title line (ALL CAPS with colon)
+        var isTitle = /^[A-Z\u00c0-\u00dc\s\d\.\:\-]{6,}:?\s*$/.test(line) || /^\d+[\.\)]\s*[A-Z]/.test(line);
+        if(isTitle){
+          y+=3;
+          pdf.setFontSize(10); pdf.setTextColor(10,61,47); pdf.setFont(undefined,"bold");
+          // Check page break
+          if(y+titleH > pageH){ pdf.addPage(); y=margin; }
+          pdf.text(line, margin, y); y+=titleH;
+          pdf.setFont(undefined,"normal");
+        } else {
+          pdf.setFontSize(9); pdf.setTextColor(51,65,85); pdf.setFont(undefined,"normal");
+          var wrapped = pdf.splitTextToSize(line, maxW);
+          for(var j=0; j<wrapped.length; j++){
+            if(y+lineH > pageH){ pdf.addPage(); y=margin; }
+            pdf.text(wrapped[j], margin, y); y+=lineH;
+          }
+        }
+      }
+    }
+
+    // Footer
+    y+=6;
+    if(y+10 > pageH){ pdf.addPage(); y=margin; }
+    pdf.setDrawColor(200); pdf.line(margin, y, pW-margin, y); y+=4;
+    pdf.setFontSize(7); pdf.setTextColor(150);
+    pdf.text("Br\u00fajula KIT \u2014 "+(evalLabel||"")+" \u2014 Debe ser revisado por el profesional tratante.", margin, y);
+    pdf.text(new Date().toLocaleDateString("es-AR"), pW-margin, y, {align:"right"});
+
+    pdf.save(filename);
+  });
 }
 
-function ReportCard({ title, titleColor, borderColor, report, ev, evalLabel, refObj, onPDF }) {
+function ReportCard({ title, titleColor, borderColor, report, ev, evalLabel, onPDF }) {
   return <div style={{flex:1,minWidth:0}}>
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8,flexWrap:"wrap",gap:6}}>
       <div style={{fontSize:14,fontWeight:700,color:titleColor||K.sd}}>{title}</div>
       <button onClick={onPDF} style={{padding:"6px 12px",background:titleColor||K.ac,color:"#fff",border:"none",borderRadius:6,fontSize:11,fontWeight:600,cursor:"pointer"}}>{"\ud83d\udda8 Imprimir"}</button>
     </div>
-    <div ref={refObj} style={{background:"#fff",borderRadius:12,border:"2px solid "+(borderColor||K.bd),padding:20,fontSize:12}}>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:12,paddingBottom:10,borderBottom:"1px solid #e2e8f0"}}>
+    <div style={{background:"#fff",borderRadius:12,border:"2px solid "+(borderColor||K.bd),padding:24}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14,paddingBottom:10,borderBottom:"1px solid #e2e8f0"}}>
         <div>
           <div style={{fontSize:9,color:titleColor||K.mt,fontWeight:700,textTransform:"uppercase",letterSpacing:1}}>{title+" \u2014 "+(evalLabel||"")}</div>
-          <div style={{fontSize:15,fontWeight:700,marginTop:2}}>{ev.paciente}</div>
-          <div style={{fontSize:11,color:K.mt,marginTop:1}}>{"DNI: "+(ev.pacienteDni||"N/A")+" \u00b7 Edad: "+ageLabel(ev.edadMeses||0)}</div>
+          <div style={{fontSize:16,fontWeight:700,marginTop:3}}>{ev.paciente}</div>
+          <div style={{fontSize:12,color:K.mt,marginTop:2}}>{"DNI: "+(ev.pacienteDni||"N/A")+" \u00b7 Edad: "+ageLabel(ev.edadMeses||0)}</div>
         </div>
-        <div style={{textAlign:"right",fontSize:10,color:K.mt}}>{"Fecha: "+(ev.fechaEvaluacion||"")}</div>
+        <div style={{textAlign:"right",fontSize:11,color:K.mt}}>{"Fecha: "+(ev.fechaEvaluacion||"")}</div>
       </div>
-      <div>{renderReportText(report)}</div>
-      <div style={{marginTop:14,background:"linear-gradient(135deg,#f3e8ff,#ede9fe)",borderRadius:8,padding:"10px 14px",border:"1px solid #d8b4fe"}}>
-        <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",fontSize:10}}>
-          <span>{"\ud83e\udde0"} <b style={{color:"#6b21a8"}}>Generado con IA</b></span>
-          <span style={{color:"#c4b5fd"}}>|</span>
-          <span>{"\u2705"} <b style={{color:"#059669"}}>Validado por profesionales</b></span>
-        </div>
-        <div style={{fontSize:9,color:"#7c3aed",marginTop:4}}>Debe ser revisado por el profesional tratante.</div>
-      </div>
-      <div style={{marginTop:10,paddingTop:6,borderTop:"1px solid #e2e8f0",fontSize:8,color:"#94a3b8",textAlign:"center"}}>{"Br\u00fajula KIT \u2014 "+(evalLabel||"")+" \u2014 "+new Date().toLocaleDateString("es-AR")}</div>
+      <div style={{fontSize:13,lineHeight:1.7}}>{renderReportText(report)}</div>
+      <div style={{marginTop:14,paddingTop:8,borderTop:"1px solid #e2e8f0",fontSize:9,color:"#94a3b8",textAlign:"center"}}>{"Br\u00fajula KIT \u2014 "+(evalLabel||"")+" \u2014 "+new Date().toLocaleDateString("es-AR")+" \u2014 Debe ser revisado por el profesional tratante."}</div>
     </div>
   </div>;
 }
@@ -58,9 +95,6 @@ export default function AIReportPanel({ ev, evalType, collectionName, evalLabel,
   var _cudGen = useState(false), cudGenerating = _cudGen[0], setCudGenerating = _cudGen[1];
   var _cudError = useState(null), cudError = _cudError[0], setCudError = _cudError[1];
   var _autoTriggered = useState(false), autoTriggered = _autoTriggered[0], setAutoTriggered = _autoTriggered[1];
-  var reportRef = useRef(null);
-  var cudRef = useRef(null);
-  // Track latest _fbId via ref so save works even if prop was null initially
   var fbIdRef = useRef(ev._fbId);
   useEffect(function(){ fbIdRef.current = ev._fbId; }, [ev._fbId]);
 
@@ -95,7 +129,6 @@ export default function AIReportPanel({ ev, evalType, collectionName, evalLabel,
     .then(function(r){ return r.json(); })
     .then(function(data){
       if(data.success && data.report){
-        // Save to Firestore with retry (fbId might not be ready yet)
         var saveToFirestore = function(field, value, retries){
           var id = fbIdRef.current || ev._fbId;
           if(id && collectionName){
@@ -127,47 +160,47 @@ export default function AIReportPanel({ ev, evalType, collectionName, evalLabel,
 
   var pdfName = function(prefix){ return prefix+"_"+evalType.toUpperCase()+"_"+((ev.paciente||"").replace(/\s/g,"_"))+"_"+(ev.fechaEvaluacion||"")+".pdf"; };
 
-  // Auto-generate report on mount if autoGenerate=true and no existing report
+  // Auto-generate
   useEffect(function(){
     if(!autoGenerate || existingReport || report || generating || genError || autoTriggered) return;
-    // Small delay to let Firestore save complete and _fbId be set
     var timer = setTimeout(function(){
       setAutoTriggered(true);
-      try { handleGenerate("clinico"); } catch(e){ console.error("Auto-generate error:",e); }
+      try { handleGenerate("clinico"); } catch(e){ console.error(e); }
     }, 1500);
     return function(){ clearTimeout(timer); };
   }, [autoGenerate]);
 
-  // No report at all
+  // No report
   if(!report && !generating && !genError) return <div style={{background:"#fffbeb",borderRadius:10,padding:"14px 18px",marginBottom:16,fontSize:13,color:"#92400e",border:"1px solid #fde68a",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:10}}>
     <span>{"⚠ No se generó informe IA para esta evaluación."}</span>
     <button onClick={function(){handleGenerate("clinico")}} style={{padding:"8px 18px",background:"#9333ea",color:"#fff",border:"none",borderRadius:8,fontSize:12,fontWeight:600,cursor:"pointer"}}>Generar informe ahora</button>
   </div>;
 
+  // Generating
   if(generating) return <div style={{background:"#fff",borderRadius:14,border:"1px solid "+K.bd,padding:40,textAlign:"center",marginBottom:20}}>
     <div style={{display:"inline-block",width:40,height:40,border:"4px solid #e2e8f0",borderTopColor:"#9333ea",borderRadius:"50%",animation:"spin 1s linear infinite",marginBottom:16}} />
     <div style={{fontSize:15,fontWeight:600,color:K.sd}}>Generando informe con IA...</div>
     <style>{"@keyframes spin { to { transform: rotate(360deg); } }"}</style>
   </div>;
 
+  // Error
   if(genError && !report) return <div style={{background:"#fff",borderRadius:14,border:"1px solid "+K.bd,padding:28,textAlign:"center",marginBottom:20}}>
     <div style={{background:"#fef2f2",border:"1px solid #fecaca",borderRadius:8,padding:"10px 14px",marginBottom:14,fontSize:12,color:"#dc2626"}}>{genError}</div>
     <button onClick={function(){handleGenerate("clinico")}} style={{padding:"10px 24px",background:"#9333ea",color:"#fff",border:"none",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer"}}>Reintentar</button>
   </div>;
 
-  // Report exists — book view if CUD exists
   var hasCUD = !!cudReport;
 
   return <div style={{marginBottom:20}}>
-    <div style={{display:hasCUD?"flex":"block",gap:16,alignItems:"flex-start"}}>
-      <ReportCard title="Informe Fonoaudiológico" titleColor={K.sd} borderColor={K.bd} report={report} ev={ev} evalLabel={evalLabel||evalType.toUpperCase()} refObj={reportRef} onPDF={function(){ if(reportRef.current) doPDF(reportRef.current, pdfName("Informe")); }} />
-      {hasCUD && <ReportCard title="Informe para CUD" titleColor="#7c3aed" borderColor="#7c3aed" report={cudReport} ev={ev} evalLabel={evalLabel||evalType.toUpperCase()} refObj={cudRef} onPDF={function(){ if(cudRef.current) doPDF(cudRef.current, pdfName("CUD")); }} />}
+    <div style={{display:hasCUD?"flex":"block",gap:20,alignItems:"flex-start"}}>
+      <ReportCard title={"Informe Fonoaudiológico"} titleColor={K.sd} borderColor={K.bd} report={report} ev={ev} evalLabel={evalLabel||evalType.toUpperCase()} onPDF={function(){ textPDF("Informe Fonoaudiológico", evalLabel||evalType.toUpperCase(), ev, report, pdfName("Informe")); }} />
+      {hasCUD && <ReportCard title="Informe para CUD" titleColor="#7c3aed" borderColor="#7c3aed" report={cudReport} ev={ev} evalLabel={evalLabel||evalType.toUpperCase()} onPDF={function(){ textPDF("Informe para CUD", evalLabel||evalType.toUpperCase(), ev, cudReport, pdfName("CUD")); }} />}
     </div>
 
-    {!hasCUD && !cudGenerating && <button onClick={function(){handleGenerate("cud")}} style={{width:"100%",marginTop:12,padding:"12px",background:"linear-gradient(135deg,#7c3aed,#6d28d9)",color:"#fff",border:"none",borderRadius:10,fontSize:13,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+    {!hasCUD && !cudGenerating && <button onClick={function(){handleGenerate("cud")}} style={{width:"100%",marginTop:14,padding:"12px",background:"linear-gradient(135deg,#7c3aed,#6d28d9)",color:"#fff",border:"none",borderRadius:10,fontSize:13,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
       <span>{"\ud83d\udccb"}</span>{"Generar Informe para CUD"}
     </button>}
-    {cudGenerating && <div style={{marginTop:12,background:"#fff",borderRadius:10,border:"1px solid "+K.bd,padding:20,textAlign:"center"}}>
+    {cudGenerating && <div style={{marginTop:14,background:"#fff",borderRadius:10,border:"1px solid "+K.bd,padding:20,textAlign:"center"}}>
       <div style={{display:"inline-block",width:30,height:30,border:"3px solid #e2e8f0",borderTopColor:"#7c3aed",borderRadius:"50%",animation:"spin 1s linear infinite",marginBottom:8}} />
       <div style={{fontSize:13,fontWeight:600,color:K.sd}}>Generando informe CUD...</div>
     </div>}
