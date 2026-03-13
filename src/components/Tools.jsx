@@ -28,7 +28,7 @@ export default function Tools({ onSel, credits, onBuy, enabledTools }) {
             </div>
             <div style={{padding:"20px 24px"}}>
               <p style={{fontSize:13,color:"#475569",lineHeight:1.6,marginBottom:16}}>{t.desc}</p>
-              <div style={{display:"flex",gap:16,fontSize:12,color:K.mt}}><span>👦👧 {t.age}</span><span>⏱ {t.time}</span></div>
+              <div style={{display:"flex",gap:16,fontSize:12,color:K.mt}}><span>{"⏱ "+t.time}</span></div>
               {noCredits
                 ? <button onClick={onBuy} style={{marginTop:16,width:"100%",padding:"11px",background:"linear-gradient(135deg,#f59e0b,#d97706)",color:"#fff",border:"none",borderRadius:8,fontSize:13,fontWeight:700,cursor:"pointer",letterSpacing:".2px"}}>COMPRAR CRÉDITOS</button>
                 : <button onClick={function(){onSel(t.newView)}} style={{marginTop:16,width:"100%",padding:"11px",background:t.color,color:"#fff",border:"none",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer"}}>Iniciar →</button>}

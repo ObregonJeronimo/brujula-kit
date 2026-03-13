@@ -170,16 +170,41 @@ export default function App() {
   // Derived filtered arrays removed — components filter from allEvals directly
 
   var goToPremium = function(){ sV("premium"); sS(null); window.scrollTo({top:0,behavior:"smooth"}); };
-  var navTo = function(v){ if(ALL_NEW_VIEWS.indexOf(view) !== -1 && v!==view){ if(!window.confirm("\u00bfSalir de la evaluaci\u00f3n?\n\nLa evaluaci\u00f3n no se guarda a medias y el cr\u00e9dito consumido no se recupera.")) return; } sV(v); sS(null); window.scrollTo({top:0,behavior:"smooth"}); };
+  
+  // Browser history integration — back button navigates within the app
+  var prevViewRef = useRef("dash");
+  var navTo = function(v){
+    if(ALL_NEW_VIEWS.indexOf(view) !== -1 && v!==view){
+      if(!window.confirm("Salir de la evaluacion?\n\nLa evaluacion no se guarda a medias y el credito consumido no se recupera.")) return;
+    }
+    prevViewRef.current = view;
+    window.history.pushState({view:v}, "", "");
+    sV(v); sS(null); window.scrollTo({top:0,behavior:"smooth"});
+  };
+  useEffect(function(){
+    var onPop = function(e){
+      if(ALL_NEW_VIEWS.indexOf(view) !== -1){
+        if(!window.confirm("Salir de la evaluacion?\n\nLa evaluacion no se guarda a medias.")) {
+          window.history.pushState({view:view}, "", "");
+          return;
+        }
+      }
+      sV(prevViewRef.current || "dash"); sS(null);
+    };
+    window.addEventListener("popstate", onPop);
+    // Push initial state
+    window.history.replaceState({view:"dash"}, "", "");
+    return function(){ window.removeEventListener("popstate", onPop); };
+  },[view]);
   var checkCredits = function(){ if(!profile) return false; if(profile.role==="admin") return true; if((profile.creditos||0)<1){ setShowNoCredits(true); return false; } return true; };
   var deductCredit = function(){ if(!profile || profile.role==="admin") return Promise.resolve(true); var userRef = doc(db,"usuarios",authUser.uid); return updateDoc(userRef,{creditos:increment(-1)}).then(function(){ return getDoc(userRef); }).then(function(fresh){ if(fresh.exists()){ var newCredits = fresh.data().creditos; setProfile(function(p){return Object.assign({},p,{creditos:newCredits})}); } return true; }).catch(function(e){ nfy("Error al descontar cr\u00e9dito: " + e.message, "er"); return false; }); };
-  var startEval = function(toolId){ if(!checkCredits()) return; if(!isAdmin){ var ok = window.confirm("\u00bfIniciar evaluaci\u00f3n?\n\nSe consumir\u00e1 1 cr\u00e9dito de tu cuenta. Esta acci\u00f3n no se puede deshacer."); if(!ok) return; deductCredit().then(function(success){ if(success){ sV(toolId); } }); } else { sV(toolId); } };
+  var startEval = function(toolId){ if(!checkCredits()) return; if(!isAdmin){ var ok = window.confirm("Iniciar evaluacion?\n\nSe consumira 1 credito de tu cuenta. Esta accion no se puede deshacer."); if(!ok) return; deductCredit().then(function(success){ if(success){ prevViewRef.current=view; window.history.pushState({view:toolId},"",""); sV(toolId); } }); } else { prevViewRef.current=view; window.history.pushState({view:toolId},"",""); sV(toolId); } };
 
   // Single callback for all New* components
-  var onEvalDone = function(data){ if(data === "tools"){ sV("tools"); sS(null); loadEvals(); window.scrollTo({top:0,behavior:"smooth"}); return; } };
+  var onEvalDone = function(data){ if(data === "tools"){ prevViewRef.current="tools"; sV("tools"); sS(null); loadEvals(); window.scrollTo({top:0,behavior:"smooth"}); return; } };
 
   // Navigate to report view for an eval (used by Dashboard + Hist)
-  var viewReport = function(ev){ sS(ev); var rv = rptViewFor(ev.tipo); if(rv) sV(rv); };
+  var viewReport = function(ev){ sS(ev); var rv = rptViewFor(ev.tipo); if(rv){ prevViewRef.current=view; window.history.pushState({view:rv},"",""); sV(rv); } };
 
   // UNIFIED: always delete from 'evaluaciones'
   var deleteEval = function(fbId){
