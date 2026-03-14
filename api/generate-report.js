@@ -125,7 +125,22 @@ export default async function handler(req, res) {
 
     var userPrompt = "";
 
-    if (reportMode === "cud") {
+    if (reportMode === "consolidado") {
+      userPrompt = "Con estos datos de MULTIPLES evaluaciones fonoaudiologicas del mismo paciente, redacta un INFORME FONOAUDIOLOGICO CONSOLIDADO.\n\n"
+        + "Estructura EXACTA:\n"
+        + "ANALISIS FONETICO-FONOLOGICO INTEGRAL\n"
+        + "INFORME CONSOLIDADO\n\n"
+        + "Datos del paciente (nombre, DNI, edad)\n\n"
+        + "EVALUACIONES REALIZADAS: listar brevemente cada evaluacion realizada con su fecha\n\n"
+        + "PERFIL FONETICO-FONOLOGICO: integrar los hallazgos de TODAS las evaluaciones en un perfil unico. Describir fortalezas y dificultades.\n\n"
+        + "AREAS COMPROMETIDAS: describir las areas con dificultad encontradas en el conjunto de evaluaciones\n\n"
+        + "DIAGNOSTICO INTEGRADO: conclusion diagnostica basada en el analisis de todas las evaluaciones\n\n"
+        + "RECOMENDACIONES: plan de intervencion basado en la vision integral del paciente\n\n"
+        + "PRONOSTICO: basado en el conjunto de evaluaciones\n\n"
+        + "Maximo 30 lineas. Sin porcentajes. Lenguaje clinico formal. Espanol rioplatense.\n"
+        + "IMPORTANTE: Este informe INTEGRA multiples evaluaciones, no es un resumen de cada una por separado.\n\n"
+        + summary.header + "\n" + summary.data + "\nOBS: " + summary.obs;
+    } else if (reportMode === "cud") {
       userPrompt = "Con estos datos de una evaluacion fonoaudiologica, redacta un INFORME FONOAUDIOLOGICO PARA PRESENTAR ANTE JUNTA EVALUADORA DE DISCAPACIDAD (CUD - Certificado Unico de Discapacidad, Argentina).\n\n"
         + "Estructura EXACTA:\n"
         + "INFORME FONOAUDIOLOGICO PARA CUD\n\n"

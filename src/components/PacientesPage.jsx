@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { db, collection, addDoc, getDocs, updateDoc, deleteDoc, doc, query, where } from "../firebase.js";
-import { K } from "../lib/fb.js";
+import { K, ageLabel } from "../lib/fb.js";
+import { renderReportText } from "../lib/evalUtils.jsx";
+import { getEvalType } from "../config/evalTypes.js";
 
 var pad = function(n){ return String(n).padStart(2,"0"); };
 
@@ -29,6 +31,38 @@ export default function PacientesPage({ userId, nfy, allEvals }){
   var _ef = useState({dni:"",nombre:"",colegio:"",fechaNac:""}), editForm = _ef[0], setEditForm = _ef[1];
   var _sf = useState(false), showForm = _sf[0], setShowForm = _sf[1];
   var _cd = useState(false), confirmDelPac = _cd[0], setConfirmDelPac = _cd[1];
+  var _consolReport = useState(null), consolReport = _consolReport[0], setConsolReport = _consolReport[1];
+  var _consolGen = useState(false), consolGenerating = _consolGen[0], setConsolGenerating = _consolGen[1];
+
+  var generateConsolidated = function(pac){
+    var pacDni = pac.dni || "";
+    var patientEvals = allEvals.filter(function(ev){ return (ev.pacienteDni||ev.dni||"") === pacDni; });
+    if(patientEvals.length === 0){ nfy("No hay evaluaciones para este paciente","er"); return; }
+    setConsolGenerating(true); setConsolReport(null);
+    var summary = patientEvals.map(function(ev){
+      var t = getEvalType(ev.tipo);
+      return (t?t.fullName:ev.tipo) + " (" + new Date(ev.fechaGuardado||ev.fechaEvaluacion).toLocaleDateString("es-AR") + "): " + JSON.stringify(ev.resultados||{}).substring(0,300);
+    }).join("\n");
+    var evalData = {
+      paciente: pac.nombre, pacienteDni: pac.dni, edadMeses: 0,
+      fechaEvaluacion: new Date().toISOString().split("T")[0],
+      observaciones: "Informe consolidado de " + patientEvals.length + " evaluaciones",
+      resultados: { resumen: summary, cantEvals: patientEvals.length }
+    };
+    if(pac.fechaNac){
+      var b=new Date(pac.fechaNac),n=new Date();
+      evalData.edadMeses = (n.getFullYear()-b.getFullYear())*12+(n.getMonth()-b.getMonth());
+    }
+    fetch("/api/generate-report", {
+      method: "POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({ evalData: evalData, evalType: "consolidado", reportMode: "consolidado" })
+    }).then(function(r){ return r.json(); })
+    .then(function(data){
+      if(data.success && data.report) setConsolReport(data.report);
+      else nfy("Error al generar: " + (data.error||""),"er");
+      setConsolGenerating(false);
+    }).catch(function(e){ nfy("Error: " + e.message,"er"); setConsolGenerating(false); });
+  };
 
   var loadPacientes = useCallback(function(){
     if(!userId) return; setLoading(true);
@@ -152,7 +186,44 @@ export default function PacientesPage({ userId, nfy, allEvals }){
           <div><div style={{fontSize:11,fontWeight:600,color:K.mt}}>Fecha nac.</div><div style={{fontSize:15}}>{selected.fechaNac ? new Date(selected.fechaNac+"T12:00:00").toLocaleDateString("es-AR") : "-"}</div></div>
           <div><div style={{fontSize:11,fontWeight:600,color:K.mt}}>Colegio</div><div style={{fontSize:15}}>{selected.colegio || "-"}</div></div>
         </div>
-        {(function(){ var last = getLastEval(selected.dni); if(!last) return <div style={{marginTop:16,padding:"10px 14px",background:"#f8faf9",borderRadius:8,border:"1px solid #e2e8f0",fontSize:12,color:K.mt,fontStyle:"italic"}}>Sin evaluaciones registradas</div>; return <div style={{marginTop:16,padding:"12px 14px",background:"#f0fdf4",borderRadius:8,border:"1px solid #bbf7d0"}}><div style={{fontSize:11,fontWeight:600,color:K.mt,marginBottom:4}}>Última evaluación</div><div style={{fontSize:14}}><span style={{fontWeight:700,color:"#0d9488"}}>{last.tipo}</span> · {last.fecha ? new Date(last.fecha).toLocaleDateString("es-AR") : "-"}</div></div>; })()}
+        {(function(){ var last = getLastEval(selected.dni); if(!last) return <div style={{marginTop:16,padding:"10px 14px",background:"#f8faf9",borderRadius:8,border:"1px solid #e2e8f0",fontSize:12,color:K.mt,fontStyle:"italic"}}>Sin evaluaciones registradas</div>; return <div style={{marginTop:16,padding:"12px 14px",background:"#f0fdf4",borderRadius:8,border:"1px solid #bbf7d0"}}><div style={{fontSize:11,fontWeight:600,color:K.mt,marginBottom:4}}>{"Ultima evaluacion"}</div><div style={{fontSize:14}}><span style={{fontWeight:700,color:"#0d9488"}}>{last.tipo}</span>{" - "}{last.fecha ? new Date(last.fecha).toLocaleDateString("es-AR") : "-"}</div></div>; })()}
+
+        {/* Consolidated report */}
+        {(function(){
+          var pacEvals = allEvals.filter(function(ev){ return (ev.pacienteDni||ev.dni||"") === (selected.dni||""); });
+          if(pacEvals.length < 1) return null;
+          return <div style={{marginTop:16}}>
+            {!consolReport && !consolGenerating && <button onClick={function(){generateConsolidated(selected)}} style={{width:"100%",padding:"12px",background:"linear-gradient(135deg,#7c3aed,#6d28d9)",color:"#fff",border:"none",borderRadius:10,fontSize:13,fontWeight:600,cursor:"pointer"}}>{"Generar Informe Consolidado (" + pacEvals.length + " evaluaciones)"}</button>}
+            {consolGenerating && <div style={{background:"#fff",borderRadius:10,border:"1px solid #e2e8f0",padding:20,textAlign:"center"}}>
+              <div style={{display:"inline-block",width:30,height:30,border:"3px solid #e2e8f0",borderTopColor:"#7c3aed",borderRadius:"50%",animation:"spin 1s linear infinite",marginBottom:8}} />
+              <div style={{fontSize:13,fontWeight:600,color:"#0a3d2f"}}>Generando informe consolidado...</div>
+              <style>{"@keyframes spin{to{transform:rotate(360deg)}}"}</style>
+            </div>}
+            {consolReport && <div style={{background:"#fff",borderRadius:12,border:"2px solid #7c3aed",padding:24,marginTop:12}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+                <div style={{fontSize:15,fontWeight:700,color:"#7c3aed"}}>Informe Consolidado</div>
+                <button onClick={function(){
+                  import("jspdf").then(function(mod){
+                    var jsPDF=mod.jsPDF,pdf=new jsPDF("p","mm","a4"),margin=14,maxW=182,y=14;
+                    pdf.setFontSize(8);pdf.setTextColor(120);pdf.text("Informe Consolidado - "+selected.nombre,margin,y);y+=8;
+                    pdf.setDrawColor(200);pdf.line(margin,y,196,y);y+=8;
+                    pdf.setFontSize(14);pdf.setTextColor(10,61,47);pdf.setFont(undefined,"bold");pdf.text(selected.nombre,margin,y);y+=7;
+                    pdf.setFontSize(9);pdf.setTextColor(100);pdf.setFont(undefined,"normal");pdf.text("DNI: "+(selected.dni||"N/A"),margin,y);y+=10;
+                    consolReport.split("\n").forEach(function(line){
+                      var t=line.trim();if(!t){y+=3;return;}
+                      var isT=/^[A-Z\u00c0-\u00dc\s\d\.\:\-]{6,}:?\s*$/.test(t);
+                      if(isT){y+=3;pdf.setFontSize(10);pdf.setTextColor(10,61,47);pdf.setFont(undefined,"bold");if(y+7>283){pdf.addPage();y=14;}pdf.text(t,margin,y);y+=7;pdf.setFont(undefined,"normal");}
+                      else{pdf.setFontSize(9);pdf.setTextColor(51,65,85);var w=pdf.splitTextToSize(t,maxW);w.forEach(function(l){if(y+5>283){pdf.addPage();y=14;}pdf.text(l,margin,y);y+=5;});}
+                    });
+                    pdf.save("Consolidado_"+selected.nombre.replace(/\s/g,"_")+".pdf");
+                  });
+                }} style={{padding:"6px 12px",background:"#7c3aed",color:"#fff",border:"none",borderRadius:6,fontSize:11,fontWeight:600,cursor:"pointer"}}>Imprimir</button>
+              </div>
+              <div style={{fontSize:13,lineHeight:1.7}}>{renderReportText(consolReport)}</div>
+              <div style={{marginTop:14,paddingTop:8,borderTop:"1px solid #e2e8f0",fontSize:9,color:"#94a3b8",textAlign:"center"}}>{"Brujula KIT - Informe Consolidado - " + new Date().toLocaleDateString("es-AR")}</div>
+            </div>}
+          </div>;
+        })()}
       </div>}
 
       <div style={{marginBottom:16}}>
