@@ -172,3 +172,25 @@ export var HIST_TABS = [["all", "Todas"]].concat(
 // Colors map para AdminStats: { PEFF: "#7c3aed", ... }
 export var TYPE_COLORS = {};
 VISIBLE_TYPES.forEach(function(t) { TYPE_COLORS[t.label] = t.color; });
+
+// =====================================================
+// AREAS DE EVALUACION — tree structure for Tools
+// =====================================================
+export var EVAL_AREAS = [
+  {
+    id: "fonetico_fonologico",
+    name: "Fonetico-Fonologico",
+    icon: "🔊",
+    color: "#7c3aed",
+    desc: "Evaluacion de la produccion, percepcion y reconocimiento de los sonidos del habla.",
+    tools: ["peff", "rep", "disc", "reco"]
+  },
+  {
+    id: "lenguaje_desarrollo",
+    name: "Lenguaje y Desarrollo",
+    icon: "🧒",
+    color: "#0d9488",
+    desc: "Evaluacion del desarrollo del lenguaje comprensivo y expresivo.",
+    tools: ["eldi"]
+  }
+];
