@@ -105,24 +105,52 @@ export var EVAL_TYPES = {
     id: "eldi",
     label: "ELDI",
     fullName: "Escala de Lenguaje y Desarrollo Infantil",
-    icon: "🧒",
+    icon: "\ud83e\uddd2",
     color: "#0d9488",
     badgeBg: "#ccfbf1",
-    age: "0-3 años",
+    age: "0-3 a\u00f1os",
     time: "~30-40 min",
-    desc: "Evaluación del desarrollo de comprensión auditiva y comunicación expresiva en infantes.",
+    desc: "Evaluacion del desarrollo de comprension auditiva y comunicacion expresiva en infantes.",
     newView: "newELDI",
     rptView: "rptEL",
     histTab: "ELDI",
     info: {
       title: "Escala de Lenguaje y Desarrollo Infantil",
       sections: [
-        { label: "Qué evalúa", text: "Evalúa el desarrollo del lenguaje en niños de 0 a 3 años en dos áreas: Comprensión Auditiva y Comunicación Expresiva. Basada en hitos evolutivos esperados por edad." },
-        { label: "Cómo funciona", text: "El profesional presenta ítems organizados por mes de vida y registra si el niño logra, no logra, o no se evalúa cada hito. Se puede evaluar una o ambas áreas." },
-        { label: "Resultados", text: "Se calcula un perfil criterial comparando los logros del niño con los hitos esperados para su edad, clasificando el rendimiento en categorías (adecuado, riesgo, retraso)." },
-        { label: "Utilidad clínica", text: "Permite detección temprana de retrasos en el desarrollo del lenguaje y orienta la intervención precoz." }
+        { label: "Que evalua", text: "Evalua el desarrollo del lenguaje en ni\u00f1os de 0 a 3 a\u00f1os en dos areas: Comprension Auditiva y Comunicacion Expresiva. Basada en hitos evolutivos esperados por edad." },
+        { label: "Como funciona", text: "El profesional presenta items organizados por mes de vida y registra si el ni\u00f1o logra, no logra, o no se evalua cada hito. Se puede evaluar una o ambas areas." },
+        { label: "Resultados", text: "Se calcula un perfil criterial comparando los logros del ni\u00f1o con los hitos esperados para su edad, clasificando el rendimiento en categorias (adecuado, riesgo, retraso)." },
+        { label: "Utilidad clinica", text: "Permite deteccion temprana de retrasos en el desarrollo del lenguaje y orienta la intervencion precoz." }
       ]
     }
+  },
+  ofa: {
+    id: "ofa",
+    label: "OFA",
+    fullName: "Examen Clinico OFA",
+    icon: "\ud83e\uddb7",
+    color: "#0891b2",
+    badgeBg: "#cffafe",
+    age: "",
+    time: "~15-20 min",
+    desc: "Evaluacion de organos fonoarticulatorios: labios, ATM, lengua, dientes, paladar y velo.",
+    newView: "newOFA",
+    rptView: null,
+    histTab: "OFA"
+  },
+  fon: {
+    id: "fon",
+    label: "FON",
+    fullName: "Evaluacion Fonetica",
+    icon: "\ud83d\udde3\ufe0f",
+    color: "#6d28d9",
+    badgeBg: "#ede9fe",
+    age: "",
+    time: "~20-30 min",
+    desc: "Repeticion de silabas con clasificacion de errores y procesos fonologicos.",
+    newView: "newFON",
+    rptView: null,
+    histTab: "FON"
   }
 };
 
@@ -183,7 +211,7 @@ export var EVAL_AREAS = [
     icon: "🔊",
     color: "#7c3aed",
     desc: "Evaluacion de la produccion, percepcion y reconocimiento de los sonidos del habla.",
-    tools: ["peff", "rep", "disc", "reco"]
+    tools: ["ofa", "fon", "peff", "rep", "disc", "reco"]
   },
   {
     id: "lenguaje_desarrollo",

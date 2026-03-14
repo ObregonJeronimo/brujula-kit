@@ -41,6 +41,8 @@ var AdminStats = lazyRetry(function(){ return import("./components/AdminStats.js
 // Eval components — heaviest, lazy-loaded
 var NewELDI = lazyRetry(function(){ return import("./components/NewELDI.jsx"); });
 var NewPEFF = lazyRetry(function(){ return import("./components/NewPEFF.jsx"); });
+var NewOFA = lazyRetry(function(){ return import("./components/NewOFA.jsx"); });
+var NewFON = lazyRetry(function(){ return import("./components/NewFON.jsx"); });
 var NewREP = lazyRetry(function(){ return import("./components/NewREP.jsx"); });
 var NewDISC = lazyRetry(function(){ return import("./components/NewDISC.jsx"); });
 var NewRECO = lazyRetry(function(){ return import("./components/NewRECO.jsx"); });
@@ -73,7 +75,7 @@ class ErrorBoundary extends Component {
 
 // Component registry: maps view names to components
 // To add a new eval: add entry in evalTypes.js + import + add here
-var NEW_COMPONENTS = { newELDI: NewELDI, newPEFF: NewPEFF, newREP: NewREP, newDISC: NewDISC, newRECO: NewRECO };
+var NEW_COMPONENTS = { newELDI: NewELDI, newPEFF: NewPEFF, newOFA: NewOFA, newFON: NewFON, newREP: NewREP, newDISC: NewDISC, newRECO: NewRECO };
 var RPT_COMPONENTS = { rptP: RptPEFF, rptR: RptREP, rptD: RptDISC, rptRC: RptRECO };
 var ALL_NEW_VIEWS = Object.keys(NEW_COMPONENTS);
 
