@@ -92,6 +92,26 @@ var _paymentFlag = _urlParams.get("payment") || (_urlParams.get("collection_stat
 var _paymentId = _urlParams.get("payment_id") || _urlParams.get("collection_id");
 if(_paymentFlag || _paymentId){ window.history.replaceState({},"",window.location.pathname); }
 
+// Unsaved changes modal component
+function UnsavedChangesModal({ onDiscard, onCancel, onSave, saving }){
+  return <div style={{position:"fixed",inset:0,zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,.4)",backdropFilter:"blur(4px)",animation:"fi .15s ease"}}>
+    <div style={{background:"#fff",borderRadius:16,padding:"32px 28px",width:400,maxWidth:"90vw",boxShadow:"0 20px 60px rgba(0,0,0,.2)"}}>
+      <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:16}}>
+        <div style={{width:40,height:40,borderRadius:10,background:"#fff7ed",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>{"⚠️"}</div>
+        <div>
+          <div style={{fontSize:16,fontWeight:700,color:"#0a3d2f"}}>Cambios sin guardar</div>
+          <div style={{fontSize:13,color:"#64748b",marginTop:2}}>Realizaste cambios en la configuración que no fueron guardados.</div>
+        </div>
+      </div>
+      <div style={{display:"flex",gap:10,marginTop:20}}>
+        <button onClick={onDiscard} style={{flex:1,padding:"11px 0",background:"#f1f5f9",border:"1px solid #e2e8f0",borderRadius:10,fontSize:13,fontWeight:600,cursor:"pointer",color:"#64748b"}}>Descartar</button>
+        <button onClick={onCancel} style={{flex:1,padding:"11px 0",background:"#fff",border:"1px solid #e2e8f0",borderRadius:10,fontSize:13,fontWeight:600,cursor:"pointer",color:"#334155"}}>Cancelar</button>
+        <button onClick={onSave} disabled={saving} style={{flex:1,padding:"11px 0",background:"#0d9488",border:"none",borderRadius:10,fontSize:13,fontWeight:700,cursor:saving?"wait":"pointer",color:"#fff",opacity:saving?.7:1}}>{saving?"Guardando...":"Guardar"}</button>
+      </div>
+    </div>
+  </div>;
+}
+
 export default function App() {
   var _au = useState(undefined), authUser = _au[0], setAuthUser = _au[1];
   var _pr = useState(null), profile = _pr[0], setProfile = _pr[1];
@@ -108,6 +128,11 @@ export default function App() {
   var _et = useState(null), enabledTools = _et[0], setEnabledTools = _et[1];
   var _activeDraft = useState(null), activeDraft = _activeDraft[0], setActiveDraft = _activeDraft[1];
   var _userSettings = useState(null), userSettings = _userSettings[0], setUserSettings = _userSettings[1];
+  // Settings unsaved changes tracking
+  var configDirtyRef = useRef(false);
+  var settingsRef = useRef(null);
+  var _unsavedModal = useState(null), unsavedModal = _unsavedModal[0], setUnsavedModal = _unsavedModal[1];
+  var _savingModal = useState(false), savingModal = _savingModal[0], setSavingModal = _savingModal[1];
   var nfy = useCallback(function(m,t){ sT({m:m,t:t}); setTimeout(function(){sT(null)},4500); },[]);
   var isAdmin = profile?.role === "admin";
   useSessionHeartbeat(authUser?.uid, isAdmin);
@@ -162,14 +187,27 @@ export default function App() {
   var goToPremium = function(){ sV("premium"); sS(null); window.scrollTo({top:0,behavior:"smooth"}); };
 
   var prevViewRef = useRef("dash");
-  var navTo = function(v){
-    if(ALL_NEW_VIEWS.indexOf(view) !== -1 && v!==view){
-      if(!window.confirm("Salir de la evaluacion?\n\nLa evaluacion no se guarda a medias y el credito consumido no se recupera.")) return;
-    }
+
+  // Actually perform navigation (no guards)
+  var doNav = function(v){
     prevViewRef.current = view;
     window.history.pushState({view:v}, "", "");
     sV(v); sS(null); window.scrollTo({top:0,behavior:"smooth"});
   };
+
+  var navTo = function(v){
+    // Guard for eval views
+    if(ALL_NEW_VIEWS.indexOf(view) !== -1 && v!==view){
+      if(!window.confirm("Salir de la evaluacion?\n\nLa evaluacion no se guarda a medias y el credito consumido no se recupera.")) return;
+    }
+    // Guard for unsaved settings
+    if(view === "config" && v !== "config" && configDirtyRef.current){
+      setUnsavedModal(v);
+      return;
+    }
+    doNav(v);
+  };
+
   useEffect(function(){
     var onPop = function(e){
       if(ALL_NEW_VIEWS.indexOf(view) !== -1){
@@ -178,12 +216,18 @@ export default function App() {
           return;
         }
       }
+      if(view === "config" && configDirtyRef.current){
+        window.history.pushState({view:view}, "", "");
+        setUnsavedModal(prevViewRef.current || "dash");
+        return;
+      }
       sV(prevViewRef.current || "dash"); sS(null);
     };
     window.addEventListener("popstate", onPop);
     window.history.replaceState({view:"dash"}, "", "");
     return function(){ window.removeEventListener("popstate", onPop); };
   },[view]);
+
   var checkCredits = function(){ if(!profile) return false; if(profile.role==="admin") return true; if((profile.creditos||0)<1){ setShowNoCredits(true); return false; } return true; };
   var deductCredit = function(){ if(!profile || profile.role==="admin") return Promise.resolve(true); var userRef = doc(db,"usuarios",authUser.uid); return updateDoc(userRef,{creditos:increment(-1)}).then(function(){ return getDoc(userRef); }).then(function(fresh){ if(fresh.exists()){ var newCredits = fresh.data().creditos; setProfile(function(p){return Object.assign({},p,{creditos:newCredits})}); } return true; }).catch(function(e){ nfy("Error al descontar cr\u00e9dito: " + e.message, "er"); return false; }); };
   var startEval = function(toolId){ if(!checkCredits()) return; if(!isAdmin){ var showWarning = !userSettings || userSettings.creditWarning !== false; if(showWarning){ var ok = window.confirm("Iniciar evaluacion?\n\nSe consumira 1 credito de tu cuenta. Esta accion no se puede deshacer.\n\nEste aviso se puede desactivar en Configuración → General."); if(!ok) return; } deductCredit().then(function(success){ if(success){ prevViewRef.current=view; window.history.pushState({view:toolId},"",""); sV(toolId); } }); } else { prevViewRef.current=view; window.history.pushState({view:toolId},"",""); sV(toolId); } };
@@ -211,10 +255,28 @@ export default function App() {
 
   var handleLogout = function(){ var p = authUser?.uid ? releaseSessionLock(authUser.uid) : Promise.resolve(); p.then(function(){ return signOut(auth); }).then(function(){ setAuthUser(null); setProfile(null); setSessionBlocked(false); sV("dash"); sS(null); }); };
 
-  if(authUser===undefined) return (<div style={{width:"100vw",height:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#0a3d2f",color:"#fff",fontFamily:"'DM Sans',system-ui,sans-serif"}}><div style={{textAlign:"center"}}><img src="/img/logo_sin_fondo.png" alt="Br\u00fajula KIT" style={{width:48,height:48,marginBottom:16}} /><div style={{fontSize:20,fontWeight:700}}>Cargando...</div></div></div>);
+  // Unsaved modal handlers
+  var handleUnsavedDiscard = function(){ configDirtyRef.current = false; var dest = unsavedModal; setUnsavedModal(null); doNav(dest); };
+  var handleUnsavedCancel = function(){ setUnsavedModal(null); };
+  var handleUnsavedSave = function(){
+    if(settingsRef.current && settingsRef.current.save){
+      setSavingModal(true);
+      settingsRef.current.save().then(function(ok){
+        setSavingModal(false);
+        configDirtyRef.current = false;
+        var dest = unsavedModal;
+        setUnsavedModal(null);
+        doNav(dest);
+      });
+    } else {
+      setUnsavedModal(null);
+    }
+  };
+
+  if(authUser===undefined) return (<div style={{width:"100vw",height:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#0a3d2f",color:"#fff",fontFamily:"'DM Sans',system-ui,sans-serif"}}><div style={{textAlign:"center"}}><img src="/img/logo_sin_fondo.png" alt="Brújula KIT" style={{width:48,height:48,marginBottom:16}} /><div style={{fontSize:20,fontWeight:700}}>Cargando...</div></div></div>);
   if(!authUser) return <AuthScreen onDone={function(u,p){setAuthUser(u);setProfile(p)}} />;
   if(authUser && !authUser.emailVerified) return <VerifyEmailScreen user={authUser} onLogout={handleLogout} />;
-  if(authUser && authUser.emailVerified && profileLoading) return (<div style={{width:"100vw",height:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#0a3d2f",color:"#fff",fontFamily:"'DM Sans',system-ui,sans-serif"}}><div style={{textAlign:"center"}}><img src="/img/logo_sin_fondo.png" alt="Br\u00fajula KIT" style={{width:48,height:48,marginBottom:16}} /><div style={{fontSize:20,fontWeight:700}}>Cargando...</div></div></div>);
+  if(authUser && authUser.emailVerified && profileLoading) return (<div style={{width:"100vw",height:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#0a3d2f",color:"#fff",fontFamily:"'DM Sans',system-ui,sans-serif"}}><div style={{textAlign:"center"}}><img src="/img/logo_sin_fondo.png" alt="Brújula KIT" style={{width:48,height:48,marginBottom:16}} /><div style={{fontSize:20,fontWeight:700}}>Cargando...</div></div></div>);
   if(authUser && authUser.emailVerified && !profile) return <CompleteProfileScreen uid={authUser.uid} email={authUser.email} onDone={function(p){setProfile(p)}} />;
 
   if(sessionBlocked) return (<div style={{width:"100vw",height:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"linear-gradient(145deg,#0a3d2f,#0d7363)",fontFamily:"'DM Sans',system-ui,sans-serif"}}><div style={{background:"rgba(255,255,255,.97)",borderRadius:16,padding:"44px 36px",width:440,maxWidth:"92vw",boxShadow:"0 20px 50px rgba(0,0,0,.3)",textAlign:"center"}}><div style={{fontSize:48,marginBottom:16}}>{"🔒"}</div><h2 style={{fontSize:20,fontWeight:700,color:"#0a3d2f",marginBottom:12}}>{"¿Sesión ocupada?"}</h2><p style={{color:"#64748b",fontSize:14,lineHeight:1.7,marginBottom:20}}>{"Otro usuario ya está conectado en este momento."}</p><p style={{color:"#94a3b8",fontSize:12,marginBottom:24}}>{"Si cree que es un error, espere unos minutos e intente nuevamente."}</p><div style={{display:"flex",gap:10,justifyContent:"center",flexWrap:"wrap"}}><button onClick={function(){acquireSessionLock(authUser.uid,false).then(function(canLogin){if(canLogin){setSessionBlocked(false);window.location.reload()}else{nfy("La sesión sigue ocupada","er")}})}} style={{background:"#0d9488",color:"#fff",border:"none",padding:"12px 24px",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer"}}>Reintentar</button><button onClick={handleLogout} style={{background:"#f1f5f9",border:"none",padding:"12px 24px",borderRadius:8,fontSize:14,cursor:"pointer",color:"#64748b"}}>{"Cerrar sesión"}</button></div></div></div>);
@@ -225,6 +287,7 @@ export default function App() {
   return (
     <div style={{display:"flex",height:"100vh",width:"100vw",fontFamily:"'DM Sans',system-ui,sans-serif",background:K.bg,color:"#1e293b",overflow:"hidden"}}>
       {showNoCredits && <NoCreditsModal onClose={function(){setShowNoCredits(false);sV("dash")}} onUpgrade={function(){setShowNoCredits(false);goToPremium()}} />}
+      {unsavedModal !== null && <UnsavedChangesModal onDiscard={handleUnsavedDiscard} onCancel={handleUnsavedCancel} onSave={handleUnsavedSave} saving={savingModal} />}
       <aside style={{width:mobile?60:230,minWidth:mobile?60:230,background:K.sd,color:"#fff",display:"flex",flexDirection:"column",padding:"18px 0",flexShrink:0,height:"100vh"}}>
         <div style={{padding:"0 14px",marginBottom:26,display:"flex",alignItems:"center",gap:9}}><img src="/img/logo_sin_fondo.png" alt="Logo" style={{width:28,height:28}} />{!mobile&&<div><div style={{fontSize:17,fontWeight:700}}>{"Brújula KIT"}</div><div style={{fontSize:9,color:"#5eead4",fontWeight:600,letterSpacing:"1px"}}>{"FONOAUDIOLOGÍA"}</div></div>}</div>
         <nav style={{flex:1}}>{nav.map(function(n){ var id=n[0],iconKey=n[1],lb=n[2]; var active = view===id; return <button key={id} onClick={function(){navTo(id)}} style={{display:"flex",alignItems:"center",gap:10,width:"100%",padding:mobile?"13px 0":"11px 18px",background:active?"rgba(94,234,212,.12)":"transparent",border:"none",color:active?"#5eead4":"rgba(255,255,255,.55)",cursor:"pointer",fontSize:14,fontWeight:active?600:400,borderLeft:active?"3px solid #5eead4":"3px solid transparent",textAlign:"left",justifyContent:mobile?"center":"flex-start",transition:"all .15s ease"}}><span style={{display:"flex",alignItems:"center",opacity:active?1:.7}}>{icons[iconKey]}</span>{!mobile&&<span>{lb}</span>}</button>; })}</nav>
@@ -243,7 +306,7 @@ export default function App() {
           {view==="pacientes"&&<PacientesPage userId={authUser?.uid} nfy={nfy} allEvals={allEvals} />}
           {view==="calendario"&&<CalendarPage userId={authUser?.uid} nfy={nfy} />}
           {view==="premium"&&<PremiumPage profile={profile} authUser={authUser} nfy={nfy} onBack={function(){sV("dash")}} />}
-          {view==="config"&&<SettingsPage userId={authUser?.uid} nfy={nfy} profile={profile} onSettingsChange={function(s){ setUserSettings(s); }} />}
+          {view==="config"&&<SettingsPage ref={settingsRef} userId={authUser?.uid} nfy={nfy} profile={profile} onSettingsChange={function(s){ setUserSettings(s); }} onDirtyChange={function(d){ configDirtyRef.current = d; }} />}
           {view==="adm"&&isAdmin&&<AdminPanel nfy={nfy} />}
           {view==="stats"&&isAdmin&&<AdminStats nfy={nfy} />}
         </Suspense>
