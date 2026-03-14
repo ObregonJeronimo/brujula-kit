@@ -211,7 +211,7 @@ export var EVAL_AREAS = [
     icon: "🔊",
     color: "#7c3aed",
     desc: "Evaluacion de la produccion, percepcion y reconocimiento de los sonidos del habla.",
-    tools: ["ofa", "fon", "peff", "rep", "disc", "reco"]
+    tools: ["ofa", "fon", "rep", "disc", "reco"]
   },
   {
     id: "lenguaje_desarrollo",
