@@ -142,6 +142,7 @@ export default async function handler(req, res) {
     } else {
       userPrompt = "Con estos datos de una evaluacion fonoaudiologica, redacta un INFORME FONOAUDIOLOGICO BREVE Y CLINICO.\n\n"
         + "Estructura EXACTA:\n"
+        + "ANALISIS FONETICO-FONOLOGICO\n"
         + "INFORME FONOAUDIOLOGICO\n"
         + "Evaluacion: (nombre de la prueba)\n"
         + "Datos del paciente (nombre, DNI, edad, fecha, derivado por, evaluador)\n\n"

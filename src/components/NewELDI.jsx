@@ -6,18 +6,20 @@ import { calcScoring, gm, fa, scrollTop } from "./NewELDI_scoring.js";
 import { SequenceGame, ShapesGame } from "./NewELDI_games.jsx";
 import { fbAdd, K } from "../lib/fb.js";
 import AIReportPanel from "./AIReportPanel.jsx";
+import { saveDraft, deleteDraft } from "../lib/drafts.js";
 
-export default function NewELDI({onS,nfy,userId}){
-  var _s=useState(1),step=_s[0],sS=_s[1];
-  var _pd=useState({pN:"",birth:"",eD:new Date().toISOString().split("T")[0],sch:"",ref:"",obs:"",dni:""}),pd=_pd[0],sPd=_pd[1];
-  var _rsp=useState({}),rsp=_rsp[0],sR=_rsp[1];
+export default function NewELDI({onS,nfy,userId,draft}){
+  var init=draft?draft.data:null;
+  var _s=useState(init?(init.step||1):1),step=_s[0],sS=_s[1];
+  var _pd=useState(init?init.pd:{pN:"",birth:"",eD:new Date().toISOString().split("T")[0],sch:"",ref:"",obs:"",dni:""}),pd=_pd[0],sPd=_pd[1];
+  var _rsp=useState(init?(init.rsp||{}):{}),rsp=_rsp[0],sR=_rsp[1];
   var _ex=useState({}),showEx=_ex[0],setEx=_ex[1];
   var _im=useState({}),showImg=_im[0],setImg=_im[1];
   var _st2=useState({}),showStory=_st2[0],setStory=_st2[1];
-  var _er=useState(true),evalRec=_er[0],setEvalRec=_er[1];
-  var _ee=useState(true),evalExp=_ee[0],setEvalExp=_ee[1];
+  var _er=useState(init?init.evalRec!==false:true),evalRec=_er[0],setEvalRec=_er[1];
+  var _ee=useState(init?init.evalExp!==false:true),evalExp=_ee[0],setEvalExp=_ee[1];
   var _d=useState(false),dirty=_d[0],setDirty=_d[1];
-  var _sp=useState(null),selectedPatient=_sp[0],setSelectedPatient=_sp[1];
+  var _sp=useState(init?init.selectedPatient:null),selectedPatient=_sp[0],setSelectedPatient=_sp[1];
   var _saved = useState(false), saved = _saved[0], setSaved = _saved[1];
   var _savedDocId = useState(null), savedDocId = _savedDocId[0], setSavedDocId = _savedDocId[1];
   var docIdRef = useRef(null);
@@ -137,12 +139,22 @@ export default function NewELDI({onS,nfy,userId}){
         if(r.success){ docIdRef.current = r.id; setSavedDocId(r.id); nfy("ELDI guardada","ok"); }
         else nfy("Error: "+r.error,"er");
       });
+      if(draft&&draft._fbId)deleteDraft(draft._fbId);
       setSaved(true);
       setDirty(false);
     }
   }, [content]);
 
-  // Auto-generate AI report
+  var handlePauseELDI=function(){
+    var draftData={step:step,pd:pd,rsp:rsp,evalRec:evalRec,evalExp:evalExp,selectedPatient:selectedPatient,patientId:selectedPatient?(selectedPatient._fbId||selectedPatient.dni||pd.pN):"unknown"};
+    saveDraft(userId,"eldi",draftData).then(function(r){if(r.success)nfy("Evaluacion pausada","ok");onS("tools");});
+  };
+  var handleFinishEarlyELDI=function(){
+    if(!selectedPatient){nfy("Selecciona un paciente","er");return;}
+    if(Object.keys(rsp).length===0){nfy("Registra al menos una respuesta","er");return;}
+    if(window.confirm("Finalizar evaluacion ahora?"))sS(evalRec&&evalExp?4:evalRec?3:3);
+  };
+
   var renderClassification=function(scoring,label){
     if(!scoring||scoring.pctExpected===null||scoring.evaluados===0)return null;
     return <div style={{background:"#fff",border:"1px solid #e2e8f0",borderRadius:10,padding:18,marginBottom:14}}>
@@ -203,9 +215,9 @@ export default function NewELDI({onS,nfy,userId}){
         <div style={{display:"flex",justifyContent:"flex-end",marginTop:20}}><Bt pr={true} onClick={function(){if(!selectedPatient){nfy("Busque y seleccione un paciente","er");return}if(!evalRec&&!evalExp){nfy("Seleccione al menos un \u00e1rea","er");return}setDirty(true);sS(2)}}>{"Siguiente \u2192"}</Bt></div>
       </div>}
 
-      {content==="rec"&&<div>{RI(REC,"AC")}<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:14,paddingTop:14,borderTop:"1px solid #e2e8f0"}}><span style={{fontSize:13,color:K.mt}}>{"Logrados: "}<b style={{color:"#0d9488"}}>{rR.logrado}</b>{"/55 \u00b7 Sin evaluar: "}<b style={{color:"#f59e0b"}}>{rR.noEvaluado.length}</b></span><div style={{display:"flex",gap:8}}><Bt onClick={function(){sS(step-1)}}>{"\u2190 Atr\u00e1s"}</Bt><Bt pr={true} onClick={function(){sS(step+1)}}>{"Siguiente \u2192"}</Bt></div></div></div>}
+      {content==="rec"&&<div>{RI(REC,"AC")}<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:14,paddingTop:14,borderTop:"1px solid #e2e8f0",flexWrap:"wrap",gap:8}}><span style={{fontSize:13,color:K.mt}}>{"Logrados: "}<b style={{color:"#0d9488"}}>{rR.logrado}</b>{"/55"}</span><div style={{display:"flex",gap:8,flexWrap:"wrap"}}><Bt onClick={function(){sS(step-1)}}>{"Atras"}</Bt><button onClick={handleFinishEarlyELDI} style={{padding:"8px 14px",background:"#059669",color:"#fff",border:"none",borderRadius:8,fontSize:12,fontWeight:600,cursor:"pointer"}}>{"Finalizar ahora"}</button><button onClick={handlePauseELDI} style={{padding:"8px 14px",background:"#f59e0b",color:"#fff",border:"none",borderRadius:8,fontSize:12,fontWeight:600,cursor:"pointer"}}>{"Pausar"}</button><Bt pr={true} onClick={function(){sS(step+1)}}>{"Siguiente"}</Bt></div></div></div>}
 
-      {content==="exp"&&<div>{RI(EXP,"EC")}<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:14,paddingTop:14,borderTop:"1px solid #e2e8f0"}}><span style={{fontSize:13,color:K.mt}}>{"Logrados: "}<b style={{color:"#0d9488"}}>{rE.logrado}</b>{"/55 \u00b7 Sin evaluar: "}<b style={{color:"#f59e0b"}}>{rE.noEvaluado.length}</b></span><div style={{display:"flex",gap:8}}><Bt onClick={function(){sS(step-1)}}>{"\u2190 Atr\u00e1s"}</Bt><Bt pr={true} onClick={function(){sS(step+1)}}>{"Resultados \u2192"}</Bt></div></div></div>}
+      {content==="exp"&&<div>{RI(EXP,"EC")}<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:14,paddingTop:14,borderTop:"1px solid #e2e8f0",flexWrap:"wrap",gap:8}}><span style={{fontSize:13,color:K.mt}}>{"Logrados: "}<b style={{color:"#0d9488"}}>{rE.logrado}</b>{"/55"}</span><div style={{display:"flex",gap:8,flexWrap:"wrap"}}><Bt onClick={function(){sS(step-1)}}>{"Atras"}</Bt><button onClick={handleFinishEarlyELDI} style={{padding:"8px 14px",background:"#059669",color:"#fff",border:"none",borderRadius:8,fontSize:12,fontWeight:600,cursor:"pointer"}}>{"Finalizar ahora"}</button><button onClick={handlePauseELDI} style={{padding:"8px 14px",background:"#f59e0b",color:"#fff",border:"none",borderRadius:8,fontSize:12,fontWeight:600,cursor:"pointer"}}>{"Pausar"}</button><Bt pr={true} onClick={function(){sS(step+1)}}>{"Resultados"}</Bt></div></div></div>}
 
       {content==="result"&&(function(){
         var recRes={label:"Comprensi\u00f3n Auditiva",evaluated:evalRec};Object.assign(recRes,rR);
