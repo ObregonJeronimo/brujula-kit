@@ -4,17 +4,29 @@ import PatientLookup from "./PatientLookup.jsx";
 import { ageMo, ageLabel, ALL_ITEMS, buildCatGroups, wordKey, catProgress, computeResults, scrollTop } from "./NewREP_logic.js";
 import NewREPResults from "./NewREP_results.jsx";
 import { K } from "../lib/fb.js";
+import { saveDraft, deleteDraft } from "../lib/drafts.js";
 var catGroups = buildCatGroups();
 
-export default function NewREP({ onS, nfy, userId }){
-  var _st = useState(0), step = _st[0], setStep = _st[1];
-  var _pat = useState(null), patient = _pat[0], setPatient = _pat[1];
-  var _ed = useState(new Date().toISOString().split("T")[0]), evalDate = _ed[0], setEvalDate = _ed[1];
-  var _ref = useState(""), derivado = _ref[0], setDerivado = _ref[1];
-  var _rsp = useState({}), responses = _rsp[0], setResponses = _rsp[1];
-  var _obs = useState(""), obs = _obs[0], setObs = _obs[1];
-  var _ci = useState(0), catIdx = _ci[0], setCatIdx = _ci[1];
+export default function NewREP({ onS, nfy, userId, draft }){
+  var init = draft ? draft.data : null;
+  var _st = useState(init?(init.step||0):0), step = _st[0], setStep = _st[1];
+  var _pat = useState(init?init.patient:null), patient = _pat[0], setPatient = _pat[1];
+  var _ed = useState(init?(init.evalDate||new Date().toISOString().split("T")[0]):new Date().toISOString().split("T")[0]), evalDate = _ed[0], setEvalDate = _ed[1];
+  var _ref = useState(init?(init.derivado||""):""), derivado = _ref[0], setDerivado = _ref[1];
+  var _rsp = useState(init?(init.responses||{}):{}), responses = _rsp[0], setResponses = _rsp[1];
+  var _obs = useState(init?(init.obs||""):""), obs = _obs[0], setObs = _obs[1];
+  var _ci = useState(init?(init.catIdx||0):0), catIdx = _ci[0], setCatIdx = _ci[1];
   var mainRef = useRef(null);
+
+  var handlePauseREP = function(){
+    var draftData = {step:step,patient:patient,evalDate:evalDate,derivado:derivado,responses:responses,obs:obs,catIdx:catIdx,patientId:patient?(patient._fbId||patient.dni||patient.nombre):"unknown"};
+    saveDraft(userId,"rep",draftData).then(function(r){if(r.success)nfy("Evaluacion pausada","ok");onS("tools");});
+  };
+  var handleFinishEarlyREP = function(){
+    if(!patient){nfy("Selecciona un paciente","er");return;}
+    if(Object.keys(responses).length===0){nfy("Registra al menos una respuesta","er");return;}
+    if(window.confirm("Finalizar evaluacion ahora?"))setStep(2);
+  };
 
   var patientAge = patient ? ageMo(patient.fechaNac) : 0;
 
@@ -76,10 +88,12 @@ export default function NewREP({ onS, nfy, userId }){
             </div>
             <div style={{padding:"12px 16px"}}><div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:12}}>{POSITIONS.map(function(pos){ var ws=pr.posWords[pos.id]||[],has=ws.length>0; return <div key={pos.id}><div style={{fontSize:11,fontWeight:700,color:has?K.ac:"#cbd5e1",textAlign:"center",padding:"4px 0",borderBottom:"2px solid "+(has?K.ac:"#f1f5f9"),marginBottom:8}}>{pos.label}</div>{has?ws.map(function(w){return <div key={w}>{renderWordCell(pr.phonId,pos.id,w)}</div>}):<div style={{textAlign:"center",color:"#cbd5e1",fontSize:11,padding:8}}>{"\u2014"}</div>}</div>; })}</div></div>
           </div>; })}
-          <div style={{display:"flex",gap:10,marginTop:16}}>
-            {catIdx>0&&<button onClick={function(){setCatIdx(catIdx-1);scrollTop();}} style={{flex:1,padding:"12px",background:"#f1f5f9",border:"1px solid "+K.bd,borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer",color:K.mt}}>{"\u2190 Anterior"}</button>}
-            {catIdx<catGroups.length-1&&<button onClick={function(){setCatIdx(catIdx+1);scrollTop();}} style={{flex:1,padding:"12px",background:K.ac,border:"none",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer",color:"#fff"}}>{"Siguiente \u2192"}</button>}
-            {catIdx===catGroups.length-1&&<button onClick={function(){setStep(2);scrollTop();}} style={{flex:1,padding:"12px",background:"#059669",border:"none",borderRadius:8,fontSize:14,fontWeight:700,cursor:"pointer",color:"#fff"}}>{"Ver Resultados \u2192"}</button>}
+          <div style={{display:"flex",gap:10,marginTop:16,flexWrap:"wrap"}}>
+            {catIdx>0&&<button onClick={function(){setCatIdx(catIdx-1);scrollTop();}} style={{flex:1,padding:"12px",background:"#f1f5f9",border:"1px solid "+K.bd,borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer",color:K.mt}}>{"Anterior"}</button>}
+            <button onClick={handleFinishEarlyREP} style={{padding:"12px 16px",background:"#059669",color:"#fff",border:"none",borderRadius:8,fontSize:12,fontWeight:600,cursor:"pointer"}}>{"Finalizar ahora"}</button>
+            <button onClick={handlePauseREP} style={{padding:"12px 16px",background:"#f59e0b",color:"#fff",border:"none",borderRadius:8,fontSize:12,fontWeight:600,cursor:"pointer"}}>{"Pausar"}</button>
+            {catIdx<catGroups.length-1&&<button onClick={function(){setCatIdx(catIdx+1);scrollTop();}} style={{flex:1,padding:"12px",background:K.ac,border:"none",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer",color:"#fff"}}>{"Siguiente"}</button>}
+            {catIdx===catGroups.length-1&&<button onClick={function(){setStep(2);scrollTop();}} style={{flex:1,padding:"12px",background:"#059669",border:"none",borderRadius:8,fontSize:14,fontWeight:700,cursor:"pointer",color:"#fff"}}>{"Ver Resultados"}</button>}
           </div>
           <div style={{marginTop:16}}><label style={{fontSize:12,fontWeight:600,color:K.mt}}>Observaciones</label><textarea value={obs} onChange={function(e){setObs(e.target.value)}} rows={3} placeholder="Notas..." style={{width:"100%",padding:"10px 12px",border:"1px solid "+K.bd,borderRadius:8,fontSize:13,marginTop:4,resize:"vertical",fontFamily:"inherit"}} /></div>
         </div>; })()}
