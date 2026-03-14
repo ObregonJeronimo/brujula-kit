@@ -4,8 +4,8 @@ import { ageLabel } from "./NewREP_logic.js";
 import { fbAdd, K } from "../lib/fb.js";
 import AIReportPanel from "./AIReportPanel.jsx";
 
-var posLabels = {ISPP:"ISPP",ISIP:"ISIP",CSIP:"CSIP",CSFP:"CSFP"};
-var posFull = {ISPP:"Inicio síl. — Pos. palabra",ISIP:"Inicio síl. — Int. palabra",CSIP:"Coda síl. — Int. palabra",CSFP:"Coda síl. — Final palabra"};
+var posLabels = {ISPP:"Inicio de palabra",ISIP:"Medio de palabra",CSIP:"Coda media",CSFP:"Final de palabra"};
+var posFull = {ISPP:"Consonante al inicio de la palabra",ISIP:"Consonante en el interior de la palabra",CSIP:"Consonante cerrando silaba en medio de palabra",CSFP:"Consonante cerrando silaba al final de palabra"};
 
 export default function NewREPResults({ results, patientAge, obs, onBack, onFinish, patient, evalDate, derivado, userId, nfy }){
   var _saved = useState(false), saved = _saved[0], setSaved = _saved[1];
