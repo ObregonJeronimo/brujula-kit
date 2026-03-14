@@ -21,10 +21,18 @@ function getPasswordStrength(p) {
   return { level: 1, label: "Débil", color: "#dc2626" };
 }
 
+function EyeIcon({ open }) {
+  if (open) return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>;
+  return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>;
+}
+
 export default function AuthScreen({ onDone }) {
   var _m = useState("login"), mode = _m[0], setMode = _m[1];
   var _e = useState(""), email = _e[0], setEmail = _e[1];
   var _p = useState(""), pass = _p[0], setPass = _p[1];
+  var _p2 = useState(""), pass2 = _p2[0], setPass2 = _p2[1];
+  var _sp = useState(false), showPass = _sp[0], setShowPass = _sp[1];
+  var _sp2 = useState(false), showPass2 = _sp2[0], setShowPass2 = _sp2[1];
   var _ld = useState(false), ld = _ld[0], setLd = _ld[1];
   var _err = useState(""), err = _err[0], setErr = _err[1];
   var _info = useState(""), info = _info[0], setInfo = _info[1];
@@ -34,17 +42,14 @@ export default function AuthScreen({ onDone }) {
   var I = { width: "100%", padding: "12px 14px", border: "1px solid #e2e8f0", borderRadius: 8, fontSize: 14, background: "#f8faf9" };
   var strength = mode === "register" ? getPasswordStrength(pass) : null;
 
-  // After Google sign-in, check if user profile exists, if not create stub
   var handleGoogleResult = async function(user, isRegisterMode) {
     var prof = await getUserProfile(user.uid);
     if (prof && prof.profileComplete) {
-      // Check if this account was created with email/password
       if (prof.authProvider === "email") {
         setErr("Esta cuenta fue creada con email y contraseña. Iniciá sesión escribiendo tu email y contraseña.");
         setLd(false);
         return;
       }
-      // If user is trying to REGISTER but account already exists
       if (isRegisterMode) {
         setErr("Ya existe una cuenta con este email de Google. Usá 'Iniciar sesión' y luego 'Continuar con Google'.");
         setLd(false);
@@ -54,13 +59,11 @@ export default function AuthScreen({ onDone }) {
       if (!canLogin) { setErr("Sesión ocupada. Intentá en unos minutos."); setLd(false); return; }
       onDone(user, prof);
     } else if (!prof) {
-      // New user — only allow in register mode
       if (!isRegisterMode) {
         setErr("No existe una cuenta con este email. Creá una cuenta primero con 'Crear cuenta' y 'Registrarse con Google'.");
         setLd(false);
         return;
       }
-      // Create user profile for Google user
       await setDoc(doc(db, "usuarios", user.uid), {
         email: user.email,
         nombre: user.displayName ? user.displayName.split(" ")[0] : "",
@@ -73,10 +76,8 @@ export default function AuthScreen({ onDone }) {
         authProvider: "google",
         createdAt: new Date().toISOString()
       });
-      // Will redirect to CompleteProfile
     } else if (prof && !prof.profileComplete) {
-      // Profile exists but incomplete — let them continue regardless of mode
-      // Will redirect to CompleteProfile
+      // Profile exists but incomplete — let them continue
     }
     setLd(false);
   };
@@ -105,7 +106,6 @@ export default function AuthScreen({ onDone }) {
       if (!u.emailVerified) { setLd(false); return; }
       var prof = await getUserProfile(u.uid);
       if (prof && prof.authProvider === "google") {
-        // Sign out immediately — they shouldn't be logged in with password
         await auth.signOut();
         setErr("Esta cuenta fue creada con Google. Usá el botón 'Continuar con Google' para iniciar sesión.");
         setLd(false); return;
@@ -127,9 +127,9 @@ export default function AuthScreen({ onDone }) {
   var handleRegister = async function(ev) {
     ev.preventDefault(); setLd(true); setErr(""); setInfo("");
     if (pass.length < 6) { setErr("La contraseña debe tener al menos 6 caracteres."); setLd(false); return; }
+    if (pass !== pass2) { setErr("Las contraseñas no coinciden."); setLd(false); return; }
     try {
       var cred = await createUserWithEmailAndPassword(auth, email.trim(), pass);
-      // Mark as email provider
       await setDoc(doc(db, "usuarios", cred.user.uid), {
         email: email.trim(),
         authProvider: "email",
@@ -163,6 +163,10 @@ export default function AuthScreen({ onDone }) {
     setLd(false);
   };
 
+  var eyeBtn = function(isVisible, toggle) {
+    return <button type="button" onClick={function(){ toggle(!isVisible); }} style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",cursor:"pointer",color:"#94a3b8",display:"flex",alignItems:"center",padding:2}}><EyeIcon open={isVisible} /></button>;
+  };
+
   return (
     <div style={{width:"100vw",height:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"linear-gradient(145deg,#0a3d2f,#0d7363)",fontFamily:"'DM Sans',system-ui,sans-serif"}}>
       <div style={{background:"rgba(255,255,255,.97)",borderRadius:16,padding:"40px 36px",width:420,maxWidth:"92vw",boxShadow:"0 20px 50px rgba(0,0,0,.3)"}}>
@@ -174,7 +178,7 @@ export default function AuthScreen({ onDone }) {
         {/* Tabs */}
         <div style={{display:"flex",marginBottom:18,borderRadius:8,overflow:"hidden",border:"1px solid #e2e8f0"}}>
           {[["login","Iniciar sesión"],["register","Crear cuenta"]].map(function(x){
-            return <button key={x[0]} onClick={function(){setMode(x[0]);setErr("");setInfo("");setShowReset(false);}} style={{flex:1,padding:"10px",border:"none",background:mode===x[0]?"#0d9488":"#f8faf9",color:mode===x[0]?"#fff":"#64748b",fontSize:13,fontWeight:600,cursor:"pointer"}}>{x[1]}</button>;
+            return <button key={x[0]} onClick={function(){setMode(x[0]);setErr("");setInfo("");setShowReset(false);setPass("");setPass2("");setShowPass(false);setShowPass2(false);}} style={{flex:1,padding:"10px",border:"none",background:mode===x[0]?"#0d9488":"#f8faf9",color:mode===x[0]?"#fff":"#64748b",fontSize:13,fontWeight:600,cursor:"pointer"}}>{x[1]}</button>;
           })}
         </div>
 
@@ -202,21 +206,38 @@ export default function AuthScreen({ onDone }) {
           </form>
         </div> : <form onSubmit={mode==="login"?handleLogin:handleRegister}>
           <div style={{marginBottom:14}}><label style={{fontSize:12,fontWeight:600,color:"#64748b",display:"block",marginBottom:5}}>Email</label><input type="email" value={email} onChange={function(e){setEmail(e.target.value)}} style={I} placeholder="correo@ejemplo.com" required/></div>
-          <div style={{marginBottom:8}}><label style={{fontSize:12,fontWeight:600,color:"#64748b",display:"block",marginBottom:5}}>{"Contraseña"}</label><input type="password" value={pass} onChange={function(e){setPass(e.target.value)}} style={I} placeholder={mode==="register"?"Mínimo 6 caracteres":"Tu contraseña"} required/></div>
 
-          {/* Password strength bar */}
-          {mode==="register" && pass.length > 0 && <div style={{marginBottom:14}}>
+          {/* Password field with eye toggle */}
+          <div style={{marginBottom:mode==="register"?8:8}}><label style={{fontSize:12,fontWeight:600,color:"#64748b",display:"block",marginBottom:5}}>{"Contraseña"}</label>
+            <div style={{position:"relative"}}>
+              <input type={showPass?"text":"password"} value={pass} onChange={function(e){setPass(e.target.value)}} style={Object.assign({},I,{paddingRight:42})} placeholder={mode==="register"?"Mínimo 6 caracteres":"Tu contraseña"} required/>
+              {eyeBtn(showPass, setShowPass)}
+            </div>
+          </div>
+
+          {/* Password strength bar (register only) */}
+          {mode==="register" && pass.length > 0 && <div style={{marginBottom:8}}>
             <div style={{display:"flex",gap:3,marginBottom:4}}>
               {[1,2,3,4].map(function(i){ return <div key={i} style={{flex:1,height:4,borderRadius:2,background:strength.level>=i?strength.color:"#e2e8f0",transition:"background .2s"}}></div>; })}
             </div>
             {strength.label && <div style={{fontSize:11,fontWeight:600,color:strength.color}}>{strength.label}</div>}
           </div>}
 
+          {/* Confirm password field (register only) */}
+          {mode==="register" && <div style={{marginBottom:14}}><label style={{fontSize:12,fontWeight:600,color:"#64748b",display:"block",marginBottom:5}}>{"Confirmar contraseña"}</label>
+            <div style={{position:"relative"}}>
+              <input type={showPass2?"text":"password"} value={pass2} onChange={function(e){setPass2(e.target.value)}} style={Object.assign({},I,{paddingRight:42,borderColor:pass2.length>0&&pass!==pass2?"#dc2626":"#e2e8f0"})} placeholder="Repetí tu contraseña" required/>
+              {eyeBtn(showPass2, setShowPass2)}
+            </div>
+            {pass2.length > 0 && pass !== pass2 && <div style={{fontSize:11,color:"#dc2626",marginTop:4,fontWeight:600}}>{"Las contraseñas no coinciden"}</div>}
+            {pass2.length > 0 && pass === pass2 && <div style={{fontSize:11,color:"#059669",marginTop:4,fontWeight:600}}>{"Las contraseñas coinciden ✓"}</div>}
+          </div>}
+
           {mode==="login" && <div style={{marginBottom:14}}><button type="button" onClick={function(){setShowReset(true);setResetEmail(email);setErr("");setInfo("")}} style={{background:"none",border:"none",color:"#0d9488",fontSize:12,fontWeight:600,cursor:"pointer",padding:0}}>{"¿Olvidaste tu contraseña?"}</button></div>}
 
           {err&&<div style={{background:"#fef2f2",border:"1px solid #fecaca",color:"#dc2626",padding:"10px 12px",borderRadius:8,fontSize:12,marginBottom:14}}>{err}</div>}
           {info&&<div style={{background:"#f0fdf4",border:"1px solid #bbf7d0",color:"#059669",padding:"10px 12px",borderRadius:8,fontSize:12,marginBottom:14}}>{info}</div>}
-          <button type="submit" disabled={ld} style={{width:"100%",padding:"13px",background:"#0d9488",color:"#fff",border:"none",borderRadius:8,fontSize:15,fontWeight:600,cursor:ld?"wait":"pointer",opacity:ld?.7:1}}>
+          <button type="submit" disabled={ld || (mode==="register" && pass !== pass2)} style={{width:"100%",padding:"13px",background:"#0d9488",color:"#fff",border:"none",borderRadius:8,fontSize:15,fontWeight:600,cursor:ld?"wait":"pointer",opacity:(ld || (mode==="register" && pass2.length>0 && pass!==pass2))?.7:1}}>
             {ld?"Procesando...":mode==="login"?"Iniciar sesión":"Crear cuenta"}
           </button>
         </form>}
