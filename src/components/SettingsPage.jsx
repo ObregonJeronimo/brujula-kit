@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useImperativeHandle, forwardRef } from "react";
 import { db, doc, getDoc, updateDoc } from "../firebase.js";
 
 var K = { sd:"#0a3d2f", ac:"#0d9488", mt:"#64748b", bd:"#e2e8f0" };
@@ -17,21 +17,21 @@ var REMINDER_OPTIONS = [
   { value:10, label:"10 días" }
 ];
 
-export default function SettingsPage({ userId, nfy, profile, onSettingsChange }) {
+var SettingsPage = forwardRef(function SettingsPageInner({ userId, nfy, profile, onSettingsChange, onDirtyChange }, ref) {
   var _ld = useState(true), loading = _ld[0], setLoading = _ld[1];
   var _saving = useState(false), saving = _saving[0], setSaving = _saving[1];
 
-  // Datos del consultorio
   var _cName = useState(""), cName = _cName[0], setCName = _cName[1];
   var _cDir = useState(""), cDir = _cDir[0], setCDir = _cDir[1];
   var _cTel = useState(""), cTel = _cTel[0], setCTel = _cTel[1];
   var _cEmail = useState(""), cEmail = _cEmail[0], setCEmail = _cEmail[1];
   var _showInReport = useState(false), showInReport = _showInReport[0], setShowInReport = _showInReport[1];
-
-  // General
   var _creditWarning = useState(true), creditWarning = _creditWarning[0], setCreditWarning = _creditWarning[1];
   var _citaReminder = useState(true), citaReminder = _citaReminder[0], setCitaReminder = _citaReminder[1];
   var _reminderDays = useState(3), reminderDays = _reminderDays[0], setReminderDays = _reminderDays[1];
+
+  // Original values to detect changes
+  var origRef = useRef(null);
 
   useEffect(function(){
     if(!userId) return;
@@ -40,40 +40,73 @@ export default function SettingsPage({ userId, nfy, profile, onSettingsChange })
       if(snap.exists()){
         var d = snap.data();
         var s = d.settings || {};
-        setCName(s.consultorioNombre || "");
-        setCDir(s.consultorioDireccion || "");
-        setCTel(s.consultorioTelefono || "");
-        setCEmail(s.consultorioEmail || "");
-        setShowInReport(s.showConsultorioInReport === true);
-        setCreditWarning(s.creditWarning !== false);
-        setCitaReminder(s.citaReminder !== false);
-        setReminderDays(s.reminderDays || 3);
+        var orig = {
+          cName: s.consultorioNombre || "",
+          cDir: s.consultorioDireccion || "",
+          cTel: s.consultorioTelefono || "",
+          cEmail: s.consultorioEmail || "",
+          showInReport: s.showConsultorioInReport === true,
+          creditWarning: s.creditWarning !== false,
+          citaReminder: s.citaReminder !== false,
+          reminderDays: s.reminderDays || 3
+        };
+        origRef.current = orig;
+        setCName(orig.cName);
+        setCDir(orig.cDir);
+        setCTel(orig.cTel);
+        setCEmail(orig.cEmail);
+        setShowInReport(orig.showInReport);
+        setCreditWarning(orig.creditWarning);
+        setCitaReminder(orig.citaReminder);
+        setReminderDays(orig.reminderDays);
       }
     }).catch(function(e){ console.error(e); }).finally(function(){ setLoading(false); });
   }, [userId]);
 
+  var isDirty = function(){
+    if(!origRef.current) return false;
+    var o = origRef.current;
+    return cName !== o.cName || cDir !== o.cDir || cTel !== o.cTel || cEmail !== o.cEmail || showInReport !== o.showInReport || creditWarning !== o.creditWarning || citaReminder !== o.citaReminder || reminderDays !== o.reminderDays;
+  };
+
+  // Notify parent of dirty state on every render
+  useEffect(function(){
+    if(onDirtyChange) onDirtyChange(isDirty());
+  });
+
   var allFieldsFilled = cName.trim() && cDir.trim() && cTel.trim() && cEmail.trim();
 
-  var saveSettings = function(){
-    if(!userId) return;
-    setSaving(true);
-    var settings = {
-      consultorioNombre: cName.trim(),
-      consultorioDireccion: cDir.trim(),
-      consultorioTelefono: cTel.trim(),
-      consultorioEmail: cEmail.trim(),
-      showConsultorioInReport: showInReport,
-      creditWarning: creditWarning,
-      citaReminder: citaReminder,
-      reminderDays: reminderDays
-    };
-    updateDoc(doc(db, "usuarios", userId), { settings: settings }).then(function(){
-      nfy("Configuración guardada", "ok");
-      if(onSettingsChange) onSettingsChange(settings);
-    }).catch(function(e){
-      nfy("Error al guardar: " + e.message, "er");
-    }).finally(function(){ setSaving(false); });
+  var doSave = function(){
+    return new Promise(function(resolve){
+      if(!userId){ resolve(false); return; }
+      setSaving(true);
+      var settings = {
+        consultorioNombre: cName.trim(),
+        consultorioDireccion: cDir.trim(),
+        consultorioTelefono: cTel.trim(),
+        consultorioEmail: cEmail.trim(),
+        showConsultorioInReport: showInReport,
+        creditWarning: creditWarning,
+        citaReminder: citaReminder,
+        reminderDays: reminderDays
+      };
+      updateDoc(doc(db, "usuarios", userId), { settings: settings }).then(function(){
+        nfy("Configuración guardada", "ok");
+        origRef.current = { cName: cName.trim(), cDir: cDir.trim(), cTel: cTel.trim(), cEmail: cEmail.trim(), showInReport: showInReport, creditWarning: creditWarning, citaReminder: citaReminder, reminderDays: reminderDays };
+        if(onSettingsChange) onSettingsChange(settings);
+        if(onDirtyChange) onDirtyChange(false);
+        resolve(true);
+      }).catch(function(e){
+        nfy("Error al guardar: " + e.message, "er");
+        resolve(false);
+      }).finally(function(){ setSaving(false); });
+    });
   };
+
+  // Expose save method to parent via ref
+  useImperativeHandle(ref, function(){
+    return { save: doSave };
+  });
 
   var I = { width:"100%", padding:"10px 14px", border:"1px solid #e2e8f0", borderRadius:8, fontSize:14, background:"#f8faf9" };
 
@@ -155,8 +188,10 @@ export default function SettingsPage({ userId, nfy, profile, onSettingsChange })
     </div>
 
     {/* GUARDAR */}
-    <button onClick={saveSettings} disabled={saving} style={{width:"100%",padding:"14px",background:K.ac,color:"#fff",border:"none",borderRadius:10,fontSize:15,fontWeight:700,cursor:saving?"wait":"pointer",opacity:saving?.7:1,marginBottom:40}}>
+    <button onClick={function(){ doSave(); }} disabled={saving} style={{width:"100%",padding:"14px",background:K.ac,color:"#fff",border:"none",borderRadius:10,fontSize:15,fontWeight:700,cursor:saving?"wait":"pointer",opacity:saving?.7:1,marginBottom:40}}>
       {saving ? "Guardando..." : "Guardar configuración"}
     </button>
   </div>;
-}
+});
+
+export default SettingsPage;
