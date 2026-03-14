@@ -14,12 +14,14 @@ function calcAge(birthStr){
   if(now.getDate() < b.getDate()) months--;
   if(months < 0){ years--; months += 12; }
   if(years < 1) return months + (months===1?" mes":" meses");
-  var parts = years + (years===1?" año":" años");
+  var parts = years + (years===1?" a\u00f1o":" a\u00f1os");
   if(months > 0) parts += ", " + months + (months===1?" mes":" meses");
   return parts;
 }
 
 var IS = {width:"100%",padding:"10px 14px",border:"1px solid #e2e8f0",borderRadius:8,fontSize:14,background:"#f8faf9"};
+
+var RESP_TYPES = ["Madre","Padre","Tutor/a","Cuidador/a","Hermano/a","Otro"];
 
 export default function PacientesPage({ userId, nfy, allEvals }){
   var _p = useState([]), pacientes = _p[0], setPacientes = _p[1];
@@ -27,7 +29,7 @@ export default function PacientesPage({ userId, nfy, allEvals }){
   var _q = useState(""), busqueda = _q[0], setBusqueda = _q[1];
   var _s = useState(null), selected = _s[0], setSelected = _s[1];
   var _e = useState(false), editing = _e[0], setEditing = _e[1];
-  var _f = useState({dni:"",nombre:"",colegio:"",fechaNac:""}), form = _f[0], setForm = _f[1];
+  var _f = useState({dni:"",nombre:"",colegio:"",fechaNac:"",respNombre:"",respDni:"",respTel:"",respEmail:"",respTipo:"Madre",respTipoOtro:""}), form = _f[0], setForm = _f[1];
   var _ef = useState({dni:"",nombre:"",colegio:"",fechaNac:""}), editForm = _ef[0], setEditForm = _ef[1];
   var _sf = useState(false), showForm = _sf[0], setShowForm = _sf[1];
   var _cd = useState(false), confirmDelPac = _cd[0], setConfirmDelPac = _cd[1];
@@ -80,10 +82,18 @@ export default function PacientesPage({ userId, nfy, allEvals }){
     var dni = (form.dni||"").replace(/\D/g,"").trim();
     var nombre = (form.nombre||"").trim();
     if(!dni || !nombre || !form.fechaNac){ nfy("Complete DNI, nombre y fecha de nacimiento","er"); return; }
-    if(dni.length < 7 || dni.length > 8){ nfy("El DNI debe tener 7 u 8 dígitos","er"); return; }
+    if(dni.length < 7 || dni.length > 8){ nfy("El DNI debe tener 7 u 8 d\u00edgitos","er"); return; }
+    if(!(form.respTel||"").trim()){ nfy("El tel\u00e9fono del responsable es obligatorio","er"); return; }
     if(pacientes.find(function(p){ return p.dni === dni; })){ nfy("Ya existe un paciente con DNI " + dni,"er"); return; }
-    addDoc(collection(db,"pacientes"), { dni: dni, nombre: nombre, colegio: (form.colegio||"").trim(), fechaNac: form.fechaNac, userId: userId, createdAt: new Date().toISOString() }).then(function(){
-      nfy("Paciente guardado","ok"); setForm({dni:"",nombre:"",colegio:"",fechaNac:""}); setShowForm(false); loadPacientes();
+    var responsable = {
+      nombre: (form.respNombre||"").trim(),
+      dni: (form.respDni||"").replace(/\D/g,"").trim(),
+      telefono: (form.respTel||"").trim(),
+      email: (form.respEmail||"").trim(),
+      tipo: form.respTipo === "Otro" ? (form.respTipoOtro||"").trim() || "Otro" : form.respTipo
+    };
+    addDoc(collection(db,"pacientes"), { dni: dni, nombre: nombre, colegio: (form.colegio||"").trim(), fechaNac: form.fechaNac, responsable: responsable, userId: userId, createdAt: new Date().toISOString() }).then(function(){
+      nfy("Paciente guardado","ok"); setForm({dni:"",nombre:"",colegio:"",fechaNac:"",respNombre:"",respDni:"",respTel:"",respEmail:"",respTipo:"Madre",respTipoOtro:""}); setShowForm(false); loadPacientes();
     }).catch(function(e){ nfy("Error: " + e.message,"er"); });
   };
 
@@ -106,9 +116,8 @@ export default function PacientesPage({ userId, nfy, allEvals }){
   };
 
   var openEdit = function(pac){ setSelected(pac); setEditForm({ dni: pac.dni||"", nombre: pac.nombre||"", colegio: pac.colegio||"", fechaNac: pac.fechaNac||"" }); setEditing(true); setConfirmDelPac(false); };
-  var openView = function(pac){ setSelected(pac); setEditing(false); setConfirmDelPac(false); };
+  var openView = function(pac){ setSelected(pac); setEditing(false); setConfirmDelPac(false); setConsolReport(null); };
 
-  // UNIFIED: use allEvals to find last eval for a patient
   var getLastEval = function(pacDni){
     if(!pacDni || !allEvals) return null;
     var matching = allEvals.filter(function(ev){ return (ev.pacienteDni||ev.dni||"") === pacDni && ev.tipo !== "eldi"; });
@@ -130,19 +139,34 @@ export default function PacientesPage({ userId, nfy, allEvals }){
 
   return (
     <div style={{animation:"fi .3s ease",width:"100%",maxWidth:900}}>
-      <h1 style={{fontSize:22,fontWeight:700,marginBottom:6}}>👧👦 Pacientes</h1>
+      <h1 style={{fontSize:22,fontWeight:700,marginBottom:6}}>{"\ud83d\udc67\ud83d\udc66 Pacientes"}</h1>
       <p style={{color:K.mt,fontSize:14,marginBottom:20}}>Gestiona los datos de tus pacientes</p>
 
       {!showForm && !editing && <button onClick={function(){ setShowForm(true); setSelected(null); setConfirmDelPac(false); }} style={{background:"#0d9488",color:"#fff",border:"none",padding:"10px 20px",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer",marginBottom:20}}>+ Nuevo paciente</button>}
 
       {showForm && !editing && <div style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",padding:24,marginBottom:20}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}><h3 style={{fontSize:16,fontWeight:700,color:"#0a3d2f",margin:0}}>Nuevo paciente</h3><button onClick={function(){ setShowForm(false); }} style={{background:"none",border:"none",fontSize:18,color:K.mt,cursor:"pointer"}}>×</button></div>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}><h3 style={{fontSize:16,fontWeight:700,color:"#0a3d2f",margin:0}}>Nuevo paciente</h3><button onClick={function(){ setShowForm(false); }} style={{background:"none",border:"none",fontSize:18,color:K.mt,cursor:"pointer"}}>\u00d7</button></div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
           <div><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>DNI (sin puntos)</label><input value={form.dni} onChange={function(e){ setForm(function(p){ return Object.assign({},p,{dni:e.target.value.replace(/\D/g,"").slice(0,8)}); }); }} style={IS} placeholder="Introducir DNI" maxLength={8} inputMode="numeric" /></div>
           <div><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>Fecha de nacimiento</label><input type="date" value={form.fechaNac} onChange={function(e){ setForm(function(p){ return Object.assign({},p,{fechaNac:e.target.value}); }); }} style={IS} /></div>
           <div style={{gridColumn:"1/-1"}}><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>Nombre completo</label><input value={form.nombre} onChange={function(e){ setForm(function(p){ return Object.assign({},p,{nombre:e.target.value}); }); }} style={IS} placeholder="Apellido Nombre" /></div>
-          <div style={{gridColumn:"1/-1"}}><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>Jardín / Colegio</label><input value={form.colegio} onChange={function(e){ setForm(function(p){ return Object.assign({},p,{colegio:e.target.value}); }); }} style={IS} placeholder="Establecimiento" /></div>
+          <div style={{gridColumn:"1/-1"}}><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>Jard\u00edn / Colegio</label><input value={form.colegio} onChange={function(e){ setForm(function(p){ return Object.assign({},p,{colegio:e.target.value}); }); }} style={IS} placeholder="Establecimiento" /></div>
         </div>
+
+        {/* RESPONSABLE */}
+        <div style={{marginTop:20,paddingTop:18,borderTop:"1px solid #e2e8f0"}}>
+          <h4 style={{fontSize:14,fontWeight:700,color:"#0a3d2f",marginBottom:4}}>Informaci\u00f3n del responsable</h4>
+          <p style={{fontSize:11,color:K.mt,marginBottom:14}}>Datos de contacto del adulto responsable del paciente</p>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
+            <div style={{gridColumn:"1/-1"}}><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>Nombre y Apellido</label><input value={form.respNombre} onChange={function(e){ setForm(function(p){ return Object.assign({},p,{respNombre:e.target.value}); }); }} style={IS} placeholder="Nombre del responsable" /></div>
+            <div><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>DNI <span style={{fontWeight:400,color:"#94a3b8"}}>(opcional)</span></label><input value={form.respDni} onChange={function(e){ setForm(function(p){ return Object.assign({},p,{respDni:e.target.value.replace(/\D/g,"").slice(0,8)}); }); }} style={IS} placeholder="DNI del responsable" maxLength={8} inputMode="numeric" /></div>
+            <div><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>Tel\u00e9fono <span style={{color:"#dc2626"}}>*</span></label><input value={form.respTel} onChange={function(e){ setForm(function(p){ return Object.assign({},p,{respTel:e.target.value}); }); }} style={IS} placeholder="Ej: +54 351 1234567" /></div>
+            <div><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>Email <span style={{fontWeight:400,color:"#94a3b8"}}>(recomendado)</span></label><input type="email" value={form.respEmail} onChange={function(e){ setForm(function(p){ return Object.assign({},p,{respEmail:e.target.value}); }); }} style={IS} placeholder="correo@ejemplo.com" /></div>
+            <div><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>Tipo de responsable</label><select value={form.respTipo} onChange={function(e){ setForm(function(p){ return Object.assign({},p,{respTipo:e.target.value}); }); }} style={Object.assign({},IS,{cursor:"pointer"})}>{RESP_TYPES.map(function(t){ return <option key={t} value={t}>{t}</option>; })}</select></div>
+            {form.respTipo==="Otro"&&<div><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>Especificar</label><input value={form.respTipoOtro} onChange={function(e){ setForm(function(p){ return Object.assign({},p,{respTipoOtro:e.target.value}); }); }} style={IS} placeholder="Tipo de v\u00ednculo" /></div>}
+          </div>
+        </div>
+
         <div style={{display:"flex",justifyContent:"flex-end",gap:10,marginTop:18}}>
           <button onClick={function(){ setShowForm(false); }} style={{background:"#f1f5f9",border:"none",padding:"10px 20px",borderRadius:8,fontSize:14,cursor:"pointer",color:K.mt}}>Cancelar</button>
           <button onClick={savePaciente} style={{background:"#0d9488",color:"#fff",border:"none",padding:"10px 24px",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer"}}>Guardar</button>
@@ -150,12 +174,12 @@ export default function PacientesPage({ userId, nfy, allEvals }){
       </div>}
 
       {editing && selected && <div style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",padding:24,marginBottom:20}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}><h3 style={{fontSize:16,fontWeight:700,color:"#0a3d2f",margin:0}}>Editar paciente</h3><button onClick={function(){ setEditing(false); setSelected(null); }} style={{background:"none",border:"none",fontSize:18,color:K.mt,cursor:"pointer"}}>×</button></div>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}><h3 style={{fontSize:16,fontWeight:700,color:"#0a3d2f",margin:0}}>Editar paciente</h3><button onClick={function(){ setEditing(false); setSelected(null); }} style={{background:"none",border:"none",fontSize:18,color:K.mt,cursor:"pointer"}}>\u00d7</button></div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
           <div><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>DNI</label><input value={editForm.dni} onChange={function(e){ setEditForm(function(p){ return Object.assign({},p,{dni:e.target.value.replace(/\D/g,"").slice(0,8)}); }); }} style={IS} maxLength={8} inputMode="numeric" /></div>
           <div><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>Fecha de nacimiento</label><input type="date" value={editForm.fechaNac} onChange={function(e){ setEditForm(function(p){ return Object.assign({},p,{fechaNac:e.target.value}); }); }} style={IS} /></div>
           <div style={{gridColumn:"1/-1"}}><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>Nombre completo</label><input value={editForm.nombre} onChange={function(e){ setEditForm(function(p){ return Object.assign({},p,{nombre:e.target.value}); }); }} style={IS} /></div>
-          <div style={{gridColumn:"1/-1"}}><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>Jardín / Colegio</label><input value={editForm.colegio} onChange={function(e){ setEditForm(function(p){ return Object.assign({},p,{colegio:e.target.value}); }); }} style={IS} /></div>
+          <div style={{gridColumn:"1/-1"}}><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>Jard\u00edn / Colegio</label><input value={editForm.colegio} onChange={function(e){ setEditForm(function(p){ return Object.assign({},p,{colegio:e.target.value}); }); }} style={IS} /></div>
         </div>
         <div style={{display:"flex",justifyContent:"flex-end",gap:10,marginTop:18}}>
           <button onClick={function(){ setEditing(false); setSelected(null); }} style={{background:"#f1f5f9",border:"none",padding:"10px 20px",borderRadius:8,fontSize:14,cursor:"pointer",color:K.mt}}>Cancelar</button>
@@ -169,13 +193,13 @@ export default function PacientesPage({ userId, nfy, allEvals }){
           <div style={{display:"flex",gap:8}}>
             <button onClick={function(){ openEdit(selected); }} style={{background:"#f0f9ff",border:"1px solid #bae6fd",borderRadius:6,padding:"6px 14px",fontSize:12,fontWeight:600,cursor:"pointer",color:"#0369a1"}}>Editar</button>
             <button onClick={function(){ setConfirmDelPac(true); }} style={{background:"#fef2f2",border:"1px solid #fecaca",borderRadius:6,padding:"6px 14px",fontSize:12,fontWeight:600,cursor:"pointer",color:"#dc2626"}}>Eliminar</button>
-            <button onClick={function(){ setSelected(null); setConfirmDelPac(false); }} style={{background:"#f1f5f9",border:"none",padding:"6px 14px",borderRadius:6,fontSize:12,cursor:"pointer",color:K.mt}}>×</button>
+            <button onClick={function(){ setSelected(null); setConfirmDelPac(false); }} style={{background:"#f1f5f9",border:"none",padding:"6px 14px",borderRadius:6,fontSize:12,cursor:"pointer",color:K.mt}}>\u00d7</button>
           </div>
         </div>
         {confirmDelPac && <div style={{background:"#fef2f2",border:"1px solid #fecaca",borderRadius:10,padding:"14px 20px",marginBottom:16,display:"flex",flexDirection:"column",alignItems:"center",gap:10}}>
-          <div style={{fontSize:13,fontWeight:600,color:"#dc2626",textAlign:"center"}}>¿Eliminar este paciente?</div>
+          <div style={{fontSize:13,fontWeight:600,color:"#dc2626",textAlign:"center"}}>\u00bfEliminar este paciente?</div>
           <div style={{display:"flex",gap:8}}>
-            <button onClick={deletePaciente} style={{background:"#dc2626",color:"#fff",border:"none",padding:"8px 20px",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer"}}>Sí, eliminar</button>
+            <button onClick={deletePaciente} style={{background:"#dc2626",color:"#fff",border:"none",padding:"8px 20px",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer"}}>S\u00ed, eliminar</button>
             <button onClick={function(){ setConfirmDelPac(false); }} style={{background:"#f1f5f9",border:"1px solid #e2e8f0",padding:"8px 20px",borderRadius:8,fontSize:13,cursor:"pointer",color:"#64748b"}}>Cancelar</button>
           </div>
         </div>}
@@ -186,9 +210,17 @@ export default function PacientesPage({ userId, nfy, allEvals }){
           <div><div style={{fontSize:11,fontWeight:600,color:K.mt}}>Fecha nac.</div><div style={{fontSize:15}}>{selected.fechaNac ? new Date(selected.fechaNac+"T12:00:00").toLocaleDateString("es-AR") : "-"}</div></div>
           <div><div style={{fontSize:11,fontWeight:600,color:K.mt}}>Colegio</div><div style={{fontSize:15}}>{selected.colegio || "-"}</div></div>
         </div>
-        {(function(){ var last = getLastEval(selected.dni); if(!last) return <div style={{marginTop:16,padding:"10px 14px",background:"#f8faf9",borderRadius:8,border:"1px solid #e2e8f0",fontSize:12,color:K.mt,fontStyle:"italic"}}>Sin evaluaciones registradas</div>; return <div style={{marginTop:16,padding:"12px 14px",background:"#f0fdf4",borderRadius:8,border:"1px solid #bbf7d0"}}><div style={{fontSize:11,fontWeight:600,color:K.mt,marginBottom:4}}>{"Ultima evaluacion"}</div><div style={{fontSize:14}}><span style={{fontWeight:700,color:"#0d9488"}}>{last.tipo}</span>{" - "}{last.fecha ? new Date(last.fecha).toLocaleDateString("es-AR") : "-"}</div></div>; })()}
-
-        {/* Consolidated report */}
+        {selected.responsable && <div style={{marginTop:16,padding:"14px 16px",background:"#f0f9ff",borderRadius:10,border:"1px solid #bae6fd"}}>
+          <div style={{fontSize:12,fontWeight:700,color:"#0369a1",marginBottom:8}}>Responsable</div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,fontSize:13}}>
+            <div><span style={{color:K.mt}}>Nombre: </span><b>{selected.responsable.nombre || "-"}</b></div>
+            <div><span style={{color:K.mt}}>Tipo: </span><b>{selected.responsable.tipo || "-"}</b></div>
+            <div><span style={{color:K.mt}}>Tel: </span><b>{selected.responsable.telefono || "-"}</b></div>
+            <div><span style={{color:K.mt}}>Email: </span><b>{selected.responsable.email || "-"}</b></div>
+            {selected.responsable.dni && <div><span style={{color:K.mt}}>DNI: </span><b>{selected.responsable.dni}</b></div>}
+          </div>
+        </div>}
+        {(function(){ var last = getLastEval(selected.dni); if(!last) return <div style={{marginTop:16,padding:"10px 14px",background:"#f8faf9",borderRadius:8,border:"1px solid #e2e8f0",fontSize:12,color:K.mt,fontStyle:"italic"}}>Sin evaluaciones registradas</div>; return <div style={{marginTop:16,padding:"12px 14px",background:"#f0fdf4",borderRadius:8,border:"1px solid #bbf7d0"}}><div style={{fontSize:11,fontWeight:600,color:K.mt,marginBottom:4}}>Ultima evaluacion</div><div style={{fontSize:14}}><span style={{fontWeight:700,color:"#0d9488"}}>{last.tipo}</span>{" - "}{last.fecha ? new Date(last.fecha).toLocaleDateString("es-AR") : "-"}</div></div>; })()}
         {(function(){
           var pacEvals = allEvals.filter(function(ev){ return (ev.pacienteDni||ev.dni||"") === (selected.dni||""); });
           if(pacEvals.length < 1) return null;
@@ -236,10 +268,10 @@ export default function PacientesPage({ userId, nfy, allEvals }){
             var isSelected = selected && selected._fbId === pac._fbId && !editing;
             var lastEv = getLastEval(pac.dni);
             return <div key={pac._fbId} onClick={function(){ openView(pac); }} style={{display:"flex",alignItems:"center",gap:12,padding:"14px 16px",background:isSelected?"#ccfbf1":"#fff",borderRadius:10,border:"1px solid "+(isSelected?"#5eead4":"#e2e8f0"),cursor:"pointer"}}>
-              <div style={{width:40,height:40,borderRadius:10,background:"#f0f9ff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>👤</div>
+              <div style={{width:40,height:40,borderRadius:10,background:"#f0f9ff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>{"\ud83d\udc64"}</div>
               <div style={{flex:1,minWidth:0}}>
                 <div style={{fontWeight:600,fontSize:14}}>{pac.nombre}</div>
-                <div style={{fontSize:11,color:K.mt}}>DNI: {pac.dni} · {calcAge(pac.fechaNac)}{pac.colegio ? " · " + pac.colegio : ""}</div>
+                <div style={{fontSize:11,color:K.mt}}>DNI: {pac.dni} \u00b7 {calcAge(pac.fechaNac)}{pac.colegio ? " \u00b7 " + pac.colegio : ""}</div>
               </div>
               <div style={{textAlign:"right",flexShrink:0}}>
                 {lastEv ? <div><div style={{fontSize:11,fontWeight:600,color:"#0d9488"}}>{lastEv.tipo}</div><div style={{fontSize:10,color:K.mt}}>{lastEv.fecha ? new Date(lastEv.fecha).toLocaleDateString("es-AR") : ""}</div></div> : <div style={{fontSize:10,color:"#cbd5e1",fontStyle:"italic"}}>Sin eval.</div>}
