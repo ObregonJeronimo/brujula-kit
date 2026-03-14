@@ -64,11 +64,26 @@ function textPDF(title, evalLabel, ev, reportText, filename){
   });
 }
 
-function ReportCard({ title, titleColor, borderColor, report, ev, evalLabel, onPDF }) {
+function ReportCard({ title, titleColor, borderColor, report, ev, evalLabel, onPDF, onReportChange }) {
+  var _editing = useState(false), editing = _editing[0], setEditing = _editing[1];
+  var _editText = useState(""), editText = _editText[0], setEditText = _editText[1];
+
+  var startEdit = function(){
+    setEditText(report || "");
+    setEditing(true);
+  };
+  var saveEdit = function(){
+    if(onReportChange) onReportChange(editText);
+    setEditing(false);
+  };
+
   return <div style={{flex:1,minWidth:0}}>
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8,flexWrap:"wrap",gap:6}}>
       <div style={{fontSize:14,fontWeight:700,color:titleColor||K.sd}}>{title}</div>
-      <button onClick={onPDF} style={{padding:"6px 12px",background:titleColor||K.ac,color:"#fff",border:"none",borderRadius:6,fontSize:11,fontWeight:600,cursor:"pointer"}}>{"\ud83d\udda8 Imprimir"}</button>
+      <div style={{display:"flex",gap:6}}>
+        {!editing && <button onClick={startEdit} style={{padding:"6px 12px",background:"#f1f5f9",border:"1px solid #e2e8f0",borderRadius:6,fontSize:11,fontWeight:600,cursor:"pointer",color:K.mt}}>{"Editar"}</button>}
+        <button onClick={function(){onPDF(editing?editText:report)}} style={{padding:"6px 12px",background:titleColor||K.ac,color:"#fff",border:"none",borderRadius:6,fontSize:11,fontWeight:600,cursor:"pointer"}}>{"Imprimir"}</button>
+      </div>
     </div>
     <div style={{background:"#fff",borderRadius:12,border:"2px solid "+(borderColor||K.bd),padding:24}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14,paddingBottom:10,borderBottom:"1px solid #e2e8f0"}}>
@@ -79,8 +94,14 @@ function ReportCard({ title, titleColor, borderColor, report, ev, evalLabel, onP
         </div>
         <div style={{textAlign:"right",fontSize:11,color:K.mt}}>{"Fecha: "+(ev.fechaEvaluacion||"")}</div>
       </div>
-      <div style={{fontSize:13,lineHeight:1.7}}>{renderReportText(report)}</div>
-      <div style={{marginTop:14,paddingTop:8,borderTop:"1px solid #e2e8f0",fontSize:9,color:"#94a3b8",textAlign:"center"}}>{"Br\u00fajula KIT \u2014 "+(evalLabel||"")+" \u2014 "+new Date().toLocaleDateString("es-AR")+" \u2014 Debe ser revisado por el profesional tratante."}</div>
+      {editing ? <div>
+        <textarea value={editText} onChange={function(e){setEditText(e.target.value)}} rows={16} style={{width:"100%",padding:"12px",border:"1px solid #e2e8f0",borderRadius:8,fontSize:13,lineHeight:1.7,fontFamily:"inherit",resize:"vertical"}} />
+        <div style={{display:"flex",gap:8,marginTop:10}}>
+          <button onClick={saveEdit} style={{padding:"8px 16px",background:"#059669",color:"#fff",border:"none",borderRadius:6,fontSize:12,fontWeight:600,cursor:"pointer"}}>{"Guardar cambios"}</button>
+          <button onClick={function(){setEditing(false)}} style={{padding:"8px 16px",background:"#f1f5f9",border:"1px solid #e2e8f0",borderRadius:6,fontSize:12,cursor:"pointer",color:K.mt}}>{"Cancelar"}</button>
+        </div>
+      </div> : <div style={{fontSize:13,lineHeight:1.7}}>{renderReportText(report)}</div>}
+      <div style={{marginTop:14,paddingTop:8,borderTop:"1px solid #e2e8f0",fontSize:9,color:"#94a3b8",textAlign:"center"}}>{"Brujula KIT \u2014 "+(evalLabel||"")+" \u2014 "+new Date().toLocaleDateString("es-AR")+" \u2014 Debe ser revisado por el profesional tratante."}</div>
     </div>
   </div>;
 }
@@ -193,8 +214,8 @@ export default function AIReportPanel({ ev, evalType, collectionName, evalLabel,
 
   return <div style={{marginBottom:20}}>
     <div style={{display:hasCUD?"flex":"block",gap:20,alignItems:"flex-start"}}>
-      <ReportCard title={"Informe Fonoaudiológico"} titleColor={K.sd} borderColor={K.bd} report={report} ev={ev} evalLabel={evalLabel||evalType.toUpperCase()} onPDF={function(){ textPDF("Informe Fonoaudiológico", evalLabel||evalType.toUpperCase(), ev, report, pdfName("Informe")); }} />
-      {hasCUD && <ReportCard title="Informe para CUD" titleColor="#7c3aed" borderColor="#7c3aed" report={cudReport} ev={ev} evalLabel={evalLabel||evalType.toUpperCase()} onPDF={function(){ textPDF("Informe para CUD", evalLabel||evalType.toUpperCase(), ev, cudReport, pdfName("CUD")); }} />}
+      <ReportCard title={"Informe Fonoaudiologico"} titleColor={K.sd} borderColor={K.bd} report={report} ev={ev} evalLabel={evalLabel||evalType.toUpperCase()} onPDF={function(txt){ textPDF("Informe Fonoaudiologico", evalLabel||evalType.toUpperCase(), ev, txt||report, pdfName("Informe")); }} onReportChange={function(t){setReport(t)}} />
+      {hasCUD && <ReportCard title="Informe para CUD" titleColor="#7c3aed" borderColor="#7c3aed" report={cudReport} ev={ev} evalLabel={evalLabel||evalType.toUpperCase()} onPDF={function(txt){ textPDF("Informe para CUD", evalLabel||evalType.toUpperCase(), ev, txt||cudReport, pdfName("CUD")); }} onReportChange={function(t){setCudReport(t)}} />}
     </div>
 
     {!hasCUD && !cudGenerating && <button onClick={function(){handleGenerate("cud")}} style={{width:"100%",marginTop:14,padding:"12px",background:"linear-gradient(135deg,#7c3aed,#6d28d9)",color:"#fff",border:"none",borderRadius:10,fontSize:13,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
