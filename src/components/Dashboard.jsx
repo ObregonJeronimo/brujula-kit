@@ -35,9 +35,9 @@ function loadShortcuts(uid){
 }
 function saveShortcuts(uid, arr){ try { window.localStorage.setItem("bk_shortcuts_"+uid, JSON.stringify(arr.slice(0,4))); } catch(e){} }
 
-function computeAlerts(citasArr, todayDate){
+function computeAlerts(citasArr, todayDate, reminderDays){
   var todayMs = new Date(todayDate.getFullYear(), todayDate.getMonth(), todayDate.getDate()).getTime();
-  var threeDaysMs = 3 * 24 * 60 * 60 * 1000;
+  var rangeMs = reminderDays * 24 * 60 * 60 * 1000;
   var results = [];
   for(var i = 0; i < citasArr.length; i++){
     var c = citasArr[i]; var est = (c.estado || "").toLowerCase();
@@ -45,14 +45,13 @@ function computeAlerts(citasArr, todayDate){
     var parts = (c.fecha || "").split("-"); if(parts.length < 3) continue;
     var citaMs = new Date(parseInt(parts[0],10), parseInt(parts[1],10)-1, parseInt(parts[2],10)).getTime();
     var diff = citaMs - todayMs;
-    if(diff >= 0 && diff <= threeDaysMs) results.push({ cita: c, dias: Math.round(diff / (24*60*60*1000)) });
+    if(diff >= 0 && diff <= rangeMs) results.push({ cita: c, dias: Math.round(diff / (24*60*60*1000)) });
   }
   results.sort(function(a,b){ return a.dias - b.dias; });
   return results;
 }
 
-export default function Dashboard({ allEvals, onT, onView, ld, profile, isAdmin, userId, nfy, onCalendar, onStartEval, onBuyCredits }) {
-  // Filter out hidden types (ELDI etc.)
+export default function Dashboard({ allEvals, onT, onView, ld, profile, isAdmin, userId, nfy, onCalendar, onStartEval, onBuyCredits, userSettings }) {
   var visibleEvals = (allEvals || []).filter(function(e){ return isVisibleType(e.tipo); });
   visibleEvals.sort(function(a,b){ return (b.fechaGuardado || "").localeCompare(a.fechaGuardado || ""); });
   var rc = visibleEvals.slice(0, 5);
@@ -89,7 +88,10 @@ export default function Dashboard({ allEvals, onT, onView, ld, profile, isAdmin,
   },[userId]);
   useEffect(function(){ loadCitas(); },[loadCitas]);
 
-  var upcomingAlerts = citasReady ? computeAlerts(citas, now) : [];
+  // Use settings for reminder days (default 3) and whether reminders are enabled (default true)
+  var citaReminderEnabled = !userSettings || userSettings.citaReminder !== false;
+  var reminderDays = (userSettings && userSettings.reminderDays) ? userSettings.reminderDays : 3;
+  var upcomingAlerts = (citasReady && citaReminderEnabled) ? computeAlerts(citas, now, reminderDays) : [];
   var lowCredits = !isAdmin && credits <= 5 && credits > 0;
   var alertCount = upcomingAlerts.length + (lowCredits ? 1 : 0);
 
@@ -102,8 +104,6 @@ export default function Dashboard({ allEvals, onT, onView, ld, profile, isAdmin,
   var getCitasForDay = function(d){ var key = dateKey(calYear, calMonth, d); return citas.filter(function(c){ return c.fecha===key; }); };
   var todayStr = dateKey(now.getFullYear(), now.getMonth(), now.getDate());
   var upcoming = citas.filter(function(c){ return c.fecha >= todayStr && c.estado !== "cancelada"; }).sort(function(a,b){ return (a.fecha+(a.hora||"")).localeCompare(b.fecha+(b.hora||"")); }).slice(0, 3);
-
-  // typeLabel imported from evalTypes.js
 
   return (
     <div style={{animation:"fi .3s ease",width:"100%"}}>
