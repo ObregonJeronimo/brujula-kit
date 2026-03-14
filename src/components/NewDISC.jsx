@@ -70,13 +70,13 @@ function discRenderTech(results) {
   </div>;
 }
 
-export default function NewDISC({ onS, nfy, userId }){
+export default function NewDISC({ onS, nfy, userId, draft }){
   return <EvalShell
     onS={onS} nfy={nfy} userId={userId}
     config={SHELL_CONFIG}
     renderEval={discRenderEval}
     computeResults={discComputeResults}
     buildPayloadExtra={discBuildPayloadExtra}
-    renderTechDetails={discRenderTech}
+    renderTechDetails={discRenderTech} draft={draft}
   />;
 }

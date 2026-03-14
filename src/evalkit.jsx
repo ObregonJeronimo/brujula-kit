@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, lazy, Suspense, Component } from "rea
 import { db, auth, doc, updateDoc, getDoc, increment, onAuthStateChanged, signOut } from "./firebase.js";
 import { fbGetAll, fbGetFiltered, fbAdd, fbDelete, getUserProfile, K } from "./lib/fb.js";
 import { acquireSessionLock, releaseSessionLock, useSessionHeartbeat } from "./lib/sessionLock.js";
-import { VISIBLE_TYPES, rptViewFor } from "./config/evalTypes.js";
+import { VISIBLE_TYPES, EVAL_TYPES, rptViewFor } from "./config/evalTypes.js";
 
 // Core components — always loaded (needed on first render)
 import AuthScreen from "./components/AuthScreen.jsx";
@@ -113,6 +113,7 @@ export default function App() {
   var _pp = useState(false), paymentProcessed = _pp[0], setPaymentProcessed = _pp[1];
   var _pl = useState(true), profileLoading = _pl[0], setProfileLoading = _pl[1];
   var _et = useState(null), enabledTools = _et[0], setEnabledTools = _et[1];
+  var _activeDraft = useState(null), activeDraft = _activeDraft[0], setActiveDraft = _activeDraft[1];
   var nfy = useCallback(function(m,t){ sT({m:m,t:t}); setTimeout(function(){sT(null)},4500); },[]);
   var isAdmin = profile?.role === "admin";
   useSessionHeartbeat(authUser?.uid, isAdmin);
@@ -201,7 +202,17 @@ export default function App() {
   var startEval = function(toolId){ if(!checkCredits()) return; if(!isAdmin){ var ok = window.confirm("Iniciar evaluacion?\n\nSe consumira 1 credito de tu cuenta. Esta accion no se puede deshacer."); if(!ok) return; deductCredit().then(function(success){ if(success){ prevViewRef.current=view; window.history.pushState({view:toolId},"",""); sV(toolId); } }); } else { prevViewRef.current=view; window.history.pushState({view:toolId},"",""); sV(toolId); } };
 
   // Single callback for all New* components
-  var onEvalDone = function(data){ if(data === "tools"){ prevViewRef.current="tools"; sV("tools"); sS(null); loadEvals(); window.scrollTo({top:0,behavior:"smooth"}); return; } };
+  var onEvalDone = function(data){ if(data === "tools"){ setActiveDraft(null); sV("tools"); sS(null); loadEvals(); window.scrollTo({top:0,behavior:"smooth"}); return; } };
+
+  var resumeDraft = function(draft){
+    var evalConfig = null;
+    for(var k in EVAL_TYPES){ if(EVAL_TYPES[k].id === draft.evalType){ evalConfig = EVAL_TYPES[k]; break; } }
+    if(!evalConfig){ return; }
+    setActiveDraft(draft);
+    prevViewRef.current = "tools";
+    window.history.pushState({view:evalConfig.newView},"","");
+    sV(evalConfig.newView);
+  };
 
   // Navigate to report view for an eval (used by Dashboard + Hist)
   var viewReport = function(ev){ sS(ev); var rv = rptViewFor(ev.tipo); if(rv){ prevViewRef.current=view; window.history.pushState({view:rv},"",""); sV(rv); } };
@@ -239,11 +250,11 @@ export default function App() {
       <main id="main-scroll" style={{flex:1,overflowY:"auto",overflowX:"hidden",padding:mobile?"16px":"28px 36px",height:"100vh"}}>
         {toast&&<div style={{position:"fixed",top:16,right:16,zIndex:999,background:toast.t==="ok"?"#059669":"#dc2626",color:"#fff",padding:"10px 18px",borderRadius:8,fontSize:13,fontWeight:500,boxShadow:"0 4px 16px rgba(0,0,0,.15)",animation:"fi .3s ease"}}>{toast.m}</div>}
         {view==="dash"&&<Dashboard allEvals={allEvals} onT={function(){navTo("tools")}} onView={viewReport} ld={loading} profile={profile} isAdmin={isAdmin} userId={authUser?.uid} nfy={nfy} onCalendar={function(){navTo("calendario")}} onStartEval={startEval} onBuyCredits={goToPremium} />}
-        {view==="tools"&&<Tools onSel={startEval} credits={isAdmin?999:(profile.creditos||0)} onBuy={goToPremium} enabledTools={enabledTools} />}
+        {view==="tools"&&<Tools onSel={startEval} credits={isAdmin?999:(profile.creditos||0)} onBuy={goToPremium} enabledTools={enabledTools} userId={authUser?.uid} onResumeDraft={resumeDraft} />}
         <ErrorBoundary onReset={function(){ sV("dash"); sS(null); }}>
         <Suspense fallback={LazyFallback}>
           {/* Dynamic New* components from registry */}
-          {NEW_COMPONENTS[view] && (function(){ var C = NEW_COMPONENTS[view]; return <C onS={onEvalDone} nfy={nfy} userId={authUser?.uid} />; })()}
+          {NEW_COMPONENTS[view] && (function(){ var C = NEW_COMPONENTS[view]; return <C onS={onEvalDone} nfy={nfy} userId={authUser?.uid} draft={activeDraft} />; })()}
           {view==="hist"&&<Hist allEvals={allEvals} onView={viewReport} isA={isAdmin} onD={deleteEval} enabledTools={enabledTools} />}
           {/* Dynamic Rpt* components from registry */}
           {RPT_COMPONENTS[view] && sel && (function(){ var C = RPT_COMPONENTS[view]; return <C ev={sel} onD={deleteEval} />; })()}
