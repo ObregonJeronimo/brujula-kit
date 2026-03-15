@@ -2,13 +2,13 @@ import { useState, useEffect, useCallback } from "react";
 import { db, collection, addDoc, getDocs, deleteDoc, doc, updateDoc, query, where } from "../firebase.js";
 
 const K = { mt: "#64748b", ac: "#0d9488", sd: "#0a3d2f" };
-const DAYS = ["Lun", "Mar", "Mi\u00e9", "Jue", "Vie", "S\u00e1b", "Dom"];
+const DAYS = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
 const MONTHS = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 
 const COLORS = [
   { id: "red", hex: "#dc2626", label: "Urgente" },
   { id: "blue", hex: "#2563eb", label: "Control" },
-  { id: "green", hex: "#059669", label: "Reevaluaci\u00f3n" },
+  { id: "green", hex: "#059669", label: "Reevaluación" },
   { id: "yellow", hex: "#d97706", label: "Primera vez" },
   { id: "violet", hex: "#7c3aed", label: "Seguimiento" }
 ];
@@ -27,7 +27,7 @@ function calcAge(birthStr){
   if(now.getDate() < b.getDate()) months--;
   if(months < 0){ years--; months += 12; }
   if(years < 1) return months + (months===1?" mes":" meses");
-  return years + (years===1?" a\u00f1o":" a\u00f1os") + (months > 0 ? ", " + months + " m" : "");
+  return years + (years===1?" año":" años") + (months > 0 ? ", " + months + " m" : "");
 }
 
 export default function CalendarPage({ userId, nfy }) {
@@ -56,7 +56,6 @@ export default function CalendarPage({ userId, nfy }) {
     setLoading(false);
   }, [userId, year, month]);
 
-  // Load pacientes for search
   useEffect(() => {
     if(!userId) return;
     const q2 = query(collection(db, "pacientes"), where("userId", "==", userId));
@@ -91,7 +90,6 @@ export default function CalendarPage({ userId, nfy }) {
     setShowForm(true);
   };
 
-  // Patient search by DNI
   const handlePacSearch = (dniVal) => {
     setPacSearchDni(dniVal);
     if(dniVal.length >= 7){
@@ -137,16 +135,16 @@ export default function CalendarPage({ userId, nfy }) {
 
   return (
     <div style={{ animation: "fi .3s ease", width: "100%", maxWidth: 900 }}>
-      <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 6 }}>{"\ud83d\udcc5 Calendario de Citas"}</h1>
-      <p style={{ color: K.mt, fontSize: 14, marginBottom: 24 }}>Organiz\u00e1 tu agenda de evaluaciones</p>
+      <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 6 }}>{"📅 Calendario de Citas"}</h1>
+      <p style={{ color: K.mt, fontSize: 14, marginBottom: 24 }}>{"Organizá tu agenda de evaluaciones"}</p>
 
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-        <button onClick={prevMonth} style={{ background: "#f1f5f9", border: "none", padding: "10px 18px", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer", color: "#475569" }}>{"\u2190"}</button>
+        <button onClick={prevMonth} style={{ background: "#f1f5f9", border: "none", padding: "10px 18px", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer", color: "#475569" }}>{"←"}</button>
         <div style={{ textAlign: "center" }}>
           <div style={{ fontSize: 20, fontWeight: 700, color: K.sd }}>{MONTHS[month]} {year}</div>
           <button onClick={goToday} style={{ background: "none", border: "none", color: K.ac, fontSize: 12, cursor: "pointer", fontWeight: 600, marginTop: 2 }}>Ir a hoy</button>
         </div>
-        <button onClick={nextMonth} style={{ background: "#f1f5f9", border: "none", padding: "10px 18px", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer", color: "#475569" }}>{"\u2192"}</button>
+        <button onClick={nextMonth} style={{ background: "#f1f5f9", border: "none", padding: "10px 18px", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer", color: "#475569" }}>{"→"}</button>
       </div>
 
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 16 }}>
@@ -164,7 +162,7 @@ export default function CalendarPage({ userId, nfy }) {
             return (<div key={d} onClick={() => handleDayClick(d)} style={{ minHeight: 80, padding: 4, borderRight: "1px solid #f1f5f9", borderBottom: "1px solid #f1f5f9", cursor: "pointer", background: isSel ? "#ccfbf1" : isT ? "#f0fdf4" : "#fff", transition: "background .15s", position: "relative" }}>
               <div style={{ fontSize: 12, fontWeight: isT ? 700 : 500, color: isT ? K.ac : "#1e293b", padding: "2px 6px", borderRadius: 4, display: "inline-block", background: isT ? "#ccfbf1" : "transparent" }}>{d}</div>
               {dc.slice(0, 2).map((c, ci) => (<div key={ci} style={{ fontSize: 10, padding: "2px 4px", margin: "1px 0", borderRadius: 3, background: getColorHex(c.color) + "22", borderLeft: `3px solid ${getColorHex(c.color)}`, color: "#1e293b", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.hora ? c.hora.substring(0, 5) + " " : ""}{c.paciente}</div>))}
-              {dc.length > 2 && <div style={{ fontSize: 9, color: K.mt, padding: "0 4px" }}>+{dc.length - 2} m\u00e1s</div>}
+              {dc.length > 2 && <div style={{ fontSize: 9, color: K.mt, padding: "0 4px" }}>+{dc.length - 2} más</div>}
             </div>);
           })}
         </div>
@@ -175,10 +173,10 @@ export default function CalendarPage({ userId, nfy }) {
           <h3 style={{ fontSize: 16, fontWeight: 700, color: K.sd }}>{selDay} de {MONTHS[month]} {year}</h3>
           <div style={{ display: "flex", gap: 8 }}>
             <button onClick={() => openNewForm(selDay)} style={{ background: K.ac, color: "#fff", border: "none", padding: "8px 16px", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>+ Nueva cita</button>
-            <button onClick={() => setSelDay(null)} style={{ background: "#f1f5f9", border: "none", padding: "8px 14px", borderRadius: 8, fontSize: 13, cursor: "pointer", color: K.mt }}>\u00d7</button>
+            <button onClick={() => setSelDay(null)} style={{ background: "#f1f5f9", border: "none", padding: "8px 14px", borderRadius: 8, fontSize: 13, cursor: "pointer", color: K.mt }}>×</button>
           </div>
         </div>
-        {dayCitas.length === 0 ? (<p style={{ color: K.mt, fontSize: 13, fontStyle: "italic" }}>No hay citas para este d\u00eda</p>) :
+        {dayCitas.length === 0 ? (<p style={{ color: K.mt, fontSize: 13, fontStyle: "italic" }}>No hay citas para este día</p>) :
           dayCitas.sort((a, b) => (a.hora || "").localeCompare(b.hora || "")).map(c => (<div key={c._fbId} style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", background: "#f8faf9", borderRadius: 10, border: "1px solid #e2e8f0", marginBottom: 8, borderLeft: `4px solid ${getColorHex(c.color)}` }}>
             <div style={{ flex: 1 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
@@ -198,12 +196,11 @@ export default function CalendarPage({ userId, nfy }) {
 
       {showForm && selDay && (<div style={{ background: "#fff", borderRadius: 14, border: "1px solid #e2e8f0", padding: 24, marginBottom: 20 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-          <h3 style={{ fontSize: 16, fontWeight: 700, color: K.sd }}>{editId ? "Editar cita" : "Nueva cita"} \u2013 {selDay} de {MONTHS[month]}</h3>
-          <button onClick={() => { setShowForm(false); setEditId(null); setSelectedPac(null); setShowPacSearch(false); }} style={{ background: "none", border: "none", fontSize: 18, color: K.mt, cursor: "pointer" }}>\u00d7</button>
+          <h3 style={{ fontSize: 16, fontWeight: 700, color: K.sd }}>{editId ? "Editar cita" : "Nueva cita"} – {selDay} de {MONTHS[month]}</h3>
+          <button onClick={() => { setShowForm(false); setEditId(null); setSelectedPac(null); setShowPacSearch(false); }} style={{ background: "none", border: "none", fontSize: 18, color: K.mt, cursor: "pointer" }}>×</button>
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-          {/* Patient name + selector */}
           <div style={{ gridColumn: "1/-1" }}>
             <label style={{ fontSize: 12, fontWeight: 600, color: K.mt, display: "block", marginBottom: 4 }}>Nombre del paciente</label>
             <div style={{ display: "flex", gap: 8 }}>
@@ -214,7 +211,7 @@ export default function CalendarPage({ userId, nfy }) {
             {showPacSearch && !selectedPac && <div style={{ marginTop: 8, padding: "10px 14px", background: "#f0f9ff", borderRadius: 8, border: "1px solid #bae6fd" }}>
               <label style={{ fontSize: 11, fontWeight: 600, color: "#0369a1", display: "block", marginBottom: 4 }}>Buscar por DNI</label>
               <input value={pacSearchDni} onChange={e => handlePacSearch(e.target.value.replace(/\D/g,"").slice(0,8))} style={Object.assign({},I,{background:"#fff"})} placeholder="Introducir DNI del paciente" maxLength={8} inputMode="numeric" />
-              {pacSearchDni.length >= 7 && !selectedPac && <div style={{ fontSize: 11, color: "#dc2626", marginTop: 4 }}>No se encontr\u00f3 paciente con ese DNI</div>}
+              {pacSearchDni.length >= 7 && !selectedPac && <div style={{ fontSize: 11, color: "#dc2626", marginTop: 4 }}>No se encontró paciente con ese DNI</div>}
             </div>}
             {selectedPac && <div style={{ marginTop: 8, padding: "10px 14px", background: "#f0fdf4", borderRadius: 8, border: "1px solid #bbf7d0" }}>
               <div style={{ fontSize: 12, fontWeight: 700, color: "#059669", marginBottom: 4 }}>Paciente seleccionado</div>
@@ -227,7 +224,7 @@ export default function CalendarPage({ userId, nfy }) {
             </div>}
           </div>
           <div>
-            <label style={{ fontSize: 12, fontWeight: 600, color: K.mt, display: "block", marginBottom: 4 }}>Tipo de evaluaci\u00f3n</label>
+            <label style={{ fontSize: 12, fontWeight: 600, color: K.mt, display: "block", marginBottom: 4 }}>Tipo de evaluación</label>
             <select value={form.tipo} onChange={e => setForm(p => ({ ...p, tipo: e.target.value }))} style={{ ...I, cursor: "pointer" }}>
               {EVAL_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
             </select>
@@ -243,15 +240,15 @@ export default function CalendarPage({ userId, nfy }) {
             </select>
           </div>
           <div>
-            <label style={{ fontSize: 12, fontWeight: 600, color: K.mt, display: "block", marginBottom: 6 }}>Color / Categor\u00eda</label>
+            <label style={{ fontSize: 12, fontWeight: 600, color: K.mt, display: "block", marginBottom: 6 }}>{"Color / Categoría"}</label>
             <div style={{ display: "flex", gap: 8 }}>
-              {COLORS.map(c => (<button key={c.id} onClick={() => setForm(p => ({ ...p, color: c.id }))} title={c.label} style={{ width: 36, height: 36, borderRadius: 8, background: c.hex, border: form.color === c.id ? "3px solid #1e293b" : "2px solid #e2e8f0", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 14, fontWeight: 700, transition: "all .15s" }}>{form.color === c.id ? "\u2713" : ""}</button>))}
+              {COLORS.map(c => (<button key={c.id} onClick={() => setForm(p => ({ ...p, color: c.id }))} title={c.label} style={{ width: 36, height: 36, borderRadius: 8, background: c.hex, border: form.color === c.id ? "3px solid #1e293b" : "2px solid #e2e8f0", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 14, fontWeight: 700, transition: "all .15s" }}>{form.color === c.id ? "✓" : ""}</button>))}
             </div>
             <div style={{ fontSize: 10, color: K.mt, marginTop: 4 }}>{COLORS.find(c => c.id === form.color)?.label || ""}</div>
           </div>
           <div style={{ gridColumn: "1/-1" }}>
-            <label style={{ fontSize: 12, fontWeight: 600, color: K.mt, display: "block", marginBottom: 4 }}>Notas cl\u00ednicas</label>
-            <textarea value={form.notas} onChange={e => setForm(p => ({ ...p, notas: e.target.value }))} rows={3} style={{ ...I, resize: "vertical" }} placeholder="Observaciones, objetivos de la sesi\u00f3n..." />
+            <label style={{ fontSize: 12, fontWeight: 600, color: K.mt, display: "block", marginBottom: 4 }}>{"Notas clínicas"}</label>
+            <textarea value={form.notas} onChange={e => setForm(p => ({ ...p, notas: e.target.value }))} rows={3} style={{ ...I, resize: "vertical" }} placeholder="Observaciones, objetivos de la sesión..." />
           </div>
         </div>
 
