@@ -29,8 +29,8 @@ var SettingsPage = forwardRef(function SettingsPageInner({ userId, nfy, profile,
   var _creditWarning = useState(true), creditWarning = _creditWarning[0], setCreditWarning = _creditWarning[1];
   var _citaReminder = useState(true), citaReminder = _citaReminder[0], setCitaReminder = _citaReminder[1];
   var _reminderDays = useState(3), reminderDays = _reminderDays[0], setReminderDays = _reminderDays[1];
+  var _autoEmail = useState(true), autoEmail = _autoEmail[0], setAutoEmail = _autoEmail[1];
 
-  // Original values to detect changes
   var origRef = useRef(null);
 
   useEffect(function(){
@@ -48,7 +48,8 @@ var SettingsPage = forwardRef(function SettingsPageInner({ userId, nfy, profile,
           showInReport: s.showConsultorioInReport === true,
           creditWarning: s.creditWarning !== false,
           citaReminder: s.citaReminder !== false,
-          reminderDays: s.reminderDays || 3
+          reminderDays: s.reminderDays || 3,
+          autoEmail: s.autoEmailCita !== false
         };
         origRef.current = orig;
         setCName(orig.cName);
@@ -59,6 +60,7 @@ var SettingsPage = forwardRef(function SettingsPageInner({ userId, nfy, profile,
         setCreditWarning(orig.creditWarning);
         setCitaReminder(orig.citaReminder);
         setReminderDays(orig.reminderDays);
+        setAutoEmail(orig.autoEmail);
       }
     }).catch(function(e){ console.error(e); }).finally(function(){ setLoading(false); });
   }, [userId]);
@@ -66,10 +68,9 @@ var SettingsPage = forwardRef(function SettingsPageInner({ userId, nfy, profile,
   var isDirty = function(){
     if(!origRef.current) return false;
     var o = origRef.current;
-    return cName !== o.cName || cDir !== o.cDir || cTel !== o.cTel || cEmail !== o.cEmail || showInReport !== o.showInReport || creditWarning !== o.creditWarning || citaReminder !== o.citaReminder || reminderDays !== o.reminderDays;
+    return cName !== o.cName || cDir !== o.cDir || cTel !== o.cTel || cEmail !== o.cEmail || showInReport !== o.showInReport || creditWarning !== o.creditWarning || citaReminder !== o.citaReminder || reminderDays !== o.reminderDays || autoEmail !== o.autoEmail;
   };
 
-  // Notify parent of dirty state on every render
   useEffect(function(){
     if(onDirtyChange) onDirtyChange(isDirty());
   });
@@ -88,11 +89,12 @@ var SettingsPage = forwardRef(function SettingsPageInner({ userId, nfy, profile,
         showConsultorioInReport: showInReport,
         creditWarning: creditWarning,
         citaReminder: citaReminder,
-        reminderDays: reminderDays
+        reminderDays: reminderDays,
+        autoEmailCita: autoEmail
       };
       updateDoc(doc(db, "usuarios", userId), { settings: settings }).then(function(){
         nfy("Configuración guardada", "ok");
-        origRef.current = { cName: cName.trim(), cDir: cDir.trim(), cTel: cTel.trim(), cEmail: cEmail.trim(), showInReport: showInReport, creditWarning: creditWarning, citaReminder: citaReminder, reminderDays: reminderDays };
+        origRef.current = { cName: cName.trim(), cDir: cDir.trim(), cTel: cTel.trim(), cEmail: cEmail.trim(), showInReport: showInReport, creditWarning: creditWarning, citaReminder: citaReminder, reminderDays: reminderDays, autoEmail: autoEmail };
         if(onSettingsChange) onSettingsChange(settings);
         if(onDirtyChange) onDirtyChange(false);
         resolve(true);
@@ -103,28 +105,27 @@ var SettingsPage = forwardRef(function SettingsPageInner({ userId, nfy, profile,
     });
   };
 
-  // Expose save method to parent via ref
   useImperativeHandle(ref, function(){
     return { save: doSave };
   });
 
   var I = { width:"100%", padding:"10px 14px", border:"1px solid #e2e8f0", borderRadius:8, fontSize:14, background:"#f8faf9" };
 
-  if(loading) return <div style={{animation:"fi .3s ease",textAlign:"center",padding:60}}><div style={{fontSize:16,fontWeight:600,color:K.mt}}>Cargando configuración...</div></div>;
+  if(loading) return <div style={{animation:"fi .3s ease",textAlign:"center",padding:60}}><div style={{fontSize:16,fontWeight:600,color:K.mt}}>{"Cargando configuración..."}</div></div>;
 
   return <div style={{animation:"fi .3s ease",width:"100%",maxWidth:700}}>
     <h1 style={{fontSize:22,fontWeight:700,marginBottom:6}}>{"⚙️ Configuración"}</h1>
-    <p style={{color:K.mt,fontSize:14,marginBottom:24}}>Personalizá tu experiencia en Brújula KIT</p>
+    <p style={{color:K.mt,fontSize:14,marginBottom:24}}>{"Personalizá tu experiencia en Brújula KIT"}</p>
 
     {/* DATOS DEL CONSULTORIO */}
     <div style={{background:"#fff",borderRadius:12,border:"1px solid #e2e8f0",padding:24,marginBottom:20}}>
       <h2 style={{fontSize:16,fontWeight:700,color:K.sd,marginBottom:4}}>{"🏥 Datos del consultorio"}</h2>
-      <p style={{fontSize:12,color:K.mt,marginBottom:16}}>Esta información puede incluirse en los informes de pacientes.</p>
+      <p style={{fontSize:12,color:K.mt,marginBottom:16}}>{"Esta información se incluye en los informes de pacientes y en los emails automáticos de recordatorio de citas."}</p>
 
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 16px",background:showInReport?"#f0fdfa":"#f8fafc",borderRadius:10,border:showInReport?"1px solid #99f6e4":"1px solid #e2e8f0",marginBottom:16}}>
         <div>
           <div style={{fontSize:13,fontWeight:600,color:showInReport?K.sd:"#475569"}}>Mostrar en informe de paciente</div>
-          {!allFieldsFilled && <div style={{fontSize:11,color:"#f59e0b",marginTop:2}}>Completá todos los campos para activar</div>}
+          {!allFieldsFilled && <div style={{fontSize:11,color:"#f59e0b",marginTop:2}}>{"Completá todos los campos para activar"}</div>}
         </div>
         <Toggle value={showInReport} onChange={function(v){ if(v && !allFieldsFilled){ nfy("Completá todos los campos primero","er"); return; } setShowInReport(v); }} disabled={false} />
       </div>
@@ -135,12 +136,12 @@ var SettingsPage = forwardRef(function SettingsPageInner({ userId, nfy, profile,
           <input value={cName} onChange={function(e){ setCName(e.target.value); }} style={I} placeholder="Ej: Consultorio Fonos" />
         </div>
         <div>
-          <label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>Teléfono</label>
+          <label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>{"Teléfono"}</label>
           <input value={cTel} onChange={function(e){ setCTel(e.target.value); }} style={I} placeholder="Ej: +54 351 1234567" />
         </div>
       </div>
       <div style={{marginBottom:14}}>
-        <label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>Dirección</label>
+        <label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>{"Dirección"}</label>
         <input value={cDir} onChange={function(e){ setCDir(e.target.value); }} style={I} placeholder="Ej: Av. Colón 1234, Córdoba" />
       </div>
       <div>
@@ -155,22 +156,30 @@ var SettingsPage = forwardRef(function SettingsPageInner({ userId, nfy, profile,
 
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 16px",background:creditWarning?"#f0fdfa":"#f8fafc",borderRadius:10,border:creditWarning?"1px solid #99f6e4":"1px solid #e2e8f0",marginBottom:14}}>
         <div>
-          <div style={{fontSize:13,fontWeight:600,color:creditWarning?K.sd:"#475569"}}>Aviso de uso de crédito al iniciar evaluación</div>
-          <div style={{fontSize:11,color:K.mt,marginTop:2}}>Muestra una confirmación antes de descontar un crédito</div>
+          <div style={{fontSize:13,fontWeight:600,color:creditWarning?K.sd:"#475569"}}>{"Aviso de uso de crédito al iniciar evaluación"}</div>
+          <div style={{fontSize:11,color:K.mt,marginTop:2}}>{"Muestra una confirmación antes de descontar un crédito"}</div>
         </div>
         <Toggle value={creditWarning} onChange={setCreditWarning} />
+      </div>
+
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 16px",background:autoEmail?"#f0fdfa":"#f8fafc",borderRadius:10,border:autoEmail?"1px solid #99f6e4":"1px solid #e2e8f0",marginBottom:14}}>
+        <div>
+          <div style={{fontSize:13,fontWeight:600,color:autoEmail?K.sd:"#475569"}}>{"Enviar mail automático al agendar cita"}</div>
+          <div style={{fontSize:11,color:K.mt,marginTop:2}}>{"Envía un email de recordatorio al responsable del paciente al guardar una cita"}</div>
+        </div>
+        <Toggle value={autoEmail} onChange={setAutoEmail} />
       </div>
 
       <div style={{padding:"12px 16px",background:citaReminder?"#f0fdfa":"#f8fafc",borderRadius:10,border:citaReminder?"1px solid #99f6e4":"1px solid #e2e8f0"}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
           <div>
-            <div style={{fontSize:13,fontWeight:600,color:citaReminder?K.sd:"#475569"}}>Avisar cuando una cita es próxima</div>
-            <div style={{fontSize:11,color:K.mt,marginTop:2}}>Recibí recordatorios de citas en el panel principal</div>
+            <div style={{fontSize:13,fontWeight:600,color:citaReminder?K.sd:"#475569"}}>{"Avisar cuando una cita es próxima"}</div>
+            <div style={{fontSize:11,color:K.mt,marginTop:2}}>{"Recibí recordatorios de citas en el panel principal"}</div>
           </div>
           <Toggle value={citaReminder} onChange={setCitaReminder} />
         </div>
         {citaReminder && <div style={{marginTop:12,padding:"10px 14px",background:"#f0f9ff",borderRadius:8,border:"1px solid #bae6fd"}}>
-          <div style={{fontSize:12,fontWeight:600,color:"#0369a1",marginBottom:8}}>Seleccionar cuándo recibir recordatorio</div>
+          <div style={{fontSize:12,fontWeight:600,color:"#0369a1",marginBottom:8}}>{"Seleccionar cuándo recibir recordatorio"}</div>
           <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
             {REMINDER_OPTIONS.map(function(opt){
               var selected = reminderDays === opt.value;
@@ -184,7 +193,7 @@ var SettingsPage = forwardRef(function SettingsPageInner({ userId, nfy, profile,
     {/* ACERCA DE */}
     <div style={{background:"#fff",borderRadius:12,border:"1px solid #e2e8f0",padding:24,marginBottom:20}}>
       <h2 style={{fontSize:16,fontWeight:700,color:K.sd,marginBottom:12}}>{"ℹ️ Acerca de"}</h2>
-      <div style={{fontSize:13,color:"#475569"}}>Versión actual del sistema: <b style={{color:K.sd}}>Brújula KIT V6.0</b></div>
+      <div style={{fontSize:13,color:"#475569"}}>{"Versión actual del sistema: "}<b style={{color:K.sd}}>{"Brújula KIT V6.0"}</b></div>
     </div>
 
     {/* GUARDAR */}
