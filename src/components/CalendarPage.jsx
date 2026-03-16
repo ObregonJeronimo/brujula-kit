@@ -32,12 +32,8 @@ function calcAge(birthStr){
 
 async function sendCitaEmail(pacienteDni, pacienteNombre, fecha, hora, tipo, notas, userId, userSettings) {
   if (!pacienteDni || !userId) return;
-  // Check if auto email is enabled (default: true)
   if (userSettings && userSettings.autoEmailCita === false) return;
   try {
-    // Get patient to find responsable email
-    const q2 = query(collection(db, "pacientes"), where("userId", "==", visitorId_placeholder));
-    // Actually, we need to find the patient by DNI + userId
     const pacQuery = query(collection(db, "pacientes"), where("userId", "==", userId), where("dni", "==", pacienteDni));
     const pacSnap = await getDocs(pacQuery);
     if (pacSnap.empty) return;
@@ -45,7 +41,6 @@ async function sendCitaEmail(pacienteDni, pacienteNombre, fecha, hora, tipo, not
     const email = pacData.responsable?.email;
     if (!email) return;
 
-    // Get consultorio data from user settings
     let consultorio = null;
     if (userSettings) {
       const cNombre = userSettings.consultorioNombre;
@@ -60,22 +55,11 @@ async function sendCitaEmail(pacienteDni, pacienteNombre, fecha, hora, tipo, not
     const res = await fetch("/api/send-cita-email", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        to: email,
-        paciente: pacienteNombre,
-        fecha: fecha,
-        hora: hora || "",
-        tipo: tipo || "",
-        notas: notas || "",
-        consultorio: consultorio
-      })
+      body: JSON.stringify({ to: email, paciente: pacienteNombre, fecha, hora: hora || "", tipo: tipo || "", notas: notas || "", consultorio })
     });
     const data = await res.json();
-    if (data.success) {
-      console.log("Email de cita enviado a:", email);
-    } else {
-      console.warn("Error enviando email de cita:", data.error);
-    }
+    if (data.success) console.log("Email de cita enviado a:", email);
+    else console.warn("Error enviando email:", data.error);
   } catch (e) {
     console.warn("Error enviando email de cita:", e.message);
   }
@@ -101,8 +85,7 @@ export default function CalendarPage({ userId, nfy, userSettings }) {
     try {
       const q2 = query(collection(db, "citas"), where("userId", "==", userId));
       const snap = await getDocs(q2);
-      const all = snap.docs.map(d => ({ _fbId: d.id, ...d.data() }));
-      setCitas(all);
+      setCitas(snap.docs.map(d => ({ _fbId: d.id, ...d.data() })));
     } catch (e) { console.error("Error cargando citas:", e); }
     setLoading(false);
   }, [userId, year, month]);
@@ -110,9 +93,7 @@ export default function CalendarPage({ userId, nfy, userSettings }) {
   useEffect(() => {
     if(!userId) return;
     const q2 = query(collection(db, "pacientes"), where("userId", "==", userId));
-    getDocs(q2).then(snap => {
-      setPacientes(snap.docs.map(d => ({ _fbId: d.id, ...d.data() })));
-    }).catch(e => console.error(e));
+    getDocs(q2).then(snap => { setPacientes(snap.docs.map(d => ({ _fbId: d.id, ...d.data() }))); }).catch(e => console.error(e));
   }, [userId]);
 
   useEffect(() => { loadCitas(); }, [loadCitas]);
@@ -145,10 +126,8 @@ export default function CalendarPage({ userId, nfy, userSettings }) {
     setPacSearchDni(dniVal);
     if(dniVal.length >= 7){
       var found = pacientes.find(p => p.dni === dniVal);
-      if(found){
-        setSelectedPac(found);
-        setForm(p => ({ ...p, paciente: found.nombre, pacienteDni: found.dni, pacienteFechaNac: found.fechaNac || "" }));
-      } else { setSelectedPac(null); }
+      if(found){ setSelectedPac(found); setForm(p => ({ ...p, paciente: found.nombre, pacienteDni: found.dni, pacienteFechaNac: found.fechaNac || "" })); }
+      else { setSelectedPac(null); }
     } else { setSelectedPac(null); }
   };
 
@@ -163,21 +142,12 @@ export default function CalendarPage({ userId, nfy, userSettings }) {
     const data = { ...form, paciente: form.paciente.trim(), fecha: key, userId, updatedAt: new Date().toISOString() };
     const isNewCita = !editId;
     try {
-      if (editId) {
-        await updateDoc(doc(db, "citas", editId), data);
-        nfy("Cita actualizada", "ok");
-      } else {
-        data.createdAt = new Date().toISOString();
-        await addDoc(collection(db, "citas"), data);
-        nfy("Cita guardada", "ok");
-      }
+      if (editId) { await updateDoc(doc(db, "citas", editId), data); nfy("Cita actualizada", "ok"); }
+      else { data.createdAt = new Date().toISOString(); await addDoc(collection(db, "citas"), data); nfy("Cita guardada", "ok"); }
       await loadCitas();
       setShowForm(false); setEditId(null); setSelectedPac(null); setShowPacSearch(false);
-      // Send email only for new citas (not edits) and only if patient was selected via DNI
       if (isNewCita && form.pacienteDni) {
-        sendCitaEmail(form.pacienteDni, form.paciente.trim(), key, form.hora, form.tipo, form.notas, userId, userSettings)
-          .then(() => {})
-          .catch(() => {});
+        sendCitaEmail(form.pacienteDni, form.paciente.trim(), key, form.hora, form.tipo, form.notas, userId, userSettings).catch(() => {});
       }
     } catch (e) { nfy("Error: " + e.message, "er"); }
   };
@@ -257,7 +227,6 @@ export default function CalendarPage({ userId, nfy, userSettings }) {
           <h3 style={{ fontSize: 16, fontWeight: 700, color: K.sd }}>{editId ? "Editar cita" : "Nueva cita"} – {selDay} de {MONTHS[month]}</h3>
           <button onClick={() => { setShowForm(false); setEditId(null); setSelectedPac(null); setShowPacSearch(false); }} style={{ background: "none", border: "none", fontSize: 18, color: K.mt, cursor: "pointer" }}>×</button>
         </div>
-
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
           <div style={{ gridColumn: "1/-1" }}>
             <label style={{ fontSize: 12, fontWeight: 600, color: K.mt, display: "block", marginBottom: 4 }}>Nombre del paciente</label>
@@ -311,7 +280,6 @@ export default function CalendarPage({ userId, nfy, userSettings }) {
             <textarea value={form.notas} onChange={e => setForm(p => ({ ...p, notas: e.target.value }))} rows={3} style={{ ...I, resize: "vertical" }} placeholder={"Observaciones, objetivos de la sesión..."} />
           </div>
         </div>
-
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 18 }}>
           <button onClick={() => { setShowForm(false); setEditId(null); setSelectedPac(null); setShowPacSearch(false); }} style={{ background: "#f1f5f9", border: "none", padding: "10px 20px", borderRadius: 8, fontSize: 14, cursor: "pointer", color: K.mt }}>Cancelar</button>
           <button onClick={saveCita} style={{ background: K.ac, color: "#fff", border: "none", padding: "10px 24px", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer" }}>{editId ? "Actualizar" : "Guardar"}</button>
