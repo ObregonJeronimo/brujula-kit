@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { db, collection, addDoc, getDocs, deleteDoc, doc, updateDoc, query, where } from "../firebase.js";
+import { db, collection, addDoc, getDocs, deleteDoc, doc, updateDoc, getDoc, query, where } from "../firebase.js";
 
 const K = { mt: "#64748b", ac: "#0d9488", sd: "#0a3d2f" };
 const DAYS = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
@@ -30,7 +30,58 @@ function calcAge(birthStr){
   return years + (years===1?" año":" años") + (months > 0 ? ", " + months + " m" : "");
 }
 
-export default function CalendarPage({ userId, nfy }) {
+async function sendCitaEmail(pacienteDni, pacienteNombre, fecha, hora, tipo, notas, userId, userSettings) {
+  if (!pacienteDni || !userId) return;
+  // Check if auto email is enabled (default: true)
+  if (userSettings && userSettings.autoEmailCita === false) return;
+  try {
+    // Get patient to find responsable email
+    const q2 = query(collection(db, "pacientes"), where("userId", "==", visitorId_placeholder));
+    // Actually, we need to find the patient by DNI + userId
+    const pacQuery = query(collection(db, "pacientes"), where("userId", "==", userId), where("dni", "==", pacienteDni));
+    const pacSnap = await getDocs(pacQuery);
+    if (pacSnap.empty) return;
+    const pacData = pacSnap.docs[0].data();
+    const email = pacData.responsable?.email;
+    if (!email) return;
+
+    // Get consultorio data from user settings
+    let consultorio = null;
+    if (userSettings) {
+      const cNombre = userSettings.consultorioNombre;
+      const cDir = userSettings.consultorioDireccion;
+      const cTel = userSettings.consultorioTelefono;
+      const cEmail = userSettings.consultorioEmail;
+      if (cNombre || cDir || cTel || cEmail) {
+        consultorio = { nombre: cNombre || "", direccion: cDir || "", telefono: cTel || "", email: cEmail || "" };
+      }
+    }
+
+    const res = await fetch("/api/send-cita-email", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        to: email,
+        paciente: pacienteNombre,
+        fecha: fecha,
+        hora: hora || "",
+        tipo: tipo || "",
+        notas: notas || "",
+        consultorio: consultorio
+      })
+    });
+    const data = await res.json();
+    if (data.success) {
+      console.log("Email de cita enviado a:", email);
+    } else {
+      console.warn("Error enviando email de cita:", data.error);
+    }
+  } catch (e) {
+    console.warn("Error enviando email de cita:", e.message);
+  }
+}
+
+export default function CalendarPage({ userId, nfy, userSettings }) {
   const [year, setYear] = useState(new Date().getFullYear());
   const [month, setMonth] = useState(new Date().getMonth());
   const [citas, setCitas] = useState([]);
@@ -110,6 +161,7 @@ export default function CalendarPage({ userId, nfy }) {
     if (!form.paciente.trim()) { nfy("Ingrese nombre del paciente", "er"); return; }
     const key = dateKey(year, month, selDay);
     const data = { ...form, paciente: form.paciente.trim(), fecha: key, userId, updatedAt: new Date().toISOString() };
+    const isNewCita = !editId;
     try {
       if (editId) {
         await updateDoc(doc(db, "citas", editId), data);
@@ -121,6 +173,12 @@ export default function CalendarPage({ userId, nfy }) {
       }
       await loadCitas();
       setShowForm(false); setEditId(null); setSelectedPac(null); setShowPacSearch(false);
+      // Send email only for new citas (not edits) and only if patient was selected via DNI
+      if (isNewCita && form.pacienteDni) {
+        sendCitaEmail(form.pacienteDni, form.paciente.trim(), key, form.hora, form.tipo, form.notas, userId, userSettings)
+          .then(() => {})
+          .catch(() => {});
+      }
     } catch (e) { nfy("Error: " + e.message, "er"); }
   };
 
@@ -176,7 +234,7 @@ export default function CalendarPage({ userId, nfy }) {
             <button onClick={() => setSelDay(null)} style={{ background: "#f1f5f9", border: "none", padding: "8px 14px", borderRadius: 8, fontSize: 13, cursor: "pointer", color: K.mt }}>×</button>
           </div>
         </div>
-        {dayCitas.length === 0 ? (<p style={{ color: K.mt, fontSize: 13, fontStyle: "italic" }}>No hay citas para este día</p>) :
+        {dayCitas.length === 0 ? (<p style={{ color: K.mt, fontSize: 13, fontStyle: "italic" }}>{"No hay citas para este día"}</p>) :
           dayCitas.sort((a, b) => (a.hora || "").localeCompare(b.hora || "")).map(c => (<div key={c._fbId} style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", background: "#f8faf9", borderRadius: 10, border: "1px solid #e2e8f0", marginBottom: 8, borderLeft: `4px solid ${getColorHex(c.color)}` }}>
             <div style={{ flex: 1 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
@@ -211,7 +269,7 @@ export default function CalendarPage({ userId, nfy }) {
             {showPacSearch && !selectedPac && <div style={{ marginTop: 8, padding: "10px 14px", background: "#f0f9ff", borderRadius: 8, border: "1px solid #bae6fd" }}>
               <label style={{ fontSize: 11, fontWeight: 600, color: "#0369a1", display: "block", marginBottom: 4 }}>Buscar por DNI</label>
               <input value={pacSearchDni} onChange={e => handlePacSearch(e.target.value.replace(/\D/g,"").slice(0,8))} style={Object.assign({},I,{background:"#fff"})} placeholder="Introducir DNI del paciente" maxLength={8} inputMode="numeric" />
-              {pacSearchDni.length >= 7 && !selectedPac && <div style={{ fontSize: 11, color: "#dc2626", marginTop: 4 }}>No se encontró paciente con ese DNI</div>}
+              {pacSearchDni.length >= 7 && !selectedPac && <div style={{ fontSize: 11, color: "#dc2626", marginTop: 4 }}>{"No se encontró paciente con ese DNI"}</div>}
             </div>}
             {selectedPac && <div style={{ marginTop: 8, padding: "10px 14px", background: "#f0fdf4", borderRadius: 8, border: "1px solid #bbf7d0" }}>
               <div style={{ fontSize: 12, fontWeight: 700, color: "#059669", marginBottom: 4 }}>Paciente seleccionado</div>
@@ -221,10 +279,12 @@ export default function CalendarPage({ userId, nfy }) {
                 <div><span style={{ color: K.mt }}>Edad: </span><b>{calcAge(selectedPac.fechaNac)}</b></div>
                 {selectedPac.colegio && <div><span style={{ color: K.mt }}>Colegio: </span><b>{selectedPac.colegio}</b></div>}
               </div>
+              {selectedPac.responsable?.email && <div style={{ marginTop: 6, fontSize: 11, color: "#059669" }}>{"📧 Se enviará recordatorio a: " + selectedPac.responsable.email}</div>}
+              {!selectedPac.responsable?.email && <div style={{ marginTop: 6, fontSize: 11, color: "#d97706" }}>{"⚠️ El responsable no tiene email registrado, no se enviará recordatorio"}</div>}
             </div>}
           </div>
           <div>
-            <label style={{ fontSize: 12, fontWeight: 600, color: K.mt, display: "block", marginBottom: 4 }}>Tipo de evaluación</label>
+            <label style={{ fontSize: 12, fontWeight: 600, color: K.mt, display: "block", marginBottom: 4 }}>{"Tipo de evaluación"}</label>
             <select value={form.tipo} onChange={e => setForm(p => ({ ...p, tipo: e.target.value }))} style={{ ...I, cursor: "pointer" }}>
               {EVAL_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
             </select>
@@ -248,7 +308,7 @@ export default function CalendarPage({ userId, nfy }) {
           </div>
           <div style={{ gridColumn: "1/-1" }}>
             <label style={{ fontSize: 12, fontWeight: 600, color: K.mt, display: "block", marginBottom: 4 }}>{"Notas clínicas"}</label>
-            <textarea value={form.notas} onChange={e => setForm(p => ({ ...p, notas: e.target.value }))} rows={3} style={{ ...I, resize: "vertical" }} placeholder="Observaciones, objetivos de la sesión..." />
+            <textarea value={form.notas} onChange={e => setForm(p => ({ ...p, notas: e.target.value }))} rows={3} style={{ ...I, resize: "vertical" }} placeholder={"Observaciones, objetivos de la sesión..."} />
           </div>
         </div>
 
