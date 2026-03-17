@@ -16,11 +16,7 @@ function lazyRetry(fn){
     return fn().catch(function(err){
       var lastReload = parseInt(sessionStorage.getItem("lazyReload")||"0");
       var now = Date.now();
-      if(now - lastReload > 10000){
-        sessionStorage.setItem("lazyReload", now+"");
-        window.location.reload();
-        return new Promise(function(){});
-      }
+      if(now - lastReload > 10000){ sessionStorage.setItem("lazyReload", now+""); window.location.reload(); return new Promise(function(){}); }
       throw err;
     });
   });
@@ -34,7 +30,6 @@ var PacientesPage = lazyRetry(function(){ return import("./components/PacientesP
 var AdminPanel = lazyRetry(function(){ return import("./components/AdminPanel.jsx"); });
 var AdminStats = lazyRetry(function(){ return import("./components/AdminStats.jsx"); });
 var SettingsPage = lazyRetry(function(){ return import("./components/SettingsPage.jsx"); });
-
 var NewELDI = lazyRetry(function(){ return import("./components/NewELDI.jsx"); });
 var NewOFA = lazyRetry(function(){ return import("./components/NewOFA.jsx"); });
 var NewFON = lazyRetry(function(){ return import("./components/NewFON.jsx"); });
@@ -55,12 +50,7 @@ class ErrorBoundary extends Component {
   render(){
     if(this.state.hasError){
       var self = this;
-      return <div style={{padding:40,textAlign:"center"}}>
-        <div style={{fontSize:48,marginBottom:16}}>{"⚠️"}</div>
-        <h2 style={{fontSize:18,fontWeight:700,color:"#0a3d2f",marginBottom:8}}>{"Algo salió mal"}</h2>
-        <p style={{fontSize:13,color:"#64748b",marginBottom:20}}>{this.state.error ? this.state.error.message : "Error inesperado"}</p>
-        <button onClick={function(){ self.setState({hasError:false,error:null}); if(self.props.onReset) self.props.onReset(); }} style={{padding:"12px 24px",background:"#0d9488",color:"#fff",border:"none",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer"}}>{"Volver al Panel"}</button>
-      </div>;
+      return <div style={{padding:40,textAlign:"center"}}><div style={{fontSize:48,marginBottom:16}}>{"⚠️"}</div><h2 style={{fontSize:18,fontWeight:700,color:"#0a3d2f",marginBottom:8}}>{"Algo salió mal"}</h2><p style={{fontSize:13,color:"#64748b",marginBottom:20}}>{this.state.error ? this.state.error.message : "Error inesperado"}</p><button onClick={function(){ self.setState({hasError:false,error:null}); if(self.props.onReset) self.props.onReset(); }} style={{padding:"12px 24px",background:"#0d9488",color:"#fff",border:"none",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer"}}>{"Volver al Panel"}</button></div>;
     }
     return this.props.children;
   }
@@ -69,7 +59,6 @@ class ErrorBoundary extends Component {
 var NEW_COMPONENTS = { newELDI: NewELDI, newOFA: NewOFA, newFON: NewFON, newREP: NewREP, newDISC: NewDISC, newRECO: NewRECO };
 var RPT_COMPONENTS = { rptP: RptPEFF, rptR: RptREP, rptD: RptDISC, rptRC: RptRECO };
 var ALL_NEW_VIEWS = Object.keys(NEW_COMPONENTS);
-
 var isMobile = function(){ return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) && window.innerWidth < 900; };
 
 var I = function(d){ return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">{d}</svg>; };
@@ -93,22 +82,7 @@ var _paymentId = _urlParams.get("payment_id") || _urlParams.get("collection_id")
 if(_paymentFlag || _paymentId){ window.history.replaceState({},"",window.location.pathname); }
 
 function UnsavedChangesModal({ onDiscard, onCancel, onSave, saving }){
-  return <div style={{position:"fixed",inset:0,zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,.4)",backdropFilter:"blur(4px)",animation:"fi .15s ease"}}>
-    <div style={{background:"#fff",borderRadius:16,padding:"32px 28px",width:400,maxWidth:"90vw",boxShadow:"0 20px 60px rgba(0,0,0,.2)"}}>
-      <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:16}}>
-        <div style={{width:40,height:40,borderRadius:10,background:"#fff7ed",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>{"⚠️"}</div>
-        <div>
-          <div style={{fontSize:16,fontWeight:700,color:"#0a3d2f"}}>Cambios sin guardar</div>
-          <div style={{fontSize:13,color:"#64748b",marginTop:2}}>{"Realizaste cambios en la configuración que no fueron guardados."}</div>
-        </div>
-      </div>
-      <div style={{display:"flex",gap:10,marginTop:20}}>
-        <button onClick={onDiscard} style={{flex:1,padding:"11px 0",background:"#f1f5f9",border:"1px solid #e2e8f0",borderRadius:10,fontSize:13,fontWeight:600,cursor:"pointer",color:"#64748b"}}>Descartar</button>
-        <button onClick={onCancel} style={{flex:1,padding:"11px 0",background:"#fff",border:"1px solid #e2e8f0",borderRadius:10,fontSize:13,fontWeight:600,cursor:"pointer",color:"#334155"}}>Cancelar</button>
-        <button onClick={onSave} disabled={saving} style={{flex:1,padding:"11px 0",background:"#0d9488",border:"none",borderRadius:10,fontSize:13,fontWeight:700,cursor:saving?"wait":"pointer",color:"#fff",opacity:saving?.7:1}}>{saving?"Guardando...":"Guardar"}</button>
-      </div>
-    </div>
-  </div>;
+  return <div style={{position:"fixed",inset:0,zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,.4)",backdropFilter:"blur(4px)",animation:"fi .15s ease"}}><div style={{background:"#fff",borderRadius:16,padding:"32px 28px",width:400,maxWidth:"90vw",boxShadow:"0 20px 60px rgba(0,0,0,.2)"}}><div style={{display:"flex",alignItems:"center",gap:12,marginBottom:16}}><div style={{width:40,height:40,borderRadius:10,background:"#fff7ed",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>{"⚠️"}</div><div><div style={{fontSize:16,fontWeight:700,color:"#0a3d2f"}}>Cambios sin guardar</div><div style={{fontSize:13,color:"#64748b",marginTop:2}}>{"Realizaste cambios en la configuración que no fueron guardados."}</div></div></div><div style={{display:"flex",gap:10,marginTop:20}}><button onClick={onDiscard} style={{flex:1,padding:"11px 0",background:"#f1f5f9",border:"1px solid #e2e8f0",borderRadius:10,fontSize:13,fontWeight:600,cursor:"pointer",color:"#64748b"}}>Descartar</button><button onClick={onCancel} style={{flex:1,padding:"11px 0",background:"#fff",border:"1px solid #e2e8f0",borderRadius:10,fontSize:13,fontWeight:600,cursor:"pointer",color:"#334155"}}>Cancelar</button><button onClick={onSave} disabled={saving} style={{flex:1,padding:"11px 0",background:"#0d9488",border:"none",borderRadius:10,fontSize:13,fontWeight:700,cursor:saving?"wait":"pointer",color:"#fff",opacity:saving?.7:1}}>{saving?"Guardando...":"Guardar"}</button></div></div></div>;
 }
 
 export default function App() {
@@ -127,8 +101,7 @@ export default function App() {
   var _et = useState(null), enabledTools = _et[0], setEnabledTools = _et[1];
   var _activeDraft = useState(null), activeDraft = _activeDraft[0], setActiveDraft = _activeDraft[1];
   var _userSettings = useState(null), userSettings = _userSettings[0], setUserSettings = _userSettings[1];
-  var configDirtyRef = useRef(false);
-  var settingsRef = useRef(null);
+  var configDirtyRef = useRef(false); var settingsRef = useRef(null);
   var _unsavedModal = useState(null), unsavedModal = _unsavedModal[0], setUnsavedModal = _unsavedModal[1];
   var _savingModal = useState(false), savingModal = _savingModal[0], setSavingModal = _savingModal[1];
   var nfy = useCallback(function(m,t){ sT({m:m,t:t}); setTimeout(function(){sT(null)},4500); },[]);
@@ -162,87 +135,47 @@ export default function App() {
   var loadEvals = useCallback(function(){
     if(!profile) return; sL(true);
     var p = profile.role==="admin" ? fbGetAll("evaluaciones") : fbGetFiltered("evaluaciones",authUser.uid);
-    p.then(function(res){
-      if(profile.role==="admin") res.sort(function(a,b){return(b.fechaGuardado||"").localeCompare(a.fechaGuardado||"")});
-      setAllEvals(res);
-    }).catch(function(e){console.error("loadEvals error:",e); setAllEvals([]);}).finally(function(){sL(false)});
+    p.then(function(res){ if(profile.role==="admin") res.sort(function(a,b){return(b.fechaGuardado||"").localeCompare(a.fechaGuardado||"")}); setAllEvals(res); }).catch(function(e){console.error("loadEvals error:",e); setAllEvals([]);}).finally(function(){sL(false)});
   },[profile,authUser]);
 
   useEffect(function(){ if(profile && !sessionBlocked) loadEvals(); },[profile,loadEvals,sessionBlocked]);
 
   useEffect(function(){
     if(!profile) return;
-    getDoc(doc(db,"config","tools")).then(function(snap){
-      if(snap.exists()){
-        var cfg = snap.data();
-        var enabled = {};
-        Object.keys(cfg).forEach(function(k){ enabled[k] = cfg[k].enabled !== false; });
-        setEnabledTools(enabled);
-      }
-    }).catch(function(){});
+    getDoc(doc(db,"config","tools")).then(function(snap){ if(snap.exists()){ var cfg = snap.data(); var enabled = {}; Object.keys(cfg).forEach(function(k){ enabled[k] = cfg[k].enabled !== false; }); setEnabledTools(enabled); } }).catch(function(){});
   },[profile]);
 
   var goToPremium = function(){ sV("premium"); sS(null); window.scrollTo({top:0,behavior:"smooth"}); };
-
   var prevViewRef = useRef("dash");
   var doNav = function(v){ prevViewRef.current = view; window.history.pushState({view:v}, "", ""); sV(v); sS(null); window.scrollTo({top:0,behavior:"smooth"}); };
-
   var navTo = function(v){
-    if(ALL_NEW_VIEWS.indexOf(view) !== -1 && v!==view){
-      if(!window.confirm("Salir de la evaluacion?\n\nLa evaluacion no se guarda a medias y el credito consumido no se recupera.")) return;
-    }
+    if(ALL_NEW_VIEWS.indexOf(view) !== -1 && v!==view){ if(!window.confirm("Salir de la evaluacion?\n\nLa evaluacion no se guarda a medias y el credito consumido no se recupera.")) return; }
     if(view === "config" && v !== "config" && configDirtyRef.current){ setUnsavedModal(v); return; }
     doNav(v);
   };
 
   useEffect(function(){
     var onPop = function(e){
-      if(ALL_NEW_VIEWS.indexOf(view) !== -1){
-        if(!window.confirm("Salir de la evaluacion?\n\nLa evaluacion no se guarda a medias.")) { window.history.pushState({view:view}, "", ""); return; }
-      }
+      if(ALL_NEW_VIEWS.indexOf(view) !== -1){ if(!window.confirm("Salir de la evaluacion?\n\nLa evaluacion no se guarda a medias.")) { window.history.pushState({view:view}, "", ""); return; } }
       if(view === "config" && configDirtyRef.current){ window.history.pushState({view:view}, "", ""); setUnsavedModal(prevViewRef.current || "dash"); return; }
       sV(prevViewRef.current || "dash"); sS(null);
     };
-    window.addEventListener("popstate", onPop);
-    window.history.replaceState({view:"dash"}, "", "");
+    window.addEventListener("popstate", onPop); window.history.replaceState({view:"dash"}, "", "");
     return function(){ window.removeEventListener("popstate", onPop); };
   },[view]);
 
   var checkCredits = function(){ if(!profile) return false; if(profile.role==="admin") return true; if((profile.creditos||0)<1){ setShowNoCredits(true); return false; } return true; };
   var deductCredit = function(){ if(!profile || profile.role==="admin") return Promise.resolve(true); var userRef = doc(db,"usuarios",authUser.uid); return updateDoc(userRef,{creditos:increment(-1)}).then(function(){ return getDoc(userRef); }).then(function(fresh){ if(fresh.exists()){ var newCredits = fresh.data().creditos; setProfile(function(p){return Object.assign({},p,{creditos:newCredits})}); } return true; }).catch(function(e){ nfy("Error al descontar cr\u00e9dito: " + e.message, "er"); return false; }); };
   var startEval = function(toolId){ if(!checkCredits()) return; if(!isAdmin){ var showWarning = !userSettings || userSettings.creditWarning !== false; if(showWarning){ var ok = window.confirm("Iniciar evaluacion?\n\nSe consumira 1 credito de tu cuenta. Esta accion no se puede deshacer.\n\nEste aviso se puede desactivar en Configuraci\u00f3n \u2192 General."); if(!ok) return; } deductCredit().then(function(success){ if(success){ prevViewRef.current=view; window.history.pushState({view:toolId},"",""); sV(toolId); } }); } else { prevViewRef.current=view; window.history.pushState({view:toolId},"",""); sV(toolId); } };
-
   var onEvalDone = function(data){ if(data === "tools"){ setActiveDraft(null); sV("tools"); sS(null); loadEvals(); window.scrollTo({top:0,behavior:"smooth"}); return; } };
-
-  var resumeDraft = function(draft){
-    var evalConfig = null;
-    for(var k in EVAL_TYPES){ if(EVAL_TYPES[k].id === draft.evalType){ evalConfig = EVAL_TYPES[k]; break; } }
-    if(!evalConfig){ return; }
-    setActiveDraft(draft);
-    prevViewRef.current = "tools";
-    window.history.pushState({view:evalConfig.newView},"","");
-    sV(evalConfig.newView);
-  };
-
+  var resumeDraft = function(draft){ var evalConfig = null; for(var k in EVAL_TYPES){ if(EVAL_TYPES[k].id === draft.evalType){ evalConfig = EVAL_TYPES[k]; break; } } if(!evalConfig){ return; } setActiveDraft(draft); prevViewRef.current = "tools"; window.history.pushState({view:evalConfig.newView},"",""); sV(evalConfig.newView); };
   var viewReport = function(ev){ sS(ev); var rv = rptViewFor(ev.tipo); if(rv){ prevViewRef.current=view; window.history.pushState({view:rv},"",""); sV(rv); } };
-
-  var deleteEval = function(fbId){
-    fbDelete("evaluaciones",fbId).then(function(res){
-      if(res.success){ nfy("Evaluaci\u00f3n eliminada","ok"); loadEvals(); } else nfy("Error: "+res.error,"er");
-      sS(null); sV("hist");
-    });
-  };
-
+  var deleteEval = function(fbId){ fbDelete("evaluaciones",fbId).then(function(res){ if(res.success){ nfy("Evaluaci\u00f3n eliminada","ok"); loadEvals(); } else nfy("Error: "+res.error,"er"); sS(null); sV("hist"); }); };
   var handleLogout = function(){ var p = authUser?.uid ? releaseSessionLock(authUser.uid) : Promise.resolve(); p.then(function(){ return signOut(auth); }).then(function(){ setAuthUser(null); setProfile(null); setSessionBlocked(false); sV("dash"); sS(null); }); };
 
   var handleUnsavedDiscard = function(){ configDirtyRef.current = false; var dest = unsavedModal; setUnsavedModal(null); doNav(dest); };
   var handleUnsavedCancel = function(){ setUnsavedModal(null); };
-  var handleUnsavedSave = function(){
-    if(settingsRef.current && settingsRef.current.save){
-      setSavingModal(true);
-      settingsRef.current.save().then(function(ok){ setSavingModal(false); configDirtyRef.current = false; var dest = unsavedModal; setUnsavedModal(null); doNav(dest); });
-    } else { setUnsavedModal(null); }
-  };
+  var handleUnsavedSave = function(){ if(settingsRef.current && settingsRef.current.save){ setSavingModal(true); settingsRef.current.save().then(function(ok){ setSavingModal(false); configDirtyRef.current = false; var dest = unsavedModal; setUnsavedModal(null); doNav(dest); }); } else { setUnsavedModal(null); } };
 
   if(authUser===undefined) return (<div style={{width:"100vw",height:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#0a3d2f",color:"#fff",fontFamily:"'DM Sans',system-ui,sans-serif"}}><div style={{textAlign:"center"}}><img src="/img/logo_sin_fondo.png" alt="Br\u00fajula KIT" style={{width:48,height:48,marginBottom:16}} /><div style={{fontSize:20,fontWeight:700}}>Cargando...</div></div></div>);
   if(!authUser) return <AuthScreen onDone={function(u,p){setAuthUser(u);setProfile(p)}} />;
@@ -275,7 +208,7 @@ export default function App() {
           {RPT_COMPONENTS[view] && sel && (function(){ var C = RPT_COMPONENTS[view]; return <C ev={sel} onD={deleteEval} userSettings={userSettings} />; })()}
           {view==="profile"&&<ProfilePage profile={profile} authUser={authUser} nfy={nfy} onBuyCredits={goToPremium} />}
           {view==="pacientes"&&<PacientesPage userId={authUser?.uid} nfy={nfy} allEvals={allEvals} />}
-          {view==="calendario"&&<CalendarPage userId={authUser?.uid} nfy={nfy} userSettings={userSettings} />}
+          {view==="calendario"&&<CalendarPage userId={authUser?.uid} nfy={nfy} userSettings={userSettings} profesionalNombre={profile?.nombre || profile?.username || ""} />}
           {view==="premium"&&<PremiumPage profile={profile} authUser={authUser} nfy={nfy} onBack={function(){sV("dash")}} />}
           {view==="config"&&<SettingsPage ref={settingsRef} userId={authUser?.uid} nfy={nfy} profile={profile} onSettingsChange={function(s){ setUserSettings(s); }} onDirtyChange={function(d){ configDirtyRef.current = d; }} />}
           {view==="adm"&&isAdmin&&<AdminPanel nfy={nfy} />}
