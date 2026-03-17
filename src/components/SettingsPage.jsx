@@ -17,9 +17,16 @@ var REMINDER_OPTIONS = [
   { value:10, label:"10 días" }
 ];
 
+var TABS = [
+  { id:"consultorio", label:"Consultorio", icon:"🏥" },
+  { id:"general", label:"General", icon:"🔧" },
+  { id:"acerca", label:"Acerca de", icon:"ℹ️" }
+];
+
 var SettingsPage = forwardRef(function SettingsPageInner({ userId, nfy, profile, onSettingsChange, onDirtyChange }, ref) {
   var _ld = useState(true), loading = _ld[0], setLoading = _ld[1];
   var _saving = useState(false), saving = _saving[0], setSaving = _saving[1];
+  var _tab = useState("consultorio"), activeTab = _tab[0], setActiveTab = _tab[1];
 
   var _cName = useState(""), cName = _cName[0], setCName = _cName[1];
   var _cDir = useState(""), cDir = _cDir[0], setCDir = _cDir[1];
@@ -52,15 +59,9 @@ var SettingsPage = forwardRef(function SettingsPageInner({ userId, nfy, profile,
           autoEmail: s.autoEmailCita !== false
         };
         origRef.current = orig;
-        setCName(orig.cName);
-        setCDir(orig.cDir);
-        setCTel(orig.cTel);
-        setCEmail(orig.cEmail);
-        setShowInReport(orig.showInReport);
-        setCreditWarning(orig.creditWarning);
-        setCitaReminder(orig.citaReminder);
-        setReminderDays(orig.reminderDays);
-        setAutoEmail(orig.autoEmail);
+        setCName(orig.cName); setCDir(orig.cDir); setCTel(orig.cTel); setCEmail(orig.cEmail);
+        setShowInReport(orig.showInReport); setCreditWarning(orig.creditWarning);
+        setCitaReminder(orig.citaReminder); setReminderDays(orig.reminderDays); setAutoEmail(orig.autoEmail);
       }
     }).catch(function(e){ console.error(e); }).finally(function(){ setLoading(false); });
   }, [userId]);
@@ -71,9 +72,7 @@ var SettingsPage = forwardRef(function SettingsPageInner({ userId, nfy, profile,
     return cName !== o.cName || cDir !== o.cDir || cTel !== o.cTel || cEmail !== o.cEmail || showInReport !== o.showInReport || creditWarning !== o.creditWarning || citaReminder !== o.citaReminder || reminderDays !== o.reminderDays || autoEmail !== o.autoEmail;
   };
 
-  useEffect(function(){
-    if(onDirtyChange) onDirtyChange(isDirty());
-  });
+  useEffect(function(){ if(onDirtyChange) onDirtyChange(isDirty()); });
 
   var allFieldsFilled = cName.trim() && cDir.trim() && cTel.trim() && cEmail.trim();
 
@@ -82,15 +81,10 @@ var SettingsPage = forwardRef(function SettingsPageInner({ userId, nfy, profile,
       if(!userId){ resolve(false); return; }
       setSaving(true);
       var settings = {
-        consultorioNombre: cName.trim(),
-        consultorioDireccion: cDir.trim(),
-        consultorioTelefono: cTel.trim(),
-        consultorioEmail: cEmail.trim(),
-        showConsultorioInReport: showInReport,
-        creditWarning: creditWarning,
-        citaReminder: citaReminder,
-        reminderDays: reminderDays,
-        autoEmailCita: autoEmail
+        consultorioNombre: cName.trim(), consultorioDireccion: cDir.trim(),
+        consultorioTelefono: cTel.trim(), consultorioEmail: cEmail.trim(),
+        showConsultorioInReport: showInReport, creditWarning: creditWarning,
+        citaReminder: citaReminder, reminderDays: reminderDays, autoEmailCita: autoEmail
       };
       updateDoc(doc(db, "usuarios", userId), { settings: settings }).then(function(){
         nfy("Configuración guardada", "ok");
@@ -98,36 +92,27 @@ var SettingsPage = forwardRef(function SettingsPageInner({ userId, nfy, profile,
         if(onSettingsChange) onSettingsChange(settings);
         if(onDirtyChange) onDirtyChange(false);
         resolve(true);
-      }).catch(function(e){
-        nfy("Error al guardar: " + e.message, "er");
-        resolve(false);
-      }).finally(function(){ setSaving(false); });
+      }).catch(function(e){ nfy("Error al guardar: " + e.message, "er"); resolve(false); }).finally(function(){ setSaving(false); });
     });
   };
 
-  useImperativeHandle(ref, function(){
-    return { save: doSave };
-  });
+  useImperativeHandle(ref, function(){ return { save: doSave }; });
 
   var I = { width:"100%", padding:"10px 14px", border:"1px solid #e2e8f0", borderRadius:8, fontSize:14, background:"#f8faf9" };
 
   if(loading) return <div style={{animation:"fi .3s ease",textAlign:"center",padding:60}}><div style={{fontSize:16,fontWeight:600,color:K.mt}}>{"Cargando configuración..."}</div></div>;
 
-  return <div style={{animation:"fi .3s ease",width:"100%",maxWidth:700}}>
-    <h1 style={{fontSize:22,fontWeight:700,marginBottom:6}}>{"⚙️ Configuración"}</h1>
-    <p style={{color:K.mt,fontSize:14,marginBottom:24}}>{"Personalizá tu experiencia en Brújula KIT"}</p>
+  // Tab content renderers
+  var renderConsultorio = function(){
+    return <div style={{animation:"fi .2s ease"}}>
+      <p style={{fontSize:12,color:K.mt,marginBottom:18}}>{"Esta información se incluye en los informes de pacientes y en los emails automáticos de recordatorio de citas."}</p>
 
-    {/* DATOS DEL CONSULTORIO */}
-    <div style={{background:"#fff",borderRadius:12,border:"1px solid #e2e8f0",padding:24,marginBottom:20}}>
-      <h2 style={{fontSize:16,fontWeight:700,color:K.sd,marginBottom:4}}>{"🏥 Datos del consultorio"}</h2>
-      <p style={{fontSize:12,color:K.mt,marginBottom:16}}>{"Esta información se incluye en los informes de pacientes y en los emails automáticos de recordatorio de citas."}</p>
-
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 16px",background:showInReport?"#f0fdfa":"#f8fafc",borderRadius:10,border:showInReport?"1px solid #99f6e4":"1px solid #e2e8f0",marginBottom:16}}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 16px",background:showInReport?"#f0fdfa":"#f8fafc",borderRadius:10,border:showInReport?"1px solid #99f6e4":"1px solid #e2e8f0",marginBottom:18}}>
         <div>
           <div style={{fontSize:13,fontWeight:600,color:showInReport?K.sd:"#475569"}}>Mostrar en informe de paciente</div>
           {!allFieldsFilled && <div style={{fontSize:11,color:"#f59e0b",marginTop:2}}>{"Completá todos los campos para activar"}</div>}
         </div>
-        <Toggle value={showInReport} onChange={function(v){ if(v && !allFieldsFilled){ nfy("Completá todos los campos primero","er"); return; } setShowInReport(v); }} disabled={false} />
+        <Toggle value={showInReport} onChange={function(v){ if(v && !allFieldsFilled){ nfy("Completá todos los campos primero","er"); return; } setShowInReport(v); }} />
       </div>
 
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:14}}>
@@ -148,12 +133,11 @@ var SettingsPage = forwardRef(function SettingsPageInner({ userId, nfy, profile,
         <label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>Email de contacto</label>
         <input value={cEmail} onChange={function(e){ setCEmail(e.target.value); }} style={I} placeholder="Ej: contacto@consultorio.com" />
       </div>
-    </div>
+    </div>;
+  };
 
-    {/* GENERAL */}
-    <div style={{background:"#fff",borderRadius:12,border:"1px solid #e2e8f0",padding:24,marginBottom:20}}>
-      <h2 style={{fontSize:16,fontWeight:700,color:K.sd,marginBottom:16}}>{"🔧 General"}</h2>
-
+  var renderGeneral = function(){
+    return <div style={{animation:"fi .2s ease"}}>
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 16px",background:creditWarning?"#f0fdfa":"#f8fafc",borderRadius:10,border:creditWarning?"1px solid #99f6e4":"1px solid #e2e8f0",marginBottom:14}}>
         <div>
           <div style={{fontSize:13,fontWeight:600,color:creditWarning?K.sd:"#475569"}}>{"Aviso de uso de crédito al iniciar evaluación"}</div>
@@ -188,18 +172,47 @@ var SettingsPage = forwardRef(function SettingsPageInner({ userId, nfy, profile,
           </div>
         </div>}
       </div>
+    </div>;
+  };
+
+  var renderAcerca = function(){
+    return <div style={{animation:"fi .2s ease"}}>
+      <div style={{fontSize:14,color:"#475569",lineHeight:1.8}}>
+        <div style={{marginBottom:16}}>{"Versión actual del sistema:"}</div>
+        <div style={{display:"inline-block",padding:"10px 20px",background:"linear-gradient(135deg,#0a3d2f,#0d9488)",borderRadius:10,color:"#fff",fontSize:16,fontWeight:700,letterSpacing:"0.5px"}}>{"Brújula KIT V6.0"}</div>
+        <div style={{marginTop:20,fontSize:12,color:"#94a3b8",lineHeight:1.6}}>
+          {"Desarrollado para profesionales de fonoaudiología."}
+        </div>
+      </div>
+    </div>;
+  };
+
+  return <div style={{animation:"fi .3s ease",width:"100%",maxWidth:700}}>
+    <h1 style={{fontSize:22,fontWeight:700,marginBottom:6}}>{"⚙️ Configuración"}</h1>
+    <p style={{color:K.mt,fontSize:14,marginBottom:20}}>{"Personalizá tu experiencia en Brújula KIT"}</p>
+
+    {/* TABS NAV */}
+    <div style={{display:"flex",gap:0,marginBottom:0,borderBottom:"2px solid #e2e8f0"}}>
+      {TABS.map(function(t){
+        var active = activeTab === t.id;
+        return <button key={t.id} onClick={function(){ setActiveTab(t.id); }} style={{display:"flex",alignItems:"center",gap:6,padding:"12px 20px",background:"transparent",border:"none",borderBottom:active?"2px solid #0d9488":"2px solid transparent",marginBottom:"-2px",color:active?K.sd:"#94a3b8",fontSize:14,fontWeight:active?700:500,cursor:"pointer",transition:"all .15s ease"}}>
+          <span style={{fontSize:15}}>{t.icon}</span>
+          <span>{t.label}</span>
+        </button>;
+      })}
     </div>
 
-    {/* ACERCA DE */}
-    <div style={{background:"#fff",borderRadius:12,border:"1px solid #e2e8f0",padding:24,marginBottom:20}}>
-      <h2 style={{fontSize:16,fontWeight:700,color:K.sd,marginBottom:12}}>{"ℹ️ Acerca de"}</h2>
-      <div style={{fontSize:13,color:"#475569"}}>{"Versión actual del sistema: "}<b style={{color:K.sd}}>{"Brújula KIT V6.0"}</b></div>
+    {/* TAB CONTENT */}
+    <div style={{background:"#fff",borderRadius:"0 0 12px 12px",border:"1px solid #e2e8f0",borderTop:"none",padding:24,marginBottom:20,minHeight:200}}>
+      {activeTab === "consultorio" && renderConsultorio()}
+      {activeTab === "general" && renderGeneral()}
+      {activeTab === "acerca" && renderAcerca()}
     </div>
 
-    {/* GUARDAR */}
-    <button onClick={function(){ doSave(); }} disabled={saving} style={{width:"100%",padding:"14px",background:K.ac,color:"#fff",border:"none",borderRadius:10,fontSize:15,fontWeight:700,cursor:saving?"wait":"pointer",opacity:saving?.7:1,marginBottom:40}}>
+    {/* GUARDAR - only show on editable tabs */}
+    {activeTab !== "acerca" && <button onClick={function(){ doSave(); }} disabled={saving} style={{width:"100%",padding:"14px",background:K.ac,color:"#fff",border:"none",borderRadius:10,fontSize:15,fontWeight:700,cursor:saving?"wait":"pointer",opacity:saving?.7:1,marginBottom:40}}>
       {saving ? "Guardando..." : "Guardar configuración"}
-    </button>
+    </button>}
   </div>;
 });
 
