@@ -30,7 +30,7 @@ function calcAge(birthStr){
   return years + (years===1?" año":" años") + (months > 0 ? ", " + months + " m" : "");
 }
 
-async function sendCitaEmail(pacienteDni, pacienteNombre, fecha, hora, tipo, notas, userId, userSettings) {
+async function sendCitaEmail(pacienteDni, pacienteNombre, fecha, hora, tipo, notas, userId, userSettings, profesional) {
   if (!pacienteDni || !userId) return;
   if (userSettings && userSettings.autoEmailCita === false) return;
   try {
@@ -55,7 +55,7 @@ async function sendCitaEmail(pacienteDni, pacienteNombre, fecha, hora, tipo, not
     const res = await fetch("/api/send-cita-email", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ to: email, paciente: pacienteNombre, fecha, hora: hora || "", tipo: tipo || "", notas: notas || "", consultorio })
+      body: JSON.stringify({ to: email, paciente: pacienteNombre, fecha, hora: hora || "", tipo: tipo || "", notas: notas || "", consultorio, profesional: profesional || "" })
     });
     const data = await res.json();
     if (data.success) console.log("Email de cita enviado a:", email);
@@ -65,7 +65,7 @@ async function sendCitaEmail(pacienteDni, pacienteNombre, fecha, hora, tipo, not
   }
 }
 
-export default function CalendarPage({ userId, nfy, userSettings }) {
+export default function CalendarPage({ userId, nfy, userSettings, profesionalNombre }) {
   const [year, setYear] = useState(new Date().getFullYear());
   const [month, setMonth] = useState(new Date().getMonth());
   const [citas, setCitas] = useState([]);
@@ -147,7 +147,7 @@ export default function CalendarPage({ userId, nfy, userSettings }) {
       await loadCitas();
       setShowForm(false); setEditId(null); setSelectedPac(null); setShowPacSearch(false);
       if (isNewCita && form.pacienteDni) {
-        sendCitaEmail(form.pacienteDni, form.paciente.trim(), key, form.hora, form.tipo, form.notas, userId, userSettings).catch(() => {});
+        sendCitaEmail(form.pacienteDni, form.paciente.trim(), key, form.hora, form.tipo, form.notas, userId, userSettings, profesionalNombre).catch(() => {});
       }
     } catch (e) { nfy("Error: " + e.message, "er"); }
   };
