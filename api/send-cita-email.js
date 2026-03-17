@@ -4,7 +4,7 @@ export default async function handler(req, res) {
   const { Resend } = await import("resend");
   const resend = new Resend(process.env.RESEND_API_KEY);
 
-  const { to, paciente, fecha, hora, tipo, notas, consultorio } = req.body;
+  const { to, paciente, fecha, hora, tipo, notas, consultorio, profesional } = req.body;
 
   if (!to || !paciente || !fecha) {
     return res.status(400).json({ error: "Faltan campos requeridos: to, paciente, fecha" });
@@ -36,7 +36,7 @@ export default async function handler(req, res) {
     
     <div style="background:linear-gradient(135deg,#0a3d2f,#0d9488);padding:28px 32px;text-align:center">
       <div style="font-size:22px;font-weight:700;color:#ffffff;letter-spacing:0.5px">Recordatorio de Cita</div>
-      <div style="font-size:12px;color:#5eead4;margin-top:4px;font-weight:600;letter-spacing:1px">BRÚJULA KIT</div>
+      <div style="font-size:12px;color:#5eead4;margin-top:4px;font-weight:600;letter-spacing:1px">BR\u00daJULA KIT</div>
     </div>
 
     <div style="padding:28px 32px">
@@ -53,6 +53,7 @@ export default async function handler(req, res) {
           <div style="font-size:13px;color:#64748b;width:110px;font-weight:600">\u{1F552} Hora</div>
           <div style="font-size:14px;color:#0a3d2f;font-weight:700">${horaStr}</div>
         </div>
+        ${profesional ? '<div style="display:flex;margin-bottom:12px"><div style="font-size:13px;color:#64748b;width:110px;font-weight:600">\u{1F9D1}\u{200D}\u{2695}\u{FE0F} Profesional</div><div style="font-size:14px;color:#0a3d2f;font-weight:600">' + profesional + '</div></div>' : ''}
         ${tipo ? '<div style="display:flex;margin-bottom:12px"><div style="font-size:13px;color:#64748b;width:110px;font-weight:600">\u{1F4CB} Tipo</div><div style="font-size:14px;color:#0a3d2f;font-weight:600">' + tipo + '</div></div>' : ''}
         ${notas ? '<div style="display:flex"><div style="font-size:13px;color:#64748b;width:110px;font-weight:600">\u{1F4DD} Notas</div><div style="font-size:13px;color:#475569;line-height:1.5">' + notas + '</div></div>' : ''}
       </div>
@@ -61,13 +62,13 @@ export default async function handler(req, res) {
 
       <div style="margin-top:24px;padding:14px 16px;background:#fffbeb;border-radius:8px;border:1px solid #fef3c7">
         <div style="font-size:12px;color:#92400e;line-height:1.5">
-          <b>Importante:</b> Si necesita reprogramar o cancelar la cita, por favor comuníquese con anticipación.
+          <b>Importante:</b> Si necesita reprogramar o cancelar la cita, por favor comun\u00edquese con anticipaci\u00f3n.
         </div>
       </div>
     </div>
 
     <div style="padding:16px 32px;background:#f8fafc;border-top:1px solid #e2e8f0;text-align:center">
-      <div style="font-size:10px;color:#94a3b8">Este es un mensaje automático enviado por Brújula KIT</div>
+      <div style="font-size:10px;color:#94a3b8">Este es un mensaje autom\u00e1tico enviado por Br\u00fajula KIT</div>
     </div>
   </div>
 </body>
@@ -76,7 +77,7 @@ export default async function handler(req, res) {
 
   try {
     const result = await resend.emails.send({
-      from: "Brújula KIT <onboarding@resend.dev>",
+      from: "Br\u00fajula KIT <onboarding@resend.dev>",
       to: [to],
       subject: "Recordatorio de cita - " + paciente + " - " + fechaFormateada,
       html: html
