@@ -5,42 +5,50 @@ var TOUR_STEPS = [
     target: "[data-tour='sidebar-logo']",
     content: "¡Bienvenido a Brújula KIT! Este es tu espacio de trabajo para gestionar evaluaciones fonoaudiológicas. Te vamos a mostrar las secciones principales.",
     placement: "right",
-    disableBeacon: true
+    disableBeacon: true,
+    title: "Brújula KIT"
   },
   {
     target: "[data-tour='nav-dash']",
     content: "En el Panel Principal vas a ver un resumen de tus evaluaciones recientes, créditos disponibles, accesos rápidos y tu agenda del mes.",
-    placement: "right"
+    placement: "right",
+    title: "Panel Principal"
   },
   {
     target: "[data-tour='nav-tools']",
     content: "Desde Herramientas podés iniciar una nueva evaluación. Cada evaluación consume 1 crédito y genera un informe automático con inteligencia artificial.",
-    placement: "right"
+    placement: "right",
+    title: "Herramientas"
   },
   {
     target: "[data-tour='nav-hist']",
     content: "En Historial encontrás todas las evaluaciones realizadas. Podés ver los informes, filtrar por tipo y eliminar evaluaciones.",
-    placement: "right"
+    placement: "right",
+    title: "Historial"
   },
   {
     target: "[data-tour='nav-pacientes']",
     content: "Acá gestionás tus pacientes: cargás sus datos personales, del responsable, y podés ver un historial consolidado de cada uno.",
-    placement: "right"
+    placement: "right",
+    title: "Pacientes"
   },
   {
     target: "[data-tour='nav-calendario']",
     content: "El Calendario te permite agendar citas. Si el paciente tiene email registrado, se envía un recordatorio automático al guardar la cita.",
-    placement: "right"
+    placement: "right",
+    title: "Calendario"
   },
   {
     target: "[data-tour='nav-premium']",
     content: "Desde Créditos podés adquirir más evaluaciones cuando lo necesites.",
-    placement: "right"
+    placement: "right",
+    title: "Créditos"
   },
   {
     target: "[data-tour='nav-config']",
     content: "En Configuración podés personalizar los datos de tu consultorio, activar o desactivar avisos, y configurar los emails automáticos. También podés volver a ver este tutorial desde ahí.",
-    placement: "right"
+    placement: "right",
+    title: "Configuración"
   }
 ];
 
@@ -71,7 +79,11 @@ var joyrideStyles = {
   tooltipTitle: {
     fontSize: 16,
     fontWeight: 700,
-    color: "#0a3d2f"
+    color: "#0a3d2f",
+    marginBottom: 4
+  },
+  tooltipFooter: {
+    marginTop: 12
   },
   buttonNext: {
     backgroundColor: "#0d9488",
@@ -103,6 +115,7 @@ var joyrideLocale = {
   close: "Cerrar",
   last: "Finalizar",
   next: "Siguiente",
+  open: "Abrir",
   skip: "Saltar tutorial"
 };
 
@@ -119,7 +132,7 @@ export default function OnboardingTour({ run, onFinish }) {
     run={run}
     continuous={true}
     showSkipButton={true}
-    showProgress={true}
+    showProgress={false}
     scrollToFirstStep={false}
     disableOverlayClose={true}
     disableCloseOnEsc={false}
