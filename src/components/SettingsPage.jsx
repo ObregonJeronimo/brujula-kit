@@ -23,7 +23,7 @@ var TABS = [
   { id:"acerca", label:"Acerca de", icon:"ℹ️" }
 ];
 
-var SettingsPage = forwardRef(function SettingsPageInner({ userId, nfy, profile, onSettingsChange, onDirtyChange }, ref) {
+var SettingsPage = forwardRef(function SettingsPageInner({ userId, nfy, profile, onSettingsChange, onDirtyChange, onStartTour }, ref) {
   var _ld = useState(true), loading = _ld[0], setLoading = _ld[1];
   var _saving = useState(false), saving = _saving[0], setSaving = _saving[1];
   var _tab = useState("consultorio"), activeTab = _tab[0], setActiveTab = _tab[1];
@@ -48,14 +48,10 @@ var SettingsPage = forwardRef(function SettingsPageInner({ userId, nfy, profile,
         var d = snap.data();
         var s = d.settings || {};
         var orig = {
-          cName: s.consultorioNombre || "",
-          cDir: s.consultorioDireccion || "",
-          cTel: s.consultorioTelefono || "",
-          cEmail: s.consultorioEmail || "",
-          showInReport: s.showConsultorioInReport === true,
-          creditWarning: s.creditWarning !== false,
-          citaReminder: s.citaReminder !== false,
-          reminderDays: s.reminderDays || 3,
+          cName: s.consultorioNombre || "", cDir: s.consultorioDireccion || "",
+          cTel: s.consultorioTelefono || "", cEmail: s.consultorioEmail || "",
+          showInReport: s.showConsultorioInReport === true, creditWarning: s.creditWarning !== false,
+          citaReminder: s.citaReminder !== false, reminderDays: s.reminderDays || 3,
           autoEmail: s.autoEmailCita !== false
         };
         origRef.current = orig;
@@ -102,11 +98,9 @@ var SettingsPage = forwardRef(function SettingsPageInner({ userId, nfy, profile,
 
   if(loading) return <div style={{animation:"fi .3s ease",textAlign:"center",padding:60}}><div style={{fontSize:16,fontWeight:600,color:K.mt}}>{"Cargando configuración..."}</div></div>;
 
-  // Tab content renderers
   var renderConsultorio = function(){
     return <div style={{animation:"fi .2s ease"}}>
       <p style={{fontSize:12,color:K.mt,marginBottom:18}}>{"Esta información se incluye en los informes de pacientes y en los emails automáticos de recordatorio de citas."}</p>
-
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 16px",background:showInReport?"#f0fdfa":"#f8fafc",borderRadius:10,border:showInReport?"1px solid #99f6e4":"1px solid #e2e8f0",marginBottom:18}}>
         <div>
           <div style={{fontSize:13,fontWeight:600,color:showInReport?K.sd:"#475569"}}>Mostrar en informe de paciente</div>
@@ -114,7 +108,6 @@ var SettingsPage = forwardRef(function SettingsPageInner({ userId, nfy, profile,
         </div>
         <Toggle value={showInReport} onChange={function(v){ if(v && !allFieldsFilled){ nfy("Completá todos los campos primero","er"); return; } setShowInReport(v); }} />
       </div>
-
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:14}}>
         <div>
           <label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>Nombre del consultorio</label>
@@ -154,7 +147,7 @@ var SettingsPage = forwardRef(function SettingsPageInner({ userId, nfy, profile,
         <Toggle value={autoEmail} onChange={setAutoEmail} />
       </div>
 
-      <div style={{padding:"12px 16px",background:citaReminder?"#f0fdfa":"#f8fafc",borderRadius:10,border:citaReminder?"1px solid #99f6e4":"1px solid #e2e8f0"}}>
+      <div style={{padding:"12px 16px",background:citaReminder?"#f0fdfa":"#f8fafc",borderRadius:10,border:citaReminder?"1px solid #99f6e4":"1px solid #e2e8f0",marginBottom:20}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
           <div>
             <div style={{fontSize:13,fontWeight:600,color:citaReminder?K.sd:"#475569"}}>{"Avisar cuando una cita es próxima"}</div>
@@ -172,6 +165,20 @@ var SettingsPage = forwardRef(function SettingsPageInner({ userId, nfy, profile,
           </div>
         </div>}
       </div>
+
+      {/* TUTORIAL */}
+      <div style={{padding:"16px",background:"#f8fafc",borderRadius:10,border:"1px solid #e2e8f0"}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+          <div>
+            <div style={{fontSize:13,fontWeight:600,color:K.sd}}>{"Iniciar tutorial"}</div>
+            <div style={{fontSize:11,color:K.mt,marginTop:2}}>{"Volvé a ver el recorrido guiado por las secciones principales"}</div>
+          </div>
+          <button onClick={function(){ if(onStartTour) onStartTour(); }} style={{padding:"8px 18px",background:"linear-gradient(135deg,#0a3d2f,#0d9488)",color:"#fff",border:"none",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer",whiteSpace:"nowrap",display:"flex",alignItems:"center",gap:6}}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+            Ver tutorial
+          </button>
+        </div>
+      </div>
     </div>;
   };
 
@@ -180,9 +187,7 @@ var SettingsPage = forwardRef(function SettingsPageInner({ userId, nfy, profile,
       <div style={{fontSize:14,color:"#475569",lineHeight:1.8}}>
         <div style={{marginBottom:16}}>{"Versión actual del sistema:"}</div>
         <div style={{display:"inline-block",padding:"10px 20px",background:"linear-gradient(135deg,#0a3d2f,#0d9488)",borderRadius:10,color:"#fff",fontSize:16,fontWeight:700,letterSpacing:"0.5px"}}>{"Brújula KIT V6.0"}</div>
-        <div style={{marginTop:20,fontSize:12,color:"#94a3b8",lineHeight:1.6}}>
-          {"Desarrollado para profesionales de fonoaudiología."}
-        </div>
+        <div style={{marginTop:20,fontSize:12,color:"#94a3b8",lineHeight:1.6}}>{"Desarrollado para profesionales de fonoaudiología."}</div>
       </div>
     </div>;
   };
@@ -191,7 +196,6 @@ var SettingsPage = forwardRef(function SettingsPageInner({ userId, nfy, profile,
     <h1 style={{fontSize:22,fontWeight:700,marginBottom:6}}>{"⚙️ Configuración"}</h1>
     <p style={{color:K.mt,fontSize:14,marginBottom:20}}>{"Personalizá tu experiencia en Brújula KIT"}</p>
 
-    {/* TABS NAV */}
     <div style={{display:"flex",gap:0,marginBottom:0,borderBottom:"2px solid #e2e8f0"}}>
       {TABS.map(function(t){
         var active = activeTab === t.id;
@@ -202,14 +206,12 @@ var SettingsPage = forwardRef(function SettingsPageInner({ userId, nfy, profile,
       })}
     </div>
 
-    {/* TAB CONTENT */}
     <div style={{background:"#fff",borderRadius:"0 0 12px 12px",border:"1px solid #e2e8f0",borderTop:"none",padding:24,marginBottom:20,minHeight:200}}>
       {activeTab === "consultorio" && renderConsultorio()}
       {activeTab === "general" && renderGeneral()}
       {activeTab === "acerca" && renderAcerca()}
     </div>
 
-    {/* GUARDAR - only show on editable tabs */}
     {activeTab !== "acerca" && <button onClick={function(){ doSave(); }} disabled={saving} style={{width:"100%",padding:"14px",background:K.ac,color:"#fff",border:"none",borderRadius:10,fontSize:15,fontWeight:700,cursor:saving?"wait":"pointer",opacity:saving?.7:1,marginBottom:40}}>
       {saving ? "Guardando..." : "Guardar configuración"}
     </button>}
