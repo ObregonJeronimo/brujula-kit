@@ -10,6 +10,7 @@ import CompleteProfileScreen from "./components/CompleteProfile.jsx";
 import Dashboard from "./components/Dashboard.jsx";
 import Tools from "./components/Tools.jsx";
 import NoCreditsModal from "./components/NoCreditsModal.jsx";
+import OnboardingTour from "./components/OnboardingTour.jsx";
 
 function lazyRetry(fn){
   return lazy(function(){
@@ -76,6 +77,8 @@ var icons = {
   logout: I(<><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></>)
 };
 
+var NAV_TOUR_IDS = { dash:"nav-dash", tools:"nav-tools", hist:"nav-hist", pacientes:"nav-pacientes", calendario:"nav-calendario", premium:"nav-premium", profile:"nav-profile", config:"nav-config", stats:"nav-stats", adm:"nav-adm" };
+
 var _urlParams = new URLSearchParams(window.location.search);
 var _paymentFlag = _urlParams.get("payment") || (_urlParams.get("collection_status") === "approved" ? "success" : null);
 var _paymentId = _urlParams.get("payment_id") || _urlParams.get("collection_id");
@@ -104,9 +107,31 @@ export default function App() {
   var configDirtyRef = useRef(false); var settingsRef = useRef(null);
   var _unsavedModal = useState(null), unsavedModal = _unsavedModal[0], setUnsavedModal = _unsavedModal[1];
   var _savingModal = useState(false), savingModal = _savingModal[0], setSavingModal = _savingModal[1];
+  var _runTour = useState(false), runTour = _runTour[0], setRunTour = _runTour[1];
   var nfy = useCallback(function(m,t){ sT({m:m,t:t}); setTimeout(function(){sT(null)},4500); },[]);
   var isAdmin = profile?.role === "admin";
   useSessionHeartbeat(authUser?.uid, isAdmin);
+
+  // Auto-trigger tour for first-time users
+  useEffect(function(){
+    if(!authUser?.uid || !profile) return;
+    var key = "bk_onboarding_" + authUser.uid;
+    if(!localStorage.getItem(key)){
+      setTimeout(function(){ setRunTour(true); }, 800);
+    }
+  },[authUser, profile]);
+
+  var handleTourFinish = function(){
+    setRunTour(false);
+    if(authUser?.uid){
+      localStorage.setItem("bk_onboarding_" + authUser.uid, "done");
+    }
+  };
+
+  var startTourManually = function(){
+    if(view !== "dash") doNav("dash");
+    setTimeout(function(){ setRunTour(true); }, 300);
+  };
 
   useEffect(function(){
     if(!authUser?.uid || paymentProcessed) return;
@@ -139,11 +164,7 @@ export default function App() {
   },[profile,authUser]);
 
   useEffect(function(){ if(profile && !sessionBlocked) loadEvals(); },[profile,loadEvals,sessionBlocked]);
-
-  useEffect(function(){
-    if(!profile) return;
-    getDoc(doc(db,"config","tools")).then(function(snap){ if(snap.exists()){ var cfg = snap.data(); var enabled = {}; Object.keys(cfg).forEach(function(k){ enabled[k] = cfg[k].enabled !== false; }); setEnabledTools(enabled); } }).catch(function(){});
-  },[profile]);
+  useEffect(function(){ if(!profile) return; getDoc(doc(db,"config","tools")).then(function(snap){ if(snap.exists()){ var cfg = snap.data(); var enabled = {}; Object.keys(cfg).forEach(function(k){ enabled[k] = cfg[k].enabled !== false; }); setEnabledTools(enabled); } }).catch(function(){}); },[profile]);
 
   var goToPremium = function(){ sV("premium"); sS(null); window.scrollTo({top:0,behavior:"smooth"}); };
   var prevViewRef = useRef("dash");
@@ -190,11 +211,12 @@ export default function App() {
 
   return (
     <div style={{display:"flex",height:"100vh",width:"100vw",fontFamily:"'DM Sans',system-ui,sans-serif",background:K.bg,color:"#1e293b",overflow:"hidden"}}>
+      <OnboardingTour run={runTour} onFinish={handleTourFinish} />
       {showNoCredits && <NoCreditsModal onClose={function(){setShowNoCredits(false);sV("dash")}} onUpgrade={function(){setShowNoCredits(false);goToPremium()}} />}
       {unsavedModal !== null && <UnsavedChangesModal onDiscard={handleUnsavedDiscard} onCancel={handleUnsavedCancel} onSave={handleUnsavedSave} saving={savingModal} />}
       <aside style={{width:mobile?60:230,minWidth:mobile?60:230,background:K.sd,color:"#fff",display:"flex",flexDirection:"column",padding:"18px 0",flexShrink:0,height:"100vh"}}>
-        <div style={{padding:"0 14px",marginBottom:26,display:"flex",alignItems:"center",gap:9}}><img src="/img/logo_sin_fondo.png" alt="Logo" style={{width:28,height:28}} />{!mobile&&<div><div style={{fontSize:17,fontWeight:700}}>{"Brújula KIT"}</div><div style={{fontSize:9,color:"#5eead4",fontWeight:600,letterSpacing:"1px"}}>{"FONOAUDIOLOGÍA"}</div></div>}</div>
-        <nav style={{flex:1}}>{nav.map(function(n){ var id=n[0],iconKey=n[1],lb=n[2]; var active = view===id; return <button key={id} onClick={function(){navTo(id)}} style={{display:"flex",alignItems:"center",gap:10,width:"100%",padding:mobile?"13px 0":"11px 18px",background:active?"rgba(94,234,212,.12)":"transparent",border:"none",color:active?"#5eead4":"rgba(255,255,255,.55)",cursor:"pointer",fontSize:14,fontWeight:active?600:400,borderLeft:active?"3px solid #5eead4":"3px solid transparent",textAlign:"left",justifyContent:mobile?"center":"flex-start",transition:"all .15s ease"}}><span style={{display:"flex",alignItems:"center",opacity:active?1:.7}}>{icons[iconKey]}</span>{!mobile&&<span>{lb}</span>}</button>; })}</nav>
+        <div data-tour="sidebar-logo" style={{padding:"0 14px",marginBottom:26,display:"flex",alignItems:"center",gap:9}}><img src="/img/logo_sin_fondo.png" alt="Logo" style={{width:28,height:28}} />{!mobile&&<div><div style={{fontSize:17,fontWeight:700}}>{"Brújula KIT"}</div><div style={{fontSize:9,color:"#5eead4",fontWeight:600,letterSpacing:"1px"}}>{"FONOAUDIOLOGÍA"}</div></div>}</div>
+        <nav style={{flex:1}}>{nav.map(function(n){ var id=n[0],iconKey=n[1],lb=n[2]; var active = view===id; return <button key={id} data-tour={NAV_TOUR_IDS[id]||""} onClick={function(){navTo(id)}} style={{display:"flex",alignItems:"center",gap:10,width:"100%",padding:mobile?"13px 0":"11px 18px",background:active?"rgba(94,234,212,.12)":"transparent",border:"none",color:active?"#5eead4":"rgba(255,255,255,.55)",cursor:"pointer",fontSize:14,fontWeight:active?600:400,borderLeft:active?"3px solid #5eead4":"3px solid transparent",textAlign:"left",justifyContent:mobile?"center":"flex-start",transition:"all .15s ease"}}><span style={{display:"flex",alignItems:"center",opacity:active?1:.7}}>{icons[iconKey]}</span>{!mobile&&<span>{lb}</span>}</button>; })}</nav>
         <div style={{padding:"0 14px",borderTop:"1px solid rgba(255,255,255,.1)",paddingTop:12}}>{!mobile&&<div style={{fontSize:10,color:"rgba(255,255,255,.45)",marginBottom:3}}>{"Sesión: "}<b style={{color:"#5eead4"}}>{profile.username}</b>{isAdmin&&<span style={{background:"#5eead4",color:K.sd,padding:"1px 5px",borderRadius:3,fontSize:8,marginLeft:6,fontWeight:700}}>ADMIN</span>}</div>}{!mobile&&<div style={{fontSize:10,color:"rgba(255,255,255,.35)",marginBottom:8}}>{"Créditos: "}<b style={{color:profile.creditos>0?"#5eead4":"#f87171"}}>{isAdmin?"\u221e":(profile.creditos||0)}</b></div>}<button onClick={handleLogout} style={{display:"flex",alignItems:"center",justifyContent:mobile?"center":"flex-start",gap:8,background:"rgba(255,255,255,.08)",border:"none",color:"rgba(255,255,255,.6)",padding:"9px 12px",borderRadius:8,cursor:"pointer",fontSize:12,width:"100%",transition:"all .15s ease"}}><span style={{display:"flex",alignItems:"center"}}>{icons.logout}</span>{!mobile&&<span>{"Cerrar sesión"}</span>}</button></div>
       </aside>
       <main id="main-scroll" style={{flex:1,overflowY:"auto",overflowX:"hidden",padding:mobile?"16px":"28px 36px",height:"100vh"}}>
@@ -210,7 +232,7 @@ export default function App() {
           {view==="pacientes"&&<PacientesPage userId={authUser?.uid} nfy={nfy} allEvals={allEvals} />}
           {view==="calendario"&&<CalendarPage userId={authUser?.uid} nfy={nfy} userSettings={userSettings} profesionalNombre={profile?.nombre || profile?.username || ""} />}
           {view==="premium"&&<PremiumPage profile={profile} authUser={authUser} nfy={nfy} onBack={function(){sV("dash")}} />}
-          {view==="config"&&<SettingsPage ref={settingsRef} userId={authUser?.uid} nfy={nfy} profile={profile} onSettingsChange={function(s){ setUserSettings(s); }} onDirtyChange={function(d){ configDirtyRef.current = d; }} />}
+          {view==="config"&&<SettingsPage ref={settingsRef} userId={authUser?.uid} nfy={nfy} profile={profile} onSettingsChange={function(s){ setUserSettings(s); }} onDirtyChange={function(d){ configDirtyRef.current = d; }} onStartTour={startTourManually} />}
           {view==="adm"&&isAdmin&&<AdminPanel nfy={nfy} />}
           {view==="stats"&&isAdmin&&<AdminStats nfy={nfy} />}
         </Suspense>
