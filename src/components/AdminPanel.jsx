@@ -129,7 +129,19 @@ export default function AdminPanel({ nfy }) {
                   </div>
                   <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
                     <div>
-                      <label style={{fontSize:11,fontWeight:600,color:K.mt,display:"block",marginBottom:3}}>Edad recomendada</label>
+                      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:3}}>
+                        <label style={{fontSize:11,fontWeight:600,color:K.mt}}>Edad recomendada</label>
+                        <button onClick={function(){
+                          var updated = Object.assign({}, toolsConfig);
+                          if(!updated[t.id]) updated[t.id] = { enabled: true };
+                          updated[t.id] = Object.assign({}, updated[t.id], { showAge: !cfg.showAge });
+                          setToolsConfig(updated);
+                          setDoc(doc(db, "config", "tools"), updated);
+                        }} style={{display:"flex",alignItems:"center",gap:4,background:"none",border:"none",cursor:"pointer",fontSize:10,color:cfg.showAge!==false?"#059669":"#dc2626",fontWeight:600}}>
+                          <span style={{width:32,height:16,borderRadius:8,background:cfg.showAge!==false?"#059669":"#dc2626",display:"inline-block",position:"relative"}}><span style={{width:12,height:12,borderRadius:6,background:"#fff",position:"absolute",top:2,left:cfg.showAge!==false?18:2,transition:"left .2s"}}></span></span>
+                          {cfg.showAge!==false?"Visible":"Oculta"}
+                        </button>
+                      </div>
                       <input value={editAge[t.id]||""} onChange={function(e){setEditAge(function(p){return Object.assign({},p,{[t.id]:e.target.value})})}} placeholder="ej: 3-6 anos" style={{width:"100%",padding:"8px 12px",border:"1px solid #e2e8f0",borderRadius:6,fontSize:13}} />
                     </div>
                     <div>

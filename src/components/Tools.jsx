@@ -4,7 +4,7 @@ import { ALL_EVAL_TYPES, EVAL_AREAS, EVAL_TYPES, getEvalType } from "../config/e
 import { loadDrafts, deleteDraft } from "../lib/drafts.js";
 import { renderReportText } from "../lib/evalUtils.jsx";
 
-export default function Tools({ onSel, credits, onBuy, enabledTools, userId, onResumeDraft, allEvals, nfy }) {
+export default function Tools({ onSel, credits, onBuy, enabledTools, toolsConfig, userId, onResumeDraft, allEvals, nfy }) {
   var _drafts = useState([]), drafts = _drafts[0], setDrafts = _drafts[1];
   var _openArea = useState(null), openArea = _openArea[0], setOpenArea = _openArea[1];
   var _info = useState(null), showInfo = _info[0], setShowInfo = _info[1];
@@ -141,7 +141,18 @@ export default function Tools({ onSel, credits, onBuy, enabledTools, userId, onR
                         <div style={{fontSize:16,fontWeight:700,color:t.color}}>{t.fullName}</div>
                       </div>
                       <p style={{fontSize:13,color:"#475569",lineHeight:1.6,marginBottom:12}}>{t.desc}</p>
-                      <div style={{fontSize:12,color:"#64748b",marginBottom:14}}>{"Tiempo: "+t.time}</div>
+                      <div style={{fontSize:12,color:"#64748b",marginBottom:14}}>
+                        {(function(){
+                          var tc = toolsConfig && toolsConfig[t.id] ? toolsConfig[t.id] : {};
+                          var showAge = tc.showAge !== false;
+                          var ageText = tc.age || t.age || "";
+                          var timeText = tc.time || t.time || "";
+                          var parts = [];
+                          if(showAge && ageText) parts.push("Edad: " + ageText);
+                          if(timeText) parts.push("Tiempo: " + timeText);
+                          return parts.join(" · ");
+                        })()}
+                      </div>
                       {noCredits
                         ? <button onClick={onBuy} style={{width:"100%",padding:"10px",background:"linear-gradient(135deg,#f59e0b,#d97706)",color:"#fff",border:"none",borderRadius:8,fontSize:13,fontWeight:700,cursor:"pointer"}}>COMPRAR CREDITOS</button>
                         : <button onClick={function(){onSel(t.newView)}} style={{width:"100%",padding:"10px",background:t.color,color:"#fff",border:"none",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer"}}>{"Iniciar"}</button>}
