@@ -11,6 +11,8 @@ export default function AdminPanel({ nfy }) {
   var _toolsConfig = useState(null), toolsConfig = _toolsConfig[0], setToolsConfig = _toolsConfig[1];
   var _editTitle = useState({}), editTitle = _editTitle[0], setEditTitle = _editTitle[1];
   var _editDesc = useState({}), editDesc = _editDesc[0], setEditDesc = _editDesc[1];
+  var _editAge = useState({}), editAge = _editAge[0], setEditAge = _editAge[1];
+  var _editTime = useState({}), editTime = _editTime[0], setEditTime = _editTime[1];
   var _saving = useState(false), saving = _saving[0], setSaving = _saving[1];
 
   // Load tools config from Firestore
@@ -54,7 +56,9 @@ export default function AdminPanel({ nfy }) {
     if(!updated[id]) updated[id] = { enabled: true };
     updated[id] = Object.assign({}, updated[id], { 
       title: editTitle[id] !== undefined ? editTitle[id] : (updated[id].title || ""),
-      desc: editDesc[id] !== undefined ? editDesc[id] : (updated[id].desc || "")
+      desc: editDesc[id] !== undefined ? editDesc[id] : (updated[id].desc || ""),
+      age: editAge[id] !== undefined ? editAge[id] : (updated[id].age || ""),
+      time: editTime[id] !== undefined ? editTime[id] : (updated[id].time || "")
     });
     setToolsConfig(updated);
     setSaving(true);
@@ -62,6 +66,8 @@ export default function AdminPanel({ nfy }) {
       nfy("Guardado", "ok");
       setEditTitle(function(p){ var n = Object.assign({},p); delete n[id]; return n; });
       setEditDesc(function(p){ var n = Object.assign({},p); delete n[id]; return n; });
+      setEditAge(function(p){ var n = Object.assign({},p); delete n[id]; return n; });
+      setEditTime(function(p){ var n = Object.assign({},p); delete n[id]; return n; });
       setSaving(false);
     }).catch(function(e){ nfy("Error: " + e.message, "er"); setSaving(false); });
   };
@@ -95,7 +101,7 @@ export default function AdminPanel({ nfy }) {
                   <span style={{fontSize:28}}>{t.icon}</span>
                   <div>
                     <div style={{fontSize:16,fontWeight:700,color:isEnabled?"#fff":"#94a3b8"}}>{cfg.title || t.fullName}</div>
-                    <div style={{fontSize:11,color:isEnabled?"rgba(255,255,255,.7)":"#cbd5e1"}}>{t.id.toUpperCase()+" · "+t.age+" · "+t.time}</div>
+                    <div style={{fontSize:11,color:isEnabled?"rgba(255,255,255,.7)":"#cbd5e1"}}>{t.id.toUpperCase()+" · "+(cfg.age||t.age||"")+" · "+(cfg.time||t.time||"")}</div>
                   </div>
                 </div>
                 {/* Toggle */}
@@ -109,21 +115,35 @@ export default function AdminPanel({ nfy }) {
                   <button onClick={function(){
                     setEditTitle(function(p){ return Object.assign({},p,{[t.id]:cfg.title||t.fullName}); });
                     setEditDesc(function(p){ return Object.assign({},p,{[t.id]:cfg.desc||t.desc}); });
-                  }} style={{padding:"6px 14px",background:"#f1f5f9",border:"1px solid #e2e8f0",borderRadius:6,fontSize:11,fontWeight:600,cursor:"pointer",color:K.mt}}>{"✏️ Editar"}</button>
+                    setEditAge(function(p){ return Object.assign({},p,{[t.id]:cfg.age||t.age||""}); });
+                    setEditTime(function(p){ return Object.assign({},p,{[t.id]:cfg.time||t.time||""}); });
+                  }} style={{padding:"6px 14px",background:"#f1f5f9",border:"1px solid #e2e8f0",borderRadius:6,fontSize:11,fontWeight:600,cursor:"pointer",color:K.mt}}>{"Editar"}</button>
                 </div> : <div>
                   <div style={{marginBottom:10}}>
-                    <label style={{fontSize:11,fontWeight:600,color:K.mt,display:"block",marginBottom:3}}>Título</label>
+                    <label style={{fontSize:11,fontWeight:600,color:K.mt,display:"block",marginBottom:3}}>Titulo</label>
                     <input value={currentTitle} onChange={function(e){setEditTitle(function(p){return Object.assign({},p,{[t.id]:e.target.value})})}} style={{width:"100%",padding:"8px 12px",border:"1px solid #e2e8f0",borderRadius:6,fontSize:13}} />
                   </div>
                   <div style={{marginBottom:10}}>
-                    <label style={{fontSize:11,fontWeight:600,color:K.mt,display:"block",marginBottom:3}}>Descripción</label>
+                    <label style={{fontSize:11,fontWeight:600,color:K.mt,display:"block",marginBottom:3}}>Descripcion</label>
                     <textarea value={currentDesc} onChange={function(e){setEditDesc(function(p){return Object.assign({},p,{[t.id]:e.target.value})})}} rows={3} style={{width:"100%",padding:"8px 12px",border:"1px solid #e2e8f0",borderRadius:6,fontSize:13,resize:"vertical",fontFamily:"inherit"}} />
+                  </div>
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
+                    <div>
+                      <label style={{fontSize:11,fontWeight:600,color:K.mt,display:"block",marginBottom:3}}>Edad recomendada</label>
+                      <input value={editAge[t.id]||""} onChange={function(e){setEditAge(function(p){return Object.assign({},p,{[t.id]:e.target.value})})}} placeholder="ej: 3-6 anos" style={{width:"100%",padding:"8px 12px",border:"1px solid #e2e8f0",borderRadius:6,fontSize:13}} />
+                    </div>
+                    <div>
+                      <label style={{fontSize:11,fontWeight:600,color:K.mt,display:"block",marginBottom:3}}>Tiempo estimado</label>
+                      <input value={editTime[t.id]||""} onChange={function(e){setEditTime(function(p){return Object.assign({},p,{[t.id]:e.target.value})})}} placeholder="ej: ~20 min" style={{width:"100%",padding:"8px 12px",border:"1px solid #e2e8f0",borderRadius:6,fontSize:13}} />
+                    </div>
                   </div>
                   <div style={{display:"flex",gap:8}}>
                     <button onClick={function(){saveTitleDesc(t.id)}} disabled={saving} style={{padding:"8px 16px",background:K.ac,color:"#fff",border:"none",borderRadius:6,fontSize:12,fontWeight:600,cursor:"pointer"}}>Guardar</button>
                     <button onClick={function(){
                       setEditTitle(function(p){ var n=Object.assign({},p); delete n[t.id]; return n; });
                       setEditDesc(function(p){ var n=Object.assign({},p); delete n[t.id]; return n; });
+                      setEditAge(function(p){ var n=Object.assign({},p); delete n[t.id]; return n; });
+                      setEditTime(function(p){ var n=Object.assign({},p); delete n[t.id]; return n; });
                     }} style={{padding:"8px 16px",background:"#f1f5f9",border:"1px solid #e2e8f0",borderRadius:6,fontSize:12,cursor:"pointer",color:K.mt}}>Cancelar</button>
                   </div>
                 </div>}
