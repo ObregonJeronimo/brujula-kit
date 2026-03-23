@@ -18,3 +18,10 @@ input:focus, select:focus, textarea:focus { outline: 2px solid #0d9488; outline-
   body { font-size: 12px; }
   button { display: none !important; }
 }
+
+/* Performance: optimize for old devices */
+button, input, select, textarea { 
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+* { -webkit-font-smoothing: antialiased; }
