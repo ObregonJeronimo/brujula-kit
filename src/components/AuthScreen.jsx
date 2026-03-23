@@ -171,7 +171,7 @@ export default function AuthScreen({ onDone }) {
     <div style={{width:"100vw",height:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"linear-gradient(145deg,#0a3d2f,#0d7363)",fontFamily:"'DM Sans',system-ui,sans-serif"}}>
       <div style={{background:"rgba(255,255,255,.97)",borderRadius:16,padding:"40px 36px",width:420,maxWidth:"92vw",boxShadow:"0 20px 50px rgba(0,0,0,.3)"}}>
         <div style={{textAlign:"center",marginBottom:24}}>
-          <div style={{display:"inline-flex",alignItems:"center",gap:9,marginBottom:6}}><img src="/img/logo_sin_fondo.png" style={{width:36,height:36}} alt="logo" /><span style={{fontSize:26,fontWeight:700,color:"#0a3d2f"}}>{"Brújula KIT"}</span></div>
+          <div style={{display:"inline-flex",alignItems:"center",gap:9,marginBottom:6}}><img src="/img/logo_96.png" style={{width:36,height:36}} alt="logo" /><span style={{fontSize:26,fontWeight:700,color:"#0a3d2f"}}>{"Brújula KIT"}</span></div>
           <p style={{color:"#64748b",fontSize:13}}>{"Sistema Integral de Evaluación Fonoaudiológica"}</p>
         </div>
 
