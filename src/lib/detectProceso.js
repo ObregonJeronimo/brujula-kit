@@ -27,9 +27,12 @@ var toFonema = function(c){
 var extractConsonant = function(syl){
   if(!syl) return "";
   var s = syl.toLowerCase().replace(/\u00f1/g,"ny").trim();
-  if(/^[bcdfgkptq]r/i.test(s)) return s.slice(0,1);
-  if(/^[bcdfgkpt]l/i.test(s)) return s.slice(0,1);
+  // Handle digraphs first
   if(s.startsWith("ch")||s.startsWith("rr")||s.startsWith("ll")||s.startsWith("ny")||s.startsWith("sh")) return s.slice(0,2);
+  // Consonant groups (Cr, Cl) — return full group
+  if(/^[bcdfgkptq]r[aeiou]/i.test(s)) return s.slice(0,2);
+  if(/^[bcdfgkpt]l[aeiou]/i.test(s)) return s.slice(0,2);
+  // Single or multiple consonants before vowel
   var m = s.match(/^([bcdfghjklmnpqrstvwxyz]+)/i);
   return m ? m[1] : "";
 };
@@ -50,11 +53,14 @@ export function detectProceso(targetWord, produccion, errorType){
 
   var tCons = extractConsonant(tw);
   var pCons = extractConsonant(pr);
-  var tF = toFonema(tCons);
-  var pF = toFonema(pCons);
+  // For phoneme comparison, use base consonant (first of group)
+  var tBase = tCons.length === 2 && /^[bcdfgkptq][rl]$/.test(tCons) ? tCons[0] : tCons;
+  var pBase = pCons.length === 2 && /^[bcdfgkptq][rl]$/.test(pCons) ? pCons[0] : pCons;
+  var tF = toFonema(tBase);
+  var pF = toFonema(pBase);
 
   if(errorType === "O"){
-    if(tw.length > pr.length){
+    if(tw.length > pr.length || tCons.length > pCons.length){
       if(tCons.length === 2 && pCons.length <= 1) return "red_grupo_cons";
       if(/[aeiou][mnlsrd]$/i.test(tw) && /[aeiou]$/i.test(pr)) return "omis_cons_final";
       if(pCons === "" && tCons !== "") return "omis_cons_inicial";
