@@ -12,7 +12,7 @@ function ageMo(birth){
   return (n.getFullYear()-b.getFullYear())*12+(n.getMonth()-b.getMonth())-(n.getDate()<b.getDate()?1:0);
 }
 
-export default function EvalShell({ onS, nfy, userId, config, renderEval, computeResults, buildPayloadExtra, renderTechDetails, draft }){
+export default function EvalShell({ onS, nfy, userId, config, renderEval, computeResults, buildPayloadExtra, renderTechDetails, draft, therapistInfo }){
   var todayStr = new Date().toISOString().split("T")[0];
   // If resuming from draft, initialize from draft data
   var init = draft ? draft.data : null;
@@ -155,6 +155,7 @@ export default function EvalShell({ onS, nfy, userId, config, renderEval, comput
           evalType={config.evalType}
           collectionName="evaluaciones"
           evalLabel={config.title} autoGenerate={true}
+          therapistInfo={therapistInfo}
         />
 
         <button onClick={function(){ setShowTech(!showTech); }} style={{width:"100%",padding:"14px",background:showTech?"#f1f5f9":"#0a3d2f",color:showTech?"#1e293b":"#fff",border:"1px solid #e2e8f0",borderRadius:10,fontSize:14,fontWeight:600,cursor:"pointer",marginBottom:showTech?16:20}}>{showTech ? "Ocultar datos tecnicos" : "Ver datos tecnicos"}</button>

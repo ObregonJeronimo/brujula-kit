@@ -70,7 +70,7 @@ function buildPayloadExtra(responses, obsMap){
   return { seccionData: responses, procesosData: obsMap };
 }
 
-export default function NewFON({ onS, nfy, userId, draft }){
+export default function NewFON({ onS, nfy, userId, draft, therapistInfo }){
   var _procData = useState({}), procData = _procData[0], setProcData = _procData[1];
 
   var renderEval = useCallback(function(props){
@@ -170,6 +170,6 @@ export default function NewFON({ onS, nfy, userId, draft }){
     computeResults={computeResults}
     buildPayloadExtra={buildPayloadExtra}
     renderTechDetails={renderTechDetails}
-    draft={draft}
+    draft={draft} therapistInfo={therapistInfo}
   />;
 }

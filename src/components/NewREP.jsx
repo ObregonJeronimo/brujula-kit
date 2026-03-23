@@ -7,7 +7,7 @@ import { K } from "../lib/fb.js";
 import { saveDraft, deleteDraft } from "../lib/drafts.js";
 var catGroups = buildCatGroups();
 
-export default function NewREP({ onS, nfy, userId, draft }){
+export default function NewREP({ onS, nfy, userId, draft, therapistInfo }){
   var init = draft ? draft.data : null;
   var _st = useState(init?(init.step||0):0), step = _st[0], setStep = _st[1];
   var _pat = useState(init?init.patient:null), patient = _pat[0], setPatient = _pat[1];
@@ -102,7 +102,7 @@ export default function NewREP({ onS, nfy, userId, draft }){
       {step===2 && <NewREPResults results={results} patientAge={patientAge} obs={obs}
         onBack={function(){setStep(1);scrollTop();}}
         onFinish={function(){onS("tools")}}
-        patient={patient} evalDate={evalDate} derivado={derivado} userId={userId} nfy={nfy} />}
+        patient={patient} evalDate={evalDate} derivado={derivado} userId={userId} nfy={nfy} therapistInfo={therapistInfo} />}
     </div>
   );
 }

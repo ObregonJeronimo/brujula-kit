@@ -30,7 +30,7 @@ function buildPayloadExtra(responses){
   return { seccionData: responses };
 }
 
-export default function NewOFA({ onS, nfy, userId, draft }){
+export default function NewOFA({ onS, nfy, userId, draft, therapistInfo }){
   var renderEval = useCallback(function(props){
     var subIdx = props.step - 1;
     if(subIdx < 0 || subIdx >= OFA_SECTION.subsections.length) return null;
@@ -80,6 +80,6 @@ export default function NewOFA({ onS, nfy, userId, draft }){
     computeResults={computeResults}
     buildPayloadExtra={buildPayloadExtra}
     renderTechDetails={renderTechDetails}
-    draft={draft}
+    draft={draft} therapistInfo={therapistInfo}
   />;
 }

@@ -116,13 +116,13 @@ function recoRenderTech(results) {
   </div>;
 }
 
-export default function NewRECO({ onS, nfy, userId, draft }){
+export default function NewRECO({ onS, nfy, userId, draft, therapistInfo }){
   return <EvalShell
     onS={onS} nfy={nfy} userId={userId}
     config={SHELL_CONFIG}
     renderEval={recoRenderEval}
     computeResults={recoComputeResults}
     buildPayloadExtra={recoBuildPayloadExtra}
-    renderTechDetails={recoRenderTech} draft={draft}
+    renderTechDetails={recoRenderTech} draft={draft} therapistInfo={therapistInfo}
   />;
 }

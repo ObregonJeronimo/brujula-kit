@@ -184,6 +184,16 @@ export default function Dashboard({ allEvals, onT, onView, ld, profile, isAdmin,
         })}
       </div>
 
+      {/* Consolidated report tip */}
+      {uniquePatients > 0 && visibleEvals.length >= 2 && <div style={{background:"linear-gradient(135deg,#f3e8ff,#ede9fe)",borderRadius:14,border:"1px solid #c4b5fd",padding:"16px 20px",marginBottom:20,display:"flex",alignItems:"center",gap:14}}>
+        <span style={{fontSize:28,flexShrink:0}}>{"📋"}</span>
+        <div style={{flex:1}}>
+          <div style={{fontSize:14,fontWeight:700,color:"#7c3aed"}}>{"Informe Consolidado disponible"}</div>
+          <div style={{fontSize:12,color:"#6b21a8",marginTop:2}}>{"Podes generar un informe que integre varias evaluaciones de un mismo paciente. Encontralo en Herramientas."}</div>
+        </div>
+        <button onClick={onT} style={{padding:"8px 16px",background:"#7c3aed",color:"#fff",border:"none",borderRadius:8,fontSize:12,fontWeight:600,cursor:"pointer",flexShrink:0}}>{"Ir"}</button>
+      </div>}
+
       <div style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",padding:24,marginBottom:20}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}}>
           <h3 style={{fontSize:16,fontWeight:700,color:"#0a3d2f",margin:0}}>📅 Agenda</h3>

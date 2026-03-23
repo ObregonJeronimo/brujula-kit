@@ -8,7 +8,7 @@ import { fbAdd, K } from "../lib/fb.js";
 import AIReportPanel from "./AIReportPanel.jsx";
 import { saveDraft, deleteDraft } from "../lib/drafts.js";
 
-export default function NewELDI({onS,nfy,userId,draft}){
+export default function NewELDI({onS,nfy,userId,draft,therapistInfo}){
   var init=draft?draft.data:null;
   var _s=useState(init?(init.step||1):1),step=_s[0],sS=_s[1];
   var _pd=useState(init?init.pd:{pN:"",birth:"",eD:new Date().toISOString().split("T")[0],sch:"",ref:"",obs:"",dni:""}),pd=_pd[0],sPd=_pd[1];
@@ -227,7 +227,7 @@ export default function NewELDI({onS,nfy,userId,draft}){
         return <div>
           <div style={{background:"#dcfce7",borderRadius:10,padding:"12px 18px",marginBottom:16,display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:18}}>{"\u2705"}</span><span style={{fontSize:13,fontWeight:600,color:"#059669"}}>{"Evaluación guardada correctamente."}</span></div>
 
-          <AIReportPanel ev={{_fbId:docIdRef.current,paciente:pd.pN,pacienteDni:pd.dni||"",edadMeses:a,fechaEvaluacion:pd.eD,derivadoPor:pd.ref||"",observaciones:pd.obs||"",resultados:{recRes:rR,expRes:rE},evalRec:evalRec,evalExp:evalExp,aiReport:report}} evalType="eldi" collectionName="evaluaciones" evalLabel="ELDI" autoGenerate={true} />
+          <AIReportPanel ev={{_fbId:docIdRef.current,paciente:pd.pN,pacienteDni:pd.dni||"",edadMeses:a,fechaEvaluacion:pd.eD,derivadoPor:pd.ref||"",observaciones:pd.obs||"",resultados:{recRes:rR,expRes:rE},evalRec:evalRec,evalExp:evalExp,aiReport:report}} evalType="eldi" collectionName="evaluaciones" evalLabel="ELDI" autoGenerate={true} therapistInfo={therapistInfo} />
 
           <button onClick={function(){ setShowTech(!showTech); }} style={{width:"100%",padding:"14px",background:showTech?"#f1f5f9":"#0a3d2f",color:showTech?"#1e293b":"#fff",border:"1px solid #e2e8f0",borderRadius:10,fontSize:14,fontWeight:600,cursor:"pointer",marginBottom:showTech?16:20}}>{showTech?"\u25b2 Ocultar datos técnicos":"\u25bc Ver datos técnicos de la evaluación"}</button>
 
