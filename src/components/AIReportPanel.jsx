@@ -50,8 +50,14 @@ function textPDF(title, evalLabel, ev, reportText, filename){
     if(y+10 > pageH){ pdf.addPage(); y=margin; }
     pdf.setDrawColor(200); pdf.line(margin, y, pW-margin, y); y+=4;
     pdf.setFontSize(7); pdf.setTextColor(150);
-    pdf.text("Brujula KIT \u2014 "+(evalLabel||"")+" \u2014 Debe ser revisado por el profesional tratante.", margin, y);
+    var footerLeft = "Brujula KIT \u2014 "+(evalLabel||"")+" \u2014 Debe ser revisado por el profesional tratante.";
+    pdf.text(footerLeft, margin, y);
     pdf.text(new Date().toLocaleDateString("es-AR"), pW-margin, y, {align:"right"});
+    // Therapist info in footer if available
+    if(ev.therapistName){
+      y+=4;
+      pdf.text(ev.therapistName + (ev.therapistLicense ? " - Mat. " + ev.therapistLicense : ""), margin, y);
+    }
 
     pdf.save(filename);
   });
@@ -93,7 +99,7 @@ function ReportCard({ title, titleColor, borderColor, report, ev, evalLabel, onP
   </div>;
 }
 
-export default function AIReportPanel({ ev, evalType, collectionName, evalLabel, autoGenerate }){
+export default function AIReportPanel({ ev, evalType, collectionName, evalLabel, autoGenerate, therapistInfo }){
   var existingReport = ev.aiReport || null;
   var _report = useState(existingReport), report = _report[0], setReport = _report[1];
   var _generating = useState(false), generating = _generating[0], setGenerating = _generating[1];
@@ -111,7 +117,9 @@ export default function AIReportPanel({ ev, evalType, collectionName, evalLabel,
       paciente: ev.paciente || "", pacienteDni: ev.pacienteDni || "",
       edadMeses: ev.edadMeses || 0, fechaEvaluacion: ev.fechaEvaluacion || "",
       derivadoPor: ev.derivadoPor || "", observaciones: ev.observaciones || "",
-      resultados: ev.resultados || {}
+      resultados: ev.resultados || {},
+      therapistName: therapistInfo ? therapistInfo.therapist : "",
+      therapistLicense: therapistInfo ? therapistInfo.license : ""
     };
     if(evalType === "eldi"){
       evalData.evalRec = ev.evalRec; evalData.evalExp = ev.evalExp;

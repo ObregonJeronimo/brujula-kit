@@ -11,7 +11,8 @@ function buildEvalSummary(ev, evalType) {
 
   var header = "PACIENTE: " + (ev.paciente || "N/D") + " | DNI: " + (ev.pacienteDni || "N/D") + " | Edad: " + edadStr + "\n"
     + "Fecha: " + (ev.fechaEvaluacion || "N/D") + " | Establecimiento: " + (ev.establecimiento || "N/D") + "\n"
-    + "Derivado por: " + (ev.derivadoPor || "N/E") + " | Evaluador: " + (ev.evaluador || "N/D") + "\n";
+    + "Derivado por: " + (ev.derivadoPor || "N/E") + " | Evaluador: " + (ev.evaluador || "N/D") + "\n"
+    + (ev.therapistName ? "Profesional: " + ev.therapistName + (ev.therapistLicense ? " | Mat: " + ev.therapistLicense : "") + "\n" : "");
 
   var obs = ev.observaciones || "Sin observaciones.";
   var data = "";
