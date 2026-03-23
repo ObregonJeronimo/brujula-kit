@@ -10,7 +10,7 @@ import CompleteProfileScreen from "./components/CompleteProfile.jsx";
 import Dashboard from "./components/Dashboard.jsx";
 import Tools from "./components/Tools.jsx";
 import NoCreditsModal from "./components/NoCreditsModal.jsx";
-import OnboardingTour from "./components/OnboardingTour.jsx";
+var OnboardingTourLazy = lazyRetry(function(){ return import("./components/OnboardingTour.jsx"); });
 
 function lazyRetry(fn){
   return lazy(function(){
@@ -215,7 +215,7 @@ export default function App() {
 
   return (
     <div style={{display:"flex",height:"100vh",width:"100vw",fontFamily:"'DM Sans',system-ui,sans-serif",background:K.bg,color:"#1e293b",overflow:"hidden"}}>
-      <OnboardingTour run={runTour} onFinish={handleTourFinish} />
+      <Suspense fallback={null}>{runTour && <OnboardingTourLazy run={runTour} onFinish={handleTourFinish} />}</Suspense>
       {showNoCredits && <NoCreditsModal onClose={function(){setShowNoCredits(false);sV("dash")}} onUpgrade={function(){setShowNoCredits(false);goToPremium()}} />}
       {unsavedModal !== null && <UnsavedChangesModal onDiscard={handleUnsavedDiscard} onCancel={handleUnsavedCancel} onSave={handleUnsavedSave} saving={savingModal} />}
       <aside style={{width:mobile?60:230,minWidth:mobile?60:230,background:K.sd,color:"#fff",display:"flex",flexDirection:"column",padding:"18px 0",flexShrink:0,height:"100vh"}}>
