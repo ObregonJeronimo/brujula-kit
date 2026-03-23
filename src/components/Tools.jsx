@@ -273,7 +273,7 @@ export default function Tools({ onSel, credits, onBuy, enabledTools, toolsConfig
               </div>
               <div style={{background:"#fff",borderRadius:12,border:"2px solid #7c3aed",padding:24}}>
                 <div style={{fontSize:13,lineHeight:1.7}}>{renderReportText(consolReport)}</div>
-                <div style={{marginTop:14,paddingTop:8,borderTop:"1px solid #e2e8f0",fontSize:9,color:"#94a3b8",textAlign:"center"}}>{"Brujula KIT - Informe Consolidado - " + new Date().toLocaleDateString("es-AR") + " - Debe ser revisado por el profesional tratante."}</div>
+                <div style={{marginTop:14,paddingTop:8,borderTop:"1px solid #e2e8f0",fontSize:9,color:"#94a3b8",textAlign:"center"}}>{"Brujula KIT - Informe Consolidado - " + new Date().toLocaleDateString("es-AR")}</div>
               </div>
             </div>}
           </div>}
