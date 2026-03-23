@@ -61,16 +61,98 @@ export function renderGroupedCoord(fields, rField){
 // ageMo: age in months. <72m (6y) = primary, 72-143m (6-11y) = mixed, >=144m (12y+) = permanent
 var DENTITION = {
   primary: {
-    upper: { teeth:["55","54","53","52","51","61","62","63","64","65"], names:["2\u00b0M","1\u00b0M","C","IL","IC","IC","IL","C","1\u00b0M","2\u00b0M"] },
-    lower: { teeth:["85","84","83","82","81","71","72","73","74","75"], names:["2\u00b0M","1\u00b0M","C","IL","IC","IC","IL","C","1\u00b0M","2\u00b0M"] },
-    label: "Primaria (20 piezas)", legend: "IC=Incisivo Central, IL=Incisivo Lateral, C=Canino, 1\u00b0M=1er Molar, 2\u00b0M=2do Molar"
+    upper: { teeth:["55","54","53","52","51","61","62","63","64","65"], names:["2\u00b0M","1\u00b0M","C","IL","IC","IC","IL","C","1\u00b0M","2\u00b0M"], shapes:["M","M","C","I","I","I","I","C","M","M"] },
+    lower: { teeth:["85","84","83","82","81","71","72","73","74","75"], names:["2\u00b0M","1\u00b0M","C","IL","IC","IC","IL","C","1\u00b0M","2\u00b0M"], shapes:["M","M","C","I","I","I","I","C","M","M"] },
+    label: "Primaria (20 piezas)", total: 10,
+    legend: "IC=Incisivo Central  IL=Incisivo Lateral  C=Canino  1\u00b0M=1er Molar  2\u00b0M=2do Molar"
   },
   permanent: {
-    upper: { teeth:["18","17","16","15","14","13","12","11","21","22","23","24","25","26","27","28"], names:["3\u00b0M","2\u00b0M","1\u00b0M","2\u00b0PM","1\u00b0PM","C","IL","IC","IC","IL","C","1\u00b0PM","2\u00b0PM","1\u00b0M","2\u00b0M","3\u00b0M"] },
-    lower: { teeth:["48","47","46","45","44","43","42","41","31","32","33","34","35","36","37","38"], names:["3\u00b0M","2\u00b0M","1\u00b0M","2\u00b0PM","1\u00b0PM","C","IL","IC","IC","IL","C","1\u00b0PM","2\u00b0PM","1\u00b0M","2\u00b0M","3\u00b0M"] },
-    label: "Permanente (32 piezas)", legend: "IC=Incisivo Central, IL=Incisivo Lateral, C=Canino, 1\u00b0PM=1er Premolar, 2\u00b0PM=2do Premolar, 1\u00b0M=1er Molar, 2\u00b0M=2do Molar, 3\u00b0M=3er Molar"
+    upper: { teeth:["18","17","16","15","14","13","12","11","21","22","23","24","25","26","27","28"], names:["3\u00b0M","2\u00b0M","1\u00b0M","2\u00b0PM","1\u00b0PM","C","IL","IC","IC","IL","C","1\u00b0PM","2\u00b0PM","1\u00b0M","2\u00b0M","3\u00b0M"], shapes:["M","M","M","P","P","C","I","I","I","I","C","P","P","M","M","M"] },
+    lower: { teeth:["48","47","46","45","44","43","42","41","31","32","33","34","35","36","37","38"], names:["3\u00b0M","2\u00b0M","1\u00b0M","2\u00b0PM","1\u00b0PM","C","IL","IC","IC","IL","C","1\u00b0PM","2\u00b0PM","1\u00b0M","2\u00b0M","3\u00b0M"], shapes:["M","M","M","P","P","C","I","I","I","I","C","P","P","M","M","M"] },
+    label: "Permanente (32 piezas)", total: 16,
+    legend: "IC=Incisivo Central  IL=Lateral  C=Canino  PM=Premolar  M=Molar"
   }
 };
+
+// SVG tooth shape paths (centered at 0,0 — scale with transform)
+var TOOTH_SVG = {
+  // Incisivo: rectangular redondeado, raíz simple
+  I: function(x, y, w, h, isUpper){
+    var rh = h * 0.45; // root height
+    var ch = h * 0.55; // crown height
+    var ry = isUpper ? y + rh : y;
+    var rootY = isUpper ? y : y + ch;
+    var rootDir = isUpper ? -1 : 1;
+    return '<rect x="'+(x+w*0.1)+'" y="'+ry+'" width="'+(w*0.8)+'" height="'+ch+'" rx="'+(w*0.15)+'" fill="#fff" stroke="#8b5cf6" stroke-width="1.2"/>' +
+      '<line x1="'+(x+w*0.5)+'" y1="'+rootY+'" x2="'+(x+w*0.5)+'" y2="'+(rootY+rh*rootDir)+'" stroke="#a78bfa" stroke-width="1.5" stroke-linecap="round"/>';
+  },
+  // Canino: más puntiagudo
+  C: function(x, y, w, h, isUpper){
+    var rh = h * 0.45; var ch = h * 0.55;
+    var ry = isUpper ? y + rh : y;
+    var rootY = isUpper ? y : y + ch;
+    var rootDir = isUpper ? -1 : 1;
+    var tipY = isUpper ? ry + ch : ry;
+    var baseY = isUpper ? ry : ry + ch;
+    return '<path d="M'+(x+w*0.1)+' '+baseY+' L'+(x+w*0.5)+' '+tipY+' L'+(x+w*0.9)+' '+baseY+' Z" fill="#fff" stroke="#8b5cf6" stroke-width="1.2" stroke-linejoin="round"/>' +
+      '<line x1="'+(x+w*0.5)+'" y1="'+rootY+'" x2="'+(x+w*0.5)+'" y2="'+(rootY+rh*rootDir*1.1)+'" stroke="#a78bfa" stroke-width="1.5" stroke-linecap="round"/>';
+  },
+  // Premolar: cuadrado con dos cúspides
+  P: function(x, y, w, h, isUpper){
+    var rh = h * 0.4; var ch = h * 0.6;
+    var ry = isUpper ? y + rh : y;
+    var rootY = isUpper ? y : y + ch;
+    var rootDir = isUpper ? -1 : 1;
+    return '<rect x="'+(x+w*0.05)+'" y="'+ry+'" width="'+(w*0.9)+'" height="'+ch+'" rx="'+(w*0.12)+'" fill="#fff" stroke="#8b5cf6" stroke-width="1.2"/>' +
+      '<line x1="'+(x+w*0.5)+'" y1="'+(ry+(isUpper?0:ch*0.3))+'" x2="'+(x+w*0.5)+'" y2="'+(ry+(isUpper?ch*0.7:ch))+'" stroke="#ddd6fe" stroke-width="0.5"/>' +
+      '<line x1="'+(x+w*0.35)+'" y1="'+rootY+'" x2="'+(x+w*0.35)+'" y2="'+(rootY+rh*rootDir*0.8)+'" stroke="#a78bfa" stroke-width="1.2" stroke-linecap="round"/>' +
+      '<line x1="'+(x+w*0.65)+'" y1="'+rootY+'" x2="'+(x+w*0.65)+'" y2="'+(rootY+rh*rootDir*0.8)+'" stroke="#a78bfa" stroke-width="1.2" stroke-linecap="round"/>';
+  },
+  // Molar: ancho con 2-3 raíces
+  M: function(x, y, w, h, isUpper){
+    var rh = h * 0.38; var ch = h * 0.62;
+    var ry = isUpper ? y + rh : y;
+    var rootY = isUpper ? y : y + ch;
+    var rootDir = isUpper ? -1 : 1;
+    return '<rect x="'+x+'" y="'+ry+'" width="'+w+'" height="'+ch+'" rx="'+(w*0.15)+'" fill="#fff" stroke="#8b5cf6" stroke-width="1.2"/>' +
+      '<line x1="'+(x+w*0.33)+'" y1="'+(ry+(isUpper?0:ch*0.3))+'" x2="'+(x+w*0.33)+'" y2="'+(ry+(isUpper?ch*0.7:ch))+'" stroke="#ddd6fe" stroke-width="0.5"/>' +
+      '<line x1="'+(x+w*0.66)+'" y1="'+(ry+(isUpper?0:ch*0.3))+'" x2="'+(x+w*0.66)+'" y2="'+(ry+(isUpper?ch*0.7:ch))+'" stroke="#ddd6fe" stroke-width="0.5"/>' +
+      '<line x1="'+(x+w*0.25)+'" y1="'+rootY+'" x2="'+(x+w*0.2)+'" y2="'+(rootY+rh*rootDir)+'" stroke="#a78bfa" stroke-width="1.2" stroke-linecap="round"/>' +
+      '<line x1="'+(x+w*0.5)+'" y1="'+rootY+'" x2="'+(x+w*0.5)+'" y2="'+(rootY+rh*rootDir*0.7)+'" stroke="#a78bfa" stroke-width="1" stroke-linecap="round"/>' +
+      '<line x1="'+(x+w*0.75)+'" y1="'+rootY+'" x2="'+(x+w*0.8)+'" y2="'+(rootY+rh*rootDir)+'" stroke="#a78bfa" stroke-width="1.2" stroke-linecap="round"/>';
+  }
+};
+
+function TeethSVG({archData, isUpper, isPerm}){
+  var count = archData.teeth.length;
+  var tw = isPerm ? 22 : 30;  // tooth width
+  var gap = isPerm ? 2 : 3;
+  var midGap = 8;
+  var totalW = count * tw + (count - 1) * gap + midGap;
+  var th = 48; // tooth height
+  var svgH = th + 20; // extra for labels
+  var svgW = totalW + 10;
+  var startX = 5;
+
+  var paths = "";
+  var labels = "";
+  archData.teeth.forEach(function(t, i){
+    var isMiddle = (i === count / 2);
+    var xOff = startX + i * (tw + gap) + (i >= count / 2 ? midGap : 0);
+    var shape = archData.shapes[i];
+    var drawFn = TOOTH_SVG[shape] || TOOTH_SVG.I;
+    paths += drawFn(xOff, isUpper ? 0 : 12, tw, th, isUpper);
+    // Number label
+    var lblY = isUpper ? th + 12 : 10;
+    labels += '<text x="'+(xOff + tw/2)+'" y="'+lblY+'" text-anchor="middle" font-size="'+(isPerm?7:8)+'" font-weight="700" fill="#5b21b6" font-family="system-ui,sans-serif">'+t+'</text>';
+    // Name label
+    var nameY = isUpper ? th + 20 : 2;
+    if(!isUpper) nameY = 4;
+    // Put name below number for upper, skip for lower (too crowded)
+  });
+
+  return {__html: '<svg viewBox="0 0 '+svgW+' '+(svgH)+'" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:'+(svgW*1.2)+'px;height:auto">' + paths + labels + '</svg>'};
+}
 
 export function TeethButton({arch, ageMo}){
   var age = typeof ageMo === "number" ? ageMo : 0;
@@ -86,12 +168,14 @@ export function TeethButton({arch, ageMo}){
   var dentLabel = isMixed ? "Mixta" : (showPermanent ? "Permanente" : "Primaria");
   var title = (isUpper ? "Arco Superior" : "Arco Inferior") + " \u2014 Dentici\u00f3n " + (tab === "perm" ? "Permanente" : "Primaria");
   var sideNote = isUpper
-    ? (isPerm ? "Derecha (18-11) | Izquierda (21-28)" : "Derecha (55-51) | Izquierda (61-65)")
-    : (isPerm ? "Derecha (48-41) | Izquierda (31-38)" : "Derecha (85-81) | Izquierda (71-75)");
+    ? (isPerm ? "Der. paciente (18-11) | Izq. (21-28)" : "Der. paciente (55-51) | Izq. (61-65)")
+    : (isPerm ? "Der. paciente (48-41) | Izq. (31-38)" : "Der. paciente (85-81) | Izq. (71-75)");
+
+  var svgData = TeethSVG({archData: archData, isUpper: isUpper, isPerm: isPerm});
 
   return <>
     <button onClick={function(e){e.preventDefault();setShow(!show)}} style={{padding:"4px 10px",borderRadius:6,border:"1px solid #c4b5fd",background:show?"#7c3aed":"#ede9fe",color:show?"#fff":"#7c3aed",fontSize:10,fontWeight:600,cursor:"pointer",marginLeft:8}}>
-      {show ? "Ocultar diagrama" : "Ver diagrama"}
+      {show ? "Ocultar diagrama" : "\ud83e\uddb7 Ver diagrama dental"}
     </button>
     {show && <div style={{marginTop:8,background:"#f8faf9",border:"1px solid #e2e8f0",borderRadius:10,padding:16}}>
       {/* Age indicator */}
@@ -100,22 +184,23 @@ export function TeethButton({arch, ageMo}){
       </div>}
       {/* Tabs to switch between primary and permanent */}
       <div style={{display:"flex",justifyContent:"center",gap:6,marginBottom:10}}>
-        <button onClick={function(e){e.preventDefault();setTab("prim")}} style={{padding:"4px 12px",borderRadius:6,border:tab==="prim"?"2px solid #7c3aed":"1px solid #e2e8f0",background:tab==="prim"?"#ede9fe":"#fff",color:tab==="prim"?"#5b21b6":"#64748b",fontSize:10,fontWeight:600,cursor:"pointer"}}>{"Primaria (decidua)"}</button>
-        <button onClick={function(e){e.preventDefault();setTab("perm")}} style={{padding:"4px 12px",borderRadius:6,border:tab==="perm"?"2px solid #7c3aed":"1px solid #e2e8f0",background:tab==="perm"?"#ede9fe":"#fff",color:tab==="perm"?"#5b21b6":"#64748b",fontSize:10,fontWeight:600,cursor:"pointer"}}>{"Permanente"}</button>
+        <button onClick={function(e){e.preventDefault();setTab("prim")}} style={{padding:"5px 14px",borderRadius:6,border:tab==="prim"?"2px solid #7c3aed":"1px solid #e2e8f0",background:tab==="prim"?"#ede9fe":"#fff",color:tab==="prim"?"#5b21b6":"#64748b",fontSize:10,fontWeight:600,cursor:"pointer"}}>{"Primaria (decidua)"}</button>
+        <button onClick={function(e){e.preventDefault();setTab("perm")}} style={{padding:"5px 14px",borderRadius:6,border:tab==="perm"?"2px solid #7c3aed":"1px solid #e2e8f0",background:tab==="perm"?"#ede9fe":"#fff",color:tab==="perm"?"#5b21b6":"#64748b",fontSize:10,fontWeight:600,cursor:"pointer"}}>{"Permanente"}</button>
       </div>
-      <div style={{fontSize:12,fontWeight:700,color:"#7c3aed",marginBottom:8,textAlign:"center"}}>{title}</div>
-      {/* Teeth row */}
-      <div style={{display:"flex",justifyContent:"center",gap:isPerm?2:4,flexWrap:"wrap"}}>
+      <div style={{fontSize:12,fontWeight:700,color:"#7c3aed",marginBottom:6,textAlign:"center"}}>{title}</div>
+      {/* Visual SVG teeth */}
+      <div style={{display:"flex",justifyContent:"center",overflow:"auto",padding:"4px 0"}} dangerouslySetInnerHTML={svgData} />
+      {/* Names row */}
+      <div style={{display:"flex",justifyContent:"center",gap:isPerm?2:3,marginTop:4,flexWrap:"wrap"}}>
         {archData.teeth.map(function(t,i){
-          var isMiddle = (i === archData.teeth.length/2 - 1);
-          return <div key={t} style={{textAlign:"center",marginRight:isMiddle?8:0}}>
-            <div style={{width:isPerm?24:30,height:isPerm?24:28,borderRadius:6,background:"#fff",border:"1.5px solid #a78bfa",display:"flex",alignItems:"center",justifyContent:"center",fontSize:isPerm?9:10,fontWeight:700,color:"#5b21b6"}}>{t}</div>
-            <div style={{fontSize:isPerm?7:8,color:"#64748b",marginTop:2,lineHeight:1.1}}>{archData.names[i]}</div>
+          var isMiddleLast = (i === archData.teeth.length/2 - 1);
+          return <div key={t} style={{width:isPerm?22:30,textAlign:"center",marginRight:isMiddleLast?8:0}}>
+            <div style={{fontSize:isPerm?6:7,color:"#64748b",lineHeight:1.1}}>{archData.names[i]}</div>
           </div>;
         })}
       </div>
-      <div style={{fontSize:9,color:"#64748b",marginTop:8,textAlign:"center"}}>{dent.legend}</div>
-      <div style={{fontSize:9,color:"#7c3aed",marginTop:3,textAlign:"center"}}>{sideNote}</div>
+      <div style={{fontSize:8,color:"#64748b",marginTop:6,textAlign:"center"}}>{dent.legend}</div>
+      <div style={{fontSize:8,color:"#7c3aed",marginTop:2,textAlign:"center"}}>{sideNote}</div>
       {isMixed && <div style={{fontSize:9,color:"#d97706",marginTop:6,textAlign:"center",background:"#fffbeb",padding:"4px 8px",borderRadius:6,border:"1px solid #fde68a"}}>
         {"Dentici\u00f3n mixta: el paciente puede tener piezas deciduas y permanentes coexistiendo."}
       </div>}
