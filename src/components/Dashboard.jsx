@@ -22,15 +22,18 @@ function countThisMonth(arr){
 }
 
 var TOOL_MAP = {
-  newPEFF: { icon: "🔊", name: "PEFF", color: "#7c3aed" },
-  newREP: { icon: "📝", name: "Rep. Palabras", color: "#2563eb" },
-  newDISC: { icon: "👂", name: "Disc. Fonol.", color: "#d97706" },
-  newRECO: { icon: "🎯", name: "Reco. Fonol.", color: "#9333ea" }
+  newPEFF: { icon: "\ud83d\udd0a", name: "PEFF", color: "#7c3aed" },
+  newOFA: { icon: "\ud83e\uddb7", name: "Examen EOF", color: "#0891b2" },
+  newFON: { icon: "\ud83d\udde3\ufe0f", name: "Eval. Fon\u00e9tica", color: "#6d28d9" },
+  newREP: { icon: "\ud83d\udcdd", name: "Rep. Palabras", color: "#2563eb" },
+  newDISC: { icon: "\ud83d\udc42", name: "Disc. Fonol.", color: "#d97706" },
+  newRECO: { icon: "\ud83c\udfaf", name: "Reco. Fonol.", color: "#9333ea" },
+  newELDI: { icon: "\ud83e\uddd2", name: "ELDI", color: "#0d9488" }
 };
-var TOOL_IDS = ["newPEFF","newREP","newDISC","newRECO"];
+var TOOL_IDS = ["newPEFF","newOFA","newFON","newREP","newDISC","newRECO","newELDI"];
 
 function loadShortcuts(uid){
-  try { var raw = window.localStorage.getItem("bk_shortcuts_"+uid); if(raw){ var parsed = JSON.parse(raw); if(Array.isArray(parsed)) return parsed.filter(function(s){return s!=="newELDI"}).slice(0,4); } } catch(e){}
+  try { var raw = window.localStorage.getItem("bk_shortcuts_"+uid); if(raw){ var parsed = JSON.parse(raw); if(Array.isArray(parsed)) return parsed.slice(0,4); } } catch(e){}
   return [];
 }
 function saveShortcuts(uid, arr){ try { window.localStorage.setItem("bk_shortcuts_"+uid, JSON.stringify(arr.slice(0,4))); } catch(e){} }

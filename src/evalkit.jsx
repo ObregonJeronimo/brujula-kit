@@ -37,6 +37,7 @@ var NewFON = lazyRetry(function(){ return import("./components/NewFON.jsx"); });
 var NewREP = lazyRetry(function(){ return import("./components/NewREP.jsx"); });
 var NewDISC = lazyRetry(function(){ return import("./components/NewDISC.jsx"); });
 var NewRECO = lazyRetry(function(){ return import("./components/NewRECO.jsx"); });
+var NewPEFF = lazyRetry(function(){ return import("./components/NewPEFF.jsx"); });
 var RptPEFF = lazyRetry(function(){ return import("./components/RptPEFF.jsx"); });
 var RptREP = lazyRetry(function(){ return import("./components/RptREP.jsx"); });
 var RptDISC = lazyRetry(function(){ return import("./components/RptDISC.jsx"); });
@@ -59,7 +60,7 @@ class ErrorBoundary extends Component {
   }
 }
 
-var NEW_COMPONENTS = { newELDI: NewELDI, newOFA: NewOFA, newFON: NewFON, newREP: NewREP, newDISC: NewDISC, newRECO: NewRECO };
+var NEW_COMPONENTS = { newPEFF: NewPEFF, newELDI: NewELDI, newOFA: NewOFA, newFON: NewFON, newREP: NewREP, newDISC: NewDISC, newRECO: NewRECO };
 var RPT_COMPONENTS = { rptP: RptPEFF, rptR: RptREP, rptD: RptDISC, rptRC: RptRECO, rptEL: RptELDI, rptGen: RptGeneric };
 var ALL_NEW_VIEWS = Object.keys(NEW_COMPONENTS);
 var isMobile = function(){ return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) && window.innerWidth < 900; };
