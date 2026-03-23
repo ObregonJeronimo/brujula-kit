@@ -7,7 +7,7 @@ import { K } from "../lib/fb.js";
 
 
 
-export default function RptELDI({ev,onD}){
+export default function RptELDI({ev,onD,therapistInfo}){
   var _cd = useState(false), cd = _cd[0], sCD = _cd[1];
   var _showTech = useState(false), showTech = _showTech[0], setShowTech = _showTech[1];
   var rsp = ev.respuestas || {};
@@ -127,7 +127,7 @@ export default function RptELDI({ev,onD}){
     </div>
 
     {/* AI Report Panel */}
-    <AIReportPanel ev={ev} evalType="eldi" collectionName="evaluaciones" evalLabel="Evaluación del Lenguaje (ELDI)" />
+    <AIReportPanel ev={ev} evalType="eldi" collectionName="evaluaciones" evalLabel="Evaluación del Lenguaje (ELDI)" therapistInfo={therapistInfo} />
 
     {/* Technical Data Toggle */}
     <button onClick={function(){ setShowTech(!showTech); }} style={{width:"100%",padding:"14px",background:showTech?"#f1f5f9":"#0a3d2f",color:showTech?"#1e293b":"#fff",border:"1px solid #e2e8f0",borderRadius:10,fontSize:14,fontWeight:600,cursor:"pointer",marginBottom:showTech?16:20}}>

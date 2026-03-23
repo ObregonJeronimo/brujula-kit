@@ -131,12 +131,21 @@ export var EVAL_TYPES = {
     icon: "\ud83e\uddb7",
     color: "#0891b2",
     badgeBg: "#cffafe",
-    age: "",
+    age: "Todas",
     time: "~15-20 min",
     desc: "Evaluacion de organos fonoarticulatorios: labios, ATM, lengua, dientes, paladar y velo.",
     newView: "newOFA",
     rptView: "rptGen",
-    histTab: "EOF"
+    histTab: "EOF",
+    info: {
+      title: "Examen Cl\u00ednico de \u00d3rganos Fonoarticulatorios",
+      sections: [
+        { label: "Qu\u00e9 eval\u00faa", text: "Examen estructural y funcional de los \u00f3rganos involucrados en el habla: labios, lengua, articulaci\u00f3n temporomandibular (ATM), dientes y oclusi\u00f3n, paladar duro y blando, velo del paladar, y coordinaci\u00f3n fonoarticulatoria (diadococinesias)." },
+        { label: "C\u00f3mo funciona", text: "El profesional observa y registra postura, tono, movilidad y funci\u00f3n de cada estructura. Incluye pruebas de praxias (movimientos voluntarios) y evaluaci\u00f3n de la velocidad/coordinaci\u00f3n articulatoria mediante secuencias r\u00e1pidas (/pa-ta-ka/)." },
+        { label: "Interpretaci\u00f3n", text: "Las alteraciones estructurales o funcionales detectadas se correlacionan con las dificultades de habla observadas. Orienta si el trastorno es de base org\u00e1nica (disartria, disglosia) o funcional." },
+        { label: "Poblaci\u00f3n objetivo", text: "Aplicable a todas las edades. Imprescindible como parte del protocolo de evaluaci\u00f3n de cualquier trastorno de los sonidos del habla." }
+      ]
+    }
   },
   fon: {
     id: "fon",
@@ -145,12 +154,21 @@ export var EVAL_TYPES = {
     icon: "\ud83d\udde3\ufe0f",
     color: "#6d28d9",
     badgeBg: "#ede9fe",
-    age: "",
+    age: "2;6-6;11",
     time: "~20-30 min",
     desc: "Repeticion de silabas con clasificacion de errores y procesos fonologicos.",
     newView: "newFON",
     rptView: "rptGen",
-    histTab: "FON"
+    histTab: "FON",
+    info: {
+      title: "Evaluaci\u00f3n Fon\u00e9tica \u2014 Repetici\u00f3n de S\u00edlabas",
+      sections: [
+        { label: "Qu\u00e9 eval\u00faa", text: "Eval\u00faa la capacidad de producci\u00f3n fon\u00e9tica a nivel de s\u00edlaba aislada. Cubre todos los fonemas del espa\u00f1ol organizados por edad de adquisici\u00f3n esperada (3, 4, 5 y 6 a\u00f1os), incluyendo grupos conson\u00e1nticos y diptongos." },
+        { label: "C\u00f3mo funciona", text: "El profesional presenta cada s\u00edlaba y el paciente la repite. Se registra si la producci\u00f3n es correcta, tiene distorsi\u00f3n, omisi\u00f3n o sustituci\u00f3n. Para errores, se anota la producci\u00f3n del paciente y el sistema sugiere autom\u00e1ticamente el proceso fonol\u00f3gico involucrado." },
+        { label: "Resultados", text: "Calcula el Porcentaje de Consonantes Correctas (PCC) y clasifica la severidad: Adecuado (100%), Leve (85-99%), Leve-Moderado (65-84%), Moderado-Severo (50-64%), Severo (<50%). Lista todos los errores con su proceso fonol\u00f3gico." },
+        { label: "Utilidad cl\u00ednica", text: "Permite identificar qu\u00e9 fonemas est\u00e1n alterados a nivel de producci\u00f3n aislada (sin la complejidad de la palabra), diferenciando si el ni\u00f1o puede producir el sonido en contexto simplificado. Complementa la Repetici\u00f3n de Palabras." }
+      ]
+    }
   }
 };
 

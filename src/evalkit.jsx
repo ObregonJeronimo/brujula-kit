@@ -42,6 +42,7 @@ var RptREP = lazyRetry(function(){ return import("./components/RptREP.jsx"); });
 var RptDISC = lazyRetry(function(){ return import("./components/RptDISC.jsx"); });
 var RptRECO = lazyRetry(function(){ return import("./components/RptRECO.jsx"); });
 var RptGeneric = lazyRetry(function(){ return import("./components/RptGeneric.jsx"); });
+var RptELDI = lazyRetry(function(){ return import("./components/RptELDI.jsx"); });
 
 var LazyFallback = <div style={{display:"flex",alignItems:"center",justifyContent:"center",padding:60,color:"#64748b",fontSize:14,fontWeight:500}}>Cargando...</div>;
 
@@ -59,7 +60,7 @@ class ErrorBoundary extends Component {
 }
 
 var NEW_COMPONENTS = { newELDI: NewELDI, newOFA: NewOFA, newFON: NewFON, newREP: NewREP, newDISC: NewDISC, newRECO: NewRECO };
-var RPT_COMPONENTS = { rptP: RptPEFF, rptR: RptREP, rptD: RptDISC, rptRC: RptRECO, rptGen: RptGeneric };
+var RPT_COMPONENTS = { rptP: RptPEFF, rptR: RptREP, rptD: RptDISC, rptRC: RptRECO, rptEL: RptELDI, rptGen: RptGeneric };
 var ALL_NEW_VIEWS = Object.keys(NEW_COMPONENTS);
 var isMobile = function(){ return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) && window.innerWidth < 900; };
 

@@ -1,7 +1,7 @@
 // Vercel Serverless Function — generate AI fonoaudiological report using Groq
 // POST /api/generate-report
 // Body: { evalData, evalType }
-// evalType: "eldi" | "peff" | "rep" | "disc" | "reco"
+// evalType: "eldi" | "peff" | "rep" | "disc" | "reco" | "ofa" | "fon"
 
 function buildEvalSummary(ev, evalType) {
   var edadAnios = Math.floor((ev.edadMeses || 0) / 12);
@@ -70,6 +70,48 @@ function buildEvalSummary(ev, evalType) {
         data += sec.label + ": " + (sec.summary || JSON.stringify(sec.results || {}).substring(0, 100)) + "\n";
       }
     });
+
+  } else if (evalType === "ofa") {
+    var ofaData = ev.seccionData || {};
+    data = "Evaluacion: Examen Clinico de Organos Fonoarticulatorios (EOF)\n";
+    data += "Campos completados: " + (res.answered || 0) + "/" + (res.total || 0) + " (" + (res.pct || 0) + "%)\n\n";
+    var ofaSections = { lab: "LABIOS", atm: "ATM/MANDIBULA", len: "LENGUA", die: "DIENTES Y OCLUSION", pal: "PALADAR DURO", vel: "ESFINTER VELOFARINGEO" };
+    Object.keys(ofaSections).forEach(function(prefix) {
+      var sectionEntries = Object.entries(ofaData).filter(function(e) { return e[0].startsWith(prefix + "_") && e[1]; });
+      if (sectionEntries.length > 0) {
+        data += ofaSections[prefix] + ":\n";
+        sectionEntries.forEach(function(e) { data += "  " + e[0] + ": " + e[1] + "\n"; });
+      }
+    });
+    // Include coordination fields
+    var coordEntries = Object.entries(ofaData).filter(function(e) { return (e[0].startsWith("pa_") || e[0].startsWith("ta_") || e[0].startsWith("ka_") || e[0].startsWith("ere_") || e[0].startsWith("rra_") || e[0].startsWith("vowel_") || e[0].startsWith("pataka_")) && e[1]; });
+    if (coordEntries.length > 0) {
+      data += "COORDINACION FONOARTICULATORIA (DIADOCOCINESIAS):\n";
+      coordEntries.forEach(function(e) { data += "  " + e[0] + ": " + e[1] + "\n"; });
+    }
+
+  } else if (evalType === "fon") {
+    var fonData = ev.seccionData || {};
+    var fonProc = ev.procesosData || {};
+    data = "Evaluacion: Evaluacion Fonetica (Repeticion de Silabas)\n";
+    data += "PCC: " + (res.pct || 0) + "%, Correctos: " + (res.ok || 0) + "/" + (res.evaluated || 0) + ", Severidad: " + (res.severity || "N/C") + "\n\n";
+    // Count by error type
+    var distCount = 0, omisCount = 0, sustCount = 0, okCount = 0;
+    Object.values(fonData).forEach(function(v) {
+      if (v === "ok") okCount++;
+      else if (v === "D") distCount++;
+      else if (v === "O") omisCount++;
+      else if (v === "S") sustCount++;
+    });
+    data += "DISTRIBUCION: Correctos=" + okCount + " Distorsiones=" + distCount + " Omisiones=" + omisCount + " Sustituciones=" + sustCount + "\n\n";
+    // Process errors
+    var procErrors = (res.procErrors || []);
+    if (procErrors.length > 0) {
+      data += "ERRORES CON PROCESOS FONOLOGICOS (" + procErrors.length + "):\n";
+      procErrors.slice(0, 30).forEach(function(e) {
+        data += "  " + e.word + " (" + e.target + ") -> " + (e.produccion || "?") + " | Proceso: " + (e.procesoName || "sin clasificar") + "\n";
+      });
+    }
   }
 
   return { header: header, data: data, obs: obs };
