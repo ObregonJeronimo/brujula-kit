@@ -4,7 +4,7 @@ import AIReportPanel from "./AIReportPanel.jsx";
 import { K, ageLabel } from "../lib/fb.js";
 import { getEvalType } from "../config/evalTypes.js";
 
-export default function RptGeneric({ ev, onD }) {
+export default function RptGeneric({ ev, onD, therapistInfo }) {
   var _showTech = useState(false), showTech = _showTech[0], setShowTech = _showTech[1];
   var evalConfig = getEvalType(ev.tipo);
   var label = evalConfig ? evalConfig.fullName : (ev.tipo || "").toUpperCase();
@@ -23,7 +23,7 @@ export default function RptGeneric({ ev, onD }) {
       ev={ev}
       evalType={ev.tipo}
       collectionName="evaluaciones"
-      evalLabel={label}
+      evalLabel={label} therapistInfo={therapistInfo}
     />
 
     <button onClick={function(){setShowTech(!showTech)}} style={{width:"100%",padding:"14px",background:showTech?"#f1f5f9":"#0a3d2f",color:showTech?"#1e293b":"#fff",border:"1px solid #e2e8f0",borderRadius:10,fontSize:14,fontWeight:600,cursor:"pointer",marginBottom:showTech?16:20}}>{showTech ? "Ocultar datos tecnicos" : "Ver datos tecnicos de la evaluacion"}</button>

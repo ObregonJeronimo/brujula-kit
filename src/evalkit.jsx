@@ -229,7 +229,7 @@ export default function App() {
         <Suspense fallback={LazyFallback}>
           {NEW_COMPONENTS[view] && (function(){ var C = NEW_COMPONENTS[view]; return <C onS={onEvalDone} nfy={nfy} userId={authUser?.uid} draft={activeDraft} therapistInfo={profile?.reportHeader} />; })()}
           {view==="hist"&&<Hist allEvals={allEvals} onView={viewReport} isA={isAdmin} onD={deleteEval} enabledTools={enabledTools} />}
-          {RPT_COMPONENTS[view] && sel && (function(){ var C = RPT_COMPONENTS[view]; return <C ev={sel} onD={deleteEval} userSettings={userSettings} />; })()}
+          {RPT_COMPONENTS[view] && sel && (function(){ var C = RPT_COMPONENTS[view]; return <C ev={sel} onD={deleteEval} userSettings={userSettings} therapistInfo={profile?.reportHeader} />; })()}
           {view==="profile"&&<ProfilePage profile={profile} authUser={authUser} nfy={nfy} onBuyCredits={goToPremium} />}
           {view==="pacientes"&&<PacientesPage userId={authUser?.uid} nfy={nfy} allEvals={allEvals} />}
           {view==="calendario"&&<CalendarPage userId={authUser?.uid} nfy={nfy} userSettings={userSettings} profesionalNombre={profile?.nombre || profile?.username || ""} />}
