@@ -28,6 +28,14 @@ function discRenderEval(props) {
   var answeredCount = Object.keys(responses).length;
 
   return <div>
+    {/* Instructions */}
+    <div style={{background:"#fff7ed",border:"1px solid #fed7aa",borderRadius:12,padding:"16px 20px",marginBottom:16}}>
+      <div style={{fontSize:14,fontWeight:700,color:"#c2410c",marginBottom:6}}>{"Como aplicar esta prueba"}</div>
+      <div style={{fontSize:13,color:"#475569",lineHeight:1.7}}>
+        {"Tapese la boca con la mano o una hoja para que el paciente no pueda leer sus labios. Diga cada par de palabras en voz alta y pregunte: \"Estas dos palabras son iguales o distintas?\". Registre la respuesta del paciente."}
+      </div>
+    </div>
+
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
       <div style={{fontSize:13,color:K.mt,fontWeight:600}}>{"Progreso: "+answeredCount+"/"+DISC_PAIRS.length}</div>
       <div style={{width:120,height:6,background:"#e2e8f0",borderRadius:3,overflow:"hidden"}}><div style={{width:Math.round(answeredCount/DISC_PAIRS.length*100)+"%",height:"100%",background:K.ac,borderRadius:3,transition:"width .3s"}}></div></div>

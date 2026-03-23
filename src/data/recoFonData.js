@@ -118,18 +118,18 @@ export function computeRecoResults(responses) {
     group.items.forEach(function(item) {
       var key = item.lam;
       var r = responses[key];
-      if (r === true || r === "si") {
+      // Support both old format (si/no) and new format (w1/w2)
+      if (r === "w1" || r === true || r === "si") {
         gTotal++;
         totalEvaluated++;
         gCorrect++;
         totalCorrect++;
         gItems.push({ lam: key, reconoce: true });
-      } else if (r === false || r === "no") {
+      } else if (r === "w2" || r === false || r === "no") {
         gTotal++;
         totalEvaluated++;
         gItems.push({ lam: key, reconoce: false });
       } else {
-        // Not evaluated — skip entirely
         gItems.push({ lam: key, reconoce: null, notEvaluated: true });
       }
     });

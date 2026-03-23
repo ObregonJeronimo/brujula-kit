@@ -4,8 +4,8 @@ import EvalShell from "./EvalShell.jsx";
 import { K } from "../lib/fb.js";
 
 var SHELL_CONFIG = {
-  title: "Reconocimiento Fonológico",
-  subtitle: "Evaluación de reconocimiento de contrastes fonológicos",
+  title: "Reconocimiento Fonológico Visual",
+  subtitle: "El paciente asocia imagenes con palabras",
   icon: "\ud83e\udde0",
   evalType: "reco",
   color: "#9333ea",
@@ -34,7 +34,7 @@ function recoRenderEval(props) {
     <div style={{background:"#f3e8ff",border:"1px solid #c4b5fd",borderRadius:12,padding:"16px 20px",marginBottom:20}}>
       <div style={{fontSize:14,fontWeight:700,color:"#7c3aed",marginBottom:6}}>{"Como aplicar esta prueba"}</div>
       <div style={{fontSize:13,color:"#475569",lineHeight:1.7}}>
-        {"Para cada item: diga las 5 palabras en voz alta, una por una. El paciente debe identificar si las palabras son iguales o diferentes. Marque 'Si' si el paciente reconoce correctamente el contraste entre los pares de palabras, o 'No' si no lo reconoce."}
+        {"Muestre al paciente las dos imagenes de cada par. Diga una de las palabras en voz alta y pida al paciente que senale la imagen correspondiente. Registre que imagen eligio el paciente. Los resultados se muestran al finalizar la evaluacion."}
       </div>
     </div>
 
@@ -49,27 +49,41 @@ function recoRenderEval(props) {
         <div style={{padding:"12px 16px"}}>
           {group.items.map(function(item){
             var r = responses[item.lam];
+            // Extract the 2 unique words (the contrast pair)
             var pair = [];
             item.est.forEach(function(w){ if(pair.indexOf(w) === -1) pair.push(w); });
-            var pairText = pair.join(" / ");
+            var word1 = pair[0] || "";
+            var word2 = pair[1] || word1;
+            // Which word did the patient choose?
+            var chose1 = r === "w1";
+            var chose2 = r === "w2";
+            var answered = chose1 || chose2;
+            // Placeholder images (colored cards with first letter)
+            var imgStyle = function(w, selected){ return {
+              flex:1, minWidth:100, padding:"20px 16px", borderRadius:12,
+              border: selected ? "3px solid #7c3aed" : "2px solid #e2e8f0",
+              background: selected ? "#f3e8ff" : "#f8faf9",
+              cursor:"pointer", textAlign:"center", transition:"all .15s"
+            }; };
 
-            return <div key={item.lam} style={{padding:"12px 16px",marginBottom:8,borderRadius:10,border:"1px solid "+(r==="si"?"#bbf7d0":r==="no"?"#fecaca":"#e2e8f0"),background:r==="si"?"#f0fdf4":r==="no"?"#fef2f2":"#fff"}}>
-              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,flexWrap:"wrap"}}>
-                <div style={{display:"flex",alignItems:"center",gap:10,flex:1}}>
-                  <span style={{fontSize:13,fontWeight:700,color:"#64748b",minWidth:30}}>{"#"+item.lam}</span>
-                  <div>
-                    <div style={{fontSize:15,fontWeight:700,color:"#1e293b"}}>{pairText}</div>
-                    <div style={{fontSize:11,color:"#94a3b8",marginTop:2}}>{"Diga las palabras en voz alta. El paciente identifica el contraste?"}</div>
-                  </div>
+            return <div key={item.lam} style={{padding:"12px 0",marginBottom:8,borderBottom:"1px solid #f1f5f9"}}>
+              <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+                <span style={{fontSize:12,fontWeight:700,color:"#64748b"}}>{"#"+item.lam}</span>
+                <span style={{fontSize:12,color:"#94a3b8"}}>{"Diga una palabra y el paciente senala la imagen"}</span>
+              </div>
+              <div style={{display:"flex",gap:12}}>
+                {/* Image card 1 */}
+                <div onClick={function(){setResponse(item.lam, chose1 ? undefined : "w1")}} style={imgStyle(word1, chose1)}>
+                  <div style={{width:60,height:60,borderRadius:12,background:"linear-gradient(135deg,#dbeafe,#bfdbfe)",margin:"0 auto 8px",display:"flex",alignItems:"center",justifyContent:"center",fontSize:28,fontWeight:800,color:"#2563eb"}}>{word1.charAt(0).toUpperCase()}</div>
+                  <div style={{fontSize:14,fontWeight:700,color:chose1?"#7c3aed":"#1e293b"}}>{word1}</div>
                 </div>
-                <div style={{display:"flex",gap:6}}>
-                  <button onClick={function(){setResponse(item.lam,r==="si"?undefined:"si")}} style={{padding:"8px 16px",borderRadius:8,border:r==="si"?"2px solid #059669":"1px solid #e2e8f0",background:r==="si"?"#059669":"#fff",color:r==="si"?"#fff":"#64748b",fontSize:13,fontWeight:700,cursor:"pointer"}}>{"Si"}</button>
-                  <button onClick={function(){setResponse(item.lam,r==="no"?undefined:"no")}} style={{padding:"8px 16px",borderRadius:8,border:r==="no"?"2px solid #dc2626":"1px solid #e2e8f0",background:r==="no"?"#dc2626":"#fff",color:r==="no"?"#fff":"#64748b",fontSize:13,fontWeight:700,cursor:"pointer"}}>{"No"}</button>
+                {/* Image card 2 */}
+                <div onClick={function(){setResponse(item.lam, chose2 ? undefined : "w2")}} style={imgStyle(word2, chose2)}>
+                  <div style={{width:60,height:60,borderRadius:12,background:"linear-gradient(135deg,#fce7f3,#fbcfe8)",margin:"0 auto 8px",display:"flex",alignItems:"center",justifyContent:"center",fontSize:28,fontWeight:800,color:"#db2777"}}>{word2.charAt(0).toUpperCase()}</div>
+                  <div style={{fontSize:14,fontWeight:700,color:chose2?"#7c3aed":"#1e293b"}}>{word2}</div>
                 </div>
               </div>
-              {r==="no" && <div style={{marginTop:8}}>
-                <input value={obsMap[item.lam]||""} onChange={function(e){setOb(item.lam,e.target.value)}} placeholder="Observacion (opcional)" style={{width:"100%",padding:"6px 10px",border:"1px solid #fecaca",borderRadius:6,fontSize:12,background:"#fff"}} />
-              </div>}
+              {answered && <div style={{marginTop:6,fontSize:11,color:"#7c3aed",fontWeight:600}}>{"Eligio: " + (chose1?word1:word2)}</div>}
             </div>;
           })}
         </div>

@@ -4,7 +4,20 @@ import { PEFF_SECTIONS } from "../data/peffSections.js";
 import { PF_CATEGORIES, ALL_PROCESSES } from "../data/peffProcesos.js";
 import EvalShell from "./EvalShell.jsx";
 
-var FON_SECTION = PEFF_SECTIONS.find(function(s){ return s.id === "fon"; });
+var FON_SECTION_RAW = PEFF_SECTIONS.find(function(s){ return s.id === "fon"; });
+// Filter out Vocales and clean titles (remove "X años")
+var FON_SECTION = {
+  id: FON_SECTION_RAW.id,
+  title: FON_SECTION_RAW.title,
+  description: FON_SECTION_RAW.description,
+  subsections: FON_SECTION_RAW.subsections.filter(function(sub){
+    return sub.id !== "sil_2"; // Remove Vocales
+  }).map(function(sub){
+    return Object.assign({}, sub, {
+      title: sub.title.replace(/\s*\d+\s*a\u00f1os?\s*/gi, " ").replace(/^\d+\.\d*\s*/, "").replace(/Fonemas\s*/, "Fonemas ").trim()
+    });
+  })
+};
 var I = {width:"100%",padding:"10px 14px",border:"1px solid #e2e8f0",borderRadius:8,fontSize:14,background:"#f8faf9"};
 var speak = function(text){
   if(!window.speechSynthesis) return;

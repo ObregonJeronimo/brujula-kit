@@ -81,7 +81,7 @@ export var EVAL_TYPES = {
   reco: {
     id: "reco",
     label: "RECO",
-    fullName: "Reconocimiento Fonológico",
+    fullName: "Reconocimiento Fonológico Visual",
     icon: "🎯",
     color: "#9333ea",
     badgeBg: "#f3e8ff",
