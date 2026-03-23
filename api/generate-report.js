@@ -167,6 +167,8 @@ export default async function handler(req, res) {
         + "- NO incluir porcentajes numericos.\n"
         + "- NO usar guiones para listas, redactar todo en prosa fluida.\n"
         + "- Espanol rioplatense profesional.\n"
+        + "- ORTOGRAFIA: usar SIEMPRE acentos y tildes correctos (evaluacion, fonologico, articulacion, etc). Esto es MUY IMPORTANTE.\n"
+        + "- No repetir el nombre del paciente mas de 2 veces en todo el informe. Usar 'el paciente', 'el/la nino/a' en su lugar.\n"
         + "- Extension: entre 35 y 50 lineas.\n\n"
         + summary.header + "\n" + summary.data + "\nOBS: " + summary.obs;
     } else {
@@ -189,7 +191,10 @@ export default async function handler(req, res) {
         + "Recomendaciones clinicas breves: necesidad de intervencion, enfoque sugerido, orientaciones para familia/escuela.\n\n"
         + "DIRECTRICES: Tercera persona, tiempo presente. Tono clinico formal. "
         + "NO usar markdown, asteriscos, guiones para listas. Todo en prosa fluida. "
-        + "NO incluir porcentajes. Espanol rioplatense. Entre 15 y 25 lineas.\n\n"
+        + "NO incluir porcentajes. Espanol rioplatense. "
+        + "ORTOGRAFIA: usar SIEMPRE acentos y tildes correctos (evaluacion, fonologico, articulacion, etc). "
+        + "No repetir el nombre del paciente mas de 2 veces, usar 'el paciente' o 'el/la nino/a'. "
+        + "Entre 15 y 25 lineas.\n\n"
         + summary.header + "\n" + summary.data + "\nOBS: " + summary.obs;
     }
 

@@ -112,12 +112,24 @@ export default function AdminPanel({ nfy }) {
               <div style={{padding:"14px 20px"}}>
                 {!isEditing ? <div>
                   <div style={{fontSize:13,color:"#475569",lineHeight:1.6,marginBottom:10}}>{cfg.desc || t.desc}</div>
-                  <button onClick={function(){
+                  <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:10}}>
+                    <button onClick={function(){
+                      var updated = Object.assign({}, toolsConfig);
+                      if(!updated[t.id]) updated[t.id] = { enabled: true };
+                      updated[t.id] = Object.assign({}, updated[t.id], { showAge: cfg.showAge === false ? true : false });
+                      setToolsConfig(updated);
+                      setDoc(doc(db, "config", "tools"), updated).then(function(){ nfy("Edad "+(updated[t.id].showAge?"visible":"oculta"),"ok"); });
+                    }} style={{display:"flex",alignItems:"center",gap:6,background:"none",border:"1px solid #e2e8f0",borderRadius:8,padding:"6px 12px",cursor:"pointer",fontSize:11,fontWeight:600,color:cfg.showAge!==false?"#059669":"#dc2626"}}>
+                      <span style={{width:32,height:16,borderRadius:8,background:cfg.showAge!==false?"#059669":"#dc2626",display:"inline-block",position:"relative"}}><span style={{width:12,height:12,borderRadius:6,background:"#fff",position:"absolute",top:2,left:cfg.showAge!==false?18:2,transition:"left .2s"}}></span></span>
+                      {"Edad: "+(cfg.showAge!==false?"visible":"oculta")}
+                    </button>
+                    <button onClick={function(){
                     setEditTitle(function(p){ return Object.assign({},p,{[t.id]:cfg.title||t.fullName}); });
                     setEditDesc(function(p){ return Object.assign({},p,{[t.id]:cfg.desc||t.desc}); });
                     setEditAge(function(p){ return Object.assign({},p,{[t.id]:cfg.age||t.age||""}); });
                     setEditTime(function(p){ return Object.assign({},p,{[t.id]:cfg.time||t.time||""}); });
                   }} style={{padding:"6px 14px",background:"#f1f5f9",border:"1px solid #e2e8f0",borderRadius:6,fontSize:11,fontWeight:600,cursor:"pointer",color:K.mt}}>{"Editar"}</button>
+                  </div>
                 </div> : <div>
                   <div style={{marginBottom:10}}>
                     <label style={{fontSize:11,fontWeight:600,color:K.mt,display:"block",marginBottom:3}}>Titulo</label>
