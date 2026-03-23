@@ -1,4 +1,4 @@
-// NewOFA — Examen Clinico OFA (seccion 1 del PEFF, independiente)
+// NewOFA — Examen Clinico EOF (seccion 1 del PEFF, independiente)
 import { useCallback } from "react";
 import { PEFF_SECTIONS } from "../data/peffSections.js";
 import { HelpTip, OptionHelpTip, TeethButton } from "./NewPEFF_helpers.jsx";
@@ -9,9 +9,9 @@ var I = {width:"100%",padding:"10px 14px",border:"1px solid #e2e8f0",borderRadiu
 
 var config = {
   evalType: "ofa",
-  title: "Examen Clinico OFA",
+  title: "Examen Clinico EOF",
   subtitle: "Evaluacion de organos fonoarticulatorios",
-  icon: "\ud83e\uddb7",
+  icon: "\ud83e\ude7a",
   color: "#0891b2",
   steps: ["Paciente"].concat(OFA_SECTION.subsections.map(function(s){ return s.title.replace(/^\d+\.\d*\s*/,""); })).concat(["Resultados"])
 };

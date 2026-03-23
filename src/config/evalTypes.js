@@ -126,8 +126,8 @@ export var EVAL_TYPES = {
   },
   ofa: {
     id: "ofa",
-    label: "OFA",
-    fullName: "Examen Clinico OFA",
+    label: "EOF",
+    fullName: "Examen Clinico EOF",
     icon: "\ud83e\uddb7",
     color: "#0891b2",
     badgeBg: "#cffafe",
@@ -135,8 +135,8 @@ export var EVAL_TYPES = {
     time: "~15-20 min",
     desc: "Evaluacion de organos fonoarticulatorios: labios, ATM, lengua, dientes, paladar y velo.",
     newView: "newOFA",
-    rptView: null,
-    histTab: "OFA"
+    rptView: "rptGen",
+    histTab: "EOF"
   },
   fon: {
     id: "fon",
@@ -149,7 +149,7 @@ export var EVAL_TYPES = {
     time: "~20-30 min",
     desc: "Repeticion de silabas con clasificacion de errores y procesos fonologicos.",
     newView: "newFON",
-    rptView: null,
+    rptView: "rptGen",
     histTab: "FON"
   }
 };

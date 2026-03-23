@@ -15,10 +15,16 @@ export default function Tools({ onSel, credits, onBuy, enabledTools, toolsConfig
   var _consolGen = useState(false), consolGenerating = _consolGen[0], setConsolGenerating = _consolGen[1];
   var noCredits = credits < 1;
 
+  var _refreshKey = useState(0), refreshKey = _refreshKey[0];
   useEffect(function(){
     if(!userId) return;
     loadDrafts(userId).then(setDrafts);
-  }, [userId]);
+  }, [userId, refreshKey]);
+  // Reload drafts when component becomes visible (user navigated back)
+  useEffect(function(){
+    if(!userId) return;
+    loadDrafts(userId).then(setDrafts);
+  }, []);
 
   var handleDeleteDraft = function(draftId){
     if(!window.confirm("Eliminar evaluacion pausada?")) return;
