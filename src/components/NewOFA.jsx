@@ -38,7 +38,7 @@ export default function NewOFA({ onS, nfy, userId, draft, therapistInfo }){
 
     var rField = function(f){
       if(f.type === "text") return <div key={f.id} style={{marginBottom:14}}>
-        <label style={{fontSize:12,fontWeight:600,color:"#64748b",display:"block",marginBottom:4}}>{f.label}<HelpTip text={f.help} searchTerm={f.label}/>{f.showTeethImg && <TeethButton arch={f.showTeethImg}/>}</label>
+        <label style={{fontSize:12,fontWeight:600,color:"#64748b",display:"block",marginBottom:4}}>{f.label}<HelpTip text={f.help} searchTerm={f.label}/>{f.showTeethImg && <TeethButton arch={f.showTeethImg} ageMo={props.patientAge}/>}</label>
         <input value={props.responses[f.id]||""} onChange={function(e){props.setResponse(f.id,null);props.setResponse(f.id,e.target.value)}} style={I}/>
       </div>;
       var cur = props.responses[f.id] || "";

@@ -3,6 +3,7 @@ import { useState, useCallback } from "react";
 import { PEFF_SECTIONS } from "../data/peffSections.js";
 import { PF_CATEGORIES, ALL_PROCESSES } from "../data/peffProcesos.js";
 import EvalShell from "./EvalShell.jsx";
+import { detectProceso } from "../lib/detectProceso.js";
 
 var FON_SECTION_RAW = PEFF_SECTIONS.find(function(s){ return s.id === "fon"; });
 // Filter out Vocales and clean titles (remove "X años")
@@ -38,6 +39,7 @@ var sevCalc = function(pct){
   return "Severo";
 };
 var sevColor = {"Adecuado":"#059669","Leve":"#84cc16","Leve-Moderado":"#f59e0b","Moderado-Severo":"#ea580c","Severo":"#dc2626"};
+
 
 var config = {
   evalType: "fon",
@@ -121,11 +123,23 @@ export default function NewFON({ onS, nfy, userId, draft, therapistInfo }){
             <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
               <div style={{flex:1,minWidth:180}}>
                 <label style={{fontSize:10,fontWeight:700,color:"#dc2626",display:"block",marginBottom:3}}>{"Produccion del paciente"}</label>
-                <input value={pd.produccion||""} onChange={function(e){spf(item.id,"produccion",e.target.value)}} style={Object.assign({},I,{fontSize:13,padding:"6px 10px",background:"#fff"})} placeholder={"Que dijo en vez de "+item.word}/>
+                <input value={pd.produccion||""} onChange={function(e){
+                  var val = e.target.value;
+                  spf(item.id,"produccion",val);
+                  // Auto-detect proceso fonológico
+                  var detected = detectProceso(item.word, val, v);
+                  if(detected && !(pd.proceso && pd.manualProceso)){
+                    spf(item.id,"proceso",detected);
+                    spf(item.id,"autoDetected",true);
+                  }
+                }} style={Object.assign({},I,{fontSize:13,padding:"6px 10px",background:"#fff"})} placeholder={"Que dijo en vez de "+item.word}/>
               </div>
               <div style={{flex:2,minWidth:220}}>
-                <label style={{fontSize:10,fontWeight:700,color:"#dc2626",display:"block",marginBottom:3}}>{"Proceso fonologico"}</label>
-                <select value={pd.proceso||""} onChange={function(e){spf(item.id,"proceso",e.target.value)}} style={Object.assign({},I,{fontSize:13,padding:"6px 10px",background:"#fff",cursor:"pointer"})}>
+                <label style={{fontSize:10,fontWeight:700,color:"#dc2626",display:"block",marginBottom:3}}>
+                  {"Proceso fonologico"}
+                  {pd.autoDetected && !pd.manualProceso && <span style={{marginLeft:6,fontSize:9,color:"#7c3aed",background:"#ede9fe",padding:"1px 6px",borderRadius:4,fontWeight:600}}>{"auto-detectado"}</span>}
+                </label>
+                <select value={pd.proceso||""} onChange={function(e){spf(item.id,"proceso",e.target.value);spf(item.id,"manualProceso",true);spf(item.id,"autoDetected",false)}} style={Object.assign({},I,{fontSize:13,padding:"6px 10px",background:pd.autoDetected&&!pd.manualProceso?"#f5f3ff":"#fff",cursor:"pointer",borderColor:pd.autoDetected&&!pd.manualProceso?"#a78bfa":"#e2e8f0"})}>
                   <option value="">-- Clasificar --</option>
                   {PF_CATEGORIES.map(function(cat){ return <optgroup key={cat.id} label={cat.title}>
                     {cat.processes.map(function(pr){ return <option key={pr.id} value={pr.id}>{pr.name}</option>; })}

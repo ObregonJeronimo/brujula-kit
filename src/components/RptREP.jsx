@@ -4,7 +4,7 @@ import { K, ageLabel } from "../lib/fb.js";
 var posLabels = {ISPP:"ISPP",ISIP:"ISIP",CSIP:"CSIP",CSFP:"CSFP"};
 var posFull = {ISPP:"Inicio síl. — Pos. palabra",ISIP:"Inicio síl. — Int. palabra",CSIP:"Coda síl. — Int. palabra",CSFP:"Coda síl. — Final palabra"};
 
-export default function RptREP({ ev, onD }){
+export default function RptREP({ ev, onD, therapistInfo }){
   var _cf = useState(false), confirmDel = _cf[0], sCf = _cf[1];
   var _showTech = useState(false), showTech = _showTech[0], setShowTech = _showTech[1];
   var printRef = useRef(null);
@@ -49,7 +49,7 @@ export default function RptREP({ ev, onD }){
       </div>
 
       {/* AI REPORT (auto-generates) */}
-      <AIReportPanel ev={ev} evalType="rep" collectionName="evaluaciones" evalLabel="Repetición de Palabras" />
+      <AIReportPanel ev={ev} evalType="rep" collectionName="evaluaciones" evalLabel="Repetición de Palabras" therapistInfo={therapistInfo} />
 
       {/* TECHNICAL DATA TOGGLE */}
       <button onClick={function(){ setShowTech(!showTech); }} style={{width:"100%",padding:"14px",background:showTech?"#f1f5f9":"#0a3d2f",color:showTech?"#1e293b":"#fff",border:"1px solid #e2e8f0",borderRadius:10,fontSize:14,fontWeight:600,cursor:"pointer",marginBottom:showTech?16:20}}>
