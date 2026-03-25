@@ -26,15 +26,42 @@ function recoRenderEval(props) {
   var obs = props.obs, setObs = props.setObs;
   var setStep = props.setStep, scrollTop = props.scrollTop;
   var accentColor = props.accentColor;
-  var answeredCount = Object.keys(responses).length;
+
+  var answeredCount = 0;
+  Object.keys(responses).forEach(function(k) {
+    var r = responses[k];
+    if (r && r.objetivo && r.seleccion) answeredCount++;
+  });
   var totalItems = 36;
+
+  // Helper to set the objetivo (word the professional says)
+  var setObjetivo = function(lam, wordKey) {
+    var current = responses[lam] || {};
+    setResponse(lam, { objetivo: wordKey, seleccion: current.seleccion || null });
+  };
+
+  // Helper to set the seleccion (image the patient points to)
+  var setSeleccion = function(lam, wordKey) {
+    var current = responses[lam] || {};
+    if (!current.objetivo) return; // Must choose objetivo first
+    setResponse(lam, { objetivo: current.objetivo, seleccion: wordKey });
+  };
+
+  // Helper to reset an item
+  var resetItem = function(lam) {
+    setResponse(lam, undefined);
+  };
 
   return <div>
     {/* Instructions */}
     <div style={{background:"#f3e8ff",border:"1px solid #c4b5fd",borderRadius:12,padding:"16px 20px",marginBottom:20}}>
-      <div style={{fontSize:14,fontWeight:700,color:"#7c3aed",marginBottom:6}}>{"Como aplicar esta prueba"}</div>
+      <div style={{fontSize:14,fontWeight:700,color:"#7c3aed",marginBottom:6}}>{"Protocolo de aplicación"}</div>
       <div style={{fontSize:13,color:"#475569",lineHeight:1.7}}>
-        {"Muestre al paciente las dos imagenes de cada par. Diga una de las palabras en voz alta y pida al paciente que senale la imagen correspondiente. Registre que imagen eligio el paciente. Los resultados se muestran al finalizar la evaluacion."}
+        {"1. Muestre al paciente las dos imágenes del par."}<br/>
+        {"2. Seleccione la palabra que va a pronunciar (botón \"Decir\")."}<br/>
+        {"3. Diga la palabra en voz alta al paciente."}<br/>
+        {"4. Registre qué imagen señaló el paciente (botón \"Señaló\")."}<br/>
+        {"Si la selección del paciente coincide con la palabra pronunciada, se registra como acierto."}
       </div>
     </div>
 
@@ -48,42 +75,58 @@ function recoRenderEval(props) {
         <div style={{background:"linear-gradient(135deg,#9333ea,#7c3aed)",padding:"14px 20px",color:"#fff"}}><div style={{display:"flex",alignItems:"center",gap:10}}><span style={{background:"rgba(255,255,255,.2)",padding:"4px 10px",borderRadius:6,fontSize:14,fontWeight:800}}>{group.id}</span><span style={{fontSize:14,fontWeight:600}}>{group.label}</span></div></div>
         <div style={{padding:"12px 16px"}}>
           {group.items.map(function(item){
-            var r = responses[item.lam];
-            // Extract the 2 unique words (the contrast pair)
-            var pair = [];
-            item.est.forEach(function(w){ if(pair.indexOf(w) === -1) pair.push(w); });
-            var word1 = pair[0] || "";
-            var word2 = pair[1] || word1;
-            // Which word did the patient choose?
-            var chose1 = r === "w1";
-            var chose2 = r === "w2";
-            var answered = chose1 || chose2;
-            // Placeholder images (colored cards with first letter)
-            var imgStyle = function(w, selected){ return {
-              flex:1, minWidth:100, padding:"20px 16px", borderRadius:12,
-              border: selected ? "3px solid #7c3aed" : "2px solid #e2e8f0",
-              background: selected ? "#f3e8ff" : "#f8faf9",
-              cursor:"pointer", textAlign:"center", transition:"all .15s"
-            }; };
+            var r = responses[item.lam] || {};
+            var objetivo = r.objetivo || null; // "w1" or "w2"
+            var seleccion = r.seleccion || null;
+            var isComplete = objetivo && seleccion;
+            var isCorrect = isComplete && objetivo === seleccion;
+            var palabraObj = objetivo === "w1" ? item.w1 : objetivo === "w2" ? item.w2 : null;
+            var palabraSel = seleccion === "w1" ? item.w1 : seleccion === "w2" ? item.w2 : null;
 
-            return <div key={item.lam} style={{padding:"12px 0",marginBottom:8,borderBottom:"1px solid #f1f5f9"}}>
-              <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
-                <span style={{fontSize:12,fontWeight:700,color:"#64748b"}}>{"#"+item.lam}</span>
-                <span style={{fontSize:12,color:"#94a3b8"}}>{"Diga una palabra y el paciente senala la imagen"}</span>
-              </div>
-              <div style={{display:"flex",gap:12}}>
-                {/* Image card 1 */}
-                <div onClick={function(){setResponse(item.lam, chose1 ? undefined : "w1")}} style={imgStyle(word1, chose1)}>
-                  <div style={{width:60,height:60,borderRadius:12,background:"linear-gradient(135deg,#dbeafe,#bfdbfe)",margin:"0 auto 8px",display:"flex",alignItems:"center",justifyContent:"center",fontSize:28,fontWeight:800,color:"#2563eb"}}>{word1.charAt(0).toUpperCase()}</div>
-                  <div style={{fontSize:14,fontWeight:700,color:chose1?"#7c3aed":"#1e293b"}}>{word1}</div>
+            return <div key={item.lam} style={{padding:"14px 0",marginBottom:8,borderBottom:"1px solid #f1f5f9"}}>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
+                <div style={{display:"flex",alignItems:"center",gap:8}}>
+                  <span style={{fontSize:13,fontWeight:700,color:"#64748b"}}>{"#"+item.lam}</span>
+                  {!isComplete && !objetivo && <span style={{fontSize:11,color:"#94a3b8"}}>{"Seleccione la palabra que va a pronunciar"}</span>}
+                  {objetivo && !seleccion && <span style={{fontSize:11,color:"#7c3aed",fontWeight:600}}>{"Diga \""+palabraObj+"\" — ahora registre qué imagen señaló el paciente"}</span>}
                 </div>
-                {/* Image card 2 */}
-                <div onClick={function(){setResponse(item.lam, chose2 ? undefined : "w2")}} style={imgStyle(word2, chose2)}>
-                  <div style={{width:60,height:60,borderRadius:12,background:"linear-gradient(135deg,#fce7f3,#fbcfe8)",margin:"0 auto 8px",display:"flex",alignItems:"center",justifyContent:"center",fontSize:28,fontWeight:800,color:"#db2777"}}>{word2.charAt(0).toUpperCase()}</div>
-                  <div style={{fontSize:14,fontWeight:700,color:chose2?"#7c3aed":"#1e293b"}}>{word2}</div>
-                </div>
+                {isComplete && <button onClick={function(){resetItem(item.lam)}} style={{fontSize:10,color:"#94a3b8",background:"none",border:"1px solid #e2e8f0",borderRadius:6,padding:"3px 8px",cursor:"pointer"}}>Reiniciar</button>}
               </div>
-              {answered && <div style={{marginTop:6,fontSize:11,color:"#7c3aed",fontWeight:600}}>{"Eligio: " + (chose1?word1:word2)}</div>}
+
+              {/* Step 1: Choose which word to say (objetivo) */}
+              {!objetivo && <div>
+                <div style={{fontSize:11,fontWeight:600,color:"#7c3aed",marginBottom:6}}>{"¿Qué palabra va a decir?"}</div>
+                <div style={{display:"flex",gap:10}}>
+                  <button onClick={function(){setObjetivo(item.lam,"w1")}} style={{flex:1,padding:"12px 16px",borderRadius:10,border:"2px solid #c4b5fd",background:"#faf5ff",cursor:"pointer",fontSize:14,fontWeight:700,color:"#7c3aed",transition:"all .15s"}}>{"Decir: \""+item.w1+"\""}</button>
+                  <button onClick={function(){setObjetivo(item.lam,"w2")}} style={{flex:1,padding:"12px 16px",borderRadius:10,border:"2px solid #c4b5fd",background:"#faf5ff",cursor:"pointer",fontSize:14,fontWeight:700,color:"#7c3aed",transition:"all .15s"}}>{"Decir: \""+item.w2+"\""}</button>
+                </div>
+              </div>}
+
+              {/* Step 2: Record patient selection */}
+              {objetivo && !seleccion && <div>
+                <div style={{fontSize:11,fontWeight:600,color:"#475569",marginBottom:6}}>{"¿Qué imagen señaló el paciente?"}</div>
+                <div style={{display:"flex",gap:12}}>
+                  <div onClick={function(){setSeleccion(item.lam,"w1")}} style={{flex:1,padding:"16px",borderRadius:12,border:"2px solid #e2e8f0",background:"#f8faf9",cursor:"pointer",textAlign:"center",transition:"all .15s"}}>
+                    <div style={{width:50,height:50,borderRadius:10,background:"linear-gradient(135deg,#dbeafe,#bfdbfe)",margin:"0 auto 8px",display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,fontWeight:800,color:"#2563eb"}}>{item.w1.charAt(0).toUpperCase()}</div>
+                    <div style={{fontSize:14,fontWeight:700,color:"#1e293b"}}>{item.w1}</div>
+                    <div style={{fontSize:10,color:"#94a3b8",marginTop:2}}>{"Señaló esta"}</div>
+                  </div>
+                  <div onClick={function(){setSeleccion(item.lam,"w2")}} style={{flex:1,padding:"16px",borderRadius:12,border:"2px solid #e2e8f0",background:"#f8faf9",cursor:"pointer",textAlign:"center",transition:"all .15s"}}>
+                    <div style={{width:50,height:50,borderRadius:10,background:"linear-gradient(135deg,#fce7f3,#fbcfe8)",margin:"0 auto 8px",display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,fontWeight:800,color:"#db2777"}}>{item.w2.charAt(0).toUpperCase()}</div>
+                    <div style={{fontSize:14,fontWeight:700,color:"#1e293b"}}>{item.w2}</div>
+                    <div style={{fontSize:10,color:"#94a3b8",marginTop:2}}>{"Señaló esta"}</div>
+                  </div>
+                </div>
+              </div>}
+
+              {/* Result badge */}
+              {isComplete && <div style={{display:"flex",alignItems:"center",gap:12,padding:"10px 14px",borderRadius:10,background:isCorrect?"#f0fdf4":"#fef2f2",border:isCorrect?"1px solid #bbf7d0":"1px solid #fecaca"}}>
+                <div style={{fontSize:18}}>{isCorrect?"\u2705":"\u274c"}</div>
+                <div style={{flex:1}}>
+                  <div style={{fontSize:12,fontWeight:700,color:isCorrect?"#059669":"#dc2626"}}>{isCorrect?"Correcto":"Incorrecto"}</div>
+                  <div style={{fontSize:11,color:"#475569",marginTop:1}}>{"Se dijo: \""+palabraObj+"\" — Señaló: \""+palabraSel+"\""}</div>
+                </div>
+              </div>}
             </div>;
           })}
         </div>
@@ -102,7 +145,7 @@ function recoRenderTech(results) {
     <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12,marginBottom:20}}>
       <div style={{background:"#f3e8ff",borderRadius:10,padding:16,textAlign:"center"}}><div style={{fontSize:28,fontWeight:800,color:"#9333ea"}}>{results.pct+"%"}</div><div style={{fontSize:11,color:K.mt,fontWeight:600}}>{"Aciertos"}</div></div>
       <div style={{background:results.severity==="Adecuado"?"#f0fdf4":results.severity==="Leve"?"#fffbeb":"#fef2f2",borderRadius:10,padding:16,textAlign:"center"}}><div style={{fontSize:20,fontWeight:700,color:results.severity==="Adecuado"?"#059669":results.severity==="Leve"?"#d97706":"#dc2626"}}>{results.severity}</div><div style={{fontSize:11,color:K.mt,fontWeight:600}}>{"Severidad"}</div></div>
-      <div style={{background:"#f8fafc",borderRadius:10,padding:16,textAlign:"center"}}><div style={{fontSize:20,fontWeight:700,color:K.sd}}>{results.correct+"/"+results.total}</div><div style={{fontSize:11,color:K.mt,fontWeight:600}}>{"Contrastes"}</div></div>
+      <div style={{background:"#f8fafc",borderRadius:10,padding:16,textAlign:"center"}}><div style={{fontSize:20,fontWeight:700,color:K.sd}}>{results.correct+"/"+results.total}</div><div style={{fontSize:11,color:K.mt,fontWeight:600}}>{"Contrastes reconocidos"}</div></div>
     </div>
     <div style={{background:"#fff",borderRadius:12,border:"1px solid "+K.bd,padding:20,marginBottom:20}}>
       <h3 style={{fontSize:15,fontWeight:700,color:"#9333ea",marginBottom:12}}>{"Por grupo"}</h3>
@@ -110,7 +153,10 @@ function recoRenderTech(results) {
     </div>
     {results.errorGroups.length>0 && <div style={{background:"#fff",borderRadius:12,border:"1px solid "+K.bd,padding:20,marginBottom:20}}>
       <h3 style={{fontSize:15,fontWeight:700,color:"#dc2626",marginBottom:12}}>{"\u26a0 Dificultades"}</h3>
-      {results.errorGroups.map(function(g){ var f=g.items.filter(function(it){return it.reconoce===false;}); return <div key={g.id} style={{padding:"12px 14px",background:"#fef2f2",borderRadius:8,marginBottom:8}}><div style={{fontSize:13,fontWeight:700,color:"#dc2626"}}>{g.id+" - "+g.label}</div><div style={{fontSize:11,color:"#7f1d1d",marginTop:2}}>{"No reconocidos: "+f.map(function(it){return "Lám."+it.lam}).join(", ")}</div></div>; })}
+      {results.errorGroups.map(function(g){ var f=g.items.filter(function(it){return it.reconoce===false;}); return <div key={g.id} style={{padding:"12px 14px",background:"#fef2f2",borderRadius:8,marginBottom:8}}>
+        <div style={{fontSize:13,fontWeight:700,color:"#dc2626"}}>{g.id+" - "+g.label}</div>
+        {f.map(function(it){ return <div key={it.lam} style={{fontSize:11,color:"#7f1d1d",marginTop:3}}>{"Lám. "+it.lam+": Se dijo \""+it.palabraObjetivo+"\" — Señaló \""+it.palabraSeleccionada+"\""}</div>; })}
+      </div>; })}
     </div>}
     {results.errorGroups.length===0 && <div style={{background:"#dcfce7",borderRadius:12,padding:24,textAlign:"center",marginBottom:20}}><span style={{fontSize:28}}>{"\u2705"}</span><p style={{fontSize:14,fontWeight:600,color:"#059669",marginTop:8}}>{"Reconocimiento adecuado."}</p></div>}
   </div>;
