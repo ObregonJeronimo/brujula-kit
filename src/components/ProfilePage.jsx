@@ -55,44 +55,6 @@ export default function ProfilePage({ profile, authUser, nfy, onBuyCredits }) {
           {resetSent?"Email enviado":(resetSending?"Enviando...":"Cambiar contrasena")}
         </button>
       </div>
-
-      {/* Report Header Customization */}
-      <div style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",padding:"20px 24px",marginTop:20}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
-          <div>
-            <div style={{fontSize:14,fontWeight:600,color:"#1e293b"}}>Encabezado de informes</div>
-            <div style={{fontSize:12,color:"#94a3b8",marginTop:2}}>Estos datos aparecen en cada informe que generes</div>
-          </div>
-          {!editingHeader && <button onClick={function(){setEditingHeader(true);setHeaderForm({therapist:profile?.reportHeader?.therapist||"",license:profile?.reportHeader?.license||"",clinic:profile?.reportHeader?.clinic||"",address:profile?.reportHeader?.address||"",phone:profile?.reportHeader?.phone||"",email:profile?.reportHeader?.email||""})}} style={{padding:"6px 14px",background:"#f1f5f9",border:"1px solid #e2e8f0",borderRadius:6,fontSize:11,fontWeight:600,cursor:"pointer",color:K.mt}}>Editar</button>}
-        </div>
-        {!editingHeader ? <div>
-          {profile?.reportHeader?.therapist ? <div style={{background:"#f8faf9",borderRadius:10,padding:16,border:"1px solid #e2e8f0"}}>
-            <div style={{fontSize:14,fontWeight:700,color:"#0a3d2f"}}>{profile.reportHeader.therapist}</div>
-            {profile.reportHeader.license && <div style={{fontSize:12,color:"#64748b",marginTop:2}}>{"Mat. "+profile.reportHeader.license}</div>}
-            {profile.reportHeader.clinic && <div style={{fontSize:12,color:"#64748b",marginTop:2}}>{profile.reportHeader.clinic}</div>}
-            {profile.reportHeader.address && <div style={{fontSize:12,color:"#94a3b8",marginTop:2}}>{profile.reportHeader.address}</div>}
-            {profile.reportHeader.phone && <div style={{fontSize:12,color:"#94a3b8",marginTop:2}}>{profile.reportHeader.phone}</div>}
-            {profile.reportHeader.email && <div style={{fontSize:12,color:"#94a3b8",marginTop:2}}>{profile.reportHeader.email}</div>}
-          </div> : <div style={{background:"#f8faf9",borderRadius:10,padding:16,border:"1px dashed #e2e8f0",textAlign:"center"}}>
-            <div style={{fontSize:13,color:"#94a3b8",fontStyle:"italic"}}>No configurado. Hace click en Editar para personalizar tu encabezado.</div>
-          </div>}
-        </div> : <div>
-          <div style={{display:"grid",gap:10}}>
-            <div><label style={{fontSize:11,fontWeight:600,color:K.mt,display:"block",marginBottom:3}}>Nombre completo del profesional</label><input value={headerForm.therapist} onChange={function(e){setHeaderForm(function(p){return Object.assign({},p,{therapist:e.target.value})})}} placeholder="Lic. Maria Lopez" style={{width:"100%",padding:"8px 12px",border:"1px solid #e2e8f0",borderRadius:6,fontSize:13}} /></div>
-            <div><label style={{fontSize:11,fontWeight:600,color:K.mt,display:"block",marginBottom:3}}>Matricula profesional</label><input value={headerForm.license} onChange={function(e){setHeaderForm(function(p){return Object.assign({},p,{license:e.target.value})})}} placeholder="MP 12345" style={{width:"100%",padding:"8px 12px",border:"1px solid #e2e8f0",borderRadius:6,fontSize:13}} /></div>
-            <div><label style={{fontSize:11,fontWeight:600,color:K.mt,display:"block",marginBottom:3}}>Consultorio / Institucion</label><input value={headerForm.clinic} onChange={function(e){setHeaderForm(function(p){return Object.assign({},p,{clinic:e.target.value})})}} placeholder="Centro de Fonoaudiologia" style={{width:"100%",padding:"8px 12px",border:"1px solid #e2e8f0",borderRadius:6,fontSize:13}} /></div>
-            <div><label style={{fontSize:11,fontWeight:600,color:K.mt,display:"block",marginBottom:3}}>Direccion</label><input value={headerForm.address} onChange={function(e){setHeaderForm(function(p){return Object.assign({},p,{address:e.target.value})})}} placeholder="Av. Colon 123, Cordoba" style={{width:"100%",padding:"8px 12px",border:"1px solid #e2e8f0",borderRadius:6,fontSize:13}} /></div>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-              <div><label style={{fontSize:11,fontWeight:600,color:K.mt,display:"block",marginBottom:3}}>Telefono</label><input value={headerForm.phone} onChange={function(e){setHeaderForm(function(p){return Object.assign({},p,{phone:e.target.value})})}} placeholder="351-1234567" style={{width:"100%",padding:"8px 12px",border:"1px solid #e2e8f0",borderRadius:6,fontSize:13}} /></div>
-              <div><label style={{fontSize:11,fontWeight:600,color:K.mt,display:"block",marginBottom:3}}>Email</label><input value={headerForm.email} onChange={function(e){setHeaderForm(function(p){return Object.assign({},p,{email:e.target.value})})}} placeholder="consultorio@email.com" style={{width:"100%",padding:"8px 12px",border:"1px solid #e2e8f0",borderRadius:6,fontSize:13}} /></div>
-            </div>
-          </div>
-          <div style={{display:"flex",gap:8,marginTop:14}}>
-            <button onClick={saveHeader} style={{padding:"8px 16px",background:K.ac,color:"#fff",border:"none",borderRadius:6,fontSize:12,fontWeight:600,cursor:"pointer"}}>Guardar</button>
-            <button onClick={function(){setEditingHeader(false)}} style={{padding:"8px 16px",background:"#f1f5f9",border:"1px solid #e2e8f0",borderRadius:6,fontSize:12,cursor:"pointer",color:K.mt}}>Cancelar</button>
-          </div>
-        </div>}
-      </div>
     </div>
   );
 }
