@@ -89,103 +89,7 @@ var icons = {
   logout: I(<><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></>)
 };
 
-var DINO_BG = "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300"><rect width="300" height="300" fill="#f0f5f3"/>'
-  // Row 1
-  + '<g opacity="0.08" stroke="#0a3d2f" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">'
-  // T-Rex top-left
-  + '<g transform="translate(5,5) scale(1.4)"><path d="M8 18c0-5 3-9 9-9s7 3 7 6c2-1 3 0 3 2s-2 3-3 2h-2c-1 3-3 5-6 5l-1 5h-2v-5l-2 5h-2l1-6c-2-1-3-3-2-5z"/><circle cx="14" cy="12" r="1.2"/></g>'
-  // Huella
-  + '<g transform="translate(55,8) scale(1.2)"><ellipse cx="8" cy="11" rx="5" ry="6.5"/><circle cx="3" cy="3" r="2.2"/><circle cx="8" cy="1" r="2.2"/><circle cx="13" cy="3" r="2.2"/></g>'
-  // Huevo con grieta
-  + '<g transform="translate(90,2) scale(1.3)"><ellipse cx="9" cy="11" rx="8" ry="10"/><path d="M5 8l3 2-2 3 3 1"/></g>'
-  // Palmera
-  + '<g transform="translate(125,5) scale(1.3)"><path d="M10 28V14M4 14c2-6 6-10 6-10s4 4 6 10M3 16c3-3 7-4 7-4s4 1 7 4"/></g>'
-  // Stego
-  + '<g transform="translate(160,3) scale(1.2)"><path d="M3 18h22c2 0 3-2 3-4l3-2c0 2-1 4-2 5 1 1 0 3-1 3H3c-2 0-3-2-2-4s2-4 4-4z"/><path d="M7 11l2-5 3 5M13 11l2-5 3 5M19 12l2-4"/><path d="M5 20v4M8 20v4M20 19v4M23 19v4"/><circle cx="26" cy="14" r="1"/></g>'
-  // Estrella
-  + '<g transform="translate(205,10) scale(1.5)"><path d="M8 1l2 5h5l-4 3 2 5-5-3-5 3 2-5-4-3h5z"/></g>'
-  // Volcán
-  + '<g transform="translate(235,2) scale(1.2)"><path d="M14 28L2 28 8 10h12l6 18z"/><path d="M12 10c-1-4 2-7 4-7s5 3 4 7"/><path d="M14 5c0-2 1-4 2-4"/></g>'
-  // Nube
-  + '<g transform="translate(275,12) scale(1.1)"><path d="M5 16h14c3 0 5-2 5-4s-2-4-4-4c0-3-3-5-6-5s-5 2-5 4c-2 0-4 2-4 4s2 5 4 5z"/></g>'
-  // Row 2
-  // Bronto
-  + '<g transform="translate(0,55) scale(1.3)"><path d="M4 18c0-3 2-5 5-5h10c3 0 4 2 4 4l7-9c1-1 3 0 2 2l-5 8c0 2-2 3-4 3H9c-3 0-5-2-5-3zM4 18v5M7 18v5M20 17v5M23 17v5"/><circle cx="29" cy="8" r="1.2"/></g>'
-  // Sol
-  + '<g transform="translate(60,55) scale(1.5)"><circle cx="8" cy="8" r="4"/><path d="M8 1v2M8 14v2M1 8h2M14 8h2M3 3l1.5 1.5M11.5 11.5l1.5 1.5M13 3l-1.5 1.5M4.5 11.5L3 13"/></g>'
-  // Huella 2
-  + '<g transform="translate(100,60) scale(1.3)"><ellipse cx="8" cy="11" rx="5" ry="6.5"/><circle cx="3" cy="3" r="2.2"/><circle cx="8" cy="1" r="2.2"/><circle cx="13" cy="3" r="2.2"/></g>'
-  // Ptero
-  + '<g transform="translate(135,50) scale(1.3)"><path d="M14 10L2 5c-1-1-1 2 0 3l9 4-9 3c-1 1-1 3 0 3l12-5 7 2c2 0 3-2 2-3z"/><path d="M25 9l3-4"/><circle cx="25" cy="8" r="1"/></g>'
-  // Hoja
-  + '<g transform="translate(185,58) scale(1.4)"><path d="M4 20Q4 4 20 4Q4 4 4 20z"/><path d="M4 20L18 6"/></g>'
-  // Tricera
-  + '<g transform="translate(220,50) scale(1.2)"><path d="M22 14c3-2 6-1 6 2s-3 4-5 3H7c-3 0-5-2-5-5s2-5 5-5h2l-2-3h4l1 3h7z"/><circle cx="9" cy="13" r="1.2"/><path d="M7 18v4M10 18v4M18 17v4M21 17v4"/></g>'
-  // Corazón
-  + '<g transform="translate(270,60) scale(1.6)"><path d="M8 5C8 2 11 0 11 4c0-4 4-3 4 0 0 4-4 7-4 7S8 9 8 5z"/></g>'
-  // Row 3
-  // Huevo 2
-  + '<g transform="translate(10,110) scale(1.3)"><ellipse cx="9" cy="11" rx="8" ry="10"/><path d="M6 9c1 2 3-1 4 1s2-1 3 1"/></g>'
-  // Arbolito
-  + '<g transform="translate(45,105) scale(1.5)"><path d="M10 25v-7M4 18l6-10 6 10zM6 13l4-6 4 6z"/></g>'
-  // T-Rex 2
-  + '<g transform="translate(85,100) scale(1.3)"><path d="M8 18c0-5 3-9 9-9s7 3 7 6c2-1 3 0 3 2s-2 3-3 2h-2c-1 3-3 5-6 5l-1 5h-2v-5l-2 5h-2l1-6c-2-1-3-3-2-5z"/><circle cx="14" cy="12" r="1.2"/></g>'
-  // Mariposa
-  + '<g transform="translate(130,110) scale(1.6)"><path d="M8 8C4 4 0 6 2 10s6 2 6-2zM8 8c4-4 8-2 6 2s-6 2-6-2z"/><path d="M8 8v6"/></g>'
-  // Huella 3
-  + '<g transform="translate(165,108) scale(1.3)"><ellipse cx="8" cy="11" rx="5" ry="6.5"/><circle cx="3" cy="3" r="2.2"/><circle cx="8" cy="1" r="2.2"/><circle cx="13" cy="3" r="2.2"/></g>'
-  // Palmera 2
-  + '<g transform="translate(200,102) scale(1.2)"><path d="M10 28V14M4 14c2-6 6-10 6-10s4 4 6 10M3 16c3-3 7-4 7-4s4 1 7 4"/></g>'
-  // Nube 2
-  + '<g transform="translate(240,112) scale(1.2)"><path d="M5 16h14c3 0 5-2 5-4s-2-4-4-4c0-3-3-5-6-5s-5 2-5 4c-2 0-4 2-4 4s2 5 4 5z"/></g>'
-  // Estrella 2
-  + '<g transform="translate(280,105) scale(1.4)"><path d="M8 1l2 5h5l-4 3 2 5-5-3-5 3 2-5-4-3h5z"/></g>'
-  // Row 4
-  // Stego 2
-  + '<g transform="translate(0,160) scale(1.2)"><path d="M3 18h22c2 0 3-2 3-4l3-2c0 2-1 4-2 5 1 1 0 3-1 3H3c-2 0-3-2-2-4s2-4 4-4z"/><path d="M7 11l2-5 3 5M13 11l2-5 3 5M19 12l2-4"/><path d="M5 20v4M8 20v4M20 19v4M23 19v4"/><circle cx="26" cy="14" r="1"/></g>'
-  // Huevo 3
-  + '<g transform="translate(55,165) scale(1.2)"><ellipse cx="9" cy="11" rx="8" ry="10"/><path d="M5 8l3 2-2 3 3 1"/></g>'
-  // Ptero 2
-  + '<g transform="translate(95,155) scale(1.2)"><path d="M14 10L2 5c-1-1-1 2 0 3l9 4-9 3c-1 1-1 3 0 3l12-5 7 2c2 0 3-2 2-3z"/><path d="M25 9l3-4"/><circle cx="25" cy="8" r="1"/></g>'
-  // Volcán 2
-  + '<g transform="translate(145,158) scale(1.1)"><path d="M14 28L2 28 8 10h12l6 18z"/><path d="M12 10c-1-4 2-7 4-7s5 3 4 7"/></g>'
-  // Bronto 2
-  + '<g transform="translate(190,155) scale(1.2)"><path d="M4 18c0-3 2-5 5-5h10c3 0 4 2 4 4l7-9c1-1 3 0 2 2l-5 8c0 2-2 3-4 3H9c-3 0-5-2-5-3zM4 18v5M7 18v5M20 17v5M23 17v5"/><circle cx="29" cy="8" r="1.2"/></g>'
-  // Corazón 2
-  + '<g transform="translate(245,168) scale(1.6)"><path d="M8 5C8 2 11 0 11 4c0-4 4-3 4 0 0 4-4 7-4 7S8 9 8 5z"/></g>'
-  // Hoja 2
-  + '<g transform="translate(275,158) scale(1.3)"><path d="M4 20Q4 4 20 4Q4 4 4 20z"/><path d="M4 20L18 6"/></g>'
-  // Row 5
-  // Tricera 2
-  + '<g transform="translate(5,210) scale(1.2)"><path d="M22 14c3-2 6-1 6 2s-3 4-5 3H7c-3 0-5-2-5-5s2-5 5-5h2l-2-3h4l1 3h7z"/><circle cx="9" cy="13" r="1.2"/><path d="M7 18v4M10 18v4M18 17v4M21 17v4"/></g>'
-  // Sol 2
-  + '<g transform="translate(60,215) scale(1.4)"><circle cx="8" cy="8" r="4"/><path d="M8 1v2M8 14v2M1 8h2M14 8h2M3 3l1.5 1.5M11.5 11.5l1.5 1.5M13 3l-1.5 1.5M4.5 11.5L3 13"/></g>'
-  // Mariposa 2
-  + '<g transform="translate(100,218) scale(1.5)"><path d="M8 8C4 4 0 6 2 10s6 2 6-2zM8 8c4-4 8-2 6 2s-6 2-6-2z"/><path d="M8 8v6"/></g>'
-  // Huella 4
-  + '<g transform="translate(140,212) scale(1.3)"><ellipse cx="8" cy="11" rx="5" ry="6.5"/><circle cx="3" cy="3" r="2.2"/><circle cx="8" cy="1" r="2.2"/><circle cx="13" cy="3" r="2.2"/></g>'
-  // T-Rex 3
-  + '<g transform="translate(175,208) scale(1.3)"><path d="M8 18c0-5 3-9 9-9s7 3 7 6c2-1 3 0 3 2s-2 3-3 2h-2c-1 3-3 5-6 5l-1 5h-2v-5l-2 5h-2l1-6c-2-1-3-3-2-5z"/><circle cx="14" cy="12" r="1.2"/></g>'
-  // Arbolito 2
-  + '<g transform="translate(225,210) scale(1.4)"><path d="M10 25v-7M4 18l6-10 6 10zM6 13l4-6 4 6z"/></g>'
-  // Huevo 4
-  + '<g transform="translate(265,215) scale(1.3)"><ellipse cx="9" cy="11" rx="8" ry="10"/><path d="M6 9c1 2 3-1 4 1s2-1 3 1"/></g>'
-  // Row 6
-  // Nube 3
-  + '<g transform="translate(15,265) scale(1.2)"><path d="M5 16h14c3 0 5-2 5-4s-2-4-4-4c0-3-3-5-6-5s-5 2-5 4c-2 0-4 2-4 4s2 5 4 5z"/></g>'
-  // Palmera 3
-  + '<g transform="translate(60,260) scale(1.2)"><path d="M10 28V14M4 14c2-6 6-10 6-10s4 4 6 10M3 16c3-3 7-4 7-4s4 1 7 4"/></g>'
-  // Estrella 3
-  + '<g transform="translate(105,270) scale(1.5)"><path d="M8 1l2 5h5l-4 3 2 5-5-3-5 3 2-5-4-3h5z"/></g>'
-  // Ptero 3
-  + '<g transform="translate(140,260) scale(1.2)"><path d="M14 10L2 5c-1-1-1 2 0 3l9 4-9 3c-1 1-1 3 0 3l12-5 7 2c2 0 3-2 2-3z"/><path d="M25 9l3-4"/><circle cx="25" cy="8" r="1"/></g>'
-  // Corazón 3
-  + '<g transform="translate(195,272) scale(1.6)"><path d="M8 5C8 2 11 0 11 4c0-4 4-3 4 0 0 4-4 7-4 7S8 9 8 5z"/></g>'
-  // Stego 3
-  + '<g transform="translate(225,258) scale(1.1)"><path d="M3 18h22c2 0 3-2 3-4l3-2c0 2-1 4-2 5 1 1 0 3-1 3H3c-2 0-3-2-2-4s2-4 4-4z"/><path d="M7 11l2-5 3 5M13 11l2-5 3 5M19 12l2-4"/><path d="M5 20v4M8 20v4M20 19v4M23 19v4"/><circle cx="26" cy="14" r="1"/></g>'
-  // Volcán 3
-  + '<g transform="translate(275,262) scale(1.1)"><path d="M14 28L2 28 8 10h12l6 18z"/><path d="M12 10c-1-4 2-7 4-7s5 3 4 7"/></g>'
-  + '</g></svg>');
+var DINO_BG = "/img/dino_bg_opt.jpg";
 
 var NAV_TOUR_IDS = { dash:"nav-dash", tools:"nav-tools", hist:"nav-hist", pacientes:"nav-pacientes", calendario:"nav-calendario", premium:"nav-premium", profile:"nav-profile", config:"nav-config", stats:"nav-stats", adm:"nav-adm" };
 
@@ -335,7 +239,7 @@ export default function App() {
         <nav style={{flex:1}}>{nav.map(function(n){ var id=n[0],iconKey=n[1],lb=n[2]; var active = view===id; return <button key={id} data-tour={NAV_TOUR_IDS[id]||""} onClick={function(){navTo(id)}} style={{display:"flex",alignItems:"center",gap:10,width:"100%",padding:mobile?"13px 0":"11px 18px",background:active?"rgba(94,234,212,.12)":"transparent",border:"none",color:active?"#5eead4":"rgba(255,255,255,.55)",cursor:"pointer",fontSize:14,fontWeight:active?600:400,borderLeft:active?"3px solid #5eead4":"3px solid transparent",textAlign:"left",justifyContent:mobile?"center":"flex-start",transition:"all .15s ease"}}><span style={{display:"flex",alignItems:"center",opacity:active?1:.7}}>{icons[iconKey]}</span>{!mobile&&<span>{lb}</span>}</button>; })}</nav>
         <div style={{padding:"0 14px",borderTop:"1px solid rgba(255,255,255,.1)",paddingTop:12}}>{!mobile&&<div style={{fontSize:10,color:"rgba(255,255,255,.45)",marginBottom:3}}>{"Sesión: "}<b style={{color:"#5eead4"}}>{profile.username}</b>{isAdmin&&<span style={{background:"#5eead4",color:K.sd,padding:"1px 5px",borderRadius:3,fontSize:8,marginLeft:6,fontWeight:700}}>ADMIN</span>}</div>}{!mobile&&<div style={{fontSize:10,color:"rgba(255,255,255,.35)",marginBottom:8}}>{"Créditos: "}<b style={{color:profile.creditos>0?"#5eead4":"#f87171"}}>{isAdmin?"\u221e":(profile.creditos||0)}</b></div>}<button onClick={handleLogout} style={{display:"flex",alignItems:"center",justifyContent:mobile?"center":"flex-start",gap:8,background:"rgba(255,255,255,.08)",border:"none",color:"rgba(255,255,255,.6)",padding:"9px 12px",borderRadius:8,cursor:"pointer",fontSize:12,width:"100%",transition:"all .15s ease"}}><span style={{display:"flex",alignItems:"center"}}>{icons.logout}</span>{!mobile&&<span>{"Cerrar sesión"}</span>}</button></div>
       </aside>
-      <main id="main-scroll" style={{flex:1,overflowY:"auto",overflowX:"hidden",padding:mobile?"16px":"28px 36px",height:"100vh",backgroundImage:"url(\""+DINO_BG+"\")",backgroundRepeat:"repeat",backgroundSize:"400px 400px"}}>
+      <main id="main-scroll" style={{flex:1,overflowY:"auto",overflowX:"hidden",padding:mobile?"16px":"28px 36px",height:"100vh",backgroundImage:"url(\""+DINO_BG+"\")",backgroundRepeat:"repeat",backgroundSize:"800px auto"}}>
         {toast&&<div style={{position:"fixed",top:16,right:16,zIndex:999,background:toast.t==="ok"?"#059669":"#dc2626",color:"#fff",padding:"10px 18px",borderRadius:8,fontSize:13,fontWeight:500,boxShadow:"0 4px 16px rgba(0,0,0,.15)",animation:"fi .3s ease"}}>{toast.m}</div>}
         <ErrorBoundary onReset={function(){ sV("dash"); sS(null); }}>
         {view==="dash"&&<Dashboard allEvals={allEvals} onT={function(){navTo("tools")}} onView={viewReport} ld={loading} profile={profile} isAdmin={isAdmin} userId={authUser?.uid} nfy={nfy} onCalendar={function(){navTo("calendario")}} onStartEval={startEval} onBuyCredits={goToPremium} userSettings={userSettings} />}
