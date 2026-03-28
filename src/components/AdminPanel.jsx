@@ -58,7 +58,7 @@ export default function AdminPanel({ nfy }) {
   };
 
   var PALETTE = [
-    {n:"Verde oscuro",c:"#0a3d2f"},{n:"Verde azulado",c:"#0d9488"},{n:"Esmeralda",c:"#059669"},
+    {n:"Blanco",c:"#ffffff"},{n:"Verde oscuro",c:"#0a3d2f"},{n:"Verde azulado",c:"#0d9488"},{n:"Esmeralda",c:"#059669"},
     {n:"Azul marino",c:"#1e3a5f"},{n:"Azul",c:"#2563eb"},{n:"Indigo",c:"#4f46e5"},
     {n:"Violeta",c:"#7c3aed"},{n:"Fucsia",c:"#c026d3"},{n:"Rosa",c:"#e11d48"},
     {n:"Rojo",c:"#dc2626"},{n:"Naranja",c:"#ea580c"},{n:"Ambar",c:"#d97706"},
@@ -206,12 +206,12 @@ export default function AdminPanel({ nfy }) {
       </div>}
 
       {tab==="colores" && <div>
-        <p style={{fontSize:13,color:K.mt,marginBottom:16}}>Personaliz\u00e1 los colores de la aplicaci\u00f3n. Los cambios se aplican para todos los usuarios.</p>
+        <p style={{fontSize:13,color:K.mt,marginBottom:16}}>{"Personaliz\u00e1 los colores de la aplicaci\u00f3n. Los cambios se aplican para todos los usuarios."}</p>
 
         {/* Color Primario */}
         <div style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",padding:20,marginBottom:16}}>
           <div style={{fontSize:14,fontWeight:700,color:"#1e293b",marginBottom:4}}>Color Primario</div>
-          <div style={{fontSize:11,color:K.mt,marginBottom:12}}>Sidebar, encabezados principales y botones de acci\u00f3n</div>
+          <div style={{fontSize:11,color:K.mt,marginBottom:12}}>{"Sidebar, encabezados principales y botones de acci\u00f3n"}</div>
 
           <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:14}}>
             {PALETTE.map(function(p){ var sel = themeColors.primary===p.c; return <button key={p.c} onClick={function(){setThemeColors(function(prev){return Object.assign({},prev,{primary:p.c})})}} title={p.n} style={{width:36,height:36,borderRadius:8,background:p.c,border:sel?"3px solid #000":"2px solid #e2e8f0",cursor:"pointer",transition:"all .15s",transform:sel?"scale(1.15)":"scale(1)",boxShadow:sel?"0 2px 8px rgba(0,0,0,.3)":"none"}} />; })}
@@ -250,7 +250,7 @@ export default function AdminPanel({ nfy }) {
           <div style={{display:"flex",gap:0,borderRadius:10,overflow:"hidden",height:60}}>
             <div style={{flex:1,background:themeColors.primary,opacity:themeColors.primaryAlpha/100,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:11,fontWeight:600}}>Sidebar</div>
             <div style={{flex:2,background:"#f0f5f3",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-              <div style={{padding:"6px 14px",background:themeColors.secondary,opacity:themeColors.secondaryAlpha/100,color:"#fff",borderRadius:6,fontSize:11,fontWeight:600}}>Bot\u00f3n</div>
+              <div style={{padding:"6px 14px",background:themeColors.secondary,opacity:themeColors.secondaryAlpha/100,color:"#fff",borderRadius:6,fontSize:11,fontWeight:600}}>{"Bot\u00f3n"}</div>
               <div style={{padding:"6px 14px",border:"1px solid "+themeColors.secondary,color:themeColors.secondary,borderRadius:6,fontSize:11,fontWeight:600}}>Enlace</div>
             </div>
           </div>
