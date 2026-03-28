@@ -223,7 +223,48 @@ export default function App() {
         <nav style={{flex:1}}>{nav.map(function(n){ var id=n[0],iconKey=n[1],lb=n[2]; var active = view===id; return <button key={id} data-tour={NAV_TOUR_IDS[id]||""} onClick={function(){navTo(id)}} style={{display:"flex",alignItems:"center",gap:10,width:"100%",padding:mobile?"13px 0":"11px 18px",background:active?"rgba(94,234,212,.12)":"transparent",border:"none",color:active?"#5eead4":"rgba(255,255,255,.55)",cursor:"pointer",fontSize:14,fontWeight:active?600:400,borderLeft:active?"3px solid #5eead4":"3px solid transparent",textAlign:"left",justifyContent:mobile?"center":"flex-start",transition:"all .15s ease"}}><span style={{display:"flex",alignItems:"center",opacity:active?1:.7}}>{icons[iconKey]}</span>{!mobile&&<span>{lb}</span>}</button>; })}</nav>
         <div style={{padding:"0 14px",borderTop:"1px solid rgba(255,255,255,.1)",paddingTop:12}}>{!mobile&&<div style={{fontSize:10,color:"rgba(255,255,255,.45)",marginBottom:3}}>{"Sesión: "}<b style={{color:"#5eead4"}}>{profile.username}</b>{isAdmin&&<span style={{background:"#5eead4",color:K.sd,padding:"1px 5px",borderRadius:3,fontSize:8,marginLeft:6,fontWeight:700}}>ADMIN</span>}</div>}{!mobile&&<div style={{fontSize:10,color:"rgba(255,255,255,.35)",marginBottom:8}}>{"Créditos: "}<b style={{color:profile.creditos>0?"#5eead4":"#f87171"}}>{isAdmin?"\u221e":(profile.creditos||0)}</b></div>}<button onClick={handleLogout} style={{display:"flex",alignItems:"center",justifyContent:mobile?"center":"flex-start",gap:8,background:"rgba(255,255,255,.08)",border:"none",color:"rgba(255,255,255,.6)",padding:"9px 12px",borderRadius:8,cursor:"pointer",fontSize:12,width:"100%",transition:"all .15s ease"}}><span style={{display:"flex",alignItems:"center"}}>{icons.logout}</span>{!mobile&&<span>{"Cerrar sesión"}</span>}</button></div>
       </aside>
-      <main id="main-scroll" style={{flex:1,overflowY:"auto",overflowX:"hidden",padding:mobile?"16px":"28px 36px",height:"100vh"}}>
+var DINO_BG = "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400"><rect width="400" height="400" fill="#f0f5f3"/>'
+  // Dino 1 - T-Rex pequeño
+  + '<g transform="translate(30,30)" opacity="0.07" stroke="#0a3d2f" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M10 18c0-6 4-10 10-10s8 3 8 7c2-1 4 0 4 2s-2 3-4 3h-2c-1 3-4 5-7 5l-1 6h-2l0-6-2 6h-2l1-7c-2-1-3-3-3-6z"/><circle cx="16" cy="11" r="1"/></g>'
+  // Huella dino
+  + '<g transform="translate(120,60)" opacity="0.06" stroke="#0a3d2f" stroke-width="1.2" fill="none"><ellipse cx="8" cy="12" rx="5" ry="7"/><circle cx="3" cy="3" r="2"/><circle cx="8" cy="1" r="2"/><circle cx="13" cy="3" r="2"/></g>'
+  // Hoja/palmera
+  + '<g transform="translate(200,20)" opacity="0.06" stroke="#0a3d2f" stroke-width="1.3" fill="none"><path d="M12 24c0-12 6-20 12-22M12 24c0-10-6-18-10-20M12 24V28"/></g>'
+  // Huevo
+  + '<g transform="translate(300,40)" opacity="0.06" stroke="#0a3d2f" stroke-width="1.3" fill="none"><ellipse cx="8" cy="10" rx="7" ry="9"/><path d="M4 8c2-1 4 1 4-1s2 2 4 1"/></g>'
+  // Dino 2 - Bronto
+  + '<g transform="translate(60,120)" opacity="0.06" stroke="#0a3d2f" stroke-width="1.5" fill="none"><path d="M5 20c0-3 2-5 5-5h12c3 0 5 2 5 4l8-10c1-1 3 0 2 2l-6 9c0 2-2 4-5 4H10c-3 0-5-2-5-4zM5 20v5M8 20v5M22 19v5M25 19v5"/><circle cx="32" cy="9" r="1"/></g>'
+  // Estrella
+  + '<g transform="translate(180,100)" opacity="0.05" stroke="#0a3d2f" stroke-width="1.2" fill="none"><path d="M8 0l2 5h6l-5 4 2 5-5-3-5 3 2-5-5-4h6z"/></g>'
+  // Volcán
+  + '<g transform="translate(280,110)" opacity="0.06" stroke="#0a3d2f" stroke-width="1.3" fill="none"><path d="M15 28L5 28 10 12h10l5 16zM12 12c-1-3 1-5 3-5s4 2 3 5M13 8c0-2 1-3 2-3"/></g>'
+  // Dino 3 - Stego
+  + '<g transform="translate(350,160)" opacity="0.06" stroke="#0a3d2f" stroke-width="1.3" fill="none"><path d="M5 16h20c2 0 3-1 3-3l3-2c0 2-1 3-2 4 1 1 1 3-1 3H5c-2 0-3-2-3-4s1-3 3-3zM8 11l2-4 3 4M14 11l2-4 3 4M20 11l2-3"/><path d="M5 18v4M8 18v4M22 18v3M25 17v4"/><circle cx="27" cy="12" r="0.8"/></g>'
+  // Corazón
+  + '<g transform="translate(30,200)" opacity="0.05" stroke="#0a3d2f" stroke-width="1.2" fill="none"><path d="M8 4C8 1 12 0 12 4c0-4 4-3 4 0 0 4-4 7-4 7S8 8 8 4z"/></g>'
+  // Nube
+  + '<g transform="translate(130,180)" opacity="0.05" stroke="#0a3d2f" stroke-width="1.2" fill="none"><path d="M8 16h16c3 0 5-2 5-5s-2-4-4-4c0-3-3-5-6-5s-6 2-6 5c-2 0-4 2-4 4s2 5 4 5h-5z"/></g>'
+  // Huella 2
+  + '<g transform="translate(240,200)" opacity="0.06" stroke="#0a3d2f" stroke-width="1.2" fill="none"><ellipse cx="8" cy="12" rx="5" ry="7"/><circle cx="3" cy="3" r="2"/><circle cx="8" cy="1" r="2"/><circle cx="13" cy="3" r="2"/></g>'
+  // Dino 4 - Ptero
+  + '<g transform="translate(320,230)" opacity="0.06" stroke="#0a3d2f" stroke-width="1.3" fill="none"><path d="M15 12L2 6c-1 0-1 2 0 3l10 5-10 3c-1 1-1 3 0 3l13-5 8 2c2 0 3-2 2-4zM28 11l3-4"/><circle cx="28" cy="10" r="1"/></g>'
+  // Hoja 2
+  + '<g transform="translate(80,280)" opacity="0.05" stroke="#0a3d2f" stroke-width="1.2" fill="none"><path d="M5 20Q5 5 20 5Q5 5 5 20zM5 20l15-15"/></g>'
+  // Huevo 2
+  + '<g transform="translate(180,270)" opacity="0.06" stroke="#0a3d2f" stroke-width="1.3" fill="none"><ellipse cx="8" cy="10" rx="7" ry="9"/><path d="M5 7c1 2 3 0 3 2s3-1 3 1"/></g>'
+  // Dino 5 - Tricera
+  + '<g transform="translate(270,290)" opacity="0.06" stroke="#0a3d2f" stroke-width="1.3" fill="none"><path d="M25 14c3-2 6-1 6 2s-3 4-6 3H8c-3 0-5-2-5-5s2-5 5-5h2l-2-3h4l1 3h7z"/><circle cx="10" cy="13" r="1"/><path d="M8 18v4M11 18v4M20 17v4M23 16v4"/></g>'
+  // Sol
+  + '<g transform="translate(370,50)" opacity="0.05" stroke="#0a3d2f" stroke-width="1" fill="none"><circle cx="8" cy="8" r="4"/><path d="M8 1v2M8 14v2M1 8h2M14 8h2M3 3l1.5 1.5M11.5 11.5l1.5 1.5M13 3l-1.5 1.5M4.5 11.5L3 13"/></g>'
+  // Arbolito
+  + '<g transform="translate(20,340)" opacity="0.05" stroke="#0a3d2f" stroke-width="1.2" fill="none"><path d="M10 24v-6M5 18l5-8 5 8zM7 14l3-5 3 5z"/></g>'
+  // Mariposa
+  + '<g transform="translate(160,340)" opacity="0.05" stroke="#0a3d2f" stroke-width="1" fill="none"><path d="M8 8C4 4 0 6 2 10s6 2 6-2zM8 8c4-4 8-2 6 2s-6 2-6-2zM8 8v6"/></g>'
+  // Huella 3
+  + '<g transform="translate(340,350)" opacity="0.06" stroke="#0a3d2f" stroke-width="1.2" fill="none"><ellipse cx="8" cy="12" rx="5" ry="7"/><circle cx="3" cy="3" r="2"/><circle cx="8" cy="1" r="2"/><circle cx="13" cy="3" r="2"/></g>'
+  + '</svg>');
+
+      <main id="main-scroll" style={{flex:1,overflowY:"auto",overflowX:"hidden",padding:mobile?"16px":"28px 36px",height:"100vh",backgroundImage:"url(\""+DINO_BG+"\")",backgroundRepeat:"repeat",backgroundSize:"400px 400px"}}>
         {toast&&<div style={{position:"fixed",top:16,right:16,zIndex:999,background:toast.t==="ok"?"#059669":"#dc2626",color:"#fff",padding:"10px 18px",borderRadius:8,fontSize:13,fontWeight:500,boxShadow:"0 4px 16px rgba(0,0,0,.15)",animation:"fi .3s ease"}}>{toast.m}</div>}
         <ErrorBoundary onReset={function(){ sV("dash"); sS(null); }}>
         {view==="dash"&&<Dashboard allEvals={allEvals} onT={function(){navTo("tools")}} onView={viewReport} ld={loading} profile={profile} isAdmin={isAdmin} userId={authUser?.uid} nfy={nfy} onCalendar={function(){navTo("calendario")}} onStartEval={startEval} onBuyCredits={goToPremium} userSettings={userSettings} />}

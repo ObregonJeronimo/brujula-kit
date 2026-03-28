@@ -4,13 +4,25 @@ import { K as _K, ageLabel } from "../lib/fb.js";
 import { renderReportText } from "../lib/evalUtils.jsx";
 var K = Object.assign({}, _K, { ac: "#9333ea" });
 
-function textPDF(title, evalLabel, ev, reportText, filename){
+function textPDF(title, evalLabel, ev, reportText, filename, therapistInfo){
   import("jspdf").then(function(mod){
     var jsPDF = mod.jsPDF;
     var pdf = new jsPDF("p","mm","a4");
     var pW=210, margin=14, maxW=pW-margin*2, y=margin;
     var lineH=5, titleH=7;
     var pageH=297-margin*2;
+    var ti = therapistInfo || {};
+
+    // Encabezado del profesional (si está configurado)
+    if(ti.therapist || ti.clinic){
+      pdf.setFontSize(11); pdf.setTextColor(10,61,47); pdf.setFont(undefined,"bold");
+      if(ti.clinic){ pdf.text(ti.clinic, pW/2, y, {align:"center"}); y+=5; }
+      if(ti.address){ pdf.setFontSize(8); pdf.setTextColor(100); pdf.setFont(undefined,"normal"); pdf.text(ti.address, pW/2, y, {align:"center"}); y+=4; }
+      if(ti.therapist){ pdf.setFontSize(9); pdf.setTextColor(10,61,47); pdf.setFont(undefined,"bold"); pdf.text(ti.therapist+(ti.license?" \u2014 "+ti.license:""), pW/2, y, {align:"center"}); y+=4; pdf.setFont(undefined,"normal"); }
+      var contactParts = [ti.phone, ti.email].filter(Boolean);
+      if(contactParts.length > 0){ pdf.setFontSize(7); pdf.setTextColor(140); pdf.text(contactParts.join(" \u00b7 "), pW/2, y, {align:"center"}); y+=4; }
+      pdf.setDrawColor(10,61,47); pdf.setLineWidth(0.5); pdf.line(margin, y, pW-margin, y); y+=8;
+    }
 
     pdf.setFontSize(8); pdf.setTextColor(120);
     pdf.text(title+" \u2014 "+(evalLabel||""), margin, y); 
@@ -63,12 +75,14 @@ function textPDF(title, evalLabel, ev, reportText, filename){
   });
 }
 
-function ReportCard({ title, titleColor, borderColor, report, ev, evalLabel, onPDF, onReportChange }) {
+function ReportCard({ title, titleColor, borderColor, report, ev, evalLabel, onPDF, onReportChange, therapistInfo }) {
   var _editing = useState(false), editing = _editing[0], setEditing = _editing[1];
   var _editText = useState(""), editText = _editText[0], setEditText = _editText[1];
 
   var startEdit = function(){ setEditText(report || ""); setEditing(true); };
   var saveEdit = function(){ if(onReportChange) onReportChange(editText); setEditing(false); };
+  var ti = therapistInfo || {};
+  var hasHeader = ti.therapist || ti.clinic;
 
   return <div style={{flex:1,minWidth:0}}>
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8,flexWrap:"wrap",gap:6}}>
@@ -79,6 +93,13 @@ function ReportCard({ title, titleColor, borderColor, report, ev, evalLabel, onP
       </div>
     </div>
     <div style={{background:"#fff",borderRadius:12,border:"2px solid "+(borderColor||K.bd),padding:24}}>
+      {/* Encabezado del profesional */}
+      {hasHeader && <div style={{textAlign:"center",marginBottom:14,paddingBottom:12,borderBottom:"2px solid #0a3d2f"}}>
+        {ti.clinic && <div style={{fontSize:13,fontWeight:700,color:"#0a3d2f"}}>{ti.clinic}</div>}
+        {ti.address && <div style={{fontSize:11,color:"#64748b",marginTop:2}}>{ti.address}</div>}
+        {ti.therapist && <div style={{fontSize:12,fontWeight:600,color:"#0a3d2f",marginTop:4}}>{ti.therapist}{ti.license ? " \u2014 "+ti.license : ""}</div>}
+        {(ti.phone || ti.email) && <div style={{fontSize:10,color:"#94a3b8",marginTop:2}}>{[ti.phone,ti.email].filter(Boolean).join(" \u00b7 ")}</div>}
+      </div>}
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14,paddingBottom:10,borderBottom:"1px solid #e2e8f0"}}>
         <div>
           <div style={{fontSize:9,color:titleColor||K.mt,fontWeight:700,textTransform:"uppercase",letterSpacing:1}}>{title+" \u2014 "+(evalLabel||"")}</div>
@@ -187,6 +208,6 @@ export default function AIReportPanel({ ev, evalType, collectionName, evalLabel,
   </div>;
 
   return <div style={{marginBottom:20}}>
-    <ReportCard title={"Informe Fonoaudiologico"} titleColor={K.sd} borderColor={K.bd} report={report} ev={ev} evalLabel={evalLabel||evalType.toUpperCase()} onPDF={function(txt){ textPDF("Informe Fonoaudiologico", evalLabel||evalType.toUpperCase(), ev, txt||report, pdfName("Informe")); }} onReportChange={function(t){setReport(t)}} />
+    <ReportCard title={"Informe Fonoaudiologico"} titleColor={K.sd} borderColor={K.bd} report={report} ev={ev} evalLabel={evalLabel||evalType.toUpperCase()} therapistInfo={therapistInfo} onPDF={function(txt){ textPDF("Informe Fonoaudiologico", evalLabel||evalType.toUpperCase(), ev, txt||report, pdfName("Informe"), therapistInfo); }} onReportChange={function(t){setReport(t)}} />
   </div>;
 }
