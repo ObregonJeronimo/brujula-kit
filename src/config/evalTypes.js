@@ -128,7 +128,7 @@ export var EVAL_TYPES = {
     id: "ofa",
     label: "EOF",
     fullName: "Examen Clinico EOF",
-    icon: "\ud83d\udc44",
+    icon: "\ud83e\ude7a",
     color: "#0891b2",
     badgeBg: "#cffafe",
     age: "Todas",
