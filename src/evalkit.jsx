@@ -10,7 +10,7 @@ import CompleteProfileScreen from "./components/CompleteProfile.jsx";
 import Dashboard from "./components/Dashboard.jsx";
 import Tools from "./components/Tools.jsx";
 import NoCreditsModal from "./components/NoCreditsModal.jsx";
-var OnboardingTourLazy = lazyRetry(function(){ return import("./components/OnboardingTour.jsx"); });
+import ChangelogModal from "./components/ChangelogModal.jsx";
 
 function lazyRetry(fn){
   return lazy(function(){
@@ -23,6 +23,7 @@ function lazyRetry(fn){
   });
 }
 
+var OnboardingTourLazy = lazyRetry(function(){ return import("./components/OnboardingTour.jsx"); });
 var Hist = lazyRetry(function(){ return import("./components/Hist.jsx"); });
 var ProfilePage = lazyRetry(function(){ return import("./components/ProfilePage.jsx"); });
 var PremiumPage = lazyRetry(function(){ return import("./components/PremiumPage.jsx"); });
@@ -65,14 +66,7 @@ var RPT_COMPONENTS = { rptP: RptPEFF, rptR: RptREP, rptD: RptDISC, rptRC: RptREC
 var ALL_NEW_VIEWS = Object.keys(NEW_COMPONENTS);
 var isMobile = function(){ return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) && window.innerWidth < 900; };
 
-// Mix hex color with white by alpha (0-100). 100=pure color, 30=very washed out
-var mixColor = function(hex, alpha){
-  if(!hex || alpha >= 100) return hex;
-  var r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
-  var a = Math.max(30, Math.min(100, alpha)) / 100;
-  var mr = Math.round(r * a + 255 * (1-a)), mg = Math.round(g * a + 255 * (1-a)), mb = Math.round(b * a + 255 * (1-a));
-  return "#" + ((1<<24)+(mr<<16)+(mg<<8)+mb).toString(16).slice(1);
-};
+var mixColor = function(hex, alpha){ if(!hex || alpha >= 100) return hex; var r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16); var a = Math.max(30, Math.min(100, alpha)) / 100; var mr = Math.round(r * a + 255 * (1-a)), mg = Math.round(g * a + 255 * (1-a)), mb = Math.round(b * a + 255 * (1-a)); return "#" + ((1<<24)+(mr<<16)+(mg<<8)+mb).toString(16).slice(1); };
 
 var I = function(d){ return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">{d}</svg>; };
 var icons = {
@@ -90,7 +84,6 @@ var icons = {
 };
 
 var DINO_BG = "/img/dino_bg_opt.jpg";
-
 var NAV_TOUR_IDS = { dash:"nav-dash", tools:"nav-tools", hist:"nav-hist", pacientes:"nav-pacientes", calendario:"nav-calendario", premium:"nav-premium", profile:"nav-profile", config:"nav-config", stats:"nav-stats", adm:"nav-adm" };
 
 var _urlParams = new URLSearchParams(window.location.search);
@@ -124,30 +117,19 @@ export default function App() {
   var _savingModal = useState(false), savingModal = _savingModal[0], setSavingModal = _savingModal[1];
   var _runTour = useState(false), runTour = _runTour[0], setRunTour = _runTour[1];
   var _theme = useState(null), theme = _theme[0], setTheme = _theme[1];
+  var _showChangelog = useState(true), showChangelog = _showChangelog[0], setShowChangelog = _showChangelog[1];
   var nfy = useCallback(function(m,t){ sT({m:m,t:t}); setTimeout(function(){sT(null)},4500); },[]);
   var isAdmin = profile?.role === "admin";
   useSessionHeartbeat(authUser?.uid, isAdmin);
 
-  // Auto-trigger tour for first-time users
   useEffect(function(){
     if(!authUser?.uid || !profile) return;
     var key = "bk_onboarding_" + authUser.uid;
-    if(!localStorage.getItem(key)){
-      setTimeout(function(){ setRunTour(true); }, 800);
-    }
+    if(!localStorage.getItem(key)){ setTimeout(function(){ setRunTour(true); }, 800); }
   },[authUser, profile]);
 
-  var handleTourFinish = function(){
-    setRunTour(false);
-    if(authUser?.uid){
-      localStorage.setItem("bk_onboarding_" + authUser.uid, "done");
-    }
-  };
-
-  var startTourManually = function(){
-    if(view !== "dash") doNav("dash");
-    setTimeout(function(){ setRunTour(true); }, 300);
-  };
+  var handleTourFinish = function(){ setRunTour(false); if(authUser?.uid){ localStorage.setItem("bk_onboarding_" + authUser.uid, "done"); } };
+  var startTourManually = function(){ if(view !== "dash") doNav("dash"); setTimeout(function(){ setRunTour(true); }, 300); };
 
   useEffect(function(){
     if(!authUser?.uid || paymentProcessed) return;
@@ -225,15 +207,13 @@ export default function App() {
   var nav = [["dash","dash","Panel"],["tools","tools","Herramientas"],["hist","hist","Historial"],["pacientes","pacientes","Pacientes"],["calendario","calendario","Calendario"],["premium","premium","Créditos"],["profile","profile","Perfil"],["config","config","Configuración"]];
   if(isAdmin){ nav.push(["stats","stats","Estadísticas"]); nav.push(["adm","adm","Administrar"]); }
   var tSd = theme && theme.primary ? mixColor(theme.primary, theme.primaryAlpha != null ? theme.primaryAlpha : 100) : K.sd;
-  var tAc = theme && theme.secondary ? mixColor(theme.secondary, theme.secondaryAlpha != null ? theme.secondaryAlpha : 100) : K.ac;
-  var tSdAlpha = theme && theme.primaryAlpha != null ? theme.primaryAlpha/100 : 1;
-  var tAcAlpha = theme && theme.secondaryAlpha != null ? theme.secondaryAlpha/100 : 1;
 
   return (
     <div style={{display:"flex",height:"100vh",width:"100vw",fontFamily:"'DM Sans',system-ui,sans-serif",background:K.bg,color:"#1e293b",overflow:"hidden"}}>
       <Suspense fallback={null}>{runTour && <OnboardingTourLazy run={runTour} onFinish={handleTourFinish} />}</Suspense>
       {showNoCredits && <NoCreditsModal onClose={function(){setShowNoCredits(false);sV("dash")}} onUpgrade={function(){setShowNoCredits(false);goToPremium()}} />}
       {unsavedModal !== null && <UnsavedChangesModal onDiscard={handleUnsavedDiscard} onCancel={handleUnsavedCancel} onSave={handleUnsavedSave} saving={savingModal} />}
+      {showChangelog && authUser?.uid && profile && <ChangelogModal userId={authUser.uid} onClose={function(){ setShowChangelog(false); }} />}
       <aside style={{width:mobile?60:230,minWidth:mobile?60:230,background:tSd,color:"#fff",display:"flex",flexDirection:"column",padding:"18px 0",flexShrink:0,height:"100vh"}}>
         <div data-tour="sidebar-logo" style={{padding:"0 14px",marginBottom:26,display:"flex",alignItems:"center",gap:9}}><img src="/img/logo_96.png" alt="Logo" style={{width:28,height:28}} />{!mobile&&<div><div style={{fontSize:17,fontWeight:700}}>{"Brújula KIT"}</div><div style={{fontSize:9,color:"#5eead4",fontWeight:600,letterSpacing:"1px"}}>{"FONOAUDIOLOGÍA"}</div></div>}</div>
         <nav style={{flex:1}}>{nav.map(function(n){ var id=n[0],iconKey=n[1],lb=n[2]; var active = view===id; return <button key={id} data-tour={NAV_TOUR_IDS[id]||""} onClick={function(){navTo(id)}} style={{display:"flex",alignItems:"center",gap:10,width:"100%",padding:mobile?"13px 0":"11px 18px",background:active?"rgba(94,234,212,.12)":"transparent",border:"none",color:active?"#5eead4":"rgba(255,255,255,.55)",cursor:"pointer",fontSize:14,fontWeight:active?600:400,borderLeft:active?"3px solid #5eead4":"3px solid transparent",textAlign:"left",justifyContent:mobile?"center":"flex-start",transition:"all .15s ease"}}><span style={{display:"flex",alignItems:"center",opacity:active?1:.7}}>{icons[iconKey]}</span>{!mobile&&<span>{lb}</span>}</button>; })}</nav>
