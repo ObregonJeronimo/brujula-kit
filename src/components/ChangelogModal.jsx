@@ -10,7 +10,7 @@ export default function ChangelogModal({ userId, onClose }) {
 
   useEffect(function(){
     if(!userId) return;
-    var q2 = query(collection(db, "changelogs"), orderBy("fecha", "desc"), limit(5));
+    var q2 = query(collection(db, "changelogs"), orderBy("createdAt", "desc"), limit(5));
     getDocs(q2).then(function(snap){
       var all = snap.docs.map(function(d){ return Object.assign({ _id: d.id }, d.data()); });
       if(all.length === 0){ setLoading(false); return; }
@@ -40,9 +40,7 @@ export default function ChangelogModal({ userId, onClose }) {
   return <div style={{position:"fixed",inset:0,zIndex:1100,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,.5)",backdropFilter:"blur(6px)",animation:"fi .2s ease"}}>
     <div style={{background:"#fff",borderRadius:20,width:560,maxWidth:"92vw",maxHeight:"85vh",overflow:"hidden",boxShadow:"0 24px 80px rgba(0,0,0,.25)",display:"flex",flexDirection:"column"}}>
 
-      {/* Header with compass */}
       <div style={{background:"linear-gradient(135deg,#f0fdfa,#ccfbf1)",padding:"32px 32px 24px",position:"relative",overflow:"hidden",flexShrink:0}}>
-        {/* Compass image inclined */}
         <div style={{position:"absolute",right:-20,top:-10,width:180,height:180,transform:"rotate(-20deg)",opacity:1}} dangerouslySetInnerHTML={{__html:COMPASS_SVG}} />
         <div style={{position:"relative",zIndex:1}}>
           <div style={{fontSize:11,fontWeight:700,color:"#0d9488",textTransform:"uppercase",letterSpacing:"1.5px",marginBottom:6}}>CHANGELOG</div>
@@ -50,7 +48,6 @@ export default function ChangelogModal({ userId, onClose }) {
         </div>
       </div>
 
-      {/* Changelog entries */}
       <div style={{flex:1,overflowY:"auto",padding:"20px 32px 8px"}}>
         {logs.map(function(log, idx){
           return <div key={log._id} style={{marginBottom:20,paddingBottom:idx < logs.length-1 ? 20 : 0,borderBottom:idx < logs.length-1 ? "1px solid #f1f5f9" : "none"}}>
@@ -65,7 +62,6 @@ export default function ChangelogModal({ userId, onClose }) {
         })}
       </div>
 
-      {/* Footer with accept button */}
       <div style={{padding:"16px 32px 24px",flexShrink:0}}>
         <button onClick={dismiss} style={{width:"100%",padding:"14px",background:"linear-gradient(135deg,#0a3d2f,#0d9488)",color:"#fff",border:"none",borderRadius:12,fontSize:15,fontWeight:700,cursor:"pointer",transition:"all .15s"}}>
           Aceptar
