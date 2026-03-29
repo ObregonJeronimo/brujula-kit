@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useImperativeHandle, forwardRef } from "react";
-import { db, doc, getDoc, updateDoc } from "../firebase.js";
+import { db, doc, getDoc, updateDoc, collection, getDocs, query, orderBy, limit } from "../firebase.js";
 
 var K = { sd:"#0a3d2f", ac:"#0d9488", mt:"#64748b", bd:"#e2e8f0" };
 
@@ -28,23 +28,21 @@ var SettingsPage = forwardRef(function SettingsPageInner({ userId, nfy, profile,
   var _saving = useState(false), saving = _saving[0], setSaving = _saving[1];
   var _tab = useState("consultorio"), activeTab = _tab[0], setActiveTab = _tab[1];
 
-  // Consultorio fields
   var _cName = useState(""), cName = _cName[0], setCName = _cName[1];
   var _cDir = useState(""), cDir = _cDir[0], setCDir = _cDir[1];
   var _cTel = useState(""), cTel = _cTel[0], setCTel = _cTel[1];
   var _cEmail = useState(""), cEmail = _cEmail[0], setCEmail = _cEmail[1];
   var _showInReport = useState(false), showInReport = _showInReport[0], setShowInReport = _showInReport[1];
-
-  // Professional info fields (from reportHeader)
   var _profName = useState(""), profName = _profName[0], setProfName = _profName[1];
   var _profLicense = useState(""), profLicense = _profLicense[0], setProfLicense = _profLicense[1];
   var _profPhone = useState(""), profPhone = _profPhone[0], setProfPhone = _profPhone[1];
-
-  // General fields
   var _creditWarning = useState(true), creditWarning = _creditWarning[0], setCreditWarning = _creditWarning[1];
   var _citaReminder = useState(true), citaReminder = _citaReminder[0], setCitaReminder = _citaReminder[1];
   var _reminderDays = useState(3), reminderDays = _reminderDays[0], setReminderDays = _reminderDays[1];
   var _autoEmail = useState(true), autoEmail = _autoEmail[0], setAutoEmail = _autoEmail[1];
+  var _appVersion = useState(""), appVersion = _appVersion[0], setAppVersion = _appVersion[1];
+  var _appVersionDate = useState(""), appVersionDate = _appVersionDate[0], setAppVersionDate = _appVersionDate[1];
+  var _appVersionTitle = useState(""), appVersionTitle = _appVersionTitle[0], setAppVersionTitle = _appVersionTitle[1];
 
   var origRef = useRef(null);
 
@@ -71,6 +69,16 @@ var SettingsPage = forwardRef(function SettingsPageInner({ userId, nfy, profile,
         setProfName(orig.profName); setProfLicense(orig.profLicense); setProfPhone(orig.profPhone);
       }
     }).catch(function(e){ console.error(e); }).finally(function(){ setLoading(false); });
+    // Load latest version from changelogs
+    var q2 = query(collection(db, "changelogs"), orderBy("createdAt", "desc"), limit(1));
+    getDocs(q2).then(function(snap){
+      if(!snap.empty){
+        var d = snap.docs[0].data();
+        setAppVersion(d.version || "");
+        setAppVersionDate(d.fecha || "");
+        setAppVersionTitle(d.titulo || "");
+      }
+    }).catch(function(){});
   }, [userId]);
 
   var isDirty = function(){
@@ -116,56 +124,28 @@ var SettingsPage = forwardRef(function SettingsPageInner({ userId, nfy, profile,
 
   var renderConsultorio = function(){
     return <div style={{animation:"fi .2s ease"}}>
-      {/* Professional Info */}
       <div style={{marginBottom:22}}>
         <h3 style={{fontSize:14,fontWeight:700,color:K.sd,marginBottom:4}}>{"Información del profesional"}</h3>
         <p style={{fontSize:11,color:K.mt,marginBottom:14}}>{"Estos datos aparecen en el encabezado de cada informe que generes."}</p>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
-          <div style={{gridColumn:"1/-1"}}>
-            <label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>Nombre completo del profesional</label>
-            <input value={profName} onChange={function(e){ setProfName(e.target.value); }} style={I} placeholder="Ej: Lic. María López" />
-          </div>
-          <div>
-            <label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>{"Matrícula profesional"}</label>
-            <input value={profLicense} onChange={function(e){ setProfLicense(e.target.value); }} style={I} placeholder="Ej: MP 12345" />
-          </div>
-          <div>
-            <label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>{"Teléfono personal"}</label>
-            <input value={profPhone} onChange={function(e){ setProfPhone(e.target.value); }} style={I} placeholder="Ej: 351-1234567" />
-          </div>
+          <div style={{gridColumn:"1/-1"}}><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>Nombre completo del profesional</label><input value={profName} onChange={function(e){ setProfName(e.target.value); }} style={I} placeholder="Ej: Lic. María López" /></div>
+          <div><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>{"Matrícula profesional"}</label><input value={profLicense} onChange={function(e){ setProfLicense(e.target.value); }} style={I} placeholder="Ej: MP 12345" /></div>
+          <div><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>{"Teléfono personal"}</label><input value={profPhone} onChange={function(e){ setProfPhone(e.target.value); }} style={I} placeholder="Ej: 351-1234567" /></div>
         </div>
       </div>
-
       <div style={{borderTop:"1px solid #e2e8f0",paddingTop:20}}>
         <h3 style={{fontSize:14,fontWeight:700,color:K.sd,marginBottom:4}}>{"Datos del consultorio"}</h3>
         <p style={{fontSize:11,color:K.mt,marginBottom:14}}>{"Esta información se incluye en los informes de pacientes y en los emails automáticos de recordatorio de citas."}</p>
-
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 16px",background:showInReport?"#f0fdfa":"#f8fafc",borderRadius:10,border:showInReport?"1px solid #99f6e4":"1px solid #e2e8f0",marginBottom:18}}>
-          <div>
-            <div style={{fontSize:13,fontWeight:600,color:showInReport?K.sd:"#475569"}}>Mostrar en informe de paciente</div>
-            {!allFieldsFilled && <div style={{fontSize:11,color:"#f59e0b",marginTop:2}}>{"Completá todos los campos del consultorio para activar"}</div>}
-          </div>
+          <div><div style={{fontSize:13,fontWeight:600,color:showInReport?K.sd:"#475569"}}>Mostrar en informe de paciente</div>{!allFieldsFilled && <div style={{fontSize:11,color:"#f59e0b",marginTop:2}}>{"Completá todos los campos del consultorio para activar"}</div>}</div>
           <Toggle value={showInReport} onChange={function(v){ if(v && !allFieldsFilled){ nfy("Completá todos los campos del consultorio primero","er"); return; } setShowInReport(v); }} />
         </div>
-
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:14}}>
-          <div>
-            <label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>Nombre del consultorio</label>
-            <input value={cName} onChange={function(e){ setCName(e.target.value); }} style={I} placeholder="Ej: Consultorio Fonos" />
-          </div>
-          <div>
-            <label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>{"Teléfono del consultorio"}</label>
-            <input value={cTel} onChange={function(e){ setCTel(e.target.value); }} style={I} placeholder="Ej: +54 351 1234567" />
-          </div>
+          <div><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>Nombre del consultorio</label><input value={cName} onChange={function(e){ setCName(e.target.value); }} style={I} placeholder="Ej: Consultorio Fonos" /></div>
+          <div><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>{"Teléfono del consultorio"}</label><input value={cTel} onChange={function(e){ setCTel(e.target.value); }} style={I} placeholder="Ej: +54 351 1234567" /></div>
         </div>
-        <div style={{marginBottom:14}}>
-          <label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>{"Dirección"}</label>
-          <input value={cDir} onChange={function(e){ setCDir(e.target.value); }} style={I} placeholder="Ej: Av. Colón 1234, Córdoba" />
-        </div>
-        <div>
-          <label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>Email de contacto</label>
-          <input value={cEmail} onChange={function(e){ setCEmail(e.target.value); }} style={I} placeholder="Ej: contacto@consultorio.com" />
-        </div>
+        <div style={{marginBottom:14}}><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>{"Dirección"}</label><input value={cDir} onChange={function(e){ setCDir(e.target.value); }} style={I} placeholder="Ej: Av. Colón 1234, Córdoba" /></div>
+        <div><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>Email de contacto</label><input value={cEmail} onChange={function(e){ setCEmail(e.target.value); }} style={I} placeholder="Ej: contacto@consultorio.com" /></div>
       </div>
     </div>;
   };
@@ -173,46 +153,26 @@ var SettingsPage = forwardRef(function SettingsPageInner({ userId, nfy, profile,
   var renderGeneral = function(){
     return <div style={{animation:"fi .2s ease"}}>
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 16px",background:creditWarning?"#f0fdfa":"#f8fafc",borderRadius:10,border:creditWarning?"1px solid #99f6e4":"1px solid #e2e8f0",marginBottom:14}}>
-        <div>
-          <div style={{fontSize:13,fontWeight:600,color:creditWarning?K.sd:"#475569"}}>{"Aviso de uso de crédito al iniciar evaluación"}</div>
-          <div style={{fontSize:11,color:K.mt,marginTop:2}}>{"Muestra una confirmación antes de descontar un crédito"}</div>
-        </div>
+        <div><div style={{fontSize:13,fontWeight:600,color:creditWarning?K.sd:"#475569"}}>{"Aviso de uso de crédito al iniciar evaluación"}</div><div style={{fontSize:11,color:K.mt,marginTop:2}}>{"Muestra una confirmación antes de descontar un crédito"}</div></div>
         <Toggle value={creditWarning} onChange={setCreditWarning} />
       </div>
-
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 16px",background:autoEmail?"#f0fdfa":"#f8fafc",borderRadius:10,border:autoEmail?"1px solid #99f6e4":"1px solid #e2e8f0",marginBottom:14}}>
-        <div>
-          <div style={{fontSize:13,fontWeight:600,color:autoEmail?K.sd:"#475569"}}>{"Enviar mail automático al agendar cita"}</div>
-          <div style={{fontSize:11,color:K.mt,marginTop:2}}>{"Envía un email de recordatorio al responsable del paciente al guardar una cita"}</div>
-        </div>
+        <div><div style={{fontSize:13,fontWeight:600,color:autoEmail?K.sd:"#475569"}}>{"Enviar mail automático al agendar cita"}</div><div style={{fontSize:11,color:K.mt,marginTop:2}}>{"Envía un email de recordatorio al responsable del paciente al guardar una cita"}</div></div>
         <Toggle value={autoEmail} onChange={setAutoEmail} />
       </div>
-
       <div style={{padding:"12px 16px",background:citaReminder?"#f0fdfa":"#f8fafc",borderRadius:10,border:citaReminder?"1px solid #99f6e4":"1px solid #e2e8f0",marginBottom:20}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-          <div>
-            <div style={{fontSize:13,fontWeight:600,color:citaReminder?K.sd:"#475569"}}>{"Avisar cuando una cita es próxima"}</div>
-            <div style={{fontSize:11,color:K.mt,marginTop:2}}>{"Recibí recordatorios de citas en el panel principal"}</div>
-          </div>
+          <div><div style={{fontSize:13,fontWeight:600,color:citaReminder?K.sd:"#475569"}}>{"Avisar cuando una cita es próxima"}</div><div style={{fontSize:11,color:K.mt,marginTop:2}}>{"Recibí recordatorios de citas en el panel principal"}</div></div>
           <Toggle value={citaReminder} onChange={setCitaReminder} />
         </div>
         {citaReminder && <div style={{marginTop:12,padding:"10px 14px",background:"#f0f9ff",borderRadius:8,border:"1px solid #bae6fd"}}>
           <div style={{fontSize:12,fontWeight:600,color:"#0369a1",marginBottom:8}}>{"Seleccionar cuándo recibir recordatorio"}</div>
-          <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-            {REMINDER_OPTIONS.map(function(opt){
-              var selected = reminderDays === opt.value;
-              return <button key={opt.value} onClick={function(){ setReminderDays(opt.value); }} style={{padding:"6px 14px",borderRadius:8,border:selected?"2px solid #0d9488":"1px solid #e2e8f0",background:selected?"#ccfbf1":"#fff",color:selected?K.sd:"#475569",fontSize:12,fontWeight:selected?700:500,cursor:"pointer"}}>{opt.label}</button>;
-            })}
-          </div>
+          <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>{REMINDER_OPTIONS.map(function(opt){ var selected = reminderDays === opt.value; return <button key={opt.value} onClick={function(){ setReminderDays(opt.value); }} style={{padding:"6px 14px",borderRadius:8,border:selected?"2px solid #0d9488":"1px solid #e2e8f0",background:selected?"#ccfbf1":"#fff",color:selected?K.sd:"#475569",fontSize:12,fontWeight:selected?700:500,cursor:"pointer"}}>{opt.label}</button>; })}</div>
         </div>}
       </div>
-
       <div style={{padding:"16px",background:"#f8fafc",borderRadius:10,border:"1px solid #e2e8f0"}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-          <div>
-            <div style={{fontSize:13,fontWeight:600,color:K.sd}}>{"Iniciar tutorial"}</div>
-            <div style={{fontSize:11,color:K.mt,marginTop:2}}>{"Volvé a ver el recorrido guiado por las secciones principales"}</div>
-          </div>
+          <div><div style={{fontSize:13,fontWeight:600,color:K.sd}}>{"Iniciar tutorial"}</div><div style={{fontSize:11,color:K.mt,marginTop:2}}>{"Volvé a ver el recorrido guiado por las secciones principales"}</div></div>
           <button onClick={function(){ if(onStartTour) onStartTour(); }} style={{padding:"8px 18px",background:"linear-gradient(135deg,#0a3d2f,#0d9488)",color:"#fff",border:"none",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer",whiteSpace:"nowrap",display:"flex",alignItems:"center",gap:6}}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
             Ver tutorial
@@ -223,10 +183,13 @@ var SettingsPage = forwardRef(function SettingsPageInner({ userId, nfy, profile,
   };
 
   var renderAcerca = function(){
+    var versionLabel = appVersion ? "Brújula KIT V" + appVersion : "Brújula KIT";
     return <div style={{animation:"fi .2s ease"}}>
       <div style={{fontSize:14,color:"#475569",lineHeight:1.8}}>
         <div style={{marginBottom:16}}>{"Versión actual del sistema:"}</div>
-        <div style={{display:"inline-block",padding:"10px 20px",background:"linear-gradient(135deg,#0a3d2f,#0d9488)",borderRadius:10,color:"#fff",fontSize:16,fontWeight:700,letterSpacing:"0.5px"}}>{"Brújula KIT V6.0"}</div>
+        <div style={{display:"inline-block",padding:"10px 20px",background:"linear-gradient(135deg,#0a3d2f,#0d9488)",borderRadius:10,color:"#fff",fontSize:16,fontWeight:700,letterSpacing:"0.5px"}}>{versionLabel}</div>
+        {appVersionTitle && <div style={{marginTop:12,fontSize:13,color:"#1e293b",fontWeight:600}}>{appVersionTitle}</div>}
+        {appVersionDate && <div style={{marginTop:4,fontSize:11,color:"#94a3b8"}}>{"Publicada el " + appVersionDate}</div>}
         <div style={{marginTop:20,fontSize:12,color:"#94a3b8",lineHeight:1.6}}>{"Desarrollado para profesionales de fonoaudiología."}</div>
       </div>
     </div>;
@@ -235,23 +198,14 @@ var SettingsPage = forwardRef(function SettingsPageInner({ userId, nfy, profile,
   return <div style={{animation:"fi .3s ease",width:"100%",maxWidth:700}}>
     <h1 style={{fontSize:22,fontWeight:700,marginBottom:6}}>{"⚙️ Configuración"}</h1>
     <p style={{color:K.mt,fontSize:14,marginBottom:20}}>{"Personalizá tu experiencia en Brújula KIT"}</p>
-
     <div style={{display:"flex",gap:0,marginBottom:0,borderBottom:"2px solid #e2e8f0"}}>
-      {TABS.map(function(t){
-        var active = activeTab === t.id;
-        return <button key={t.id} onClick={function(){ setActiveTab(t.id); }} style={{display:"flex",alignItems:"center",gap:6,padding:"12px 20px",background:"transparent",border:"none",borderBottom:active?"2px solid #0d9488":"2px solid transparent",marginBottom:"-2px",color:active?K.sd:"#94a3b8",fontSize:14,fontWeight:active?700:500,cursor:"pointer",transition:"all .15s ease"}}>
-          <span style={{fontSize:15}}>{t.icon}</span>
-          <span>{t.label}</span>
-        </button>;
-      })}
+      {TABS.map(function(t){ var active = activeTab === t.id; return <button key={t.id} onClick={function(){ setActiveTab(t.id); }} style={{display:"flex",alignItems:"center",gap:6,padding:"12px 20px",background:"transparent",border:"none",borderBottom:active?"2px solid #0d9488":"2px solid transparent",marginBottom:"-2px",color:active?K.sd:"#94a3b8",fontSize:14,fontWeight:active?700:500,cursor:"pointer",transition:"all .15s ease"}}><span style={{fontSize:15}}>{t.icon}</span><span>{t.label}</span></button>; })}
     </div>
-
     <div style={{background:"#fff",borderRadius:"0 0 12px 12px",border:"1px solid #e2e8f0",borderTop:"none",padding:24,marginBottom:20,minHeight:200}}>
       {activeTab === "consultorio" && renderConsultorio()}
       {activeTab === "general" && renderGeneral()}
       {activeTab === "acerca" && renderAcerca()}
     </div>
-
     {activeTab !== "acerca" && <button onClick={function(){ doSave(); }} disabled={saving} style={{width:"100%",padding:"14px",background:K.ac,color:"#fff",border:"none",borderRadius:10,fontSize:15,fontWeight:700,cursor:saving?"wait":"pointer",opacity:saving?.7:1,marginBottom:40}}>
       {saving ? "Guardando..." : "Guardar configuración"}
     </button>}
