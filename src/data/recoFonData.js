@@ -3,21 +3,21 @@
 
 var IMG_BASE = "/img/img-RFV/";
 
-// Map word -> image filename (based on actual files in public/img/img-RFV/)
+// Map word -> image filename (exact case-sensitive names from repo)
 var IMG_MAP = {
-  "puente": "puente.png", "fuente": "fuente.png", "taco": "taco.png", "saco": "saco.png",
+  "puente": "puente.png", "fuente": "fuente.png", "taco": "taco.jpg", "saco": "saco.png",
   "carro": "carro.png", "jarro": "jarro.png", "bota": "bota.png", "gota": "gota.png",
   "codo": "codo.png", "cono": "cono.png", "capa": "capa.png", "cama": "cama.png",
   "boda": "boda.png", "soda": "soda.png", "toro": "toro.png", "loro": "loro.png",
-  "masa": "masa.png", "casa": "casa.avif", "taza": "taza.png", "soga": "soga.png",
+  "masa": "masa.png", "casa": "casa.avif", "taza": "taza.PNG", "soga": "soga.png",
   "pato": "pato.PNG", "gato": "gato.PNG", "roto": "roto.png", "moto": "moto.png",
-  "rana": "rana.png", "lana": "lana.jpg", "rama": "rama.png",
+  "rana": "rana.png", "lana": "lana.jpg", "rama": "RAMA.avif",
   "mono": "mono.jpg", "moño": "moño.jpg", "llama": "llama.jpg",
-  "sapo": "sapo.png", "ocho": "ocho.jpg", "hoyo": "hoyo.png",
+  "sapo": "sapo.png", "ocho": "ocho.jpg", "hoyo": "HOYO.jpg",
   "hacha": "hacha.avif", "fuego": "fuego.jpg", "huevo": "huevo.avif",
-  "caja": "caja.avif", "fiesta": "fiesta.png", "cesta": "cesta.png",
+  "caja": "caja.avif", "fiesta": "fiesta.png", "cesta": "cesta.jfif",
   "ola": "ola.jpg", "hora": "hora.jfif", "cero": "cero.jpg", "cerro": "cerro.jpg",
-  "rata": "rata.png", "lata": "lata.jpg"
+  "rata": "rata.PNG", "lata": "lata.jpg"
 };
 
 export function getImageUrl(word) {
