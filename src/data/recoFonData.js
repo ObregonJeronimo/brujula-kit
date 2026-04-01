@@ -1,6 +1,31 @@
-// Reconocimiento Fonologico - PEFF-R seccion 3.5
-// 12 grupos (A-L), cada uno con 3 items (laminas)
-// Cada item tiene un par de palabras contrastivas
+// Reconocimiento Fonologico Visual - 28 conjuntos
+// Cada item tiene un par de palabras contrastivas y rutas de imagen
+
+var IMG_BASE = "/img/img-RFV/";
+
+// Map word -> image filename (based on actual files in public/img/img-RFV/)
+var IMG_MAP = {
+  "puente": "puente.png", "fuente": "fuente.png", "taco": "taco.png", "saco": "saco.png",
+  "carro": "carro.png", "jarro": "jarro.png", "bota": "bota.png", "gota": "gota.png",
+  "codo": "codo.png", "cono": "cono.png", "capa": "capa.png", "cama": "cama.png",
+  "boda": "boda.png", "soda": "soda.png", "toro": "toro.png", "loro": "loro.png",
+  "masa": "masa.png", "casa": "casa.avif", "taza": "taza.png", "soga": "soga.png",
+  "pato": "pato.PNG", "gato": "gato.PNG", "roto": "roto.png", "moto": "moto.png",
+  "rana": "rana.png", "lana": "lana.jpg", "rama": "rama.png",
+  "mono": "mono.jpg", "moño": "moño.jpg", "llama": "llama.jpg",
+  "sapo": "sapo.png", "ocho": "ocho.jpg", "hoyo": "hoyo.png",
+  "hacha": "hacha.avif", "fuego": "fuego.jpg", "huevo": "huevo.avif",
+  "caja": "caja.avif", "fiesta": "fiesta.png", "cesta": "cesta.png",
+  "ola": "ola.jpg", "hora": "hora.jfif", "cero": "cero.jpg", "cerro": "cerro.jpg",
+  "rata": "rata.png", "lata": "lata.jpg"
+};
+
+export function getImageUrl(word) {
+  var lower = word.toLowerCase();
+  var filename = IMG_MAP[lower];
+  if (!filename) return null;
+  return IMG_BASE + filename;
+}
 
 export var RECO_GROUPS = [
   {
@@ -12,9 +37,9 @@ export var RECO_GROUPS = [
     ]
   },
   {
-    id: "B", label: "Oclusivas (orales) y nasales",
+    id: "B", label: "Oclusivas y nasales",
     items: [
-      { lam: 4, w1: "bota", w2: "mota" },
+      { lam: 4, w1: "bota", w2: "gota" },
       { lam: 5, w1: "codo", w2: "cono" },
       { lam: 6, w1: "capa", w2: "cama" }
     ]
@@ -22,86 +47,68 @@ export var RECO_GROUPS = [
   {
     id: "C", label: "Oclusivas y liquidas",
     items: [
-      { lam: 7, w1: "duna", w2: "luna" },
-      { lam: 8, w1: "boda", w2: "borra" },
-      { lam: 9, w1: "lodo", w2: "loro" }
+      { lam: 7, w1: "boda", w2: "soda" },
+      { lam: 8, w1: "toro", w2: "loro" },
+      { lam: 9, w1: "masa", w2: "casa" }
     ]
   },
   {
-    id: "D", label: "Oclusiva sonora y oclusiva sorda",
+    id: "D", label: "Oclusivas frontales y posteriores",
     items: [
-      { lam: 10, w1: "vaso", w2: "paso" },
-      { lam: 11, w1: "duna", w2: "tuna" },
-      { lam: 12, w1: "gasa", w2: "casa" }
+      { lam: 10, w1: "taza", w2: "casa" },
+      { lam: 11, w1: "soda", w2: "soga" },
+      { lam: 12, w1: "pato", w2: "gato" }
     ]
   },
   {
-    id: "E", label: "Oclusivas frontales y posteriores",
+    id: "E", label: "Fricativas y nasales",
     items: [
-      { lam: 13, w1: "taza", w2: "casa" },
-      { lam: 14, w1: "soda", w2: "soga" },
-      { lam: 15, w1: "pato", w2: "gato" }
+      { lam: 13, w1: "roto", w2: "moto" },
+      { lam: 14, w1: "casa", w2: "masa" },
+      { lam: 15, w1: "rana", w2: "lana" }
     ]
   },
   {
-    id: "F", label: "Fricativas y nasales",
+    id: "F", label: "Nasales frontales y posteriores",
     items: [
-      { lam: 16, w1: "foto", w2: "moto" },
-      { lam: 17, w1: "casa", w2: "cana" },
-      { lam: 18, w1: "callo", w2: "cano" }
+      { lam: 16, w1: "rama", w2: "rana" },
+      { lam: 17, w1: "mono", w2: "moño" },
+      { lam: 18, w1: "cama", w2: "lana" }
     ]
   },
   {
-    id: "G", label: "Nasales y liquidas",
+    id: "G", label: "Fricativas y liquidas",
     items: [
-      { lam: 19, w1: "nana", w2: "lana" },
-      { lam: 20, w1: "mono", w2: "morro" },
-      { lam: 21, w1: "cana", w2: "cara" }
+      { lam: 19, w1: "sapo", w2: "gato" },
+      { lam: 20, w1: "llama", w2: "rama" },
+      { lam: 21, w1: "ocho", w2: "hoyo" }
     ]
   },
   {
-    id: "H", label: "Nasales frontales y posteriores",
+    id: "H", label: "Africadas y fricativas",
     items: [
-      { lam: 22, w1: "rama", w2: "rana" },
-      { lam: 23, w1: "mono", w2: "moño" },
-      { lam: 24, w1: "cama", w2: "cana" }
+      { lam: 22, w1: "hacha", w2: "casa" },
+      { lam: 23, w1: "fuego", w2: "huevo" },
+      { lam: 24, w1: "casa", w2: "caja" }
     ]
   },
   {
-    id: "I", label: "Fricativas y liquidas",
+    id: "I", label: "Fricativas frontales y posteriores",
     items: [
-      { lam: 25, w1: "pollo", w2: "polo" },
-      { lam: 26, w1: "llama", w2: "rama" },
-      { lam: 27, w1: "sello", w2: "cero" }
+      { lam: 25, w1: "fiesta", w2: "cesta" },
+      { lam: 26, w1: "ola", w2: "hora" },
+      { lam: 27, w1: "cero", w2: "cerro" }
     ]
   },
   {
-    id: "J", label: "Africadas y fricativas",
+    id: "J", label: "Liquidas",
     items: [
-      { lam: 28, w1: "ocho", w2: "oso" },
-      { lam: 29, w1: "ocho", w2: "hoyo" },
-      { lam: 30, w1: "hacha", w2: "asa" }
-    ]
-  },
-  {
-    id: "K", label: "Fricativas frontales y posteriores",
-    items: [
-      { lam: 31, w1: "fuego", w2: "juego" },
-      { lam: 32, w1: "casa", w2: "caja" },
-      { lam: 33, w1: "fiesta", w2: "siesta" }
-    ]
-  },
-  {
-    id: "L", label: "Liquidas",
-    items: [
-      { lam: 34, w1: "ola", w2: "hora" },
-      { lam: 35, w1: "cero", w2: "cerro" },
-      { lam: 36, w1: "rata", w2: "lata" }
+      { lam: 28, w1: "rata", w2: "lata" }
     ]
   }
 ];
 
-export var TOTAL_ITEMS = 36;
+export var TOTAL_ITEMS = 28;
 
 // responses format: { [lam]: { objetivo: "w1"|"w2", seleccion: "w1"|"w2" } }
 // A response is correct when objetivo === seleccion
