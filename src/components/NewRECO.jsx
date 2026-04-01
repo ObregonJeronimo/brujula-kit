@@ -25,12 +25,13 @@ function recoRenderEval(props) {
   var answeredCount = 0;
   Object.keys(responses).forEach(function(k) { var r = responses[k]; if (r && r.objetivo && r.seleccion) answeredCount++; });
 
-  var _showImgs = useState({}), showImgs = _showImgs[0], setShowImgs = _showImgs[1];
-  var toggleImgs = function(lam) { setShowImgs(function(prev) { var n = Object.assign({}, prev); n[lam] = !n[lam]; return n; }); };
+  // Use obsMap with special keys to track image visibility (avoids hooks in non-component)
+  var isImgVisible = function(lam) { return obsMap["_img_" + lam] === "1"; };
+  var toggleImgs = function(lam) { setOb("_img_" + lam, isImgVisible(lam) ? "" : "1"); };
 
   var setObjetivo = function(lam, wordKey) { var current = responses[lam] || {}; setResponse(lam, { objetivo: wordKey, seleccion: current.seleccion || null }); };
   var setSeleccion = function(lam, wordKey) { var current = responses[lam] || {}; if (!current.objetivo) return; setResponse(lam, { objetivo: current.objetivo, seleccion: wordKey }); };
-  var resetItem = function(lam) { setResponse(lam, undefined); setShowImgs(function(prev) { var n = Object.assign({}, prev); delete n[lam]; return n; }); };
+  var resetItem = function(lam) { setResponse(lam, undefined); setOb("_img_" + lam, ""); };
 
   return <div>
     <div style={{background:"#f3e8ff",border:"1px solid #c4b5fd",borderRadius:12,padding:"16px 20px",marginBottom:20}}>
@@ -61,7 +62,7 @@ function recoRenderEval(props) {
             var isCorrect = isComplete && objetivo === seleccion;
             var palabraObj = objetivo === "w1" ? item.w1 : objetivo === "w2" ? item.w2 : null;
             var palabraSel = seleccion === "w1" ? item.w1 : seleccion === "w2" ? item.w2 : null;
-            var imgsVisible = showImgs[item.lam];
+            var imgsVisible = isImgVisible(item.lam);
             var img1 = getImageUrl(item.w1);
             var img2 = getImageUrl(item.w2);
 
@@ -86,14 +87,12 @@ function recoRenderEval(props) {
 
               {/* Step 2: Show images button + record selection */}
               {objetivo && !seleccion && <div>
-                {/* Show images toggle */}
                 {!imgsVisible && <button onClick={function(){toggleImgs(item.lam)}} style={{width:"100%",padding:"10px",borderRadius:10,border:"2px dashed #c4b5fd",background:"#faf5ff",cursor:"pointer",fontSize:13,fontWeight:600,color:"#7c3aed",marginBottom:12,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
                   {"Mostrar ambas imágenes"}
                 </button>}
                 {imgsVisible && <button onClick={function(){toggleImgs(item.lam)}} style={{width:"100%",padding:"6px",borderRadius:8,border:"1px solid #e2e8f0",background:"#f8fafc",cursor:"pointer",fontSize:11,fontWeight:500,color:"#94a3b8",marginBottom:10,textAlign:"center"}}>{"Ocultar imágenes"}</button>}
 
-                {/* Images display */}
                 {imgsVisible && <div style={{display:"flex",gap:12,marginBottom:12}}>
                   <div style={{flex:1,borderRadius:12,border:"2px solid #e2e8f0",overflow:"hidden",background:"#fff"}}>
                     {img1 ? <img src={img1} alt={item.w1} style={{width:"100%",height:140,objectFit:"contain",display:"block",padding:8}} /> : <div style={{height:140,display:"flex",alignItems:"center",justifyContent:"center",background:"#f1f5f9",color:"#94a3b8",fontSize:12}}>Sin imagen</div>}
@@ -118,7 +117,6 @@ function recoRenderEval(props) {
                 </div>
               </div>}
 
-              {/* Result badge */}
               {isComplete && <div style={{display:"flex",alignItems:"center",gap:12,padding:"10px 14px",borderRadius:10,background:isCorrect?"#f0fdf4":"#fef2f2",border:isCorrect?"1px solid #bbf7d0":"1px solid #fecaca"}}>
                 <div style={{fontSize:18}}>{isCorrect?"\u2705":"\u274c"}</div>
                 <div style={{flex:1}}>
