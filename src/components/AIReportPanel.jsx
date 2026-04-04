@@ -62,8 +62,6 @@ function textPDF(title, evalLabel, ev, reportText, filename, therapistInfo){
     if(y+10 > pageH){ pdf.addPage(); y=margin; }
     pdf.setDrawColor(200); pdf.line(margin, y, pW-margin, y); y+=4;
     pdf.setFontSize(7); pdf.setTextColor(150);
-    var footerLeft = "Brujula KIT \u2014 "+(evalLabel||"");
-    pdf.text(footerLeft, margin, y);
     pdf.text(new Date().toLocaleDateString("es-AR"), pW-margin, y, {align:"right"});
     // Therapist info in footer if available
     if(ev.therapistName){
@@ -115,8 +113,7 @@ function ReportCard({ title, titleColor, borderColor, report, ev, evalLabel, onP
           <button onClick={function(){setEditing(false)}} style={{padding:"8px 16px",background:"#f1f5f9",border:"1px solid #e2e8f0",borderRadius:6,fontSize:12,cursor:"pointer",color:K.mt}}>{"Cancelar"}</button>
         </div>
       </div> : <div style={{fontSize:13,lineHeight:1.7}}>{renderReportText(report)}</div>}
-      <div style={{marginTop:14,paddingTop:8,borderTop:"1px solid #e2e8f0",fontSize:9,color:"#94a3b8",textAlign:"center"}}>{"Brujula KIT \u2014 "+(evalLabel||"")+" \u2014 "+new Date().toLocaleDateString("es-AR")}</div>
-    </div>
+      </div>
   </div>;
 }
 

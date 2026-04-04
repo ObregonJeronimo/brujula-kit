@@ -316,7 +316,6 @@ export default function Tools({ onSel, credits, onBuy, enabledTools, toolsConfig
                     <button onClick={function(){ setConsolEditing(false); }} style={{padding:"8px 16px",background:"#f1f5f9",border:"1px solid #e2e8f0",borderRadius:6,fontSize:12,cursor:"pointer",color:"#64748b"}}>{"Cancelar"}</button>
                   </div>
                 </div> : <div style={{fontSize:13,lineHeight:1.7}}>{renderReportText(consolReport)}</div>}
-                <div style={{marginTop:14,paddingTop:8,borderTop:"1px solid #e2e8f0",fontSize:9,color:"#94a3b8",textAlign:"center"}}>{"Brujula KIT - Informe Complementario - " + new Date().toLocaleDateString("es-AR")}</div>
               </div>
             </div>}
           </div>}
