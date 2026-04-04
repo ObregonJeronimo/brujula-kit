@@ -153,7 +153,7 @@ export default function CalendarPage({ userId, nfy, userSettings, profesionalNom
           <h3 style={{ fontSize: 16, fontWeight: 700, color: K.sd }}>{editId ? "Editar cita" : "Nueva cita"} – {selDay} de {MONTHS[month]}</h3>
           <button onClick={() => { setShowForm(false); setEditId(null); setSelectedPac(null); setShowPacSearch(false); }} style={{ background: "none", border: "none", fontSize: 18, color: K.mt, cursor: "pointer" }}>×</button>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+        <div style={{ display: "grid", gridTemplateColumns: window.innerWidth < 600 ? "1fr" : "1fr 1fr", gap: 14 }}>
           <div style={{ gridColumn: "1/-1" }}>
             <label style={{ fontSize: 12, fontWeight: 600, color: K.mt, display: "block", marginBottom: 4 }}>Nombre del paciente</label>
             <div style={{ display: "flex", gap: 8 }}>

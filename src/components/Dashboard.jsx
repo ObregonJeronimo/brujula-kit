@@ -77,6 +77,15 @@ export default function Dashboard({ allEvals, onT, onView, ld, profile, isAdmin,
   var availableToAdd = TOOL_IDS.filter(function(id){ return shortcuts.indexOf(id) === -1; });
 
   var _showAlerts = useState(false), showAlerts = _showAlerts[0], setShowAlerts = _showAlerts[1];
+  var _isMob = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) && window.innerWidth < 900;
+  // Dismiss persistente: una vez cerradas las alertas, no se muestran más
+  var _alertsDismissed = useState(function(){ try { return localStorage.getItem("bk_alerts_dismissed_"+userId) === "1"; } catch(e){ return false; } });
+  var alertsDismissed = _alertsDismissed[0], setAlertsDismissed = _alertsDismissed[1];
+  var dismissAlerts = function(){ setShowAlerts(false); setAlertsDismissed(true); try { localStorage.setItem("bk_alerts_dismissed_"+userId, "1"); } catch(e){} };
+  // Welcome modal for first-time users (5 free credits)
+  var _showWelcome = useState(function(){ try { return !localStorage.getItem("bk_welcome_shown_"+userId); } catch(e){ return false; } });
+  var showWelcome = _showWelcome[0], setShowWelcome = _showWelcome[1];
+  var dismissWelcome = function(){ setShowWelcome(false); try { localStorage.setItem("bk_welcome_shown_"+userId, "1"); } catch(e){} };
   var now = new Date();
   var _ms = useState(now.getMonth()), calMonth = _ms[0], setCalMonth = _ms[1];
   var _ys = useState(now.getFullYear()), calYear = _ys[0], setCalYear = _ys[1];
@@ -115,17 +124,17 @@ export default function Dashboard({ allEvals, onT, onView, ld, profile, isAdmin,
           <h1 style={{fontSize:22,fontWeight:700,marginBottom:6,display:"flex",alignItems:"center",gap:8}}><img src="/img/logo_96.png" style={{width:28,height:28}} alt="logo" /> Panel Principal</h1>
           <p style={{color:K.mt,fontSize:14,marginBottom:0}}>Bienvenido/a, {profile && profile.nombre ? profile.nombre : (profile && profile.username ? profile.username : "")}{ld ? " — cargando..." : ""}</p>
         </div>
-        <button onClick={function(){ setShowAlerts(!showAlerts); }} style={{display:"flex",alignItems:"center",gap:8,background:alertCount > 0 ? "#fff7ed" : "#f8fafc",border:alertCount > 0 ? "1px solid #fed7aa" : "1px solid #e2e8f0",borderRadius:10,padding:"10px 16px",cursor:"pointer",fontSize:13,fontWeight:600,color:alertCount > 0 ? "#c2410c" : "#64748b"}}>
+        {!alertsDismissed && alertCount > 0 && <button onClick={function(){ setShowAlerts(!showAlerts); }} style={{display:"flex",alignItems:"center",gap:8,background:"#fff7ed",border:"1px solid #fed7aa",borderRadius:10,padding:"10px 16px",cursor:"pointer",fontSize:13,fontWeight:600,color:"#c2410c"}}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-          Alertas y recordatorios
-          {alertCount > 0 && <span style={{background:"#dc2626",color:"#fff",fontSize:11,fontWeight:800,minWidth:20,height:20,borderRadius:"50%",display:"inline-flex",alignItems:"center",justifyContent:"center"}}>{alertCount}</span>}
-        </button>
+          {"Alertas y recordatorios"}
+          <span style={{background:"#dc2626",color:"#fff",fontSize:11,fontWeight:800,minWidth:20,height:20,borderRadius:"50%",display:"inline-flex",alignItems:"center",justifyContent:"center"}}>{alertCount}</span>
+        </button>}
       </div>
 
       {showAlerts && <div style={{background:"#fff",borderRadius:12,border:"1px solid #e2e8f0",padding:20,marginBottom:20,animation:"fi .2s ease"}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
           <h3 style={{fontSize:15,fontWeight:700,color:"#0a3d2f",margin:0}}>Alertas y recordatorios</h3>
-          <button onClick={function(){ setShowAlerts(false); }} style={{background:"none",border:"none",fontSize:18,color:"#94a3b8",cursor:"pointer"}}>×</button>
+          <button onClick={dismissAlerts} style={{background:"none",border:"none",fontSize:18,color:"#94a3b8",cursor:"pointer"}}>{"\u00d7"}</button>
         </div>
         {alertCount === 0 && <p style={{color:"#94a3b8",fontSize:13,fontStyle:"italic",margin:0}}>No hay alertas activas.</p>}
         {upcomingAlerts.map(function(a, idx){
@@ -148,16 +157,37 @@ export default function Dashboard({ allEvals, onT, onView, ld, profile, isAdmin,
       </div>}
 
       <div style={{marginBottom:28}}>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))",gap:16}}>
+        <div style={{display:"grid",gridTemplateColumns:_isMob?"1fr":"repeat(auto-fit,minmax(160px,1fr))",gap:16}}>
           {cards.map(function(c,i){ return <div key={i} style={{background:"#fff",borderRadius:12,padding:"14px 18px",border:"1px solid #e2e8f0",display:"flex",alignItems:"center",gap:14}}><div style={{fontSize:24}}>{c.ic}</div><div><div style={{fontSize:22,fontWeight:700,lineHeight:1}}>{c.value}</div><div style={{fontSize:12,color:K.mt,marginTop:2}}>{c.label}</div>{c.sublabel && <div style={{fontSize:10,color:"#94a3b8"}}>{c.sublabel}</div>}</div></div>; })}
         </div>
       </div>
 
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20,marginBottom:28}}>
-        <button onClick={onT} style={{background:"linear-gradient(135deg,#0a3d2f,#0d9488)",color:"#fff",border:"none",borderRadius:14,padding:"28px 24px",cursor:"pointer",display:"flex",alignItems:"center",gap:16,textAlign:"left"}}>
-          <div style={{width:52,height:52,borderRadius:12,background:"rgba(255,255,255,.14)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,flexShrink:0}}>🧰</div>
-          <div><div style={{fontSize:18,fontWeight:700}}>Herramientas</div><div style={{fontSize:13,opacity:.8,marginTop:4}}>Nueva evaluación</div></div>
-        </button>
+      {/* Welcome modal - first login */}
+      {showWelcome && <div style={{position:"fixed",inset:0,zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,.5)",backdropFilter:"blur(4px)",padding:20}}>
+        <div style={{background:"#fff",borderRadius:20,padding:"36px 28px",width:400,maxWidth:"90vw",boxShadow:"0 20px 60px rgba(0,0,0,.25)",textAlign:"center"}}>
+          <div style={{fontSize:48,marginBottom:12}}>{"\ud83c\udf89"}</div>
+          <div style={{fontSize:20,fontWeight:700,color:"#0a3d2f",marginBottom:8}}>{"\u00a1Bienvenido/a a Br\u00fajula KIT!"}</div>
+          <div style={{fontSize:14,color:"#475569",lineHeight:1.7,marginBottom:16}}>{"Te regalamos "}<b style={{color:"#059669"}}>{"5 cr\u00e9ditos gratis"}</b>{" para que puedas probar todas las evaluaciones disponibles."}</div>
+          <div style={{background:"#f0fdf4",border:"1px solid #bbf7d0",borderRadius:12,padding:"14px 18px",marginBottom:20}}>
+            <div style={{fontSize:28,fontWeight:800,color:"#059669"}}>{"5"}</div>
+            <div style={{fontSize:12,color:"#065f46",fontWeight:600}}>{"cr\u00e9ditos disponibles"}</div>
+          </div>
+          <div style={{fontSize:12,color:"#94a3b8",marginBottom:16}}>{"Cada cr\u00e9dito = 1 evaluaci\u00f3n completa con informe profesional."}</div>
+          <button onClick={dismissWelcome} style={{width:"100%",padding:"14px",background:"linear-gradient(135deg,#059669,#0d9488)",color:"#fff",border:"none",borderRadius:12,fontSize:15,fontWeight:700,cursor:"pointer"}}>{"\u00a1Comenzar!"}</button>
+        </div>
+      </div>}
+
+      {/* Mobile: aviso de usar PC */}
+      {_isMob && <div style={{background:"#eff6ff",border:"1px solid #bfdbfe",borderRadius:12,padding:"14px 18px",marginBottom:16,display:"flex",alignItems:"center",gap:12}}>
+        <span style={{fontSize:24,flexShrink:0}}>{"\ud83d\udcbb"}</span>
+        <div style={{fontSize:12,color:"#1e40af",lineHeight:1.5}}>{"Para realizar evaluaciones, inici\u00e1 sesi\u00f3n desde una computadora o notebook."}</div>
+      </div>}
+
+      <div style={{display:"grid",gridTemplateColumns:_isMob?"1fr":"1fr 1fr",gap:20,marginBottom:28}}>
+        {!_isMob && <button onClick={onT} style={{background:"linear-gradient(135deg,#0a3d2f,#0d9488)",color:"#fff",border:"none",borderRadius:14,padding:"28px 24px",cursor:"pointer",display:"flex",alignItems:"center",gap:16,textAlign:"left"}}>
+          <div style={{width:52,height:52,borderRadius:12,background:"rgba(255,255,255,.14)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,flexShrink:0}}>{"\ud83e\uddf0"}</div>
+          <div><div style={{fontSize:18,fontWeight:700}}>Herramientas</div><div style={{fontSize:13,opacity:.8,marginTop:4}}>{"Nueva evaluaci\u00f3n"}</div></div>
+        </button>}
         <div style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",padding:20}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
             <h3 style={{fontSize:14,fontWeight:700,color:"#0a3d2f",margin:0}}>Acceso rápido</h3>

@@ -41,7 +41,7 @@ function recoRenderEval(props) {
         {"2. Presione \"Mostrar ambas imágenes\" para mostrar al paciente."}<br/>
         {"3. Diga la palabra en voz alta al paciente."}<br/>
         {"4. Registre qué imagen señaló el paciente."}<br/>
-        {"Si la selección del paciente coincide con la palabra pronunciada, se registra como acierto."}
+        {"Si la selecci\u00f3n del paciente coincide con la palabra objetivo, se registra como correcta."}
       </div>
     </div>
 

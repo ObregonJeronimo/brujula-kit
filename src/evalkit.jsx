@@ -68,6 +68,9 @@ var isMobile = function(){ return /Android|iPhone|iPad|iPod/i.test(navigator.use
 
 var mixColor = function(hex, alpha){ if(!hex || alpha >= 100) return hex; var r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16); var a = Math.max(30, Math.min(100, alpha)) / 100; var mr = Math.round(r * a + 255 * (1-a)), mg = Math.round(g * a + 255 * (1-a)), mb = Math.round(b * a + 255 * (1-a)); return "#" + ((1<<24)+(mr<<16)+(mg<<8)+mb).toString(16).slice(1); };
 
+// Cached theme color for loading screen
+var _cachedBg = (function(){ try { var t = JSON.parse(localStorage.getItem("bk_theme")||"null"); if(t && t.primary) return mixColor(t.primary, t.primaryAlpha != null ? t.primaryAlpha : 100); } catch(e){} return "#0a3d2f"; })();
+
 var I = function(d){ return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">{d}</svg>; };
 var icons = {
   dash: I(<><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></>),
@@ -162,7 +165,7 @@ export default function App() {
   },[profile,authUser]);
 
   useEffect(function(){ if(profile && !sessionBlocked) loadEvals(); },[profile,loadEvals,sessionBlocked]);
-  useEffect(function(){ if(!profile) return; getDoc(doc(db,"config","tools")).then(function(snap){ if(snap.exists()){ var cfg = snap.data(); setToolsConfig(cfg); var enabled = {}; Object.keys(cfg).forEach(function(k){ enabled[k] = cfg[k].enabled !== false; }); setEnabledTools(enabled); } }).catch(function(){}); getDoc(doc(db,"config","theme")).then(function(snap){ if(snap.exists()) setTheme(snap.data()); }).catch(function(){}); },[profile]);
+  useEffect(function(){ if(!profile) return; getDoc(doc(db,"config","tools")).then(function(snap){ if(snap.exists()){ var cfg = snap.data(); setToolsConfig(cfg); var enabled = {}; Object.keys(cfg).forEach(function(k){ enabled[k] = cfg[k].enabled !== false; }); setEnabledTools(enabled); } }).catch(function(){}); getDoc(doc(db,"config","theme")).then(function(snap){ if(snap.exists()){ var td = snap.data(); setTheme(td); try { localStorage.setItem("bk_theme", JSON.stringify(td)); } catch(e){} } }).catch(function(){}); },[profile]);
 
   var goToPremium = function(){ sV("premium"); sS(null); window.scrollTo({top:0,behavior:"smooth"}); };
   var prevViewRef = useRef("dash");
@@ -196,16 +199,18 @@ export default function App() {
   var handleUnsavedCancel = function(){ setUnsavedModal(null); };
   var handleUnsavedSave = function(){ if(settingsRef.current && settingsRef.current.save){ setSavingModal(true); settingsRef.current.save().then(function(ok){ setSavingModal(false); configDirtyRef.current = false; var dest = unsavedModal; setUnsavedModal(null); doNav(dest); }); } else { setUnsavedModal(null); } };
 
-  if(authUser===undefined) return (<div style={{width:"100vw",height:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#0a3d2f",color:"#fff",fontFamily:"'DM Sans',system-ui,sans-serif"}}><div style={{textAlign:"center"}}><img src="/img/logo_96.png" alt="Br\u00fajula KIT" style={{width:48,height:48,marginBottom:16}} /><div style={{fontSize:20,fontWeight:700}}>Cargando...</div></div></div>);
+  if(authUser===undefined) return (<div style={{width:"100vw",height:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:_cachedBg,color:"#fff",fontFamily:"'DM Sans',system-ui,sans-serif"}}><div style={{textAlign:"center"}}><img src="/img/logo_96.png" alt="Br\u00fajula KIT" style={{width:48,height:48,marginBottom:16}} /><div style={{fontSize:20,fontWeight:700}}>Cargando...</div></div></div>);
   if(!authUser) return <AuthScreen onDone={function(u,p){setAuthUser(u);setProfile(p)}} />;
   if(authUser && !authUser.emailVerified) return <VerifyEmailScreen user={authUser} onLogout={handleLogout} />;
-  if(authUser && authUser.emailVerified && profileLoading) return (<div style={{width:"100vw",height:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#0a3d2f",color:"#fff",fontFamily:"'DM Sans',system-ui,sans-serif"}}><div style={{textAlign:"center"}}><img src="/img/logo_96.png" alt="Br\u00fajula KIT" style={{width:48,height:48,marginBottom:16}} /><div style={{fontSize:20,fontWeight:700}}>Cargando...</div></div></div>);
+  if(authUser && authUser.emailVerified && profileLoading) return (<div style={{width:"100vw",height:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:_cachedBg,color:"#fff",fontFamily:"'DM Sans',system-ui,sans-serif"}}><div style={{textAlign:"center"}}><img src="/img/logo_96.png" alt="Br\u00fajula KIT" style={{width:48,height:48,marginBottom:16}} /><div style={{fontSize:20,fontWeight:700}}>Cargando...</div></div></div>);
   if(authUser && authUser.emailVerified && !profile) return <CompleteProfileScreen uid={authUser.uid} email={authUser.email} onDone={function(p){setProfile(p)}} />;
 
   if(sessionBlocked) return (<div style={{width:"100vw",height:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"linear-gradient(145deg,#0a3d2f,#0d7363)",fontFamily:"'DM Sans',system-ui,sans-serif"}}><div style={{background:"rgba(255,255,255,.97)",borderRadius:16,padding:"44px 36px",width:440,maxWidth:"92vw",boxShadow:"0 20px 50px rgba(0,0,0,.3)",textAlign:"center"}}><div style={{fontSize:48,marginBottom:16}}>{"🔒"}</div><h2 style={{fontSize:20,fontWeight:700,color:"#0a3d2f",marginBottom:12}}>{"¿Sesión ocupada?"}</h2><p style={{color:"#64748b",fontSize:14,lineHeight:1.7,marginBottom:20}}>{"Otro usuario ya está conectado en este momento."}</p><p style={{color:"#94a3b8",fontSize:12,marginBottom:24}}>{"Si cree que es un error, espere unos minutos e intente nuevamente."}</p><div style={{display:"flex",gap:10,justifyContent:"center",flexWrap:"wrap"}}><button onClick={function(){acquireSessionLock(authUser.uid,false).then(function(canLogin){if(canLogin){setSessionBlocked(false);window.location.reload()}else{nfy("La sesión sigue ocupada","er")}})}} style={{background:"#0d9488",color:"#fff",border:"none",padding:"12px 24px",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer"}}>Reintentar</button><button onClick={handleLogout} style={{background:"#f1f5f9",border:"none",padding:"12px 24px",borderRadius:8,fontSize:14,cursor:"pointer",color:"#64748b"}}>{"Cerrar sesión"}</button></div></div></div>);
 
-  var nav = [["dash","dash","Panel"],["tools","tools","Herramientas"],["hist","hist","Historial"],["pacientes","pacientes","Pacientes"],["calendario","calendario","Calendario"],["premium","premium","Créditos"],["profile","profile","Perfil"],["config","config","Configuración"]];
-  if(isAdmin){ nav.push(["stats","stats","Estadísticas"]); nav.push(["adm","adm","Administrar"]); }
+  var nav = [["dash","dash","Panel"],["tools","tools","Herramientas"],["hist","hist","Historial"],["pacientes","pacientes","Pacientes"],["calendario","calendario","Calendario"],["premium","premium","Cr\u00e9ditos"],["profile","profile","Perfil"],["config","config","Configuraci\u00f3n"]];
+  if(isAdmin){ nav.push(["stats","stats","Estad\u00edsticas"]); nav.push(["adm","adm","Administrar"]); }
+  // En móvil ocultar Herramientas y Configuración
+  if(mobile){ nav = nav.filter(function(n){ return n[0] !== "tools" && n[0] !== "config"; }); }
   var tSd = theme && theme.primary ? mixColor(theme.primary, theme.primaryAlpha != null ? theme.primaryAlpha : 100) : K.sd;
 
   return (

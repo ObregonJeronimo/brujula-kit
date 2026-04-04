@@ -60,7 +60,7 @@ export default function PremiumPage({ profile, nfy, onBack, authUser }) {
         </div>
       </div>
 
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:28}}>
+      <div style={{display:"grid",gridTemplateColumns:window.innerWidth<600?"1fr":"1fr 1fr",gap:16,marginBottom:28}}>
         {PACKS.map(function(pack){
           var active = selId === pack.id;
           var pp = perCredit(pack);
@@ -115,7 +115,7 @@ export default function PremiumPage({ profile, nfy, onBack, authUser }) {
 
       <div style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",padding:24,marginBottom:20}}>
         <div style={{fontSize:14,fontWeight:700,color:"#0a3d2f",marginBottom:14}}>{"Incluido con tus cr\u00e9ditos"}</div>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+        <div style={{display:"grid",gridTemplateColumns:window.innerWidth<600?"1fr":"1fr 1fr",gap:12}}>
           {[
             ["\ud83d\udccb","Todas las herramientas de evaluaci\u00f3n"],
             ["\u23f0","Sin vencimiento \u2014 us\u00e1los cuando quieras"],
