@@ -154,7 +154,7 @@ export default function App() {
 
   useEffect(function(){
     var unsub = onAuthStateChanged(auth, function(u){
-      if(u){ setAuthUser(u); if(u.emailVerified){ setProfileLoading(true); getUserProfile(u.uid).then(function(prof){ if(prof && prof.profileComplete){ acquireSessionLock(u.uid, prof.role==="admin").then(function(canLogin){ if(!canLogin){ setSessionBlocked(true); setAuthUser(u); setProfile(prof); return; } setSessionBlocked(false); setProfile(prof); if(prof.settings) setUserSettings(prof.settings); }); } else setProfile(null); }).finally(function(){ setProfileLoading(false); }); } else { setProfileLoading(false); } } else { setAuthUser(null); setProfile(null); setProfileLoading(false); }
+      if(u){ setAuthUser(u); if(u.emailVerified){ setProfileLoading(true); getUserProfile(u.uid).then(function(prof){ if(prof && prof.profileComplete){ var _mob = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) && window.innerWidth < 900; if(_mob){ setSessionBlocked(false); setProfile(prof); if(prof.settings) setUserSettings(prof.settings); } else { acquireSessionLock(u.uid, prof.role==="admin").then(function(canLogin){ if(!canLogin){ setSessionBlocked(true); setAuthUser(u); setProfile(prof); return; } setSessionBlocked(false); setProfile(prof); if(prof.settings) setUserSettings(prof.settings); }); } } else setProfile(null); }).finally(function(){ setProfileLoading(false); }); } else { setProfileLoading(false); } } else { setAuthUser(null); setProfile(null); setProfileLoading(false); }
     }); return unsub;
   },[]);
 
