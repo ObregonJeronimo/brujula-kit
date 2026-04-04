@@ -224,9 +224,9 @@ export default function Dashboard({ allEvals, onT, onView, ld, profile, isAdmin,
         <span style={{fontSize:28,flexShrink:0}}>{"📋"}</span>
         <div style={{flex:1}}>
           <div style={{fontSize:14,fontWeight:700,color:"#7c3aed"}}>{"Informe Complementario disponible"}</div>
-          <div style={{fontSize:12,color:"#6b21a8",marginTop:2}}>{"Podes generar un informe que integre varias evaluaciones de un mismo paciente. Encontralo en Herramientas."}</div>
+          <div style={{fontSize:12,color:"#6b21a8",marginTop:2}}>{_isMob ? "Pod\u00e9s generar un informe que integre varias evaluaciones de un mismo paciente. Ingres\u00e1 en modo escritorio para acceder." : "Pod\u00e9s generar un informe que integre varias evaluaciones de un mismo paciente. Encontralo en Herramientas."}</div>
         </div>
-        <button onClick={onT} style={{padding:"8px 16px",background:"#7c3aed",color:"#fff",border:"none",borderRadius:8,fontSize:12,fontWeight:600,cursor:"pointer",flexShrink:0}}>{"Ir"}</button>
+        {!_isMob && <button onClick={onT} style={{padding:"8px 16px",background:"#7c3aed",color:"#fff",border:"none",borderRadius:8,fontSize:12,fontWeight:600,cursor:"pointer",flexShrink:0}}>{"Ir"}</button>}
       </div>}
 
       <div style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",padding:24,marginBottom:20}}>
