@@ -213,12 +213,24 @@ export default function App() {
   if(mobile){ nav = nav.filter(function(n){ return n[0] !== "tools" && n[0] !== "config"; }); }
   var tSd = theme && theme.primary ? mixColor(theme.primary, theme.primaryAlpha != null ? theme.primaryAlpha : 100) : K.sd;
 
+  // Verificar si el profesional completó sus datos (obligatorio para informes)
+  var needsProfileSetup = profile && !isAdmin && (!profile.reportHeader || !profile.reportHeader.therapist);
+  var _forceConfig = useState(needsProfileSetup), forceConfig = _forceConfig[0], setForceConfig = _forceConfig[1];
+
   return (
     <div style={{display:"flex",height:"100vh",width:"100vw",fontFamily:"'DM Sans',system-ui,sans-serif",background:K.bg,color:"#1e293b",overflow:"hidden"}}>
       <Suspense fallback={null}>{runTour && <OnboardingTourLazy run={runTour} onFinish={handleTourFinish} />}</Suspense>
       {showNoCredits && <NoCreditsModal onClose={function(){setShowNoCredits(false);sV("dash")}} onUpgrade={function(){setShowNoCredits(false);goToPremium()}} />}
       {unsavedModal !== null && <UnsavedChangesModal onDiscard={handleUnsavedDiscard} onCancel={handleUnsavedCancel} onSave={handleUnsavedSave} saving={savingModal} />}
       {showChangelog && authUser?.uid && profile && <ChangelogModal userId={authUser.uid} onClose={function(){ setShowChangelog(false); }} />}
+      {forceConfig && !mobile && <div style={{position:"fixed",inset:0,zIndex:1001,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,.6)",backdropFilter:"blur(4px)",padding:20}}>
+        <div style={{background:"#fff",borderRadius:20,padding:"36px 28px",width:440,maxWidth:"92vw",boxShadow:"0 20px 60px rgba(0,0,0,.25)",textAlign:"center"}}>
+          <div style={{fontSize:48,marginBottom:12}}>{"\ud83d\udcdd"}</div>
+          <div style={{fontSize:20,fontWeight:700,color:"#0a3d2f",marginBottom:8}}>{"Complet\u00e1 tus datos profesionales"}</div>
+          <div style={{fontSize:14,color:"#475569",lineHeight:1.7,marginBottom:20}}>{"Para generar informes con tu encabezado profesional, necesitamos que completes tus datos en Configuraci\u00f3n. Esto se mostrar\u00e1 en cada informe que generes."}</div>
+          <button onClick={function(){ setForceConfig(false); doNav("config"); }} style={{width:"100%",padding:"14px",background:"linear-gradient(135deg,#0d9488,#059669)",color:"#fff",border:"none",borderRadius:12,fontSize:15,fontWeight:700,cursor:"pointer"}}>{"Ir a Configuraci\u00f3n"}</button>
+        </div>
+      </div>}
       <aside style={{width:mobile?60:230,minWidth:mobile?60:230,background:tSd,color:"#fff",display:"flex",flexDirection:"column",padding:"18px 0",flexShrink:0,height:"100vh"}}>
         <div data-tour="sidebar-logo" style={{padding:"0 14px",marginBottom:26,display:"flex",alignItems:"center",gap:9}}><img src="/img/logo_96.png" alt="Logo" style={{width:28,height:28}} />{!mobile&&<div><div style={{fontSize:17,fontWeight:700}}>{"Brújula KIT"}</div><div style={{fontSize:9,color:"#5eead4",fontWeight:600,letterSpacing:"1px"}}>{"FONOAUDIOLOGÍA"}</div></div>}</div>
         <nav style={{flex:1}}>{nav.map(function(n){ var id=n[0],iconKey=n[1],lb=n[2]; var active = view===id; return <button key={id} data-tour={NAV_TOUR_IDS[id]||""} onClick={function(){navTo(id)}} style={{display:"flex",alignItems:"center",gap:10,width:"100%",padding:mobile?"13px 0":"11px 18px",background:active?"rgba(94,234,212,.12)":"transparent",border:"none",color:active?"#5eead4":"rgba(255,255,255,.55)",cursor:"pointer",fontSize:14,fontWeight:active?600:400,borderLeft:active?"3px solid #5eead4":"3px solid transparent",textAlign:"left",justifyContent:mobile?"center":"flex-start",transition:"all .15s ease"}}><span style={{display:"flex",alignItems:"center",opacity:active?1:.7}}>{icons[iconKey]}</span>{!mobile&&<span>{lb}</span>}</button>; })}</nav>

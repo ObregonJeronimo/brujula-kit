@@ -12,6 +12,8 @@ export default function Tools({ onSel, credits, onBuy, enabledTools, toolsConfig
   var _consolPatient = useState(null), consolPatient = _consolPatient[0], setConsolPatient = _consolPatient[1];
   var _consolSelected = useState({}), consolSelected = _consolSelected[0], setConsolSelected = _consolSelected[1];
   var _consolReport = useState(null), consolReport = _consolReport[0], setConsolReport = _consolReport[1];
+  var _consolEditing = useState(false), consolEditing = _consolEditing[0], setConsolEditing = _consolEditing[1];
+  var _consolEditText = useState(""), consolEditText = _consolEditText[0], setConsolEditText = _consolEditText[1];
   var _consolGen = useState(false), consolGenerating = _consolGen[0], setConsolGenerating = _consolGen[1];
   var noCredits = credits < 1;
 
@@ -189,8 +191,8 @@ export default function Tools({ onSel, credits, onBuy, enabledTools, toolsConfig
             <div style={{display:"flex",alignItems:"center",gap:14}}>
               <span style={{fontSize:36}}>{"📋"}</span>
               <div>
-                <div style={{fontSize:18,fontWeight:700}}>Informe Consolidado</div>
-                <div style={{fontSize:13,opacity:.85,marginTop:2}}>Genera un informe integrando varias evaluaciones de un mismo paciente</div>
+                <div style={{fontSize:18,fontWeight:700}}>Informe Complementario</div>
+                <div style={{fontSize:13,opacity:.85,marginTop:2}}>{"Gener\u00e1 un informe integrando m\u00faltiples evaluaciones de un mismo paciente"}</div>
               </div>
             </div>
             <div style={{fontSize:24,fontWeight:300,transition:"transform .2s",transform:showConsol?"rotate(180deg)":"rotate(0)"}}>{"v"}</div>
@@ -221,7 +223,7 @@ export default function Tools({ onSel, credits, onBuy, enabledTools, toolsConfig
                 <div style={{fontSize:14,fontWeight:700,color:"#7c3aed"}}>{"2. Selecciona evaluaciones para " + consolPatient.nombre}</div>
                 <button onClick={function(){ setConsolPatient(null); setConsolSelected({}); }} style={{fontSize:12,color:"#64748b",background:"#f1f5f9",border:"none",borderRadius:6,padding:"6px 12px",cursor:"pointer"}}>{"Cambiar paciente"}</button>
               </div>
-              {patientEvals.length < 2 && <div style={{fontSize:13,color:"#dc2626",background:"#fef2f2",padding:"10px 14px",borderRadius:8,marginBottom:12}}>{"Este paciente tiene menos de 2 evaluaciones. Necesitas al menos 2 para generar un informe consolidado."}</div>}
+              {patientEvals.length < 2 && <div style={{fontSize:13,color:"#dc2626",background:"#fef2f2",padding:"10px 14px",borderRadius:8,marginBottom:12}}>{"Este paciente tiene menos de 2 evaluaciones. Se necesitan al menos 2 para generar un informe complementario."}</div>}
               <div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:16}}>
                 {patientEvals.map(function(ev){
                   var t = getEvalType(ev.tipo);
@@ -237,43 +239,51 @@ export default function Tools({ onSel, credits, onBuy, enabledTools, toolsConfig
                   </label>;
                 })}
               </div>
-              <button onClick={handleGenerateConsol} disabled={selectedCount < 2} style={{width:"100%",padding:"14px",background:selectedCount<2?"#94a3b8":"linear-gradient(135deg,#7c3aed,#6d28d9)",color:"#fff",border:"none",borderRadius:10,fontSize:14,fontWeight:700,cursor:selectedCount<2?"not-allowed":"pointer"}}>{"Generar Informe Consolidado (" + selectedCount + " seleccionadas)"}</button>
+              <button onClick={handleGenerateConsol} disabled={selectedCount < 2} style={{width:"100%",padding:"14px",background:selectedCount<2?"#94a3b8":"linear-gradient(135deg,#7c3aed,#6d28d9)",color:"#fff",border:"none",borderRadius:10,fontSize:14,fontWeight:700,cursor:selectedCount<2?"not-allowed":"pointer"}}>{"Generar Informe Complementario (" + selectedCount + " seleccionadas)"}</button>
             </div>}
 
             {/* Generating */}
             {consolGenerating && <div style={{textAlign:"center",padding:30}}>
               <div style={{display:"inline-block",width:36,height:36,border:"4px solid #e2e8f0",borderTopColor:"#7c3aed",borderRadius:"50%",animation:"spin 1s linear infinite",marginBottom:12}} />
-              <div style={{fontSize:14,fontWeight:600,color:"#0a3d2f"}}>Generando informe consolidado...</div>
+              <div style={{fontSize:14,fontWeight:600,color:"#0a3d2f"}}>Generando informe complementario...</div>
               <style>{"@keyframes spin{to{transform:rotate(360deg)}}"}</style>
             </div>}
 
             {/* Report result */}
             {consolReport && <div>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
-                <div style={{fontSize:15,fontWeight:700,color:"#7c3aed"}}>{"Informe Consolidado - " + consolPatient.nombre}</div>
+                <div style={{fontSize:15,fontWeight:700,color:"#7c3aed"}}>{"Informe Complementario - " + consolPatient.nombre}</div>
                 <div style={{display:"flex",gap:6}}>
+                  {!consolEditing && <button onClick={function(){ setConsolEditText(consolReport); setConsolEditing(true); }} style={{padding:"8px 16px",background:"#f1f5f9",border:"1px solid #e2e8f0",borderRadius:8,fontSize:12,fontWeight:600,cursor:"pointer",color:"#64748b"}}>{"Editar"}</button>}
                   <button onClick={function(){
+                    var textToUse = consolEditing ? consolEditText : consolReport;
                     import("jspdf").then(function(mod){
                       var jsPDF=mod.jsPDF,pdf=new jsPDF("p","mm","a4"),margin=14,maxW=182,y=14;
-                      pdf.setFontSize(8);pdf.setTextColor(120);pdf.text("Informe Consolidado - "+consolPatient.nombre,margin,y);y+=8;
+                      pdf.setFontSize(8);pdf.setTextColor(120);pdf.text("Informe Complementario - "+consolPatient.nombre,margin,y);y+=8;
                       pdf.setDrawColor(200);pdf.line(margin,y,196,y);y+=8;
                       pdf.setFontSize(14);pdf.setTextColor(10,61,47);pdf.setFont(undefined,"bold");pdf.text(consolPatient.nombre,margin,y);y+=7;
                       pdf.setFontSize(9);pdf.setTextColor(100);pdf.setFont(undefined,"normal");pdf.text("DNI: "+(consolPatient.dni||"N/A"),margin,y);y+=10;
-                      consolReport.split("\n").forEach(function(line){
+                      textToUse.split("\n").forEach(function(line){
                         var t2=line.trim();if(!t2){y+=3;return;}
                         var isT=/^[A-Z\u00c0-\u00dc\s\d\.\:\-]{6,}:?\s*$/.test(t2);
                         if(isT){y+=3;pdf.setFontSize(10);pdf.setTextColor(10,61,47);pdf.setFont(undefined,"bold");if(y+7>283){pdf.addPage();y=14;}pdf.text(t2,margin,y);y+=7;pdf.setFont(undefined,"normal");}
                         else{pdf.setFontSize(9);pdf.setTextColor(51,65,85);var w=pdf.splitTextToSize(t2,maxW);w.forEach(function(l){if(y+5>283){pdf.addPage();y=14;}pdf.text(l,margin,y);y+=5;});}
                       });
-                      pdf.save("Consolidado_"+consolPatient.nombre.replace(/\s/g,"_")+".pdf");
+                      pdf.save("Complementario_"+consolPatient.nombre.replace(/\s/g,"_")+".pdf");
                     });
                   }} style={{padding:"8px 16px",background:"#7c3aed",color:"#fff",border:"none",borderRadius:8,fontSize:12,fontWeight:600,cursor:"pointer"}}>{"Imprimir"}</button>
-                  <button onClick={function(){ setConsolReport(null); setConsolSelected({}); }} style={{padding:"8px 16px",background:"#f1f5f9",border:"1px solid #e2e8f0",borderRadius:8,fontSize:12,cursor:"pointer",color:"#64748b"}}>{"Nuevo informe"}</button>
+                  <button onClick={function(){ setConsolReport(null); setConsolSelected({}); setConsolEditing(false); }} style={{padding:"8px 16px",background:"#f1f5f9",border:"1px solid #e2e8f0",borderRadius:8,fontSize:12,cursor:"pointer",color:"#64748b"}}>{"Nuevo informe"}</button>
                 </div>
               </div>
               <div style={{background:"#fff",borderRadius:12,border:"2px solid #7c3aed",padding:24}}>
-                <div style={{fontSize:13,lineHeight:1.7}}>{renderReportText(consolReport)}</div>
-                <div style={{marginTop:14,paddingTop:8,borderTop:"1px solid #e2e8f0",fontSize:9,color:"#94a3b8",textAlign:"center"}}>{"Brujula KIT - Informe Consolidado - " + new Date().toLocaleDateString("es-AR")}</div>
+                {consolEditing ? <div>
+                  <textarea value={consolEditText} onChange={function(e){setConsolEditText(e.target.value)}} rows={18} style={{width:"100%",padding:"12px",border:"1px solid #e2e8f0",borderRadius:8,fontSize:13,lineHeight:1.7,fontFamily:"inherit",resize:"vertical"}} />
+                  <div style={{display:"flex",gap:8,marginTop:10}}>
+                    <button onClick={function(){ setConsolReport(consolEditText); setConsolEditing(false); }} style={{padding:"8px 16px",background:"#059669",color:"#fff",border:"none",borderRadius:6,fontSize:12,fontWeight:600,cursor:"pointer"}}>{"Guardar cambios"}</button>
+                    <button onClick={function(){ setConsolEditing(false); }} style={{padding:"8px 16px",background:"#f1f5f9",border:"1px solid #e2e8f0",borderRadius:6,fontSize:12,cursor:"pointer",color:"#64748b"}}>{"Cancelar"}</button>
+                  </div>
+                </div> : <div style={{fontSize:13,lineHeight:1.7}}>{renderReportText(consolReport)}</div>}
+                <div style={{marginTop:14,paddingTop:8,borderTop:"1px solid #e2e8f0",fontSize:9,color:"#94a3b8",textAlign:"center"}}>{"Brujula KIT - Informe Complementario - " + new Date().toLocaleDateString("es-AR")}</div>
               </div>
             </div>}
           </div>}

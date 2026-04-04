@@ -170,9 +170,9 @@ export default async function handler(req, res) {
 
     if (reportMode === "consolidado") {
       userPrompt = "Sos una fonoaudi\u00f3loga con m\u00e1s de 20 a\u00f1os de experiencia cl\u00ednica en trastornos de los sonidos del habla y del lenguaje infantil. "
-        + "Con los siguientes datos de M\u00daLTIPLES evaluaciones fonoaudiol\u00f3gicas del mismo paciente, redact\u00e1 un INFORME FONOAUDIOL\u00d3GICO CONSOLIDADO de nivel profesional.\n\n"
+        + "Con los siguientes datos de M\u00daLTIPLES evaluaciones fonoaudiol\u00f3gicas del mismo paciente, redact\u00e1 un INFORME FONOAUDIOL\u00d3GICO COMPLEMENTARIO de nivel profesional.\n\n"
         + "Estructura EXACTA (usar estos t\u00edtulos tal cual):\n\n"
-        + "INFORME FONOAUDIOL\u00d3GICO CONSOLIDADO\n\n"
+        + "INFORME FONOAUDIOL\u00d3GICO COMPLEMENTARIO\n\n"
         + "DESCRIPCI\u00d3N GENERAL:\n"
         + "Breve contexto cl\u00ednico, motivo de la bater\u00eda de evaluaciones y objetivo cl\u00ednico. "
         + "NO repetir datos del paciente (nombre, DNI, edad, fecha) porque ya figuran en el encabezado.\n\n"
