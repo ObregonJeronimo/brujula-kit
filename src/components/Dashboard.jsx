@@ -185,29 +185,29 @@ export default function Dashboard({ allEvals, onT, onView, ld, profile, isAdmin,
         <div style={{marginTop:12,padding:"10px 16px",background:"rgba(255,255,255,.15)",borderRadius:10,fontSize:12,fontWeight:600}}>{"Para realizar evaluaciones, inici\u00e1 sesi\u00f3n desde una PC o notebook."}</div>
       </div>}
 
-      <div style={{display:"grid",gridTemplateColumns:_isMob?"1fr":"1fr 1fr",gap:20,marginBottom:28}}>
-        {!_isMob && <button onClick={onT} style={{background:"linear-gradient(135deg,#0a3d2f,#0d9488)",color:"#fff",border:"none",borderRadius:14,padding:"28px 24px",cursor:"pointer",display:"flex",alignItems:"center",gap:16,textAlign:"left"}}>
+      {!_isMob && <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20,marginBottom:28}}>
+        <button onClick={onT} style={{background:"linear-gradient(135deg,#0a3d2f,#0d9488)",color:"#fff",border:"none",borderRadius:14,padding:"28px 24px",cursor:"pointer",display:"flex",alignItems:"center",gap:16,textAlign:"left"}}>
           <div style={{width:52,height:52,borderRadius:12,background:"rgba(255,255,255,.14)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,flexShrink:0}}>{"\ud83e\uddf0"}</div>
           <div><div style={{fontSize:18,fontWeight:700}}>Herramientas</div><div style={{fontSize:13,opacity:.8,marginTop:4}}>{"Nueva evaluaci\u00f3n"}</div></div>
-        </button>}
+        </button>
         <div style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",padding:20}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
-            <h3 style={{fontSize:14,fontWeight:700,color:"#0a3d2f",margin:0}}>Acceso rápido</h3>
+            <h3 style={{fontSize:14,fontWeight:700,color:"#0a3d2f",margin:0}}>{"Acceso r\u00e1pido"}</h3>
             {shortcuts.length > 0 && shortcuts.length < 4 && availableToAdd.length > 0 && <button onClick={function(){ setShowAddSC(!showAddSC); }} style={{background:"none",border:"1px solid #e2e8f0",borderRadius:6,padding:"4px 10px",fontSize:11,fontWeight:600,cursor:"pointer",color:"#0d9488"}}>{showAddSC ? "Cancelar" : "+ Agregar"}</button>}
           </div>
           {shortcuts.length === 0 && !showAddSC && <div style={{textAlign:"center",padding:"14px 0"}}>
-            <button onClick={function(){ setShowAddSC(true); }} style={{background:"#f0fdfa",border:"1px dashed #99f6e4",borderRadius:10,padding:"14px 20px",cursor:"pointer",color:"#0d9488",fontSize:13,fontWeight:600,display:"inline-flex",alignItems:"center",gap:6}}>+ Agregar acceso rápido</button>
-            <p style={{fontSize:11,color:"#94a3b8",marginTop:6}}>Podés agregar hasta 4 evaluaciones</p>
+            <button onClick={function(){ setShowAddSC(true); }} style={{background:"#f0fdfa",border:"1px dashed #99f6e4",borderRadius:10,padding:"14px 20px",cursor:"pointer",color:"#0d9488",fontSize:13,fontWeight:600,display:"inline-flex",alignItems:"center",gap:6}}>{"+ Agregar acceso r\u00e1pido"}</button>
+            <p style={{fontSize:11,color:"#94a3b8",marginTop:6}}>{"Pod\u00e9s agregar hasta 4 evaluaciones"}</p>
           </div>}
           {shortcuts.length > 0 && <div style={{display:"grid",gridTemplateColumns:shortcuts.length > 2 ? "1fr 1fr" : "1fr",gap:8}}>
-            {shortcuts.map(function(scId){ var tool = TOOL_MAP[scId]; if(!tool) return null; return <div key={scId} style={{display:"flex",alignItems:"center",gap:8,padding:"10px 12px",background:"#f8faf9",borderRadius:8,border:"1px solid #e2e8f0",cursor:"pointer"}} onClick={function(){ if(onStartEval) onStartEval(scId); }}><span style={{fontSize:20}}>{tool.icon}</span><span style={{fontSize:12,fontWeight:600,color:"#334155",flex:1}}>{tool.name}</span><button onClick={function(ev){ ev.stopPropagation(); removeShortcut(scId); }} style={{background:"none",border:"none",fontSize:14,color:"#94a3b8",cursor:"pointer",padding:"0 2px"}}>×</button></div>; })}
+            {shortcuts.map(function(scId){ var tool = TOOL_MAP[scId]; if(!tool) return null; return <div key={scId} style={{display:"flex",alignItems:"center",gap:8,padding:"10px 12px",background:"#f8faf9",borderRadius:8,border:"1px solid #e2e8f0",cursor:"pointer"}} onClick={function(){ if(onStartEval) onStartEval(scId); }}><span style={{fontSize:20}}>{tool.icon}</span><span style={{fontSize:12,fontWeight:600,color:"#334155",flex:1}}>{tool.name}</span><button onClick={function(ev){ ev.stopPropagation(); removeShortcut(scId); }} style={{background:"none",border:"none",fontSize:14,color:"#94a3b8",cursor:"pointer",padding:"0 2px"}}>{"\u00d7"}</button></div>; })}
           </div>}
           {showAddSC && <div style={{marginTop:shortcuts.length > 0 ? 10 : 0,background:"#f0fdfa",borderRadius:8,padding:12,border:"1px solid #ccfbf1"}}>
-            <div style={{fontSize:11,fontWeight:600,color:"#0d9488",marginBottom:8}}>Seleccionar evaluación:</div>
+            <div style={{fontSize:11,fontWeight:600,color:"#0d9488",marginBottom:8}}>{"Seleccionar evaluaci\u00f3n:"}</div>
             <div style={{display:"flex",flexWrap:"wrap",gap:6}}>{availableToAdd.map(function(toolId){ var tool = TOOL_MAP[toolId]; if(!tool) return null; return <button key={toolId} onClick={function(){ addShortcut(toolId); }} style={{display:"flex",alignItems:"center",gap:6,padding:"8px 12px",background:"#fff",border:"1px solid #e2e8f0",borderRadius:8,cursor:"pointer",fontSize:12,fontWeight:500,color:"#334155"}}><span style={{fontSize:16}}>{tool.icon}</span>{tool.name}</button>; })}</div>
           </div>}
         </div>
-      </div>
+      </div>}
 
       <div style={{background:"#fff",borderRadius:14,padding:22,border:"1px solid #e2e8f0",marginBottom:28}}>
         <h3 style={{fontSize:15,fontWeight:600,marginBottom:14}}>Recientes</h3>
