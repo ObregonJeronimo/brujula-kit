@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { db, doc, setDoc } from "../firebase.js";
 import { fbGetAll, getUserProfile, generateUsername, ADMIN_EMAIL } from "../lib/fb.js";
 
-export default function CompleteProfileScreen({ uid, email, onDone }) {
+export default function CompleteProfileScreen({ uid, email, onDone, themeColor }) {
   const [nombre, setNombre] = useState("");
   const [apellido, setApellido] = useState("");
   const [dni, setDni] = useState("");
@@ -38,7 +38,7 @@ export default function CompleteProfileScreen({ uid, email, onDone }) {
     setLd(false);
   };
   if (genUser) return (
-    <div style={{width:"100vw",height:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"linear-gradient(145deg,#0a3d2f,#0d7363)",fontFamily:"'DM Sans',system-ui,sans-serif"}}>
+    <div style={{width:"100vw",height:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:themeColor||"#0a3d2f",fontFamily:"'DM Sans',system-ui,sans-serif"}}>
       <div style={{background:"rgba(255,255,255,.97)",borderRadius:16,padding:"44px 36px",width:420,maxWidth:"92vw",textAlign:"center",boxShadow:"0 20px 50px rgba(0,0,0,.3)"}}>
         <div style={{fontSize:48,marginBottom:16}}>{"\u2705"}</div>
         <h2 style={{fontSize:20,fontWeight:700,color:"#0a3d2f",marginBottom:10}}>Cuenta creada</h2>
@@ -49,7 +49,7 @@ export default function CompleteProfileScreen({ uid, email, onDone }) {
     </div>
   );
   return (
-    <div style={{width:"100vw",height:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"linear-gradient(145deg,#0a3d2f,#0d7363)",fontFamily:"'DM Sans',system-ui,sans-serif"}}>
+    <div style={{width:"100vw",height:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:themeColor||"#0a3d2f",fontFamily:"'DM Sans',system-ui,sans-serif"}}>
       <div style={{background:"rgba(255,255,255,.97)",borderRadius:16,padding:"44px 36px",width:420,maxWidth:"92vw",boxShadow:"0 20px 50px rgba(0,0,0,.3)"}}>
         <div style={{textAlign:"center",marginBottom:24}}>
           <div style={{fontSize:40,marginBottom:8}}>{"\ud83d\udcdd"}</div>

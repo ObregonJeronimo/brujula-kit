@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { sendEmailVerification } from "../firebase.js";
 
-export default function VerifyEmailScreen({ user, onLogout }) {
+export default function VerifyEmailScreen({ user, onLogout, themeColor }) {
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const resend = async () => { setSending(true); try { await sendEmailVerification(user); setSent(true); } catch(e){} setSending(false); };
   return (
-    <div style={{width:"100vw",height:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"linear-gradient(145deg,#0a3d2f,#0d7363)",fontFamily:"'DM Sans',system-ui,sans-serif"}}>
+    <div style={{width:"100vw",height:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:themeColor||"#0a3d2f",fontFamily:"'DM Sans',system-ui,sans-serif"}}>
       <div style={{background:"rgba(255,255,255,.97)",borderRadius:16,padding:"44px 36px",width:420,maxWidth:"92vw",boxShadow:"0 20px 50px rgba(0,0,0,.3)",textAlign:"center"}}>
         <div style={{fontSize:48,marginBottom:16}}>{"\ud83d\udce7"}</div>
         <h2 style={{fontSize:20,fontWeight:700,color:"#0a3d2f",marginBottom:10}}>Verifique su email</h2>
