@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { K } from "../lib/fb.js";
+import { K, fbAdd } from "../lib/fb.js";
 import { ALL_EVAL_TYPES, EVAL_AREAS, EVAL_TYPES, getEvalType } from "../config/evalTypes.js";
 import { loadDrafts, deleteDraft } from "../lib/drafts.js";
 import { renderReportText } from "../lib/evalUtils.jsx";
@@ -72,7 +72,23 @@ export default function Tools({ onSel, credits, onBuy, enabledTools, toolsConfig
       body: JSON.stringify({ evalData: evalData, evalType: "consolidado", reportMode: "consolidado" })
     }).then(function(r){ return r.json(); })
     .then(function(data){
-      if(data.success && data.report) setConsolReport(data.report);
+      if(data.success && data.report){
+        setConsolReport(data.report);
+        // Guardar en historial
+        var payload = {
+          id: Date.now()+"", userId: userId, tipo: "complementario",
+          paciente: consolPatient.nombre, pacienteDni: consolPatient.dni || "",
+          fechaNacimiento: consolPatient.fechaNac || "", edadMeses: consolPatient.edadMeses || 0,
+          fechaEvaluacion: new Date().toISOString().split("T")[0],
+          observaciones: "Informe complementario de " + selected.length + " evaluaciones",
+          fechaGuardado: new Date().toISOString(),
+          aiReport: data.report,
+          resultados: { cantEvals: selected.length, evaluacionesIncluidas: selected.map(function(ev){ return { tipo: ev.tipo, fecha: ev.fechaEvaluacion || ev.fechaGuardado }; }) }
+        };
+        fbAdd("evaluaciones", payload).then(function(r){
+          if(r.success && nfy) nfy("Informe complementario guardado en historial", "ok");
+        });
+      }
       else { if(nfy) nfy("Error: " + (data.error||""),"er"); }
       setConsolGenerating(false);
     }).catch(function(e){ if(nfy) nfy("Error: " + e.message,"er"); setConsolGenerating(false); });

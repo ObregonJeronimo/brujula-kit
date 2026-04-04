@@ -169,6 +169,20 @@ export var EVAL_TYPES = {
         { label: "Utilidad cl\u00ednica", text: "Permite identificar qu\u00e9 fonemas est\u00e1n alterados a nivel de producci\u00f3n aislada (sin la complejidad de la palabra), diferenciando si el ni\u00f1o puede producir el sonido en contexto simplificado. Complementa la Repetici\u00f3n de Palabras." }
       ]
     }
+  },
+  complementario: {
+    id: "complementario",
+    label: "Compl.",
+    fullName: "Informe Complementario",
+    icon: "\ud83d\udccb",
+    color: "#7c3aed",
+    badgeBg: "#f3e8ff",
+    age: "",
+    time: "",
+    desc: "Informe integrando m\u00faltiples evaluaciones de un mismo paciente.",
+    newView: null,
+    rptView: "rptGen",
+    histTab: "Compl."
   }
 };
 
