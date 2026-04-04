@@ -12,7 +12,7 @@ function ageMo(birth){
   return (n.getFullYear()-b.getFullYear())*12+(n.getMonth()-b.getMonth())-(n.getDate()<b.getDate()?1:0);
 }
 
-export default function EvalShell({ onS, nfy, userId, config, renderEval, computeResults, buildPayloadExtra, renderTechDetails, draft, therapistInfo }){
+export default function EvalShell({ onS, nfy, userId, config, renderEval, computeResults, buildPayloadExtra, renderTechDetails, draft, therapistInfo, deductCredit, isAdmin, userSettings }){
   var todayStr = new Date().toISOString().split("T")[0];
   // If resuming from draft, initialize from draft data
   var init = draft ? draft.data : null;
@@ -123,7 +123,7 @@ export default function EvalShell({ onS, nfy, userId, config, renderEval, comput
             <div><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>{"Derivado por"}</label><input value={derivado} onChange={function(e){setDerivado(e.target.value)}} placeholder="Nombre del derivador" style={{width:"100%",padding:"10px 12px",border:"1px solid "+K.bd,borderRadius:8,fontSize:14}} /></div>
           </div>
         </div>}
-        <button onClick={function(){ if(!patient){nfy("Selecciona un paciente","er");return;} setStep(1);scrollTop(); }} disabled={!patient} style={{width:"100%",padding:"14px",background:!patient?"#94a3b8":accentColor,color:"#fff",border:"none",borderRadius:10,fontSize:15,fontWeight:700,cursor:!patient?"not-allowed":"pointer"}}>{"Comenzar evaluacion"}</button>
+        <button onClick={function(){ if(!patient){nfy("Selecciona un paciente","er");return;} if(!isAdmin){ var showWarning = !userSettings || userSettings.creditWarning !== false; if(showWarning){ var ok = window.confirm("Comenzar evaluaci\u00f3n?\n\nSe consumir\u00e1 1 cr\u00e9dito de tu cuenta.\nEsta acci\u00f3n no se puede deshacer."); if(!ok) return; } if(deductCredit){ deductCredit().then(function(success){ if(success){ setStep(1); scrollTop(); } }); return; } } setStep(1);scrollTop(); }} disabled={!patient} style={{width:"100%",padding:"14px",background:!patient?"#94a3b8":accentColor,color:"#fff",border:"none",borderRadius:10,fontSize:15,fontWeight:700,cursor:!patient?"not-allowed":"pointer"}}>{"Comenzar evaluaci\u00f3n \u2192"}</button>
       </div>}
 
       {/* Middle steps: evaluation content (provided by each eval) */}

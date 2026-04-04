@@ -4,7 +4,7 @@ import { ALL_EVAL_TYPES, EVAL_AREAS, EVAL_TYPES, getEvalType } from "../config/e
 import { loadDrafts, deleteDraft } from "../lib/drafts.js";
 import { renderReportText } from "../lib/evalUtils.jsx";
 
-export default function Tools({ onSel, credits, onBuy, enabledTools, toolsConfig, userId, onResumeDraft, allEvals, nfy, therapistInfo }) {
+export default function Tools({ onSel, credits, onBuy, enabledTools, toolsConfig, userId, onResumeDraft, allEvals, nfy, therapistInfo, deductCredit, isAdmin }) {
   var _drafts = useState([]), drafts = _drafts[0], setDrafts = _drafts[1];
   var _openArea = useState(null), openArea = _openArea[0], setOpenArea = _openArea[1];
   var _info = useState(null), showInfo = _info[0], setShowInfo = _info[1];
@@ -56,6 +56,20 @@ export default function Tools({ onSel, credits, onBuy, enabledTools, toolsConfig
   var handleGenerateConsol = function(){
     var selected = patientEvals.filter(function(ev){ return consolSelected[ev._fbId]; });
     if(selected.length < 2){ if(nfy) nfy("Selecciona al menos 2 evaluaciones","er"); return; }
+    // Cobrar crédito con confirmación
+    if(!isAdmin){
+      var ok = window.confirm("Generar Informe Complementario?\n\nSe consumir\u00e1 1 cr\u00e9dito de tu cuenta.\nEsta acci\u00f3n no se puede deshacer.");
+      if(!ok) return;
+      if(deductCredit){
+        deductCredit().then(function(success){
+          if(success) doGenerateConsol(selected);
+        });
+        return;
+      }
+    }
+    doGenerateConsol(selected);
+  };
+  var doGenerateConsol = function(selected){
     setConsolGenerating(true); setConsolReport(null);
     var summary = selected.map(function(ev){
       var t = getEvalType(ev.tipo);

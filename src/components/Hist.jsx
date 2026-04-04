@@ -71,7 +71,7 @@ export default function Hist({ allEvals, onView, isA, onD, enabledTools }) {
                   </div>
                 </div>
                 <div style={{display:"flex",alignItems:"center",gap:10}}>
-                  {ev.resultados && <span style={{padding:"3px 10px",borderRadius:14,background:bg.b,color:bg.c,fontSize:12,fontWeight:600}}>{ev.resultados.severity||(ev.resultados.pct+"%")}</span>}
+                  {ev.resultados && (ev.resultados.severity || ev.resultados.pct != null) && <span style={{padding:"3px 10px",borderRadius:14,background:bg.b,color:bg.c,fontSize:12,fontWeight:600}}>{ev.resultados.severity||(ev.resultados.pct+"%")}</span>}
                   {isA && (cf === (ev._fbId||ev.id) ?
                     <div style={{display:"flex",gap:4}}>
                       <button onClick={function(){onD(ev._fbId); sC(null);}} style={{background:"#dc2626",color:"#fff",border:"none",padding:"5px 10px",borderRadius:5,fontSize:11,cursor:"pointer",fontWeight:600}}>¿Sí?</button>
