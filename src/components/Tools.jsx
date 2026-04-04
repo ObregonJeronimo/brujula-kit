@@ -263,10 +263,10 @@ export default function Tools({ onSel, credits, onBuy, enabledTools, toolsConfig
                       // Encabezado del profesional
                       if(ti.therapist || ti.clinic){
                         pdf.setFontSize(11);pdf.setTextColor(10,61,47);pdf.setFont(undefined,"bold");
-                        if(ti.clinic){pdf.text(ti.clinic,pW/2,y,{align:"center"});y+=5;}
-                        if(ti.address){pdf.setFontSize(8);pdf.setTextColor(100);pdf.setFont(undefined,"normal");pdf.text(ti.address,pW/2,y,{align:"center"});y+=4;}
-                        if(ti.therapist){pdf.setFontSize(9);pdf.setTextColor(10,61,47);pdf.setFont(undefined,"bold");pdf.text(ti.therapist+(ti.license?" \u2014 "+ti.license:""),pW/2,y,{align:"center"});y+=4;pdf.setFont(undefined,"normal");}
-                        var cp=[ti.phone,ti.email].filter(Boolean);if(cp.length>0){pdf.setFontSize(7);pdf.setTextColor(140);pdf.text(cp.join(" \u00b7 "),pW/2,y,{align:"center"});y+=4;}
+                        if(ti.clinic){pdf.text(ti.clinic,margin,y);y+=5;}
+                        if(ti.address){pdf.setFontSize(8);pdf.setTextColor(100);pdf.setFont(undefined,"normal");pdf.text(ti.address,margin,y);y+=4;}
+                        if(ti.therapist){pdf.setFontSize(9);pdf.setTextColor(10,61,47);pdf.setFont(undefined,"bold");pdf.text(ti.therapist+(ti.license?" \u2014 "+ti.license:""),margin,y);y+=4;pdf.setFont(undefined,"normal");}
+                        var cp=[ti.phone,ti.email].filter(Boolean);if(cp.length>0){pdf.setFontSize(7);pdf.setTextColor(140);pdf.text(cp.join(" \u00b7 "),margin,y);y+=4;}
                         pdf.setDrawColor(10,61,47);pdf.setLineWidth(0.5);pdf.line(margin,y,pW-margin,y);y+=8;
                       }
                       pdf.setFontSize(8);pdf.setTextColor(120);pdf.text("Informe Complementario - "+consolPatient.nombre,margin,y);y+=8;
@@ -287,7 +287,7 @@ export default function Tools({ onSel, credits, onBuy, enabledTools, toolsConfig
               </div>
               <div style={{background:"#fff",borderRadius:12,border:"2px solid #7c3aed",padding:24}}>
                 {/* Encabezado del profesional */}
-                {therapistInfo && (therapistInfo.therapist || therapistInfo.clinic) && <div style={{textAlign:"center",marginBottom:14,paddingBottom:12,borderBottom:"2px solid #0a3d2f"}}>
+                {therapistInfo && (therapistInfo.therapist || therapistInfo.clinic) && <div style={{marginBottom:14,paddingBottom:12,borderBottom:"2px solid #0a3d2f"}}>
                   {therapistInfo.clinic && <div style={{fontSize:13,fontWeight:700,color:"#0a3d2f"}}>{therapistInfo.clinic}</div>}
                   {therapistInfo.address && <div style={{fontSize:11,color:"#64748b",marginTop:2}}>{therapistInfo.address}</div>}
                   {therapistInfo.therapist && <div style={{fontSize:12,fontWeight:600,color:"#0a3d2f",marginTop:4}}>{therapistInfo.therapist}{therapistInfo.license ? " \u2014 " + therapistInfo.license : ""}</div>}

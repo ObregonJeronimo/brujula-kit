@@ -16,11 +16,11 @@ function textPDF(title, evalLabel, ev, reportText, filename, therapistInfo){
     // Encabezado del profesional (si está configurado)
     if(ti.therapist || ti.clinic){
       pdf.setFontSize(11); pdf.setTextColor(10,61,47); pdf.setFont(undefined,"bold");
-      if(ti.clinic){ pdf.text(ti.clinic, pW/2, y, {align:"center"}); y+=5; }
-      if(ti.address){ pdf.setFontSize(8); pdf.setTextColor(100); pdf.setFont(undefined,"normal"); pdf.text(ti.address, pW/2, y, {align:"center"}); y+=4; }
-      if(ti.therapist){ pdf.setFontSize(9); pdf.setTextColor(10,61,47); pdf.setFont(undefined,"bold"); pdf.text(ti.therapist+(ti.license?" \u2014 "+ti.license:""), pW/2, y, {align:"center"}); y+=4; pdf.setFont(undefined,"normal"); }
+      if(ti.clinic){ pdf.text(ti.clinic, margin, y); y+=5; }
+      if(ti.address){ pdf.setFontSize(8); pdf.setTextColor(100); pdf.setFont(undefined,"normal"); pdf.text(ti.address, margin, y); y+=4; }
+      if(ti.therapist){ pdf.setFontSize(9); pdf.setTextColor(10,61,47); pdf.setFont(undefined,"bold"); pdf.text(ti.therapist+(ti.license?" \u2014 "+ti.license:""), margin, y); y+=4; pdf.setFont(undefined,"normal"); }
       var contactParts = [ti.phone, ti.email].filter(Boolean);
-      if(contactParts.length > 0){ pdf.setFontSize(7); pdf.setTextColor(140); pdf.text(contactParts.join(" \u00b7 "), pW/2, y, {align:"center"}); y+=4; }
+      if(contactParts.length > 0){ pdf.setFontSize(7); pdf.setTextColor(140); pdf.text(contactParts.join(" \u00b7 "), margin, y); y+=4; }
       pdf.setDrawColor(10,61,47); pdf.setLineWidth(0.5); pdf.line(margin, y, pW-margin, y); y+=8;
     }
 
@@ -94,7 +94,7 @@ function ReportCard({ title, titleColor, borderColor, report, ev, evalLabel, onP
     </div>
     <div style={{background:"#fff",borderRadius:12,border:"2px solid "+(borderColor||K.bd),padding:24}}>
       {/* Encabezado del profesional */}
-      {hasHeader && <div style={{textAlign:"center",marginBottom:14,paddingBottom:12,borderBottom:"2px solid #0a3d2f"}}>
+      {hasHeader && <div style={{marginBottom:14,paddingBottom:12,borderBottom:"2px solid #0a3d2f"}}>
         {ti.clinic && <div style={{fontSize:13,fontWeight:700,color:"#0a3d2f"}}>{ti.clinic}</div>}
         {ti.address && <div style={{fontSize:11,color:"#64748b",marginTop:2}}>{ti.address}</div>}
         {ti.therapist && <div style={{fontSize:12,fontWeight:600,color:"#0a3d2f",marginTop:4}}>{ti.therapist}{ti.license ? " \u2014 "+ti.license : ""}</div>}
