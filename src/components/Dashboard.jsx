@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { K } from "../lib/fb.js";
-import { db, collection, getDocs, query, where } from "../firebase.js";
+import { db, collection, getDocs, query, where, doc, updateDoc } from "../firebase.js";
 import { typeLabel, isVisibleType } from "../config/evalTypes.js";
 
 var MESES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
@@ -82,10 +82,10 @@ export default function Dashboard({ allEvals, onT, onView, ld, profile, isAdmin,
   var _alertsDismissed = useState(function(){ try { return localStorage.getItem("bk_alerts_dismissed_"+userId) === "1"; } catch(e){ return false; } });
   var alertsDismissed = _alertsDismissed[0], setAlertsDismissed = _alertsDismissed[1];
   var dismissAlerts = function(){ setShowAlerts(false); setAlertsDismissed(true); try { localStorage.setItem("bk_alerts_dismissed_"+userId, "1"); } catch(e){} };
-  // Welcome modal for first-time users (5 free credits)
-  var _showWelcome = useState(function(){ try { return !localStorage.getItem("bk_welcome_shown_"+userId); } catch(e){ return false; } });
+  // Welcome modal - first time user (check Firestore, not localStorage)
+  var _showWelcome = useState(profile && !profile.welcomeShown);
   var showWelcome = _showWelcome[0], setShowWelcome = _showWelcome[1];
-  var dismissWelcome = function(){ setShowWelcome(false); try { localStorage.setItem("bk_welcome_shown_"+userId, "1"); } catch(e){} };
+  var dismissWelcome = function(){ setShowWelcome(false); if(userId){ updateDoc(doc(db,"usuarios",userId),{welcomeShown:true}).catch(function(){}); } };
   var now = new Date();
   var _ms = useState(now.getMonth()), calMonth = _ms[0], setCalMonth = _ms[1];
   var _ys = useState(now.getFullYear()), calYear = _ys[0], setCalYear = _ys[1];
