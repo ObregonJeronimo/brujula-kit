@@ -48,7 +48,7 @@ export default function Tools({ onSel, credits, onBuy, enabledTools, toolsConfig
   });
 
   var patientEvals = consolPatient ? (allEvals||[]).filter(function(ev){
-    return (ev.pacienteDni || ev.paciente) === (consolPatient.dni || consolPatient.nombre);
+    return (ev.pacienteDni || ev.paciente) === (consolPatient.dni || consolPatient.nombre) && ev.tipo !== "complementario";
   }) : [];
 
   var selectedCount = Object.keys(consolSelected).filter(function(k){ return consolSelected[k]; }).length;
