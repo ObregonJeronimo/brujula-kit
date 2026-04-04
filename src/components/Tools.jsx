@@ -4,7 +4,7 @@ import { ALL_EVAL_TYPES, EVAL_AREAS, EVAL_TYPES, getEvalType } from "../config/e
 import { loadDrafts, deleteDraft } from "../lib/drafts.js";
 import { renderReportText } from "../lib/evalUtils.jsx";
 
-export default function Tools({ onSel, credits, onBuy, enabledTools, toolsConfig, userId, onResumeDraft, allEvals, nfy }) {
+export default function Tools({ onSel, credits, onBuy, enabledTools, toolsConfig, userId, onResumeDraft, allEvals, nfy, therapistInfo }) {
   var _drafts = useState([]), drafts = _drafts[0], setDrafts = _drafts[1];
   var _openArea = useState(null), openArea = _openArea[0], setOpenArea = _openArea[1];
   var _info = useState(null), showInfo = _info[0], setShowInfo = _info[1];
@@ -258,7 +258,17 @@ export default function Tools({ onSel, credits, onBuy, enabledTools, toolsConfig
                   <button onClick={function(){
                     var textToUse = consolEditing ? consolEditText : consolReport;
                     import("jspdf").then(function(mod){
-                      var jsPDF=mod.jsPDF,pdf=new jsPDF("p","mm","a4"),margin=14,maxW=182,y=14;
+                      var jsPDF=mod.jsPDF,pdf=new jsPDF("p","mm","a4"),pW=210,margin=14,maxW=182,y=14;
+                      var ti = therapistInfo || {};
+                      // Encabezado del profesional
+                      if(ti.therapist || ti.clinic){
+                        pdf.setFontSize(11);pdf.setTextColor(10,61,47);pdf.setFont(undefined,"bold");
+                        if(ti.clinic){pdf.text(ti.clinic,pW/2,y,{align:"center"});y+=5;}
+                        if(ti.address){pdf.setFontSize(8);pdf.setTextColor(100);pdf.setFont(undefined,"normal");pdf.text(ti.address,pW/2,y,{align:"center"});y+=4;}
+                        if(ti.therapist){pdf.setFontSize(9);pdf.setTextColor(10,61,47);pdf.setFont(undefined,"bold");pdf.text(ti.therapist+(ti.license?" \u2014 "+ti.license:""),pW/2,y,{align:"center"});y+=4;pdf.setFont(undefined,"normal");}
+                        var cp=[ti.phone,ti.email].filter(Boolean);if(cp.length>0){pdf.setFontSize(7);pdf.setTextColor(140);pdf.text(cp.join(" \u00b7 "),pW/2,y,{align:"center"});y+=4;}
+                        pdf.setDrawColor(10,61,47);pdf.setLineWidth(0.5);pdf.line(margin,y,pW-margin,y);y+=8;
+                      }
                       pdf.setFontSize(8);pdf.setTextColor(120);pdf.text("Informe Complementario - "+consolPatient.nombre,margin,y);y+=8;
                       pdf.setDrawColor(200);pdf.line(margin,y,196,y);y+=8;
                       pdf.setFontSize(14);pdf.setTextColor(10,61,47);pdf.setFont(undefined,"bold");pdf.text(consolPatient.nombre,margin,y);y+=7;
@@ -276,6 +286,13 @@ export default function Tools({ onSel, credits, onBuy, enabledTools, toolsConfig
                 </div>
               </div>
               <div style={{background:"#fff",borderRadius:12,border:"2px solid #7c3aed",padding:24}}>
+                {/* Encabezado del profesional */}
+                {therapistInfo && (therapistInfo.therapist || therapistInfo.clinic) && <div style={{textAlign:"center",marginBottom:14,paddingBottom:12,borderBottom:"2px solid #0a3d2f"}}>
+                  {therapistInfo.clinic && <div style={{fontSize:13,fontWeight:700,color:"#0a3d2f"}}>{therapistInfo.clinic}</div>}
+                  {therapistInfo.address && <div style={{fontSize:11,color:"#64748b",marginTop:2}}>{therapistInfo.address}</div>}
+                  {therapistInfo.therapist && <div style={{fontSize:12,fontWeight:600,color:"#0a3d2f",marginTop:4}}>{therapistInfo.therapist}{therapistInfo.license ? " \u2014 " + therapistInfo.license : ""}</div>}
+                  {(therapistInfo.phone || therapistInfo.email) && <div style={{fontSize:10,color:"#94a3b8",marginTop:2}}>{[therapistInfo.phone, therapistInfo.email].filter(Boolean).join(" \u00b7 ")}</div>}
+                </div>}
                 {consolEditing ? <div>
                   <textarea value={consolEditText} onChange={function(e){setConsolEditText(e.target.value)}} rows={18} style={{width:"100%",padding:"12px",border:"1px solid #e2e8f0",borderRadius:8,fontSize:13,lineHeight:1.7,fontFamily:"inherit",resize:"vertical"}} />
                   <div style={{display:"flex",gap:8,marginTop:10}}>
