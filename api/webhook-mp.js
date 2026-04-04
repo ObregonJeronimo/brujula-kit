@@ -16,7 +16,7 @@ if (!getApps().length) {
 const db = getFirestore();
 
 // Valid credit amounts (security: only accept known amounts)
-var VALID_CREDITS = [10, 25, 40, 60];
+var VALID_CREDITS = [1, 10, 25, 40, 60];
 
 export default async function handler(req, res) {
   // CORS

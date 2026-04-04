@@ -24,7 +24,7 @@ try {
   console.error("[verify-payment] INIT ERROR:", e);
 }
 
-var VALID_CREDITS = [10, 25, 40, 60];
+var VALID_CREDITS = [1, 10, 25, 40, 60];
 
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");

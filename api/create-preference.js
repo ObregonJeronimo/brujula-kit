@@ -3,10 +3,11 @@
 // Body: { uid, email, nombre, packId, credits, price }
 
 var VALID_PACKS = {
-  "pack-10": { credits: 10, price: 18999, title: "10 Cr\u00e9ditos" },
-  "pack-25": { credits: 25, price: 35499, title: "25 Cr\u00e9ditos" },
-  "pack-40": { credits: 40, price: 53199, title: "40 Cr\u00e9ditos" },
-  "pack-60": { credits: 60, price: 79799, title: "60 Cr\u00e9ditos" }
+  "pack-test": { credits: 1, price: 50, title: "1 Credito (Test)" },
+  "pack-10": { credits: 10, price: 18999, title: "10 Creditos" },
+  "pack-25": { credits: 25, price: 35499, title: "25 Creditos" },
+  "pack-40": { credits: 40, price: 53199, title: "40 Creditos" },
+  "pack-60": { credits: 60, price: 79799, title: "60 Creditos" }
 };
 
 export default async function handler(req, res) {
@@ -28,7 +29,7 @@ export default async function handler(req, res) {
     const ACCESS_TOKEN = process.env.MP_ACCESS_TOKEN;
     if (!ACCESS_TOKEN) return res.status(500).json({ error: "MP_ACCESS_TOKEN not configured" });
 
-    // Detect sandbox mode: test tokens start with "APP_USR-" or "TEST-"
+    // Detect sandbox mode: test tokens start with "TEST-"
     const isSandbox = ACCESS_TOKEN.startsWith("TEST-") || process.env.MP_SANDBOX === "true";
 
     // Determine the base URL for callbacks
@@ -40,8 +41,8 @@ export default async function handler(req, res) {
       items: [
         {
           id: packId,
-          title: `Br\u00fajula KIT \u2014 ${pack.title}`,
-          description: `${pack.credits} evaluaciones fonoaudiol\u00f3gicas (ELDI + PEFF + Rep. Palabras)`,
+          title: `Brujula KIT - ${pack.title}`,
+          description: `${pack.credits} evaluacion(es) fonoaudiologica(s)`,
           quantity: 1,
           currency_id: "ARS",
           unit_price: pack.price,
