@@ -199,6 +199,11 @@ export default function App() {
   var handleUnsavedCancel = function(){ setUnsavedModal(null); };
   var handleUnsavedSave = function(){ if(settingsRef.current && settingsRef.current.save){ setSavingModal(true); settingsRef.current.save().then(function(ok){ setSavingModal(false); configDirtyRef.current = false; var dest = unsavedModal; setUnsavedModal(null); doNav(dest); }); } else { setUnsavedModal(null); } };
 
+  // Verificar si el profesional completó sus datos (obligatorio para informes)
+  var needsProfileSetup = profile && !isAdmin && (!profile.reportHeader || !profile.reportHeader.therapist);
+  var _forceConfig = useState(false), forceConfig = _forceConfig[0], setForceConfig = _forceConfig[1];
+  useEffect(function(){ if(needsProfileSetup) setForceConfig(true); }, [needsProfileSetup]);
+
   if(authUser===undefined) return (<div style={{width:"100vw",height:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:_cachedBg,color:"#fff",fontFamily:"'DM Sans',system-ui,sans-serif"}}><div style={{textAlign:"center"}}><img src="/img/logo_96.png" alt="Br\u00fajula KIT" style={{width:48,height:48,marginBottom:16}} /><div style={{fontSize:20,fontWeight:700}}>Cargando...</div></div></div>);
   if(!authUser) return <AuthScreen onDone={function(u,p){setAuthUser(u);setProfile(p)}} themeColor={_cachedBg} />;
   if(authUser && !authUser.emailVerified) return <VerifyEmailScreen user={authUser} onLogout={handleLogout} themeColor={_cachedBg} />;
@@ -212,10 +217,6 @@ export default function App() {
   // En móvil ocultar Herramientas y Configuración
   if(mobile){ nav = nav.filter(function(n){ return n[0] !== "tools" && n[0] !== "config"; }); }
   var tSd = theme && theme.primary ? mixColor(theme.primary, theme.primaryAlpha != null ? theme.primaryAlpha : 100) : K.sd;
-
-  // Verificar si el profesional completó sus datos (obligatorio para informes)
-  var needsProfileSetup = profile && !isAdmin && (!profile.reportHeader || !profile.reportHeader.therapist);
-  var _forceConfig = useState(needsProfileSetup), forceConfig = _forceConfig[0], setForceConfig = _forceConfig[1];
 
   return (
     <div style={{display:"flex",height:"100vh",width:"100vw",fontFamily:"'DM Sans',system-ui,sans-serif",background:K.bg,color:"#1e293b",overflow:"hidden"}}>
