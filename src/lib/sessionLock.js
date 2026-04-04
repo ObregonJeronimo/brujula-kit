@@ -5,6 +5,9 @@ import { db, doc, getDoc, setDoc } from "../firebase.js";
 // at sessions/{uid} instead of a single global system/active_session.
 // This allows unlimited concurrent users.
 
+// Session lock — per-user with browser session ID to avoid self-blocking on reload
+var _sessionId = (function(){ var id = sessionStorage.getItem("bk_sid"); if(!id){ id = Date.now()+"_"+Math.random().toString(36).slice(2); sessionStorage.setItem("bk_sid", id); } return id; })();
+
 export async function acquireSessionLock(uid, isAdmin) {
   if (isAdmin) return true;
   var lockRef = doc(db, "sessions", uid);
@@ -14,12 +17,13 @@ export async function acquireSessionLock(uid, isAdmin) {
       var data = snap.data();
       var lockTime = data.timestamp ? new Date(data.timestamp).getTime() : 0;
       var diff = Date.now() - lockTime;
-      // If lock is stale (>2 min without heartbeat), allow takeover
-      if (diff < 2 * 60 * 1000 && data.active) {
+      // Allow if: same session (reload), or lock is stale (>2 min)
+      if (data.sessionId === _sessionId) { /* same browser tab/reload — allow */ }
+      else if (diff < 2 * 60 * 1000 && data.active) {
         return false; // Another active session exists
       }
     }
-    await setDoc(lockRef, { uid: uid, timestamp: new Date().toISOString(), active: true });
+    await setDoc(lockRef, { uid: uid, timestamp: new Date().toISOString(), active: true, sessionId: _sessionId });
     return true;
   } catch (e) { console.error("Session lock error:", e); return true; }
 }
@@ -27,7 +31,7 @@ export async function acquireSessionLock(uid, isAdmin) {
 export async function releaseSessionLock(uid) {
   var lockRef = doc(db, "sessions", uid);
   try {
-    await setDoc(lockRef, { uid: uid, timestamp: new Date().toISOString(), active: false });
+    await setDoc(lockRef, { uid: uid, timestamp: new Date().toISOString(), active: false, sessionId: _sessionId });
   } catch (e) { console.error("Session release error:", e); }
 }
 
@@ -35,9 +39,8 @@ export function useSessionHeartbeat(uid, isAdmin) {
   useEffect(function() {
     if (!uid || isAdmin) return;
     var lockRef = doc(db, "sessions", uid);
-    // Heartbeat every 90 seconds (must be less than the 2 min lock timeout)
     var interval = setInterval(function() {
-      setDoc(lockRef, { uid: uid, timestamp: new Date().toISOString(), active: true }).catch(function(){});
+      setDoc(lockRef, { uid: uid, timestamp: new Date().toISOString(), active: true, sessionId: _sessionId }).catch(function(){});
     }, 90000);
     return function() { clearInterval(interval); };
   }, [uid, isAdmin]);

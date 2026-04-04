@@ -178,9 +178,11 @@ export default function Dashboard({ allEvals, onT, onView, ld, profile, isAdmin,
       </div>}
 
       {/* Mobile: aviso de usar PC */}
-      {_isMob && <div style={{background:"#eff6ff",border:"1px solid #bfdbfe",borderRadius:12,padding:"14px 18px",marginBottom:16,display:"flex",alignItems:"center",gap:12}}>
-        <span style={{fontSize:24,flexShrink:0}}>{"\ud83d\udcbb"}</span>
-        <div style={{fontSize:12,color:"#1e40af",lineHeight:1.5}}>{"Para realizar evaluaciones, inici\u00e1 sesi\u00f3n desde una computadora o notebook."}</div>
+      {_isMob && <div style={{background:"linear-gradient(135deg,#1e3a5f,#2563eb)",borderRadius:16,padding:"24px 20px",marginBottom:20,color:"#fff",textAlign:"center",boxShadow:"0 4px 16px rgba(37,99,235,.3)"}}>
+        <div style={{fontSize:40,marginBottom:10}}>{"\ud83d\udcbb"}</div>
+        <div style={{fontSize:16,fontWeight:700,marginBottom:6}}>{"Modo consulta"}</div>
+        <div style={{fontSize:13,opacity:.9,lineHeight:1.6}}>{"Pod\u00e9s ver el historial, pacientes y calendario desde el celular."}</div>
+        <div style={{marginTop:12,padding:"10px 16px",background:"rgba(255,255,255,.15)",borderRadius:10,fontSize:12,fontWeight:600}}>{"Para realizar evaluaciones, inici\u00e1 sesi\u00f3n desde una PC o notebook."}</div>
       </div>}
 
       <div style={{display:"grid",gridTemplateColumns:_isMob?"1fr":"1fr 1fr",gap:20,marginBottom:28}}>
