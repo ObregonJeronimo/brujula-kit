@@ -25,7 +25,7 @@ function EyeIcon({ open }) {
   return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>;
 }
 
-export default function AuthScreen({ onDone }) {
+export default function AuthScreen({ onDone, themeColor }) {
   var _m = useState("login"), mode = _m[0], setMode = _m[1];
   var _e = useState(""), email = _e[0], setEmail = _e[1];
   var _p = useState(""), pass = _p[0], setPass = _p[1];
@@ -122,7 +122,7 @@ export default function AuthScreen({ onDone }) {
   var versionText = appVersion ? "Brújula KIT v" + appVersion : "Brújula KIT";
 
   return (
-    <div style={{width:"100vw",height:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"linear-gradient(145deg,#0a3d2f,#0d7363)",fontFamily:"'DM Sans',system-ui,sans-serif"}}>
+    <div style={{width:"100vw",height:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:themeColor||"#0a3d2f",fontFamily:"'DM Sans',system-ui,sans-serif"}}>
       <div style={{background:"rgba(255,255,255,.97)",borderRadius:16,padding:"40px 36px",width:420,maxWidth:"92vw",boxShadow:"0 20px 50px rgba(0,0,0,.3)"}}>
         <div style={{textAlign:"center",marginBottom:24}}>
           <div style={{display:"inline-flex",alignItems:"center",gap:9,marginBottom:6}}><img src="/img/logo_96.png" style={{width:36,height:36}} alt="logo" /><span style={{fontSize:26,fontWeight:700,color:"#0a3d2f"}}>{"Brújula KIT"}</span></div>
