@@ -8,8 +8,6 @@ var PACKS = [
   { id:"pack-60", credits:60, price:79799, label:"60", popular:false, save:22 }
 ];
 
-var TEST_PACK = { id:"pack-test", credits:1, price:50, label:"1", popular:false, save:0 };
-
 function fmt(n){ return "$"+n.toLocaleString("es-AR"); }
 function perCredit(p){ return Math.round(p.price/p.credits); }
 
@@ -18,8 +16,7 @@ export default function PremiumPage({ profile, nfy, onBack, authUser }) {
   var _ld = useState(false), loading = _ld[0], setLoading = _ld[1];
 
   var handleBuy = function(packId){
-    var allPacks = PACKS.concat([TEST_PACK]);
-    var pack = allPacks.find(function(p){return p.id===packId});
+    var pack = PACKS.find(function(p){return p.id===packId});
     if(!pack) return;
     setLoading(true);
     fetch("/api/create-preference", {
@@ -99,24 +96,12 @@ export default function PremiumPage({ profile, nfy, onBack, authUser }) {
           width:"100%",padding:"18px 24px",
           background:loading?"#94a3b8":"linear-gradient(135deg,#0a3d2f,#0d9488)",
           color:"#fff",border:"none",borderRadius:14,fontSize:17,fontWeight:800,
-          cursor:loading?"wait":"pointer",marginBottom:14,
+          cursor:loading?"wait":"pointer",marginBottom:20,
           boxShadow:"0 6px 24px rgba(13,148,136,.35)",
           transition:"all .2s",letterSpacing:".3px",
           display:"flex",alignItems:"center",justifyContent:"center",gap:10
         }}>
-        {loading ? "Procesando..." : "\ud83d\udd12 Pagar "+fmt(PACKS.concat([TEST_PACK]).find(function(p){return p.id===selId})?.price||0)+" con MercadoPago"}
-      </button>
-
-      {/* Test pack button */}
-      <button onClick={function(){handleBuy("pack-test")}} disabled={loading}
-        style={{
-          width:"100%",padding:"12px 24px",
-          background:"#fffbeb",color:"#92400e",
-          border:"2px dashed #fbbf24",borderRadius:10,fontSize:13,fontWeight:700,
-          cursor:loading?"wait":"pointer",marginBottom:20,
-          display:"flex",alignItems:"center",justifyContent:"center",gap:8
-        }}>
-        {"🧪 Comprar 1 crédito de prueba — $50"}
+        {loading ? "Procesando..." : "\ud83d\udd12 Pagar "+fmt(PACKS.find(function(p){return p.id===selId})?.price||0)+" con MercadoPago"}
       </button>
 
       <div style={{textAlign:"center",marginBottom:24}}>
