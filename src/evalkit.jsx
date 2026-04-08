@@ -130,13 +130,26 @@ export default function App() {
   var isAdmin = profile?.role === "admin";
   useSessionHeartbeat(authUser?.uid, isAdmin);
 
+  // Tutorial: check Firestore (persistent) with localStorage as fast cache
   useEffect(function(){
     if(!authUser?.uid || !profile) return;
-    var key = "bk_onboarding_" + authUser.uid;
-    if(!localStorage.getItem(key)){ setTimeout(function(){ setRunTour(true); }, 800); }
+    // Fast check: if localStorage says done, skip Firestore read
+    var localKey = "bk_onboarding_" + authUser.uid;
+    if(localStorage.getItem(localKey)) return;
+    // Check Firestore for persistent flag
+    if(profile.onboardingDone) { localStorage.setItem(localKey, "done"); return; }
+    // Neither localStorage nor Firestore has it — show tour
+    setTimeout(function(){ setRunTour(true); }, 800);
   },[authUser, profile]);
 
-  var handleTourFinish = function(){ setRunTour(false); if(authUser?.uid){ localStorage.setItem("bk_onboarding_" + authUser.uid, "done"); } };
+  var handleTourFinish = function(){
+    setRunTour(false);
+    if(authUser?.uid){
+      // Save to both localStorage (fast cache) and Firestore (persistent)
+      localStorage.setItem("bk_onboarding_" + authUser.uid, "done");
+      updateDoc(doc(db, "usuarios", authUser.uid), { onboardingDone: true }).catch(function(){});
+    }
+  };
   var startTourManually = function(){ if(view !== "dash") doNav("dash"); setTimeout(function(){ setRunTour(true); }, 300); };
 
   useEffect(function(){
