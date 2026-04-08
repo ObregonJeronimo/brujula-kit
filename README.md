@@ -4,8 +4,7 @@ Sistema Integral de Evaluación Fonoaudiológica.
 
 ## Herramientas
 
-- **ELDI** — Evaluación del Lenguaje y Desarrollo Infantil (0–7;11 años)
-- **PEFF** — Protocolo de Evaluación Fonética-Fonológica (2;6–6;11 años)
+---------
 
 ## Stack
 
