@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef, lazy, Suspense, Component } from "react";
-import { db, auth, doc, updateDoc, getDoc, increment, onAuthStateChanged, signOut } from "./firebase.js";
+import { db, auth, doc, updateDoc, getDoc, getDocs, collection, query, where, increment, onAuthStateChanged, signOut } from "./firebase.js";
 import { fbGetAll, fbGetFiltered, fbAdd, fbDelete, getUserProfile, K } from "./lib/fb.js";
 import { acquireSessionLock, releaseSessionLock, useSessionHeartbeat } from "./lib/sessionLock.js";
 import { VISIBLE_TYPES, EVAL_TYPES, rptViewFor } from "./config/evalTypes.js";
@@ -98,6 +98,10 @@ function UnsavedChangesModal({ onDiscard, onCancel, onSave, saving }){
   return <div style={{position:"fixed",inset:0,zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,.4)",backdropFilter:"blur(4px)",animation:"fi .15s ease"}}><div style={{background:"#fff",borderRadius:16,padding:"32px 28px",width:400,maxWidth:"90vw",boxShadow:"0 20px 60px rgba(0,0,0,.2)"}}><div style={{display:"flex",alignItems:"center",gap:12,marginBottom:16}}><div style={{width:40,height:40,borderRadius:10,background:"#fff7ed",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>{"⚠️"}</div><div><div style={{fontSize:16,fontWeight:700,color:"#0a3d2f"}}>Cambios sin guardar</div><div style={{fontSize:13,color:"#64748b",marginTop:2}}>{"Realizaste cambios en la configuración que no fueron guardados."}</div></div></div><div style={{display:"flex",gap:10,marginTop:20}}><button onClick={onDiscard} style={{flex:1,padding:"11px 0",background:"#f1f5f9",border:"1px solid #e2e8f0",borderRadius:10,fontSize:13,fontWeight:600,cursor:"pointer",color:"#64748b"}}>Descartar</button><button onClick={onCancel} style={{flex:1,padding:"11px 0",background:"#fff",border:"1px solid #e2e8f0",borderRadius:10,fontSize:13,fontWeight:600,cursor:"pointer",color:"#334155"}}>Cancelar</button><button onClick={onSave} disabled={saving} style={{flex:1,padding:"11px 0",background:"#0d9488",border:"none",borderRadius:10,fontSize:13,fontWeight:700,cursor:saving?"wait":"pointer",color:"#fff",opacity:saving?.7:1}}>{saving?"Guardando...":"Guardar"}</button></div></div></div>;
 }
 
+function NoPacientesModal({ onClose, onGoPacientes }){
+  return <div style={{position:"fixed",inset:0,zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,.4)",backdropFilter:"blur(4px)",animation:"fi .15s ease"}}><div style={{background:"#fff",borderRadius:16,padding:"32px 28px",width:420,maxWidth:"90vw",boxShadow:"0 20px 60px rgba(0,0,0,.2)"}}><div style={{display:"flex",alignItems:"center",gap:12,marginBottom:16}}><div style={{width:40,height:40,borderRadius:10,background:"#fef2f2",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>{"\ud83d\udc64"}</div><div><div style={{fontSize:16,fontWeight:700,color:"#0a3d2f"}}>{"Sin pacientes registrados"}</div><div style={{fontSize:13,color:"#64748b",marginTop:2,lineHeight:1.6}}>{"No se puede continuar con la evaluación porque no hay pacientes registrados. Por favor, registre un paciente para continuar."}</div></div></div><div style={{display:"flex",gap:10,marginTop:20}}><button onClick={onClose} style={{flex:1,padding:"11px 0",background:"#f1f5f9",border:"1px solid #e2e8f0",borderRadius:10,fontSize:13,fontWeight:600,cursor:"pointer",color:"#64748b"}}>Aceptar</button><button onClick={onGoPacientes} style={{flex:1.4,padding:"11px 0",background:"#0d9488",border:"none",borderRadius:10,fontSize:13,fontWeight:700,cursor:"pointer",color:"#fff"}}>{"Ir a Pacientes"}</button></div></div></div>;
+}
+
 export default function App() {
   var _au = useState(undefined), authUser = _au[0], setAuthUser = _au[1];
   var _pr = useState(null), profile = _pr[0], setProfile = _pr[1];
@@ -109,6 +113,7 @@ export default function App() {
   var _mb = useState(isMobile()), mobile = _mb[0];
   var _sb = useState(false), sessionBlocked = _sb[0], setSessionBlocked = _sb[1];
   var _nc = useState(false), showNoCredits = _nc[0], setShowNoCredits = _nc[1];
+  var _np = useState(false), showNoPacientes = _np[0], setShowNoPacientes = _np[1];
   var _pp = useState(false), paymentProcessed = _pp[0], setPaymentProcessed = _pp[1];
   var _pl = useState(true), profileLoading = _pl[0], setProfileLoading = _pl[1];
   var _et = useState(null), enabledTools = _et[0], setEnabledTools = _et[1];
@@ -188,7 +193,7 @@ export default function App() {
 
   var checkCredits = function(){ if(!profile) return false; if(profile.role==="admin") return true; if((profile.creditos||0)<1){ setShowNoCredits(true); return false; } return true; };
   var deductCredit = function(){ if(!profile || profile.role==="admin") return Promise.resolve(true); var userRef = doc(db,"usuarios",authUser.uid); return updateDoc(userRef,{creditos:increment(-1)}).then(function(){ return getDoc(userRef); }).then(function(fresh){ if(fresh.exists()){ var newCredits = fresh.data().creditos; setProfile(function(p){return Object.assign({},p,{creditos:newCredits})}); } return true; }).catch(function(e){ nfy("Error al descontar cr\u00e9dito: " + e.message, "er"); return false; }); };
-  var startEval = function(toolId){ if(!checkCredits()) return; if(!isAdmin){ var showWarning = !userSettings || userSettings.creditWarning !== false; if(showWarning){ var ok = window.confirm("Comenzar evaluaci\u00f3n?\n\nSe consumir\u00e1 1 cr\u00e9dito de tu cuenta.\nEsta acci\u00f3n no se puede deshacer."); if(!ok) return; } deductCredit().then(function(success){ if(success){ prevViewRef.current=view; window.history.pushState({view:toolId},"",""); sV(toolId); } }); } else { prevViewRef.current=view; window.history.pushState({view:toolId},"",""); sV(toolId); } };
+  var startEval = function(toolId){ if(!isAdmin){ getDocs(query(collection(db,"pacientes"),where("userId","==",authUser.uid))).then(function(snap){ if(snap.empty){ setShowNoPacientes(true); return; } if(!checkCredits()) return; var showWarning = !userSettings || userSettings.creditWarning !== false; if(showWarning){ var ok = window.confirm("Comenzar evaluaci\u00f3n?\n\nSe consumir\u00e1 1 cr\u00e9dito de tu cuenta.\nEsta acci\u00f3n no se puede deshacer."); if(!ok) return; } deductCredit().then(function(success){ if(success){ prevViewRef.current=view; window.history.pushState({view:toolId},"",""); sV(toolId); } }); }).catch(function(e){ console.error("Error checking patients:",e); if(!checkCredits()) return; deductCredit().then(function(success){ if(success){ prevViewRef.current=view; window.history.pushState({view:toolId},"",""); sV(toolId); } }); }); } else { prevViewRef.current=view; window.history.pushState({view:toolId},"",""); sV(toolId); } };
   var onEvalDone = function(data){ if(data === "tools"){ setActiveDraft(null); sV("tools"); sS(null); loadEvals(); window.scrollTo({top:0,behavior:"smooth"}); return; } };
   var resumeDraft = function(draft){ var evalConfig = null; for(var k in EVAL_TYPES){ if(EVAL_TYPES[k].id === draft.evalType){ evalConfig = EVAL_TYPES[k]; break; } } if(!evalConfig){ return; } setActiveDraft(draft); prevViewRef.current = "tools"; window.history.pushState({view:evalConfig.newView},"",""); sV(evalConfig.newView); };
   var viewReport = function(ev){ sS(ev); var rv = rptViewFor(ev.tipo); if(rv){ prevViewRef.current=view; window.history.pushState({view:rv},"",""); sV(rv); } };
@@ -222,6 +227,7 @@ export default function App() {
     <div style={{display:"flex",height:"100vh",width:"100vw",fontFamily:"'DM Sans',system-ui,sans-serif",background:K.bg,color:"#1e293b",overflow:"hidden"}}>
       <Suspense fallback={null}>{runTour && <OnboardingTourLazy run={runTour} onFinish={handleTourFinish} />}</Suspense>
       {showNoCredits && <NoCreditsModal onClose={function(){setShowNoCredits(false);sV("dash")}} onUpgrade={function(){setShowNoCredits(false);goToPremium()}} />}
+      {showNoPacientes && <NoPacientesModal onClose={function(){setShowNoPacientes(false)}} onGoPacientes={function(){setShowNoPacientes(false);doNav("pacientes")}} />}
       {unsavedModal !== null && <UnsavedChangesModal onDiscard={handleUnsavedDiscard} onCancel={handleUnsavedCancel} onSave={handleUnsavedSave} saving={savingModal} />}
       {showChangelog && authUser?.uid && profile && <ChangelogModal userId={authUser.uid} onClose={function(){ setShowChangelog(false); }} />}
       {forceConfig && !mobile && <div style={{position:"fixed",inset:0,zIndex:1001,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,.6)",backdropFilter:"blur(4px)",padding:20}}>
@@ -229,7 +235,7 @@ export default function App() {
           <div style={{fontSize:48,marginBottom:12}}>{"\ud83d\udcdd"}</div>
           <div style={{fontSize:20,fontWeight:700,color:"#0a3d2f",marginBottom:8}}>{"Complet\u00e1 tus datos profesionales"}</div>
           <div style={{fontSize:14,color:"#475569",lineHeight:1.7,marginBottom:20}}>{"Para generar informes con tu encabezado profesional, necesitamos que completes tus datos en Configuraci\u00f3n. Esto se mostrar\u00e1 en cada informe que generes."}</div>
-          <button onClick={function(){ setForceConfig(false); doNav("config"); }} style={{width:"100%",padding:"14px",background:"linear-gradient(135deg,#0d9488,#059669)",color:"#fff",border:"none",borderRadius:12,fontSize:15,fontWeight:700,cursor:"pointer"}}>{"Ir a Configuraci\u00f3n"}</button>
+          <button onClick={function(){ setForceConfig(false); doNav("config"); }} style={{width:"100%",padding:"14px",background:"linear-gradient(135deg,#0d9488,#059669)",color:"#fff",border:"none",borderRadius:12,fontSize:15,fontWeight:700,cursor:"pointer"}}>{"Ir a Configuración"}</button>
         </div>
       </div>}
       <aside style={{width:mobile?60:230,minWidth:mobile?60:230,background:tSd,color:"#fff",display:"flex",flexDirection:"column",padding:"18px 0",flexShrink:0,height:"100vh"}}>
