@@ -190,6 +190,17 @@ var SettingsPage = forwardRef(function SettingsPageInner({ userId, nfy, profile,
         <div style={{display:"inline-block",padding:"10px 20px",background:"linear-gradient(135deg,#0a3d2f,#0d9488)",borderRadius:10,color:"#fff",fontSize:16,fontWeight:700,letterSpacing:"0.5px"}}>{versionLabel}</div>
         {appVersionTitle && <div style={{marginTop:12,fontSize:13,color:"#1e293b",fontWeight:600}}>{appVersionTitle}</div>}
         {appVersionDate && <div style={{marginTop:4,fontSize:11,color:"#94a3b8"}}>{"Publicada el " + appVersionDate}</div>}
+        <div style={{marginTop:24,paddingTop:20,borderTop:"1px solid #e2e8f0"}}>
+          <div style={{fontSize:14,fontWeight:700,color:K.sd,marginBottom:12}}>{"Legal"}</div>
+          <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
+            <a href="/politicas.html" target="_blank" rel="noopener noreferrer" style={{display:"inline-flex",alignItems:"center",gap:6,padding:"10px 18px",background:"#f8faf9",border:"1px solid #e2e8f0",borderRadius:8,fontSize:13,fontWeight:600,color:K.sd,textDecoration:"none",cursor:"pointer"}}>
+              {"📄 Términos y Condiciones"}
+            </a>
+            <a href="/politicas.html#privacidad" target="_blank" rel="noopener noreferrer" style={{display:"inline-flex",alignItems:"center",gap:6,padding:"10px 18px",background:"#f8faf9",border:"1px solid #e2e8f0",borderRadius:8,fontSize:13,fontWeight:600,color:K.sd,textDecoration:"none",cursor:"pointer"}}>
+              {"🔒 Política de Privacidad"}
+            </a>
+          </div>
+        </div>
         <div style={{marginTop:20,fontSize:12,color:"#94a3b8",lineHeight:1.6}}>{"Desarrollado para profesionales de fonoaudiología."}</div>
       </div>
     </div>;
