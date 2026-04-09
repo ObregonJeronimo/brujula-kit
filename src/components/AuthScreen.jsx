@@ -185,7 +185,13 @@ export default function AuthScreen({ onDone, themeColor }) {
           </button>
         </form>}
 
-        <p style={{textAlign:"center",marginTop:12,fontSize:10,color:"#94a3b8"}}>{versionText}</p>
+        <p style={{textAlign:"center",marginTop:14,fontSize:10,color:"#94a3b8",lineHeight:1.6}}>
+          {"Al registrarte, aceptás los "}
+          <a href="/politicas.html" target="_blank" rel="noopener noreferrer" style={{color:"#0d9488",textDecoration:"none",fontWeight:600}}>{"Términos y Condiciones"}</a>
+          {" y la "}
+          <a href="/politicas.html#privacidad" target="_blank" rel="noopener noreferrer" style={{color:"#0d9488",textDecoration:"none",fontWeight:600}}>{"Política de Privacidad"}</a>
+        </p>
+        <p style={{textAlign:"center",marginTop:4,fontSize:10,color:"#cbd5e1"}}>{versionText}</p>
       </div>
     </div>
   );
