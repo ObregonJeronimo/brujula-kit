@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useImperativeHandle, forwardRef } from "re
 import { db, doc, getDoc, updateDoc, collection, getDocs, query, orderBy, limit } from "../firebase.js";
 
 var K = { sd:"#0a3d2f", ac:"#0d9488", mt:"#64748b", bd:"#e2e8f0" };
+var DEFAULT_VERSION = "1.0.0.0";
 
 function Toggle({ value, onChange, disabled }) {
   return <button type="button" onClick={function(){ if(!disabled) onChange(!value); }} style={{width:44,height:24,borderRadius:12,border:"none",background:value?"#0d9488":"#cbd5e1",cursor:disabled?"not-allowed":"pointer",position:"relative",transition:"background .2s",opacity:disabled?.5:1}}>
@@ -40,7 +41,7 @@ var SettingsPage = forwardRef(function SettingsPageInner({ userId, nfy, profile,
   var _citaReminder = useState(true), citaReminder = _citaReminder[0], setCitaReminder = _citaReminder[1];
   var _reminderDays = useState(3), reminderDays = _reminderDays[0], setReminderDays = _reminderDays[1];
   var _autoEmail = useState(true), autoEmail = _autoEmail[0], setAutoEmail = _autoEmail[1];
-  var _appVersion = useState(""), appVersion = _appVersion[0], setAppVersion = _appVersion[1];
+  var _appVersion = useState(DEFAULT_VERSION), appVersion = _appVersion[0], setAppVersion = _appVersion[1];
   var _appVersionDate = useState(""), appVersionDate = _appVersionDate[0], setAppVersionDate = _appVersionDate[1];
   var _appVersionTitle = useState(""), appVersionTitle = _appVersionTitle[0], setAppVersionTitle = _appVersionTitle[1];
 
@@ -69,12 +70,12 @@ var SettingsPage = forwardRef(function SettingsPageInner({ userId, nfy, profile,
         setProfName(orig.profName); setProfLicense(orig.profLicense); setProfPhone(orig.profPhone);
       }
     }).catch(function(e){ console.error(e); }).finally(function(){ setLoading(false); });
-    // Load latest version from changelogs
+    // Load latest version from changelogs (fallback to DEFAULT_VERSION)
     var q2 = query(collection(db, "changelogs"), orderBy("createdAt", "desc"), limit(1));
     getDocs(q2).then(function(snap){
       if(!snap.empty){
         var d = snap.docs[0].data();
-        setAppVersion(d.version || "");
+        setAppVersion(d.version || DEFAULT_VERSION);
         setAppVersionDate(d.fecha || "");
         setAppVersionTitle(d.titulo || "");
       }
@@ -183,7 +184,7 @@ var SettingsPage = forwardRef(function SettingsPageInner({ userId, nfy, profile,
   };
 
   var renderAcerca = function(){
-    var versionLabel = appVersion ? "Brújula KIT V" + appVersion : "Brújula KIT";
+    var versionLabel = "Brújula KIT v" + appVersion;
     return <div style={{animation:"fi .2s ease"}}>
       <div style={{fontSize:14,color:"#475569",lineHeight:1.8}}>
         <div style={{marginBottom:16}}>{"Versión actual del sistema:"}</div>
@@ -194,10 +195,10 @@ var SettingsPage = forwardRef(function SettingsPageInner({ userId, nfy, profile,
           <div style={{fontSize:14,fontWeight:700,color:K.sd,marginBottom:12}}>{"Legal"}</div>
           <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
             <a href="/politicas.html" target="_blank" rel="noopener noreferrer" style={{display:"inline-flex",alignItems:"center",gap:6,padding:"10px 18px",background:"#f8faf9",border:"1px solid #e2e8f0",borderRadius:8,fontSize:13,fontWeight:600,color:K.sd,textDecoration:"none",cursor:"pointer"}}>
-              {"📄 Términos y Condiciones"}
+              {"Términos y Condiciones"}
             </a>
             <a href="/politicas.html#privacidad" target="_blank" rel="noopener noreferrer" style={{display:"inline-flex",alignItems:"center",gap:6,padding:"10px 18px",background:"#f8faf9",border:"1px solid #e2e8f0",borderRadius:8,fontSize:13,fontWeight:600,color:K.sd,textDecoration:"none",cursor:"pointer"}}>
-              {"🔒 Política de Privacidad"}
+              {"Política de Privacidad"}
             </a>
           </div>
         </div>
