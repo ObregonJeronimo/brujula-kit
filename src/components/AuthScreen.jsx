@@ -5,6 +5,7 @@ import { acquireSessionLock } from "../lib/sessionLock.js";
 import { db, doc, setDoc, getDoc, getDocs, query, where, collection, orderBy, limit } from "../firebase.js";
 
 var googleProvider = new GoogleAuthProvider();
+var DEFAULT_VERSION = "1.0.0.0";
 
 function getPasswordStrength(p) {
   if (!p || p.length < 6) return { level: 0, label: "", color: "#e2e8f0" };
@@ -37,13 +38,13 @@ export default function AuthScreen({ onDone, themeColor }) {
   var _info = useState(""), info = _info[0], setInfo = _info[1];
   var _showReset = useState(false), showReset = _showReset[0], setShowReset = _showReset[1];
   var _resetEmail = useState(""), resetEmail = _resetEmail[0], setResetEmail = _resetEmail[1];
-  var _appVersion = useState(""), appVersion = _appVersion[0], setAppVersion = _appVersion[1];
+  var _appVersion = useState(DEFAULT_VERSION), appVersion = _appVersion[0], setAppVersion = _appVersion[1];
 
   // Load latest version from changelogs
   useEffect(function(){
     var q2 = query(collection(db, "changelogs"), orderBy("createdAt", "desc"), limit(1));
     getDocs(q2).then(function(snap){
-      if(!snap.empty){ setAppVersion(snap.docs[0].data().version || ""); }
+      if(!snap.empty){ setAppVersion(snap.docs[0].data().version || DEFAULT_VERSION); }
     }).catch(function(){});
   },[]);
 
@@ -119,7 +120,7 @@ export default function AuthScreen({ onDone, themeColor }) {
     return <button type="button" onClick={function(){ toggle(!isVisible); }} style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",cursor:"pointer",color:"#94a3b8",display:"flex",alignItems:"center",padding:2}}><EyeIcon open={isVisible} /></button>;
   };
 
-  var versionText = appVersion ? "Brújula KIT v" + appVersion : "Brújula KIT";
+  var versionText = "Brújula KIT v" + appVersion;
 
   return (
     <div style={{width:"100vw",height:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:themeColor||"#0a3d2f",fontFamily:"'DM Sans',system-ui,sans-serif"}}>
