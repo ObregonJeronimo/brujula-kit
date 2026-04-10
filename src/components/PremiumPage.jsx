@@ -3,9 +3,9 @@ import { K } from "../lib/fb.js";
 
 var PACKS = [
   { id:"pack-10", credits:10, price:18999, label:"10", popular:false, save:0 },
-  { id:"pack-25", credits:25, price:35499, label:"25", popular:true, save:12 },
-  { id:"pack-40", credits:40, price:53199, label:"40", popular:false, save:16 },
-  { id:"pack-60", credits:60, price:79799, label:"60", popular:false, save:22 }
+  { id:"pack-25", credits:25, price:35499, label:"25", popular:true, save:25 },
+  { id:"pack-40", credits:40, price:53199, label:"40", popular:false, save:30 },
+  { id:"pack-60", credits:60, price:75000, label:"60", popular:false, save:34 }
 ];
 
 function fmt(n){ return "$"+n.toLocaleString("es-AR"); }
