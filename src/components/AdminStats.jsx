@@ -92,7 +92,7 @@ export default function AdminStats({nfy}){
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))",gap:14,marginBottom:24}}>
         <Stat icon="💰" label="Ingresos totales" value={fmt$(totalRevenue)} sub={totalCreditsPurchased+" créditos vendidos"} color="#059669"/>
         <Stat icon={"\ud83d\udcb3"} label={"Evaluaciones realizadas"} value={visibleEvals.length} color="#7c3aed"/>
-        <Stat icon="👥" label="Usuarios registrados" value={totalUsers} sub={neverPurchased.length+" nunca compraron"} color="#0d9488"/>
+        <Stat icon={"\ud83d\udc65"} label={"Usuarios registrados"} value={totalUsers} color="#0d9488"/>
         <Stat icon="⚠️" label="Sin comprar" value={neverPurchased.length} sub="terminaron demo sin comprar" color="#f59e0b"/>
       </div>
 
