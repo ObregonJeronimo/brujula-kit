@@ -30,7 +30,7 @@ var TOOL_MAP = {
   newRECO: { icon: "\ud83c\udfaf", name: "Reco. Fonol.", color: "#9333ea" },
   newELDI: { icon: "\ud83e\uddd2", name: "ELDI", color: "#0d9488" }
 };
-var TOOL_IDS = ["newPEFF","newOFA","newFON","newREP","newDISC","newRECO","newELDI"];
+var TOOL_IDS = ["newOFA","newFON","newREP","newDISC","newRECO"];
 
 function loadShortcuts(uid){
   try { var raw = window.localStorage.getItem("bk_shortcuts_"+uid); if(raw){ var parsed = JSON.parse(raw); if(Array.isArray(parsed)) return parsed.slice(0,4); } } catch(e){}

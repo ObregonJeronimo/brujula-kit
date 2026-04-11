@@ -82,9 +82,22 @@ export default function AuthScreen({ onDone, themeColor }) {
       if (prof && prof.authProvider === "google") { await auth.signOut(); setErr("Esta cuenta fue creada con Google. Usá el botón 'Continuar con Google' para iniciar sesión."); setLd(false); return; }
       if (prof && prof.profileComplete) { var canLogin = await acquireSessionLock(u.uid, prof.role === "admin"); if (!canLogin) { setErr("Sesión ocupada. Intentá en unos minutos."); setLd(false); return; } onDone(u, prof); }
     } catch (e) {
-      if (e.code === "auth/user-not-found" || e.code === "auth/invalid-credential") setErr("Email o contraseña incorrectos.");
-      else if (e.code === "auth/wrong-password") setErr("Contraseña incorrecta.");
-      else if (e.code === "auth/too-many-requests") setErr("Demasiados intentos. Esperá unos minutos.");
+      if (e.code === "auth/user-not-found" || e.code === "auth/invalid-credential" || e.code === "auth/wrong-password") {
+        // Check if this email belongs to a Google auth account
+        try {
+          var snap = await getDocs(query(collection(db, "usuarios"), where("email", "==", email.trim())));
+          if (!snap.empty) {
+            var userData = snap.docs[0].data();
+            if (userData.authProvider === "google") {
+              setErr("google-hint");
+              setLd(false);
+              return;
+            }
+          }
+        } catch(qe){}
+        setErr("Email o contrase\u00f1a incorrectos.");
+      }
+      else if (e.code === "auth/too-many-requests") setErr("Demasiados intentos. Esper\u00e1 unos minutos.");
       else setErr("Error: " + e.message);
     }
     setLd(false);
@@ -178,8 +191,12 @@ export default function AuthScreen({ onDone, themeColor }) {
             {pass2.length > 0 && pass !== pass2 && <div style={{fontSize:11,color:"#dc2626",marginTop:4,fontWeight:600}}>{"Las contraseñas no coinciden"}</div>}
             {pass2.length > 0 && pass === pass2 && <div style={{fontSize:11,color:"#059669",marginTop:4,fontWeight:600}}>{"Las contraseñas coinciden ✓"}</div>}
           </div>}
-          {mode==="login" && <div style={{marginBottom:14}}><button type="button" onClick={function(){setShowReset(true);setResetEmail(email);setErr("");setInfo("")}} style={{background:"none",border:"none",color:"#0d9488",fontSize:12,fontWeight:600,cursor:"pointer",padding:0}}>{"¿Olvidaste tu contraseña?"}</button></div>}
-          {err&&<div style={{background:"#fef2f2",border:"1px solid #fecaca",color:"#dc2626",padding:"10px 12px",borderRadius:8,fontSize:12,marginBottom:14}}>{err}</div>}
+          {mode==="login" && <div style={{marginBottom:14}}><button type="button" onClick={function(){setShowReset(true);setResetEmail(email);setErr("");setInfo("")}} style={{background:"none",border:"none",color:"#0d9488",fontSize:12,fontWeight:600,cursor:"pointer",padding:0}}>{"¿Olvidaste tu contrase\u00f1a?"}</button></div>}
+          {err && err === "google-hint" ? <div style={{background:"#eff6ff",border:"1px solid #bfdbfe",borderRadius:12,padding:"14px 16px",marginBottom:14,textAlign:"center"}}>
+            <div style={{fontSize:24,marginBottom:4}}>{"\u2b06\ufe0f"}</div>
+            <div style={{fontSize:13,fontWeight:700,color:"#1e40af",marginBottom:4}}>{"Debe iniciar sesi\u00f3n con Google"}</div>
+            <div style={{fontSize:12,color:"#3b82f6"}}>{"Esta cuenta fue creada con Google. Us\u00e1 el bot\u00f3n de arriba."}</div>
+          </div> : err && <div style={{background:"#fef2f2",border:"1px solid #fecaca",color:"#dc2626",padding:"10px 12px",borderRadius:8,fontSize:12,marginBottom:14}}>{err}</div>}
           {info&&<div style={{background:"#f0fdf4",border:"1px solid #bbf7d0",color:"#059669",padding:"10px 12px",borderRadius:8,fontSize:12,marginBottom:14}}>{info}</div>}
           <button type="submit" disabled={ld || (mode==="register" && pass !== pass2)} style={{width:"100%",padding:"13px",background:"#0d9488",color:"#fff",border:"none",borderRadius:8,fontSize:15,fontWeight:600,cursor:ld?"wait":"pointer",opacity:(ld || (mode==="register" && pass2.length>0 && pass!==pass2))?.7:1}}>
             {ld?"Procesando...":mode==="login"?"Iniciar sesión":"Crear cuenta"}

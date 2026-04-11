@@ -226,7 +226,7 @@ export function isVisibleType(tipo) {
 
 // Tabs para historial: [["all","Todas"],["peff","PEFF"],...]
 export var HIST_TABS = [["all", "Todas"]].concat(
-  VISIBLE_TYPES.map(function(t) { return [t.id, t.histTab]; })
+  VISIBLE_TYPES.filter(function(t){ return t.id !== "peff"; }).map(function(t) { return [t.id, t.histTab]; })
 );
 
 // Colors map para AdminStats: { PEFF: "#7c3aed", ... }
