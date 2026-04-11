@@ -48,13 +48,13 @@ export default function ProfilePage({ profile, authUser, nfy, onBuyCredits }) {
           <div style={{flex:1}}><div style={{fontSize:11,fontWeight:600,color:"#94a3b8",textTransform:"uppercase",letterSpacing:".5px",marginBottom:2}}>Miembro desde</div><div style={{fontSize:15,fontWeight:500,color:"#1e293b"}}>{profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString("es-AR",{year:"numeric",month:"long",day:"numeric"}) : "\u2014"}</div></div>
         </div>
       </div>
-      <div style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",padding:"20px 24px"}}>
+      {profile?.authProvider !== "google" && <div style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",padding:"20px 24px"}}>
         <div style={{fontSize:14,fontWeight:600,color:"#1e293b",marginBottom:4}}>Seguridad</div>
         <p style={{fontSize:13,color:"#94a3b8",marginBottom:14}}>{"Se enviar\u00e1 un enlace a tu email para establecer una nueva contrase\u00f1a."}</p>
         <button onClick={handlePasswordReset} disabled={resetSending||resetSent} style={{padding:"10px 20px",background:resetSent?"#ecfdf5":"#f8faf9",border:resetSent?"1px solid #a7f3d0":"1px solid #e2e8f0",borderRadius:10,fontSize:13,fontWeight:600,cursor:resetSending?"wait":resetSent?"default":"pointer",color:resetSent?"#059669":"#1e293b",display:"flex",alignItems:"center",gap:8,transition:"all .2s"}}>
           {resetSent?"Email enviado":(resetSending?"Enviando...":"Cambiar contrase\u00f1a")}
         </button>
-      </div>
+      </div>}
     </div>
   );
 }
