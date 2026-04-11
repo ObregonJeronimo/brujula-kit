@@ -287,7 +287,7 @@ export default function NewFON({ onS, nfy, userId, draft, therapistInfo, isAdmin
         <button onClick={function(){ props.setStep(props.step+1); props.scrollTop(); }} style={{background:"#6d28d9",color:"#fff",border:"none",padding:"10px 22px",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer"}}>{props.step < props.RESULT_STEP - 1 ? "Siguiente" : "Ver Resultados"}</button>
       </div>
     </div>;
-  },[procData]);
+  },[procData, recording, savedAudios, mediaRec, isAdmin]);
 
   var renderTechDetails = function(results){
     var sc = sevColor[results.severity] || "#6d28d9";
