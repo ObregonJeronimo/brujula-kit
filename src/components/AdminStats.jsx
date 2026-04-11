@@ -41,16 +41,11 @@ export default function AdminStats({nfy}){
   var totalUsers=nonAdminUsers.length;
   var totalCreditsDeducted=allEvals.length;
   var neverPurchased=nonAdminUsers.filter(function(u){
-    var userEvals=allEvals.filter(function(ev){return ev.userId===u._fbId}).length;
-    var totalEverHad=(u.creditos||0)+userEvals;
-    return totalEverHad<=5;
+    return !allPagos.some(function(p){ return p.userId===u._fbId; });
   });
-  var totalCreditsPurchased=nonAdminUsers.reduce(function(sum,u){
-    var userEvals=allEvals.filter(function(ev){return ev.userId===u._fbId}).length;
-    var totalEverHad=(u.creditos||0)+userEvals;
-    return sum+Math.max(0,totalEverHad-5);
-  },0);
-  var totalRevenue=totalCreditsPurchased*PRICE_PER_CREDIT;
+  // Ingresos reales: solo desde pagos completados
+  var totalCreditsPurchased=allPagos.reduce(function(sum,p){ return sum+(p.creditosAgregados||0); },0);
+  var totalRevenue=allPagos.reduce(function(sum,p){ return sum+(p.amount||0); },0);
 
   var getMonthEvals=function(y,m){return visibleEvals.filter(function(ev){if(!ev.fechaGuardado)return false;var d=new Date(ev.fechaGuardado);return d.getFullYear()===y&&d.getMonth()===m})};
   var getYearEvals=function(y){return visibleEvals.filter(function(ev){if(!ev.fechaGuardado)return false;return new Date(ev.fechaGuardado).getFullYear()===y})};

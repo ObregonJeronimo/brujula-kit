@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { db, doc, getDoc, setDoc } from "../firebase.js";
+import { db, doc, getDoc, setDoc, collection, getDocs, deleteDoc } from "../firebase.js";
 import { ALL_EVAL_TYPES } from "../config/evalTypes.js";
 import { K } from "../lib/fb.js";
 import Admin from "./Admin.jsx";
@@ -61,7 +61,7 @@ export default function AdminPanel({ nfy }) {
     setDoc(doc(db, "config", "tools"), updated).then(function(){ nfy("Guardado", "ok"); setEditTitle(function(p){ var n = Object.assign({},p); delete n[id]; return n; }); setEditDesc(function(p){ var n = Object.assign({},p); delete n[id]; return n; }); setEditAge(function(p){ var n = Object.assign({},p); delete n[id]; return n; }); setEditTime(function(p){ var n = Object.assign({},p); delete n[id]; return n; }); setSaving(false); }).catch(function(e){ nfy("Error: " + e.message, "er"); setSaving(false); });
   };
 
-  var ADMIN_TABS = [["usuarios","\ud83d\udc65 Usuarios"],["changelog","\ud83d\udcdd Changelog"],["herramientas","\ud83e\uddf0 Herramientas"],["colores","\ud83c\udfa8 Colores"]];
+  var ADMIN_TABS = [["usuarios","\ud83d\udc65 Usuarios"],["changelog","\ud83d\udcdd Changelog"],["herramientas","\ud83e\uddf0 Herramientas"],["colores","\ud83c\udfa8 Colores"],["datos","\ud83d\uddd1\ufe0f Datos"]];
 
   return (
     <div style={{animation:"fi .3s ease",width:"100%",maxWidth:900}}>
@@ -179,6 +179,51 @@ export default function AdminPanel({ nfy }) {
         <button onClick={saveTheme} disabled={themeSaving} style={{width:"100%",padding:"14px",background:themeColors.primary,color:"#fff",border:"none",borderRadius:10,fontSize:14,fontWeight:700,cursor:themeSaving?"wait":"pointer",opacity:themeSaving?.7:1}}>
           {themeSaving ? "Guardando..." : "Guardar colores"}
         </button>
+      </div>}
+
+      {tab==="datos" && <div>
+        <p style={{fontSize:13,color:K.mt,marginBottom:20}}>{"Herramientas de mantenimiento de datos. Estas acciones son irreversibles."}</p>
+
+        <div style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",padding:20,marginBottom:16}}>
+          <div style={{fontSize:14,fontWeight:700,color:"#dc2626",marginBottom:4}}>{"Borrar todas las evaluaciones"}</div>
+          <div style={{fontSize:12,color:K.mt,marginBottom:14}}>{"Elimina todas las evaluaciones e informes complementarios de la base de datos. Los usuarios y cr\u00e9ditos no se ven afectados."}</div>
+          <button onClick={function(){
+            var ok = window.confirm("ATENCION: Esto borrar\u00e1 TODAS las evaluaciones de TODOS los usuarios.\n\nEsta acci\u00f3n es IRREVERSIBLE.\n\n\u00bfEst\u00e1s seguro?");
+            if(!ok) return;
+            var ok2 = window.confirm("ULTIMA CONFIRMACION:\n\nSe borrar\u00e1n todas las evaluaciones y estad\u00edsticas volver\u00e1n a 0.\n\nEscrib\u00ed OK para confirmar... (cancel para cancelar)");
+            if(!ok2) return;
+            getDocs(collection(db,"evaluaciones")).then(function(snap){
+              var promises = snap.docs.map(function(d){ return deleteDoc(doc(db,"evaluaciones",d.id)); });
+              return Promise.all(promises);
+            }).then(function(){ nfy("Todas las evaluaciones fueron borradas","ok"); }).catch(function(e){ nfy("Error: "+e.message,"er"); });
+          }} style={{padding:"10px 20px",background:"#dc2626",color:"#fff",border:"none",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer"}}>{"Borrar evaluaciones"}</button>
+        </div>
+
+        <div style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",padding:20,marginBottom:16}}>
+          <div style={{fontSize:14,fontWeight:700,color:"#dc2626",marginBottom:4}}>{"Borrar historial de pagos"}</div>
+          <div style={{fontSize:12,color:K.mt,marginBottom:14}}>{"Elimina todos los registros de pagos. Los cr\u00e9ditos actuales de los usuarios no se modifican."}</div>
+          <button onClick={function(){
+            var ok = window.confirm("Esto borrar\u00e1 todos los registros de pagos.\n\nLos cr\u00e9ditos de los usuarios NO se modifican.\n\n\u00bfEst\u00e1s seguro?");
+            if(!ok) return;
+            getDocs(collection(db,"pagos")).then(function(snap){
+              var promises = snap.docs.map(function(d){ return deleteDoc(doc(db,"pagos",d.id)); });
+              return Promise.all(promises);
+            }).then(function(){ nfy("Historial de pagos borrado","ok"); }).catch(function(e){ nfy("Error: "+e.message,"er"); });
+          }} style={{padding:"10px 20px",background:"#dc2626",color:"#fff",border:"none",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer"}}>{"Borrar pagos"}</button>
+        </div>
+
+        <div style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",padding:20}}>
+          <div style={{fontSize:14,fontWeight:700,color:"#dc2626",marginBottom:4}}>{"Resetear TODO (evaluaciones + pagos)"}</div>
+          <div style={{fontSize:12,color:K.mt,marginBottom:14}}>{"Borra todas las evaluaciones y todos los pagos. Las estad\u00edsticas vuelven a 0. Los usuarios y sus cr\u00e9ditos actuales no se tocan."}</div>
+          <button onClick={function(){
+            var ok = window.confirm("RESETEAR TODO:\n\nSe borrar\u00e1n TODAS las evaluaciones y TODOS los pagos.\n\nEsta acci\u00f3n es IRREVERSIBLE.\n\n\u00bfEst\u00e1s completamente seguro?");
+            if(!ok) return;
+            Promise.all([
+              getDocs(collection(db,"evaluaciones")).then(function(snap){ return Promise.all(snap.docs.map(function(d){ return deleteDoc(doc(db,"evaluaciones",d.id)); })); }),
+              getDocs(collection(db,"pagos")).then(function(snap){ return Promise.all(snap.docs.map(function(d){ return deleteDoc(doc(db,"pagos",d.id)); })); })
+            ]).then(function(){ nfy("Todo reseteado a 0","ok"); }).catch(function(e){ nfy("Error: "+e.message,"er"); });
+          }} style={{padding:"10px 20px",background:"#7f1d1d",color:"#fff",border:"none",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer"}}>{"Resetear TODO"}</button>
+        </div>
       </div>}
     </div>
   );
