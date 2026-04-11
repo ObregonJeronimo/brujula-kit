@@ -46,10 +46,46 @@ if(window.speechSynthesis){
   if(imm){ _cachedVoice = imm; _voicesLoaded = true; }
 }
 
+// Correcciones fonéticas para sílabas que el sintetizador pronuncia mal
+var PHON_FIX = {
+  // Vocales abiertas que se cierran
+  "to":"toh","so":"soh","go":"goh","mo":"moh","no":"noh",
+  "su":"suh","tu":"tuh","mu":"muh","nu":"nuh",
+  // J pronunciada como Y
+  "je":"jeh","ji":"jih","ju":"juh","ja":"jah","jo":"joh",
+  // B pronunciada letra por letra
+  "ba":"bah","be":"beh","bi":"bih","bo":"boh","bu":"buh",
+  // CH pronunciada letra por letra
+  "cha":"chah","che":"cheh","chi":"chih","cho":"choh","chu":"chuh",
+  // G pronunciada mal
+  "ga":"gah","ge":"gueh","gi":"guih","gu":"guh",
+  // Grupos consonánticos pronunciados letra por letra
+  "bla":"blah","ble":"bleh","bli":"blih","blo":"bloh","blu":"bluh",
+  "bra":"brah","bre":"breh","bri":"brih","bro":"broh","bru":"bruh",
+  "cla":"clah","cle":"cleh","cli":"clih","clo":"cloh","clu":"cluh",
+  "cra":"crah","cre":"creh","cri":"crih","cro":"croh","cru":"cruh",
+  "dra":"drah","dre":"dreh","dri":"drih","dro":"droh","dru":"druh",
+  "fla":"flah","fle":"fleh","fli":"flih","flo":"floh","flu":"fluh",
+  "fra":"frah","fre":"freh","fri":"frih","fro":"froh","fru":"fruh",
+  "gla":"glah","gle":"gleh","gli":"glih","glo":"gloh","glu":"gluh",
+  "gra":"grah","gre":"greh","gri":"grih","gro":"groh","gru":"gruh",
+  "pla":"plah","ple":"pleh","pli":"plih","plo":"ploh","plu":"pluh",
+  "pra":"prah","pre":"preh","pri":"prih","pro":"proh","pru":"pruh",
+  "tra":"trah","tre":"treh","tri":"trih","tro":"troh","tru":"truh",
+  // RR
+  "rra":"rrah","rre":"rreh","rri":"rrih","rro":"rroh","rru":"rruh",
+  // Diptongos
+  "au":"a-u","ei":"e-i","ou":"o-u",
+  // ARE y similares
+  "are":"a-reh","ere":"e-reh","ire":"i-reh","ore":"o-reh","ure":"u-reh"
+};
+
 var speak = function(text){
   if(!window.speechSynthesis) return;
   window.speechSynthesis.cancel();
-  var u = new SpeechSynthesisUtterance(text);
+  // Aplicar corrección fonética
+  var fixed = PHON_FIX[text.toLowerCase()] || text;
+  var u = new SpeechSynthesisUtterance(fixed);
   u.lang = "es-AR"; u.rate = 0.72; u.pitch = 1.05; u.volume = 1;
   if(!_cachedVoice && !_voicesLoaded){ _cachedVoice = findBestVoice(); }
   if(_cachedVoice) u.voice = _cachedVoice;
