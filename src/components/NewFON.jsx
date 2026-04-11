@@ -24,9 +24,14 @@ var speak = function(text){
   if(!window.speechSynthesis) return;
   window.speechSynthesis.cancel();
   var u = new SpeechSynthesisUtterance(text);
-  u.lang = "es-AR"; u.rate = 0.68; u.pitch = 1.08;
+  u.lang = "es-AR"; u.rate = 0.7; u.pitch = 1.05; u.volume = 1;
   var voices = window.speechSynthesis.getVoices();
-  var pick = voices.find(function(v){return /es[-_]AR/i.test(v.lang)}) || voices.find(function(v){return v.lang.startsWith("es")});
+  var pick = voices.find(function(v){return /es[-_]AR/i.test(v.lang) && /Google|Microsoft/i.test(v.name)})
+    || voices.find(function(v){return /es[-_](AR|MX|ES)/i.test(v.lang) && /Google|Microsoft/i.test(v.name)})
+    || voices.find(function(v){return /es[-_]AR/i.test(v.lang)})
+    || voices.find(function(v){return /es[-_]MX/i.test(v.lang)})
+    || voices.find(function(v){return /es[-_]ES/i.test(v.lang)})
+    || voices.find(function(v){return v.lang.startsWith("es")});
   if(pick) u.voice = pick;
   window.speechSynthesis.speak(u);
 };
