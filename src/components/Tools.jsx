@@ -156,7 +156,7 @@ export default function Tools({ TC, onSel, credits, onBuy, enabledTools, toolsCo
           var isOpen = openArea === area.id;
 
           return <div key={area.id} style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",overflow:"hidden"}}>
-            <div onClick={function(){ setOpenArea(isOpen ? null : area.id); }} style={{background:"linear-gradient(135deg,"+area.color+","+area.color+"cc)",padding:"20px 24px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between",color:"#fff"}}>
+            <div onClick={function(){ setOpenArea(isOpen ? null : area.id); }} style={{background:"linear-gradient(135deg,"+(TC&&TC.sd||"#0a3d2f")+","+(TC&&TC.ac||"#0d9488")+")",padding:"20px 24px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between",color:"#fff"}}>
               <div style={{display:"flex",alignItems:"center",gap:14}}>
                 <span style={{fontSize:36}}>{area.icon}</span>
                 <div>
@@ -217,7 +217,7 @@ export default function Tools({ TC, onSel, credits, onBuy, enabledTools, toolsCo
 
         {/* Consolidated Report Builder */}
         <div style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",overflow:"hidden"}}>
-          <div onClick={function(){ setShowConsol(!showConsol); setConsolReport(null); setConsolPatient(null); setConsolSelected({}); }} style={{background:"linear-gradient(135deg,#7c3aed,#6d28d9)",padding:"20px 24px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between",color:"#fff"}}>
+          <div onClick={function(){ setShowConsol(!showConsol); setConsolReport(null); setConsolPatient(null); setConsolSelected({}); }} style={{background:"linear-gradient(135deg,"+(TC&&TC.sd||"#0a3d2f")+","+(TC&&TC.ac||"#0d9488")+")",padding:"20px 24px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between",color:"#fff"}}>
             <div style={{display:"flex",alignItems:"center",gap:14}}>
               <span style={{fontSize:36}}>{"📋"}</span>
               <div>
@@ -231,7 +231,7 @@ export default function Tools({ TC, onSel, credits, onBuy, enabledTools, toolsCo
           {showConsol && <div style={{padding:20}}>
             {/* Step 1: Select patient */}
             {!consolPatient && <div>
-              <div style={{fontSize:14,fontWeight:700,color:"#7c3aed",marginBottom:12}}>{"1. Selecciona un paciente"}</div>
+              <div style={{fontSize:14,fontWeight:700,color:(TC&&TC.ac||"#0d9488"),marginBottom:12}}>{"1. Selecciona un paciente"}</div>
               {patients.length === 0 && <div style={{fontSize:13,color:"#64748b",fontStyle:"italic"}}>No hay evaluaciones realizadas todavia</div>}
               <div style={{display:"flex",flexDirection:"column",gap:6}}>
                 {patients.map(function(p,i){
@@ -241,7 +241,7 @@ export default function Tools({ TC, onSel, credits, onBuy, enabledTools, toolsCo
                       <div style={{fontWeight:600,fontSize:14}}>{p.nombre}</div>
                       <div style={{fontSize:12,color:"#64748b"}}>{"DNI: "+(p.dni||"N/A")}</div>
                     </div>
-                    <span style={{fontSize:12,color:"#7c3aed",fontWeight:600}}>{evCount + " eval."}</span>
+                    <span style={{fontSize:12,color:(TC&&TC.ac||"#0d9488"),fontWeight:600}}>{evCount + " eval."}</span>
                   </button>;
                 })}
               </div>
@@ -250,7 +250,7 @@ export default function Tools({ TC, onSel, credits, onBuy, enabledTools, toolsCo
             {/* Step 2: Select evaluations */}
             {consolPatient && !consolReport && !consolGenerating && <div>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
-                <div style={{fontSize:14,fontWeight:700,color:"#7c3aed"}}>{"2. Selecciona evaluaciones para " + consolPatient.nombre}</div>
+                <div style={{fontSize:14,fontWeight:700,color:(TC&&TC.ac||"#0d9488")}}>{"2. Selecciona evaluaciones para " + consolPatient.nombre}</div>
                 <button onClick={function(){ setConsolPatient(null); setConsolSelected({}); }} style={{fontSize:12,color:"#64748b",background:"#f1f5f9",border:"none",borderRadius:6,padding:"6px 12px",cursor:"pointer"}}>{"Cambiar paciente"}</button>
               </div>
               {patientEvals.length < 2 && <div style={{fontSize:13,color:"#dc2626",background:"#fef2f2",padding:"10px 14px",borderRadius:8,marginBottom:12}}>{"Este paciente tiene menos de 2 evaluaciones. Se necesitan al menos 2 para generar un informe complementario."}</div>}
@@ -259,7 +259,7 @@ export default function Tools({ TC, onSel, credits, onBuy, enabledTools, toolsCo
                   var t = getEvalType(ev.tipo);
                   var checked = !!consolSelected[ev._fbId];
                   return <label key={ev._fbId} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 16px",background:checked?"#f3e8ff":"#f8faf9",border:"1px solid "+(checked?"#c4b5fd":"#e2e8f0"),borderRadius:10,cursor:"pointer"}}>
-                    <input type="checkbox" checked={checked} onChange={function(){ setConsolSelected(function(prev){ var n = Object.assign({},prev); n[ev._fbId] = !prev[ev._fbId]; return n; }); }} style={{width:18,height:18,accentColor:"#7c3aed"}} />
+                    <input type="checkbox" checked={checked} onChange={function(){ setConsolSelected(function(prev){ var n = Object.assign({},prev); n[ev._fbId] = !prev[ev._fbId]; return n; }); }} style={{width:18,height:18,accentColor:(TC&&TC.ac||"#0d9488")}} />
                     <span style={{fontSize:24}}>{t ? t.icon : ""}</span>
                     <div style={{flex:1}}>
                       <div style={{fontWeight:600,fontSize:14}}>{t ? t.fullName : ev.tipo}</div>
@@ -269,12 +269,12 @@ export default function Tools({ TC, onSel, credits, onBuy, enabledTools, toolsCo
                   </label>;
                 })}
               </div>
-              <button onClick={handleGenerateConsol} disabled={selectedCount < 2} style={{width:"100%",padding:"14px",background:selectedCount<2?"#94a3b8":"linear-gradient(135deg,#7c3aed,#6d28d9)",color:"#fff",border:"none",borderRadius:10,fontSize:14,fontWeight:700,cursor:selectedCount<2?"not-allowed":"pointer"}}>{"Generar Informe Complementario (" + selectedCount + " seleccionadas)"}</button>
+              <button onClick={handleGenerateConsol} disabled={selectedCount < 2} style={{width:"100%",padding:"14px",background:selectedCount<2?"#94a3b8":"linear-gradient(135deg,"+(TC&&TC.sd||"#0a3d2f")+","+(TC&&TC.ac||"#0d9488")+")",color:"#fff",border:"none",borderRadius:10,fontSize:14,fontWeight:700,cursor:selectedCount<2?"not-allowed":"pointer"}}>{"Generar Informe Complementario (" + selectedCount + " seleccionadas)"}</button>
             </div>}
 
             {/* Generating */}
             {consolGenerating && <div style={{textAlign:"center",padding:30}}>
-              <div style={{display:"inline-block",width:36,height:36,border:"4px solid #e2e8f0",borderTopColor:"#7c3aed",borderRadius:"50%",animation:"spin 1s linear infinite",marginBottom:12}} />
+              <div style={{display:"inline-block",width:36,height:36,border:"4px solid #e2e8f0",borderTopColor:(TC&&TC.ac||"#0d9488"),borderRadius:"50%",animation:"spin 1s linear infinite",marginBottom:12}} />
               <div style={{fontSize:14,fontWeight:600,color:(TC&&TC.sd||"#0a3d2f")}}>Generando informe complementario...</div>
               <style>{"@keyframes spin{to{transform:rotate(360deg)}}"}</style>
             </div>}
@@ -282,7 +282,7 @@ export default function Tools({ TC, onSel, credits, onBuy, enabledTools, toolsCo
             {/* Report result */}
             {consolReport && <div>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
-                <div style={{fontSize:15,fontWeight:700,color:"#7c3aed"}}>{"Informe Complementario - " + consolPatient.nombre}</div>
+                <div style={{fontSize:15,fontWeight:700,color:(TC&&TC.ac||"#0d9488")}}>{"Informe Complementario - " + consolPatient.nombre}</div>
                 <div style={{display:"flex",gap:6}}>
                   {!consolEditing && <button onClick={function(){ setConsolEditText(consolReport); setConsolEditing(true); }} style={{padding:"8px 16px",background:"#f1f5f9",border:"1px solid #e2e8f0",borderRadius:8,fontSize:12,fontWeight:600,cursor:"pointer",color:"#64748b"}}>{"Editar"}</button>}
                   <button onClick={function(){
@@ -311,11 +311,11 @@ export default function Tools({ TC, onSel, credits, onBuy, enabledTools, toolsCo
                       });
                       pdf.save("Complementario_"+consolPatient.nombre.replace(/\s/g,"_")+".pdf");
                     });
-                  }} style={{padding:"8px 16px",background:"#7c3aed",color:"#fff",border:"none",borderRadius:8,fontSize:12,fontWeight:600,cursor:"pointer"}}>{"Imprimir"}</button>
+                  }} style={{padding:"8px 16px",background:(TC&&TC.ac||"#0d9488"),color:"#fff",border:"none",borderRadius:8,fontSize:12,fontWeight:600,cursor:"pointer"}}>{"Imprimir"}</button>
                   <button onClick={function(){ setConsolReport(null); setConsolSelected({}); setConsolEditing(false); }} style={{padding:"8px 16px",background:"#f1f5f9",border:"1px solid #e2e8f0",borderRadius:8,fontSize:12,cursor:"pointer",color:"#64748b"}}>{"Nuevo informe"}</button>
                 </div>
               </div>
-              <div style={{background:"#fff",borderRadius:12,border:"2px solid #7c3aed",padding:24}}>
+              <div style={{background:"#fff",borderRadius:12,border:"2px solid "+(TC&&TC.ac||"#0d9488"),padding:24}}>
                 {/* Encabezado del profesional */}
                 {therapistInfo && (therapistInfo.therapist || therapistInfo.clinic) && <div style={{marginBottom:14,paddingBottom:12,borderBottom:"2px solid #0a3d2f"}}>
                   {therapistInfo.clinic && <div style={{fontSize:13,fontWeight:700,color:(TC&&TC.sd||"#0a3d2f")}}>{therapistInfo.clinic}</div>}
