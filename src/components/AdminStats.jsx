@@ -91,32 +91,36 @@ export default function AdminStats({nfy}){
     {tab==="resumen"&&<div>
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))",gap:14,marginBottom:24}}>
         <Stat icon="💰" label="Ingresos totales" value={fmt$(totalRevenue)} sub={totalCreditsPurchased+" créditos vendidos"} color="#059669"/>
-        <Stat icon="💳" label="Evaluaciones realizadas" value={visibleEvals.length} sub={evalCountsSub} color="#7c3aed"/>
+        <Stat icon={"\ud83d\udcb3"} label={"Evaluaciones realizadas"} value={visibleEvals.length} color="#7c3aed"/>
         <Stat icon="👥" label="Usuarios registrados" value={totalUsers} sub={neverPurchased.length+" nunca compraron"} color="#0d9488"/>
         <Stat icon="⚠️" label="Sin comprar" value={neverPurchased.length} sub="terminaron demo sin comprar" color="#f59e0b"/>
       </div>
 
       <div style={{background:"#fff",borderRadius:12,padding:24,border:"1px solid #e2e8f0",marginBottom:20}}>
-        <div style={{fontSize:15,fontWeight:700,marginBottom:16}}>{"Evaluaciones por mes ("+selYear+")"}</div>
-        <div style={{display:"flex",alignItems:"flex-end",gap:6,height:140,padding:"0 4px"}}>
-          {monthlyData.map(function(d){return <div key={d.m} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
-            <div style={{fontSize:10,fontWeight:600,color:K.mt}}>{d.count||""}</div>
-            <div style={{width:"100%",borderRadius:3,height:Math.max(2,d.count/maxMonthly*100),transition:"height .3s",background:d.count>0?"linear-gradient(to top,#0d9488,#7c3aed)":"#e2e8f0"}}/>
-            <div style={{fontSize:9,color:K.mt}}>{monthNames[d.m]}</div>
-          </div>})}
-        </div>
-        <div style={{display:"flex",gap:12,marginTop:12,justifyContent:"center",fontSize:11,flexWrap:"wrap"}}>
-          {Object.entries(TYPE_COLORS).map(function(e){return <span key={e[0]} style={{display:"flex",alignItems:"center",gap:4}}><div style={{width:10,height:10,borderRadius:2,background:e[1]}}/>{e[0]}</span>})}
-        </div>
+        <div style={{fontSize:15,fontWeight:700,marginBottom:16}}>{"Ingresos por mes ("+selYear+")"}</div>
+        {(function(){
+          var monthlyIncome = monthNames.map(function(_,m){
+            var mPagos = allPagos.filter(function(p){ if(!p.processedAt) return false; var d = new Date(p.processedAt); return d.getFullYear()===selYear && d.getMonth()===m; });
+            var total = mPagos.reduce(function(s,p){ return s + (p.amount||0); },0);
+            var creds = mPagos.reduce(function(s,p){ return s + (p.creditosAgregados||0); },0);
+            return {m:m, amount:total, creds:creds};
+          });
+          var maxIncome = Math.max(1, Math.max.apply(null, monthlyIncome.map(function(d){return d.amount})));
+          return <div>
+            <div style={{display:"flex",alignItems:"flex-end",gap:6,height:140,padding:"0 4px"}}>
+              {monthlyIncome.map(function(d){ return <div key={d.m} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
+                <div style={{fontSize:9,fontWeight:600,color:K.mt}}>{d.amount > 0 ? fmt$(d.amount) : ""}</div>
+                <div style={{width:"100%",borderRadius:3,height:Math.max(2, d.amount/maxIncome*100),transition:"height .3s",background:d.amount>0?"linear-gradient(to top,#059669,#0d9488)":"#e2e8f0"}}/>
+                <div style={{fontSize:9,color:K.mt}}>{monthNames[d.m]}</div>
+              </div>; })}
+            </div>
+          </div>;
+        })()}
         <div style={{display:"flex",justifyContent:"center",gap:12,marginTop:12}}>
           <button onClick={function(){setSelYear(function(y){return y-1})}} style={{background:"#f1f5f9",border:"none",borderRadius:6,padding:"6px 14px",fontSize:12,cursor:"pointer"}}>{"← "+(selYear-1)}</button>
           <span style={{fontWeight:700,fontSize:14,padding:"6px 0"}}>{selYear}</span>
           <button onClick={function(){setSelYear(function(y){return y+1})}} style={{background:"#f1f5f9",border:"none",borderRadius:6,padding:"6px 14px",fontSize:12,cursor:"pointer"}}>{(selYear+1)+" →"}</button>
         </div>
-      </div>
-
-      <div style={{display:"grid",gridTemplateColumns:"repeat("+VISIBLE_TYPES.length+",1fr)",gap:10,marginBottom:20}}>
-        {VISIBLE_TYPES.map(function(t){return <div key={t.id} style={{background:"#fff",borderRadius:10,padding:16,border:"1px solid #e2e8f0",textAlign:"center"}}><div style={{fontSize:24,fontWeight:700,color:t.color}}>{globalCounts[t.id]}</div><div style={{fontSize:11,color:K.mt,fontWeight:600}}>{t.label}</div></div>})}
       </div>
 
       {neverPurchased.length>0&&<div style={{background:"#fffbeb",border:"1px solid #fde68a",borderRadius:12,padding:20}}>
