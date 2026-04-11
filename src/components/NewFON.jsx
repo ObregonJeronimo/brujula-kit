@@ -20,19 +20,39 @@ var FON_SECTION = {
   })
 };
 var I = {width:"100%",padding:"10px 14px",border:"1px solid #e2e8f0",borderRadius:8,fontSize:14,background:"#f8faf9"};
-var speak = function(text){
-  if(!window.speechSynthesis) return;
-  window.speechSynthesis.cancel();
-  var u = new SpeechSynthesisUtterance(text);
-  u.lang = "es-AR"; u.rate = 0.7; u.pitch = 1.05; u.volume = 1;
+
+// Preload voices
+var _cachedVoice = null;
+var _voicesLoaded = false;
+var findBestVoice = function(){
   var voices = window.speechSynthesis.getVoices();
-  var pick = voices.find(function(v){return /es[-_]AR/i.test(v.lang) && /Google|Microsoft/i.test(v.name)})
-    || voices.find(function(v){return /es[-_](AR|MX|ES)/i.test(v.lang) && /Google|Microsoft/i.test(v.name)})
+  if(!voices.length) return null;
+  return voices.find(function(v){return /es[-_]AR/i.test(v.lang) && /Google|Microsoft/i.test(v.name)})
+    || voices.find(function(v){return /es/i.test(v.lang) && /Google/i.test(v.name)})
+    || voices.find(function(v){return /es/i.test(v.lang) && /Microsoft/i.test(v.name)})
     || voices.find(function(v){return /es[-_]AR/i.test(v.lang)})
     || voices.find(function(v){return /es[-_]MX/i.test(v.lang)})
     || voices.find(function(v){return /es[-_]ES/i.test(v.lang)})
     || voices.find(function(v){return v.lang.startsWith("es")});
-  if(pick) u.voice = pick;
+};
+if(window.speechSynthesis){
+  window.speechSynthesis.getVoices();
+  window.speechSynthesis.onvoiceschanged = function(){
+    _cachedVoice = findBestVoice();
+    _voicesLoaded = true;
+  };
+  // Try immediately in case voices are already loaded
+  var imm = findBestVoice();
+  if(imm){ _cachedVoice = imm; _voicesLoaded = true; }
+}
+
+var speak = function(text){
+  if(!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  var u = new SpeechSynthesisUtterance(text);
+  u.lang = "es-AR"; u.rate = 0.72; u.pitch = 1.05; u.volume = 1;
+  if(!_cachedVoice && !_voicesLoaded){ _cachedVoice = findBestVoice(); }
+  if(_cachedVoice) u.voice = _cachedVoice;
   window.speechSynthesis.speak(u);
 };
 
