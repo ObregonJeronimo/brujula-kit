@@ -1,9 +1,10 @@
 // NewFON — Evaluacion Fonetica (repeticion de silabas, seccion 2 del PEFF)
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { PEFF_SECTIONS } from "../data/peffSections.js";
 import { PF_CATEGORIES, ALL_PROCESSES } from "../data/peffProcesos.js";
 import EvalShell from "./EvalShell.jsx";
 import { detectProceso } from "../lib/detectProceso.js";
+import { db, doc, getDoc, setDoc } from "../firebase.js";
 
 var FON_SECTION_RAW = PEFF_SECTIONS.find(function(s){ return s.id === "fon"; });
 // Filter out Vocales and clean titles (remove "X años")
@@ -134,8 +135,75 @@ function buildPayloadExtra(responses, obsMap){
   return { seccionData: responses, procesosData: obsMap };
 }
 
-export default function NewFON({ onS, nfy, userId, draft, therapistInfo }){
+export default function NewFON({ onS, nfy, userId, draft, therapistInfo, isAdmin }){
   var _procData = useState({}), procData = _procData[0], setProcData = _procData[1];
+  // Audio guardado por admin (clave: sílaba, valor: base64 audio)
+  var _savedAudios = useState({}), savedAudios = _savedAudios[0], setSavedAudios = _savedAudios[1];
+  var _recording = useState(null), recording = _recording[0], setRecording = _recording[1];
+  var _mediaRec = useState(null), mediaRec = _mediaRec[0], setMediaRec = _mediaRec[1];
+
+  // Cargar audios guardados de Firestore al montar
+  useEffect(function(){
+    getDoc(doc(db,"config","fon_audios")).then(function(snap){
+      if(snap.exists()) setSavedAudios(snap.data());
+    }).catch(function(){});
+  },[]);
+
+  // Grabar audio con micrófono
+  var startRecording = function(word){
+    navigator.mediaDevices.getUserMedia({audio:true}).then(function(stream){
+      var mr = new MediaRecorder(stream, {mimeType: MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "audio/mp4"});
+      var chunks = [];
+      mr.ondataavailable = function(e){ chunks.push(e.data); };
+      mr.onstop = function(){
+        stream.getTracks().forEach(function(t){t.stop()});
+        var blob = new Blob(chunks, {type: mr.mimeType});
+        var reader = new FileReader();
+        reader.onloadend = function(){
+          var base64 = reader.result;
+          // Guardar en state y Firestore
+          setSavedAudios(function(prev){
+            var next = Object.assign({}, prev);
+            next[word.toLowerCase()] = base64;
+            // Guardar en Firestore
+            setDoc(doc(db,"config","fon_audios"), next).then(function(){
+              nfy("Audio guardado para '"+word+"'", "ok");
+            }).catch(function(e){ nfy("Error: "+e.message,"er"); });
+            return next;
+          });
+          setRecording(null);
+        };
+        reader.readAsDataURL(blob);
+      };
+      mr.start();
+      setRecording(word.toLowerCase());
+      setMediaRec(mr);
+      nfy("Grabando... Pronunci\u00e1 '"+word+"'","ok");
+    }).catch(function(e){
+      nfy("No se pudo acceder al micr\u00f3fono","er");
+    });
+  };
+
+  var stopRecording = function(){
+    if(mediaRec && mediaRec.state === "recording"){
+      mediaRec.stop();
+      setMediaRec(null);
+    }
+  };
+
+  // Reproducir: audio guardado si existe, sino sintetizador
+  var playWord = function(word){
+    var key = word.toLowerCase();
+    if(savedAudios[key]){
+      var audio = new Audio(savedAudios[key]);
+      audio.play().catch(function(){
+        // Fallback al sintetizador si falla
+        speak(word);
+      });
+    } else {
+      speak(word);
+    }
+  };
 
   var renderEval = useCallback(function(props){
     var subIdx = props.step - 1;
@@ -172,7 +240,8 @@ export default function NewFON({ onS, nfy, userId, draft, therapistInfo }){
         var pd = procData[item.id] || {};
         return <div key={item.id} style={{marginBottom:isError?12:4}}>
           <div style={{display:"flex",alignItems:"center",gap:10,padding:"8px 14px",background:isError?"#fef2f2":v==="ok"?"#f0fdf4":"#fff",borderRadius:isError?"8px 8px 0 0":8,border:"1px solid "+(isError?"#fecaca":v==="ok"?"#bbf7d0":"#e2e8f0")}}>
-            <button onClick={function(){speak(item.word)}} style={{background:"#ede9fe",border:"1px solid #c4b5fd",borderRadius:6,padding:"4px 8px",fontSize:12,cursor:"pointer",color:"#6d28d9"}}>{"Escuchar"}</button>
+            <button onClick={function(){playWord(item.word)}} style={{background:"#ede9fe",border:"1px solid #c4b5fd",borderRadius:6,padding:"4px 8px",fontSize:12,cursor:"pointer",color:"#6d28d9"}}>{savedAudios[item.word.toLowerCase()] ? "\ud83d\udd0a Escuchar" : "Escuchar"}</button>
+            {isAdmin && (recording === item.word.toLowerCase() ? <button onClick={stopRecording} style={{background:"#dc2626",border:"none",borderRadius:6,padding:"4px 8px",fontSize:11,cursor:"pointer",color:"#fff",animation:"pulse 1s infinite"}}>{"⏹ Parar"}</button> : <button onClick={function(){startRecording(item.word)}} style={{background:savedAudios[item.word.toLowerCase()]?"#059669":"#f1f5f9",border:"1px solid "+(savedAudios[item.word.toLowerCase()]?"#059669":"#e2e8f0"),borderRadius:6,padding:"4px 8px",fontSize:11,cursor:"pointer",color:savedAudios[item.word.toLowerCase()]?"#fff":"#64748b"}}>{savedAudios[item.word.toLowerCase()] ? "\u2713 Grabado" : "\ud83c\udfa4 Grabar"}</button>)}
             <span style={{fontWeight:700,fontSize:16,minWidth:50,color:"#6d28d9"}}>{item.word}</span>
             <span style={{fontSize:12,color:"#64748b",flex:1}}>{item.target}</span>
             <div style={{display:"flex",gap:4}}>
@@ -239,7 +308,7 @@ export default function NewFON({ onS, nfy, userId, draft, therapistInfo }){
     </div>;
   };
 
-  return <EvalShell
+  return <><style>{"@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}"}</style><EvalShell
     onS={onS} nfy={nfy} userId={userId}
     config={config}
     renderEval={renderEval}
@@ -247,5 +316,6 @@ export default function NewFON({ onS, nfy, userId, draft, therapistInfo }){
     buildPayloadExtra={buildPayloadExtra}
     renderTechDetails={renderTechDetails}
     draft={draft} therapistInfo={therapistInfo}
-  />;
+    isAdmin={isAdmin}
+  /></>;
 }
