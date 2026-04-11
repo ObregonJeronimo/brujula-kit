@@ -17,6 +17,9 @@ export default function AdminPanel({ nfy }) {
   var _saving = useState(false), saving = _saving[0], setSaving = _saving[1];
   var _themeColors = useState({primary:"#0a3d2f",secondary:"#0d9488",primaryAlpha:100,secondaryAlpha:100}), themeColors = _themeColors[0], setThemeColors = _themeColors[1];
   var _themeSaving = useState(false), themeSaving = _themeSaving[0], setThemeSaving = _themeSaving[1];
+  // Audios de evaluación fonética
+  var _fonAudios = useState(null), fonAudios = _fonAudios[0], setFonAudios = _fonAudios[1];
+  var _playingAudio = useState(null), playingAudio = _playingAudio[0], setPlayingAudio = _playingAudio[1];
 
   useEffect(function(){
     getDoc(doc(db, "config", "tools")).then(function(snap){
@@ -61,7 +64,7 @@ export default function AdminPanel({ nfy }) {
     setDoc(doc(db, "config", "tools"), updated).then(function(){ nfy("Guardado", "ok"); setEditTitle(function(p){ var n = Object.assign({},p); delete n[id]; return n; }); setEditDesc(function(p){ var n = Object.assign({},p); delete n[id]; return n; }); setEditAge(function(p){ var n = Object.assign({},p); delete n[id]; return n; }); setEditTime(function(p){ var n = Object.assign({},p); delete n[id]; return n; }); setSaving(false); }).catch(function(e){ nfy("Error: " + e.message, "er"); setSaving(false); });
   };
 
-  var ADMIN_TABS = [["usuarios","\ud83d\udc65 Usuarios"],["changelog","\ud83d\udcdd Changelog"],["herramientas","\ud83e\uddf0 Herramientas"],["colores","\ud83c\udfa8 Colores"],["datos","\ud83d\uddd1\ufe0f Datos"]];
+  var ADMIN_TABS = [["usuarios","\ud83d\udc65 Usuarios"],["changelog","\ud83d\udcdd Changelog"],["herramientas","\ud83e\uddf0 Herramientas"],["colores","\ud83c\udfa8 Colores"],["audios","\ud83c\udfa4 Audios"],["datos","\ud83d\uddd1\ufe0f Datos"]];
 
   return (
     <div style={{animation:"fi .3s ease",width:"100%",maxWidth:900}}>
@@ -179,6 +182,55 @@ export default function AdminPanel({ nfy }) {
         <button onClick={saveTheme} disabled={themeSaving} style={{width:"100%",padding:"14px",background:themeColors.primary,color:"#fff",border:"none",borderRadius:10,fontSize:14,fontWeight:700,cursor:themeSaving?"wait":"pointer",opacity:themeSaving?.7:1}}>
           {themeSaving ? "Guardando..." : "Guardar colores"}
         </button>
+      </div>}
+
+      {tab==="audios" && <div>
+        <p style={{fontSize:13,color:K.mt,marginBottom:16}}>{"Audios grabados para la Evaluaci\u00f3n Fon\u00e9tica. Se reproducen en vez del sintetizador de voz."}</p>
+        {fonAudios === null ? <div>
+          <button onClick={function(){
+            getDoc(doc(db,"config","fon_audios")).then(function(snap){
+              setFonAudios(snap.exists() ? snap.data() : {});
+            }).catch(function(){ setFonAudios({}); });
+          }} style={{padding:"12px 24px",background:K.ac,color:"#fff",border:"none",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer"}}>{"Cargar audios"}</button>
+        </div> : (function(){
+          var keys = Object.keys(fonAudios).sort();
+          if(keys.length === 0) return <div style={{background:"#f8faf9",borderRadius:10,padding:20,textAlign:"center",color:K.mt,fontSize:14}}>{"No hay audios grabados. And\u00e1 a Herramientas \u2192 Evaluaci\u00f3n Fon\u00e9tica para grabar."}</div>;
+          return <div>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+              <div style={{fontSize:14,fontWeight:700,color:"#1e293b"}}>{keys.length + " audios grabados"}</div>
+              <button onClick={function(){
+                getDoc(doc(db,"config","fon_audios")).then(function(snap){
+                  setFonAudios(snap.exists() ? snap.data() : {});
+                  nfy("Audios recargados","ok");
+                });
+              }} style={{padding:"6px 14px",background:"#f1f5f9",border:"1px solid #e2e8f0",borderRadius:6,fontSize:11,fontWeight:600,cursor:"pointer",color:K.mt}}>{"Recargar"}</button>
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(140px,1fr))",gap:8}}>
+              {keys.map(function(k){
+                return <div key={k} style={{background:"#fff",borderRadius:10,border:"1px solid #e2e8f0",padding:"10px 12px",display:"flex",alignItems:"center",gap:8}}>
+                  <button onClick={function(){
+                    if(playingAudio === k){ setPlayingAudio(null); return; }
+                    setPlayingAudio(k);
+                    var a = new Audio(fonAudios[k]);
+                    a.onended = function(){ setPlayingAudio(null); };
+                    a.play().catch(function(){ setPlayingAudio(null); });
+                  }} style={{background:playingAudio===k?"#059669":"#ede9fe",border:"none",borderRadius:6,width:28,height:28,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:12,color:playingAudio===k?"#fff":"#6d28d9",flexShrink:0}}>{playingAudio===k?"\u23f9":"\u25b6"}</button>
+                  <span style={{fontSize:14,fontWeight:700,color:"#1e293b",flex:1}}>{k}</span>
+                  <button onClick={function(){
+                    var ok = window.confirm("Eliminar audio de '"+k+"'?");
+                    if(!ok) return;
+                    var next = Object.assign({}, fonAudios);
+                    delete next[k];
+                    setDoc(doc(db,"config","fon_audios"), next).then(function(){
+                      setFonAudios(next);
+                      nfy("Audio '"+k+"' eliminado","ok");
+                    }).catch(function(e){ nfy("Error: "+e.message,"er"); });
+                  }} style={{background:"none",border:"none",fontSize:14,color:"#dc2626",cursor:"pointer",padding:2,flexShrink:0}}>{"\u00d7"}</button>
+                </div>;
+              })}
+            </div>
+          </div>;
+        })()}
       </div>}
 
       {tab==="datos" && <div>
