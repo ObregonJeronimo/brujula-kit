@@ -4,7 +4,7 @@ import { ALL_EVAL_TYPES, EVAL_AREAS, EVAL_TYPES, getEvalType } from "../config/e
 import { loadDrafts, deleteDraft } from "../lib/drafts.js";
 import { renderReportText } from "../lib/evalUtils.jsx";
 
-export default function Tools({ onSel, credits, onBuy, enabledTools, toolsConfig, userId, onResumeDraft, allEvals, nfy, therapistInfo, deductCredit, isAdmin }) {
+export default function Tools({ TC, onSel, credits, onBuy, enabledTools, toolsConfig, userId, onResumeDraft, allEvals, nfy, therapistInfo, deductCredit, isAdmin }) {
   var _drafts = useState([]), drafts = _drafts[0], setDrafts = _drafts[1];
   var _openArea = useState(null), openArea = _openArea[0], setOpenArea = _openArea[1];
   var _info = useState(null), showInfo = _info[0], setShowInfo = _info[1];
@@ -275,7 +275,7 @@ export default function Tools({ onSel, credits, onBuy, enabledTools, toolsConfig
             {/* Generating */}
             {consolGenerating && <div style={{textAlign:"center",padding:30}}>
               <div style={{display:"inline-block",width:36,height:36,border:"4px solid #e2e8f0",borderTopColor:"#7c3aed",borderRadius:"50%",animation:"spin 1s linear infinite",marginBottom:12}} />
-              <div style={{fontSize:14,fontWeight:600,color:"#0a3d2f"}}>Generando informe complementario...</div>
+              <div style={{fontSize:14,fontWeight:600,color:(TC&&TC.sd||"#0a3d2f")}}>Generando informe complementario...</div>
               <style>{"@keyframes spin{to{transform:rotate(360deg)}}"}</style>
             </div>}
 
@@ -318,9 +318,9 @@ export default function Tools({ onSel, credits, onBuy, enabledTools, toolsConfig
               <div style={{background:"#fff",borderRadius:12,border:"2px solid #7c3aed",padding:24}}>
                 {/* Encabezado del profesional */}
                 {therapistInfo && (therapistInfo.therapist || therapistInfo.clinic) && <div style={{marginBottom:14,paddingBottom:12,borderBottom:"2px solid #0a3d2f"}}>
-                  {therapistInfo.clinic && <div style={{fontSize:13,fontWeight:700,color:"#0a3d2f"}}>{therapistInfo.clinic}</div>}
+                  {therapistInfo.clinic && <div style={{fontSize:13,fontWeight:700,color:(TC&&TC.sd||"#0a3d2f")}}>{therapistInfo.clinic}</div>}
                   {therapistInfo.address && <div style={{fontSize:11,color:"#64748b",marginTop:2}}>{therapistInfo.address}</div>}
-                  {therapistInfo.therapist && <div style={{fontSize:12,fontWeight:600,color:"#0a3d2f",marginTop:4}}>{therapistInfo.therapist}{therapistInfo.license ? " \u2014 " + therapistInfo.license : ""}</div>}
+                  {therapistInfo.therapist && <div style={{fontSize:12,fontWeight:600,color:(TC&&TC.sd||"#0a3d2f"),marginTop:4}}>{therapistInfo.therapist}{therapistInfo.license ? " \u2014 " + therapistInfo.license : ""}</div>}
                   {(therapistInfo.phone || therapistInfo.email) && <div style={{fontSize:10,color:"#94a3b8",marginTop:2}}>{[therapistInfo.phone, therapistInfo.email].filter(Boolean).join(" \u00b7 ")}</div>}
                 </div>}
                 {consolEditing ? <div>

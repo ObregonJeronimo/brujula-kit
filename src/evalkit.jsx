@@ -235,6 +235,8 @@ export default function App() {
   // En móvil ocultar Herramientas y Configuración
   if(mobile){ nav = nav.filter(function(n){ return n[0] !== "tools" && n[0] !== "config"; }); }
   var tSd = theme && theme.primary ? mixColor(theme.primary, theme.primaryAlpha != null ? theme.primaryAlpha : 100) : K.sd;
+  var tAc = theme && theme.secondary ? mixColor(theme.secondary, theme.secondaryAlpha != null ? theme.secondaryAlpha : 100) : K.ac;
+  var TC = {sd:tSd, ac:tAc};
 
   return (
     <div style={{display:"flex",height:"100vh",width:"100vw",fontFamily:"'DM Sans',system-ui,sans-serif",background:K.bg,color:"#1e293b",overflow:"hidden"}}>
@@ -259,16 +261,16 @@ export default function App() {
       <main id="main-scroll" style={{flex:1,overflowY:"auto",overflowX:"hidden",padding:mobile?"16px":"28px 36px",height:"100vh",backgroundImage:"url(\""+DINO_BG+"\")",backgroundRepeat:"repeat",backgroundSize:"800px auto"}}>
         {toast&&<div style={{position:"fixed",top:16,right:16,zIndex:999,background:toast.t==="ok"?"#059669":"#dc2626",color:"#fff",padding:"10px 18px",borderRadius:8,fontSize:13,fontWeight:500,boxShadow:"0 4px 16px rgba(0,0,0,.15)",animation:"fi .3s ease"}}>{toast.m}</div>}
         <ErrorBoundary onReset={function(){ sV("dash"); sS(null); }}>
-        {view==="dash"&&<Dashboard allEvals={allEvals} onT={function(){navTo("tools")}} onView={viewReport} ld={loading} profile={profile} isAdmin={isAdmin} userId={authUser?.uid} nfy={nfy} onCalendar={function(){navTo("calendario")}} onStartEval={startEval} onBuyCredits={goToPremium} userSettings={userSettings} />}
-        {view==="tools"&&<Tools onSel={startEval} credits={isAdmin?999:(profile.creditos||0)} onBuy={goToPremium} enabledTools={enabledTools} toolsConfig={toolsConfig} userId={authUser?.uid} onResumeDraft={resumeDraft} allEvals={allEvals} nfy={nfy} therapistInfo={profile?.reportHeader} deductCredit={deductCredit} isAdmin={isAdmin} />}
+        {view==="dash"&&<Dashboard TC={TC} allEvals={allEvals} onT={function(){navTo("tools")}} onView={viewReport} ld={loading} profile={profile} isAdmin={isAdmin} userId={authUser?.uid} nfy={nfy} onCalendar={function(){navTo("calendario")}} onStartEval={startEval} onBuyCredits={goToPremium} userSettings={userSettings} />}
+        {view==="tools"&&<Tools TC={TC} onSel={startEval} credits={isAdmin?999:(profile.creditos||0)} onBuy={goToPremium} enabledTools={enabledTools} toolsConfig={toolsConfig} userId={authUser?.uid} onResumeDraft={resumeDraft} allEvals={allEvals} nfy={nfy} therapistInfo={profile?.reportHeader} deductCredit={deductCredit} isAdmin={isAdmin} />}
         <Suspense fallback={LazyFallback}>
           {NEW_COMPONENTS[view] && (function(){ var C = NEW_COMPONENTS[view]; return <C onS={onEvalDone} nfy={nfy} userId={authUser?.uid} draft={activeDraft} therapistInfo={profile?.reportHeader} deductCredit={deductCredit} isAdmin={isAdmin} userSettings={userSettings} />; })()}
-          {view==="hist"&&<Hist allEvals={allEvals} onView={viewReport} isA={isAdmin} onD={deleteEval} enabledTools={enabledTools} />}
+          {view==="hist"&&<Hist TC={TC} allEvals={allEvals} onView={viewReport} isA={isAdmin} onD={deleteEval} enabledTools={enabledTools} />}
           {RPT_COMPONENTS[view] && sel && (function(){ var C = RPT_COMPONENTS[view]; return <C ev={sel} onD={deleteEval} userSettings={userSettings} therapistInfo={profile?.reportHeader} />; })()}
-          {view==="profile"&&<ProfilePage profile={profile} authUser={authUser} nfy={nfy} onBuyCredits={goToPremium} />}
-          {view==="pacientes"&&<PacientesPage userId={authUser?.uid} nfy={nfy} allEvals={allEvals} therapistInfo={profile?.reportHeader} />}
+          {view==="profile"&&<ProfilePage TC={TC} profile={profile} authUser={authUser} nfy={nfy} onBuyCredits={goToPremium} />}
+          {view==="pacientes"&&<PacientesPage TC={TC} userId={authUser?.uid} nfy={nfy} allEvals={allEvals} therapistInfo={profile?.reportHeader} />}
           {view==="calendario"&&<CalendarPage userId={authUser?.uid} nfy={nfy} userSettings={userSettings} profesionalNombre={profile?.nombre || profile?.username || ""} />}
-          {view==="premium"&&<PremiumPage profile={profile} authUser={authUser} nfy={nfy} onBack={function(){sV("dash")}} />}
+          {view==="premium"&&<PremiumPage TC={TC} profile={profile} authUser={authUser} nfy={nfy} onBack={function(){sV("dash")}} />}
           {view==="config"&&<SettingsPage ref={settingsRef} userId={authUser?.uid} nfy={nfy} profile={profile} onSettingsChange={function(s){ setUserSettings(s); }} onDirtyChange={function(d){ configDirtyRef.current = d; }} onStartTour={startTourManually} />}
           {view==="adm"&&isAdmin&&<AdminPanel nfy={nfy} />}
           {view==="stats"&&isAdmin&&<AdminStats nfy={nfy} />}

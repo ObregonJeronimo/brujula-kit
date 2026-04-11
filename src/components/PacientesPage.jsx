@@ -22,7 +22,7 @@ function calcAge(birthStr){
 var IS = {width:"100%",padding:"10px 14px",border:"1px solid #e2e8f0",borderRadius:8,fontSize:14,background:"#f8faf9"};
 var RESP_TYPES = ["Madre","Padre","Tutor/a","Cuidador/a","Hermano/a","Otro"];
 
-export default function PacientesPage({ userId, nfy, allEvals, therapistInfo }){
+export default function PacientesPage({ TC, userId, nfy, allEvals, therapistInfo }){
   var _p = useState([]), pacientes = _p[0], setPacientes = _p[1];
   var _l = useState(true), loading = _l[0], setLoading = _l[1];
   var _q = useState(""), busqueda = _q[0], setBusqueda = _q[1];
@@ -96,10 +96,10 @@ export default function PacientesPage({ userId, nfy, allEvals, therapistInfo }){
       <h1 style={{fontSize:22,fontWeight:700,marginBottom:6}}>{"👧👦 Pacientes"}</h1>
       <p style={{color:K.mt,fontSize:14,marginBottom:20}}>Gestiona los datos de tus pacientes</p>
 
-      {!showForm && !editing && <button onClick={function(){ setShowForm(true); setSelected(null); setConfirmDelPac(false); }} style={{background:"#0d9488",color:"#fff",border:"none",padding:"10px 20px",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer",marginBottom:20}}>+ Nuevo paciente</button>}
+      {!showForm && !editing && <button onClick={function(){ setShowForm(true); setSelected(null); setConfirmDelPac(false); }} style={{background:(TC&&TC.ac||"#0d9488"),color:"#fff",border:"none",padding:"10px 20px",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer",marginBottom:20}}>+ Nuevo paciente</button>}
 
       {showForm && !editing && <div style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",padding:24,marginBottom:20}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}><h3 style={{fontSize:16,fontWeight:700,color:"#0a3d2f",margin:0}}>Nuevo paciente</h3><button onClick={function(){ setShowForm(false); }} style={{background:"none",border:"none",fontSize:18,color:K.mt,cursor:"pointer"}}>×</button></div>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}><h3 style={{fontSize:16,fontWeight:700,color:(TC&&TC.sd||"#0a3d2f"),margin:0}}>Nuevo paciente</h3><button onClick={function(){ setShowForm(false); }} style={{background:"none",border:"none",fontSize:18,color:K.mt,cursor:"pointer"}}>×</button></div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
           <div><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>DNI (sin puntos)</label><input value={form.dni} onChange={function(e){ setForm(function(p){ return Object.assign({},p,{dni:e.target.value.replace(/\D/g,"").slice(0,8)}); }); }} style={IS} placeholder="Introducir DNI" maxLength={8} inputMode="numeric" /></div>
           <div><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>Fecha de nacimiento</label><input type="date" value={form.fechaNac} onChange={function(e){ setForm(function(p){ return Object.assign({},p,{fechaNac:e.target.value}); }); }} style={IS} /></div>
@@ -107,7 +107,7 @@ export default function PacientesPage({ userId, nfy, allEvals, therapistInfo }){
           <div style={{gridColumn:"1/-1"}}><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>{"Jardín / Colegio"}</label><input value={form.colegio} onChange={function(e){ setForm(function(p){ return Object.assign({},p,{colegio:e.target.value}); }); }} style={IS} placeholder="Establecimiento" /></div>
         </div>
         <div style={{marginTop:20,paddingTop:18,borderTop:"1px solid #e2e8f0"}}>
-          <h4 style={{fontSize:14,fontWeight:700,color:"#0a3d2f",marginBottom:4}}>{"Información del responsable"}</h4>
+          <h4 style={{fontSize:14,fontWeight:700,color:(TC&&TC.sd||"#0a3d2f"),marginBottom:4}}>{"Información del responsable"}</h4>
           <p style={{fontSize:11,color:K.mt,marginBottom:14}}>Datos de contacto del adulto responsable del paciente</p>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
             <div style={{gridColumn:"1/-1"}}><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>Nombre y Apellido</label><input value={form.respNombre} onChange={function(e){ setForm(function(p){ return Object.assign({},p,{respNombre:e.target.value}); }); }} style={IS} placeholder="Nombre del responsable" /></div>
@@ -120,12 +120,12 @@ export default function PacientesPage({ userId, nfy, allEvals, therapistInfo }){
         </div>
         <div style={{display:"flex",justifyContent:"flex-end",gap:10,marginTop:18}}>
           <button onClick={function(){ setShowForm(false); }} style={{background:"#f1f5f9",border:"none",padding:"10px 20px",borderRadius:8,fontSize:14,cursor:"pointer",color:K.mt}}>Cancelar</button>
-          <button onClick={savePaciente} style={{background:"#0d9488",color:"#fff",border:"none",padding:"10px 24px",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer"}}>Guardar</button>
+          <button onClick={savePaciente} style={{background:(TC&&TC.ac||"#0d9488"),color:"#fff",border:"none",padding:"10px 24px",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer"}}>Guardar</button>
         </div>
       </div>}
 
       {editing && selected && <div style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",padding:24,marginBottom:20}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}><h3 style={{fontSize:16,fontWeight:700,color:"#0a3d2f",margin:0}}>Editar paciente</h3><button onClick={function(){ setEditing(false); setSelected(null); }} style={{background:"none",border:"none",fontSize:18,color:K.mt,cursor:"pointer"}}>×</button></div>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}><h3 style={{fontSize:16,fontWeight:700,color:(TC&&TC.sd||"#0a3d2f"),margin:0}}>Editar paciente</h3><button onClick={function(){ setEditing(false); setSelected(null); }} style={{background:"none",border:"none",fontSize:18,color:K.mt,cursor:"pointer"}}>×</button></div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
           <div><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>DNI</label><input value={editForm.dni} onChange={function(e){ setEditForm(function(p){ return Object.assign({},p,{dni:e.target.value.replace(/\D/g,"").slice(0,8)}); }); }} style={IS} maxLength={8} inputMode="numeric" /></div>
           <div><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>Fecha de nacimiento</label><input type="date" value={editForm.fechaNac} onChange={function(e){ setEditForm(function(p){ return Object.assign({},p,{fechaNac:e.target.value}); }); }} style={IS} /></div>
@@ -133,7 +133,7 @@ export default function PacientesPage({ userId, nfy, allEvals, therapistInfo }){
           <div style={{gridColumn:"1/-1"}}><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>{"Jardín / Colegio"}</label><input value={editForm.colegio} onChange={function(e){ setEditForm(function(p){ return Object.assign({},p,{colegio:e.target.value}); }); }} style={IS} /></div>
         </div>
         <div style={{marginTop:20,paddingTop:18,borderTop:"1px solid #e2e8f0"}}>
-          <h4 style={{fontSize:14,fontWeight:700,color:"#0a3d2f",marginBottom:4}}>{"Información del responsable"}</h4>
+          <h4 style={{fontSize:14,fontWeight:700,color:(TC&&TC.sd||"#0a3d2f"),marginBottom:4}}>{"Información del responsable"}</h4>
           <p style={{fontSize:11,color:K.mt,marginBottom:14}}>Datos de contacto del adulto responsable del paciente</p>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
             <div style={{gridColumn:"1/-1"}}><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>Nombre y Apellido</label><input value={editForm.respNombre} onChange={function(e){ setEditForm(function(p){ return Object.assign({},p,{respNombre:e.target.value}); }); }} style={IS} placeholder="Nombre del responsable" /></div>
@@ -146,13 +146,13 @@ export default function PacientesPage({ userId, nfy, allEvals, therapistInfo }){
         </div>
         <div style={{display:"flex",justifyContent:"flex-end",gap:10,marginTop:18}}>
           <button onClick={function(){ setEditing(false); setSelected(null); }} style={{background:"#f1f5f9",border:"none",padding:"10px 20px",borderRadius:8,fontSize:14,cursor:"pointer",color:K.mt}}>Cancelar</button>
-          <button onClick={updatePaciente} style={{background:"#0d9488",color:"#fff",border:"none",padding:"10px 24px",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer"}}>Actualizar</button>
+          <button onClick={updatePaciente} style={{background:(TC&&TC.ac||"#0d9488"),color:"#fff",border:"none",padding:"10px 24px",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer"}}>Actualizar</button>
         </div>
       </div>}
 
       {selected && !editing && <div style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",padding:24,marginBottom:20}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
-          <h3 style={{fontSize:16,fontWeight:700,color:"#0a3d2f",margin:0}}>Ficha del paciente</h3>
+          <h3 style={{fontSize:16,fontWeight:700,color:(TC&&TC.sd||"#0a3d2f"),margin:0}}>Ficha del paciente</h3>
           <div style={{display:"flex",gap:8}}>
             <button onClick={function(){ openEdit(selected); }} style={{background:"#f0f9ff",border:"1px solid #bae6fd",borderRadius:6,padding:"6px 14px",fontSize:12,fontWeight:600,cursor:"pointer",color:"#0369a1"}}>Editar</button>
             <button onClick={function(){ setConfirmDelPac(true); }} style={{background:"#fef2f2",border:"1px solid #fecaca",borderRadius:6,padding:"6px 14px",fontSize:12,fontWeight:600,cursor:"pointer",color:"#dc2626"}}>Eliminar</button>
@@ -180,19 +180,19 @@ export default function PacientesPage({ userId, nfy, allEvals, therapistInfo }){
             {selected.responsable.dni && <div><span style={{color:K.mt}}>DNI: </span><b>{selected.responsable.dni}</b></div>}
           </div>
         </div>}
-        {(function(){ var last = getLastEval(selected.dni); if(!last) return <div style={{marginTop:16,padding:"10px 14px",background:"#f8faf9",borderRadius:8,border:"1px solid #e2e8f0",fontSize:12,color:K.mt,fontStyle:"italic"}}>Sin evaluaciones registradas</div>; return <div style={{marginTop:16,padding:"12px 14px",background:"#f0fdf4",borderRadius:8,border:"1px solid #bbf7d0"}}><div style={{fontSize:11,fontWeight:600,color:K.mt,marginBottom:4}}>{"Última evaluación"}</div><div style={{fontSize:14}}><span style={{fontWeight:700,color:"#0d9488"}}>{last.tipo}</span>{" - "}{last.fecha ? new Date(last.fecha).toLocaleDateString("es-AR") : "-"}</div></div>; })()}
+        {(function(){ var last = getLastEval(selected.dni); if(!last) return <div style={{marginTop:16,padding:"10px 14px",background:"#f8faf9",borderRadius:8,border:"1px solid #e2e8f0",fontSize:12,color:K.mt,fontStyle:"italic"}}>Sin evaluaciones registradas</div>; return <div style={{marginTop:16,padding:"12px 14px",background:"#f0fdf4",borderRadius:8,border:"1px solid #bbf7d0"}}><div style={{fontSize:11,fontWeight:600,color:K.mt,marginBottom:4}}>{"Última evaluación"}</div><div style={{fontSize:14}}><span style={{fontWeight:700,color:(TC&&TC.ac||"#0d9488")}}>{last.tipo}</span>{" - "}{last.fecha ? new Date(last.fecha).toLocaleDateString("es-AR") : "-"}</div></div>; })()}
         {(function(){
           var pacEvals = allEvals.filter(function(ev){ return (ev.pacienteDni||ev.dni||"") === (selected.dni||""); });
           if(pacEvals.length < 1) return null;
           return <div style={{marginTop:16}}>
             {!consolReport && !consolGenerating && <button onClick={function(){generateConsolidated(selected)}} style={{width:"100%",padding:"12px",background:"linear-gradient(135deg,#7c3aed,#6d28d9)",color:"#fff",border:"none",borderRadius:10,fontSize:13,fontWeight:600,cursor:"pointer"}}>{"Generar Informe Complementario (" + pacEvals.length + " evaluaciones)"}</button>}
-            {consolGenerating && <div style={{background:"#fff",borderRadius:10,border:"1px solid #e2e8f0",padding:20,textAlign:"center"}}><div style={{display:"inline-block",width:30,height:30,border:"3px solid #e2e8f0",borderTopColor:"#7c3aed",borderRadius:"50%",animation:"spin 1s linear infinite",marginBottom:8}} /><div style={{fontSize:13,fontWeight:600,color:"#0a3d2f"}}>Generando informe complementario...</div><style>{"@keyframes spin{to{transform:rotate(360deg)}}"}</style></div>}
+            {consolGenerating && <div style={{background:"#fff",borderRadius:10,border:"1px solid #e2e8f0",padding:20,textAlign:"center"}}><div style={{display:"inline-block",width:30,height:30,border:"3px solid #e2e8f0",borderTopColor:"#7c3aed",borderRadius:"50%",animation:"spin 1s linear infinite",marginBottom:8}} /><div style={{fontSize:13,fontWeight:600,color:(TC&&TC.sd||"#0a3d2f")}}>Generando informe complementario...</div><style>{"@keyframes spin{to{transform:rotate(360deg)}}"}</style></div>}
             {consolReport && <div style={{background:"#fff",borderRadius:12,border:"2px solid #7c3aed",padding:24,marginTop:12}}>
               {/* Encabezado del profesional */}
               {therapistInfo && (therapistInfo.therapist || therapistInfo.clinic) && <div style={{marginBottom:14,paddingBottom:12,borderBottom:"2px solid #0a3d2f"}}>
-                {therapistInfo.clinic && <div style={{fontSize:13,fontWeight:700,color:"#0a3d2f"}}>{therapistInfo.clinic}</div>}
+                {therapistInfo.clinic && <div style={{fontSize:13,fontWeight:700,color:(TC&&TC.sd||"#0a3d2f")}}>{therapistInfo.clinic}</div>}
                 {therapistInfo.address && <div style={{fontSize:11,color:"#64748b",marginTop:2}}>{therapistInfo.address}</div>}
-                {therapistInfo.therapist && <div style={{fontSize:12,fontWeight:600,color:"#0a3d2f",marginTop:4}}>{therapistInfo.therapist}{therapistInfo.license ? " \u2014 " + therapistInfo.license : ""}</div>}
+                {therapistInfo.therapist && <div style={{fontSize:12,fontWeight:600,color:(TC&&TC.sd||"#0a3d2f"),marginTop:4}}>{therapistInfo.therapist}{therapistInfo.license ? " \u2014 " + therapistInfo.license : ""}</div>}
                 {(therapistInfo.phone || therapistInfo.email) && <div style={{fontSize:10,color:"#94a3b8",marginTop:2}}>{[therapistInfo.phone, therapistInfo.email].filter(Boolean).join(" \u00b7 ")}</div>}
               </div>}
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}><div style={{fontSize:15,fontWeight:700,color:"#7c3aed"}}>Informe Complementario</div><button onClick={function(){ import("jspdf").then(function(mod){ var jsPDF=mod.jsPDF,pdf=new jsPDF("p","mm","a4"),pW=210,margin=14,maxW=182,y=14; var ti=therapistInfo||{}; if(ti.therapist||ti.clinic){pdf.setFontSize(11);pdf.setTextColor(10,61,47);pdf.setFont(undefined,"bold");if(ti.clinic){pdf.text(ti.clinic,margin,y);y+=5;}if(ti.address){pdf.setFontSize(8);pdf.setTextColor(100);pdf.setFont(undefined,"normal");pdf.text(ti.address,margin,y);y+=4;}if(ti.therapist){pdf.setFontSize(9);pdf.setTextColor(10,61,47);pdf.setFont(undefined,"bold");pdf.text(ti.therapist+(ti.license?" \u2014 "+ti.license:""),margin,y);y+=4;pdf.setFont(undefined,"normal");}var cp=[ti.phone,ti.email].filter(Boolean);if(cp.length>0){pdf.setFontSize(7);pdf.setTextColor(140);pdf.text(cp.join(" \u00b7 "),margin,y);y+=4;}pdf.setDrawColor(10,61,47);pdf.setLineWidth(0.5);pdf.line(margin,y,pW-margin,y);y+=8;} pdf.setFontSize(8);pdf.setTextColor(120);pdf.text("Informe Complementario - "+selected.nombre,margin,y);y+=8; pdf.setDrawColor(200);pdf.line(margin,y,196,y);y+=8; pdf.setFontSize(14);pdf.setTextColor(10,61,47);pdf.setFont(undefined,"bold");pdf.text(selected.nombre,margin,y);y+=7; pdf.setFontSize(9);pdf.setTextColor(100);pdf.setFont(undefined,"normal");pdf.text("DNI: "+(selected.dni||"N/A"),margin,y);y+=10; consolReport.split("\n").forEach(function(line){ var t=line.trim();if(!t){y+=3;return;} var isT=/^[A-Z\u00c0-\u00dc\s\d\.\:\-]{6,}:?\s*$/.test(t); if(isT){y+=3;pdf.setFontSize(10);pdf.setTextColor(10,61,47);pdf.setFont(undefined,"bold");if(y+7>283){pdf.addPage();y=14;}pdf.text(t,margin,y);y+=7;pdf.setFont(undefined,"normal");} else{pdf.setFontSize(9);pdf.setTextColor(51,65,85);var w=pdf.splitTextToSize(t,maxW);w.forEach(function(l){if(y+5>283){pdf.addPage();y=14;}pdf.text(l,margin,y);y+=5;});} }); pdf.save("Complementario_"+selected.nombre.replace(/\s/g,"_")+".pdf"); }); }} style={{padding:"6px 12px",background:"#7c3aed",color:"#fff",border:"none",borderRadius:6,fontSize:11,fontWeight:600,cursor:"pointer"}}>Imprimir</button></div>
@@ -212,7 +212,7 @@ export default function PacientesPage({ userId, nfy, allEvals, therapistInfo }){
             return <div key={pac._fbId} onClick={function(){ openView(pac); }} style={{display:"flex",alignItems:"center",gap:12,padding:"14px 16px",background:isSelected?"#ccfbf1":"#fff",borderRadius:10,border:"1px solid "+(isSelected?"#5eead4":"#e2e8f0"),cursor:"pointer"}}>
               <div style={{width:40,height:40,borderRadius:10,background:"#f0f9ff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>{"👤"}</div>
               <div style={{flex:1,minWidth:0}}><div style={{fontWeight:600,fontSize:14}}>{pac.nombre}</div><div style={{fontSize:11,color:K.mt}}>{"DNI: " + pac.dni + " · " + calcAge(pac.fechaNac) + (pac.colegio ? " · " + pac.colegio : "")}</div></div>
-              <div style={{textAlign:"right",flexShrink:0}}>{lastEv ? <div><div style={{fontSize:11,fontWeight:600,color:"#0d9488"}}>{lastEv.tipo}</div><div style={{fontSize:10,color:K.mt}}>{lastEv.fecha ? new Date(lastEv.fecha).toLocaleDateString("es-AR") : ""}</div></div> : <div style={{fontSize:10,color:"#cbd5e1",fontStyle:"italic"}}>Sin eval.</div>}</div>
+              <div style={{textAlign:"right",flexShrink:0}}>{lastEv ? <div><div style={{fontSize:11,fontWeight:600,color:(TC&&TC.ac||"#0d9488")}}>{lastEv.tipo}</div><div style={{fontSize:10,color:K.mt}}>{lastEv.fecha ? new Date(lastEv.fecha).toLocaleDateString("es-AR") : ""}</div></div> : <div style={{fontSize:10,color:"#cbd5e1",fontStyle:"italic"}}>Sin eval.</div>}</div>
               <button onClick={function(e){ e.stopPropagation(); openEdit(pac); }} style={{background:"#f0f9ff",border:"1px solid #bae6fd",borderRadius:6,padding:"6px 10px",fontSize:11,fontWeight:600,cursor:"pointer",color:"#0369a1",flexShrink:0}}>Editar</button>
             </div>;
           })}

@@ -28,7 +28,7 @@ var TOOL_MAP = {
   newREP: { icon: "\ud83d\udcdd", name: "Rep. Palabras", color: "#2563eb" },
   newDISC: { icon: "\ud83d\udc42", name: "Disc. Fonol.", color: "#d97706" },
   newRECO: { icon: "\ud83c\udfaf", name: "Reco. Fonol.", color: "#9333ea" },
-  newELDI: { icon: "\ud83e\uddd2", name: "ELDI", color: "#0d9488" }
+  newELDI: { icon: "\ud83e\uddd2", name: "ELDI", color: (TC&&TC.ac||"#0d9488") }
 };
 var TOOL_IDS = ["newOFA","newFON","newREP","newDISC","newRECO"];
 
@@ -54,7 +54,7 @@ function computeAlerts(citasArr, todayDate, reminderDays){
   return results;
 }
 
-export default function Dashboard({ allEvals, onT, onView, ld, profile, isAdmin, userId, nfy, onCalendar, onStartEval, onBuyCredits, userSettings }) {
+export default function Dashboard({ TC, allEvals, onT, onView, ld, profile, isAdmin, userId, nfy, onCalendar, onStartEval, onBuyCredits, userSettings }) {
   var visibleEvals = (allEvals || []).filter(function(e){ return isVisibleType(e.tipo); });
   visibleEvals.sort(function(a,b){ return (b.fechaGuardado || "").localeCompare(a.fechaGuardado || ""); });
   var rc = visibleEvals.slice(0, 5);
@@ -82,10 +82,11 @@ export default function Dashboard({ allEvals, onT, onView, ld, profile, isAdmin,
   var _alertsDismissed = useState(function(){ try { return localStorage.getItem("bk_alerts_dismissed_"+userId) === "1"; } catch(e){ return false; } });
   var alertsDismissed = _alertsDismissed[0], setAlertsDismissed = _alertsDismissed[1];
   var dismissAlerts = function(){ setShowAlerts(false); setAlertsDismissed(true); try { localStorage.setItem("bk_alerts_dismissed_"+userId, "1"); } catch(e){} };
-  // Welcome modal - first time user (check Firestore, not localStorage)
-  var _showWelcome = useState(profile && !profile.welcomeShown);
+  // Welcome modal - first time user (Firestore + localStorage backup)
+  var _welcomeDismissed = (profile && profile.welcomeShown) || (function(){ try { return localStorage.getItem("bk_welcome_"+userId)==="1"; } catch(e){ return false; } })();
+  var _showWelcome = useState(!_welcomeDismissed);
   var showWelcome = _showWelcome[0], setShowWelcome = _showWelcome[1];
-  var dismissWelcome = function(){ setShowWelcome(false); if(userId){ updateDoc(doc(db,"usuarios",userId),{welcomeShown:true}).catch(function(){}); } };
+  var dismissWelcome = function(){ setShowWelcome(false); try { localStorage.setItem("bk_welcome_"+userId,"1"); } catch(e){} if(userId){ updateDoc(doc(db,"usuarios",userId),{welcomeShown:true}).catch(function(){}); } };
   var now = new Date();
   var _ms = useState(now.getMonth()), calMonth = _ms[0], setCalMonth = _ms[1];
   var _ys = useState(now.getFullYear()), calYear = _ys[0], setCalYear = _ys[1];
@@ -133,7 +134,7 @@ export default function Dashboard({ allEvals, onT, onView, ld, profile, isAdmin,
 
       {showAlerts && <div style={{background:"#fff",borderRadius:12,border:"1px solid #e2e8f0",padding:20,marginBottom:20,animation:"fi .2s ease"}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
-          <h3 style={{fontSize:15,fontWeight:700,color:"#0a3d2f",margin:0}}>Alertas y recordatorios</h3>
+          <h3 style={{fontSize:15,fontWeight:700,color:(TC&&TC.sd||"#0a3d2f"),margin:0}}>Alertas y recordatorios</h3>
           <button onClick={dismissAlerts} style={{background:"none",border:"none",fontSize:18,color:"#94a3b8",cursor:"pointer"}}>{"\u00d7"}</button>
         </div>
         {alertCount === 0 && <p style={{color:"#94a3b8",fontSize:13,fontStyle:"italic",margin:0}}>No hay alertas activas.</p>}
@@ -166,14 +167,14 @@ export default function Dashboard({ allEvals, onT, onView, ld, profile, isAdmin,
       {showWelcome && <div style={{position:"fixed",inset:0,zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,.5)",backdropFilter:"blur(4px)",padding:20}}>
         <div style={{background:"#fff",borderRadius:20,padding:"36px 28px",width:400,maxWidth:"90vw",boxShadow:"0 20px 60px rgba(0,0,0,.25)",textAlign:"center"}}>
           <div style={{fontSize:48,marginBottom:12}}>{"\ud83c\udf89"}</div>
-          <div style={{fontSize:20,fontWeight:700,color:"#0a3d2f",marginBottom:8}}>{"\u00a1Bienvenido/a a Br\u00fajula KIT!"}</div>
+          <div style={{fontSize:20,fontWeight:700,color:(TC&&TC.sd||"#0a3d2f"),marginBottom:8}}>{"\u00a1Bienvenido/a a Br\u00fajula KIT!"}</div>
           <div style={{fontSize:14,color:"#475569",lineHeight:1.7,marginBottom:16}}>{"Te regalamos "}<b style={{color:"#059669"}}>{"5 cr\u00e9ditos gratis"}</b>{" para que puedas probar todas las evaluaciones disponibles."}</div>
           <div style={{background:"#f0fdf4",border:"1px solid #bbf7d0",borderRadius:12,padding:"14px 18px",marginBottom:20}}>
             <div style={{fontSize:28,fontWeight:800,color:"#059669"}}>{"5"}</div>
             <div style={{fontSize:12,color:"#065f46",fontWeight:600}}>{"cr\u00e9ditos disponibles"}</div>
           </div>
           <div style={{fontSize:12,color:"#94a3b8",marginBottom:16}}>{"Cada cr\u00e9dito = 1 evaluaci\u00f3n completa con informe profesional."}</div>
-          <button onClick={dismissWelcome} style={{width:"100%",padding:"14px",background:"linear-gradient(135deg,#059669,#0d9488)",color:"#fff",border:"none",borderRadius:12,fontSize:15,fontWeight:700,cursor:"pointer"}}>{"\u00a1Comenzar!"}</button>
+          <button onClick={dismissWelcome} style={{width:"100%",padding:"14px",background:"linear-gradient(135deg,"+(TC&&TC.ac||"#0d9488")+","+(TC&&TC.sd||"#0a3d2f")+")",color:"#fff",border:"none",borderRadius:12,fontSize:15,fontWeight:700,cursor:"pointer"}}>{"\u00a1Comenzar!"}</button>
         </div>
       </div>}
 
@@ -186,24 +187,24 @@ export default function Dashboard({ allEvals, onT, onView, ld, profile, isAdmin,
       </div>}
 
       {!_isMob && <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20,marginBottom:28}}>
-        <button onClick={onT} style={{background:"linear-gradient(135deg,#0a3d2f,#0d9488)",color:"#fff",border:"none",borderRadius:14,padding:"28px 24px",cursor:"pointer",display:"flex",alignItems:"center",gap:16,textAlign:"left"}}>
+        <button onClick={onT} style={{background:"linear-gradient(135deg,"+(TC&&TC.sd||"#0a3d2f")+","+(TC&&TC.ac||"#0d9488")+")",color:"#fff",border:"none",borderRadius:14,padding:"28px 24px",cursor:"pointer",display:"flex",alignItems:"center",gap:16,textAlign:"left"}}>
           <div style={{width:52,height:52,borderRadius:12,background:"rgba(255,255,255,.14)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,flexShrink:0}}>{"\ud83e\uddf0"}</div>
           <div><div style={{fontSize:18,fontWeight:700}}>Herramientas</div><div style={{fontSize:13,opacity:.8,marginTop:4}}>{"Nueva evaluaci\u00f3n"}</div></div>
         </button>
         <div style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",padding:20}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
-            <h3 style={{fontSize:14,fontWeight:700,color:"#0a3d2f",margin:0}}>{"Acceso r\u00e1pido"}</h3>
-            {shortcuts.length > 0 && shortcuts.length < 4 && availableToAdd.length > 0 && <button onClick={function(){ setShowAddSC(!showAddSC); }} style={{background:"none",border:"1px solid #e2e8f0",borderRadius:6,padding:"4px 10px",fontSize:11,fontWeight:600,cursor:"pointer",color:"#0d9488"}}>{showAddSC ? "Cancelar" : "+ Agregar"}</button>}
+            <h3 style={{fontSize:14,fontWeight:700,color:(TC&&TC.sd||"#0a3d2f"),margin:0}}>{"Acceso r\u00e1pido"}</h3>
+            {shortcuts.length > 0 && shortcuts.length < 4 && availableToAdd.length > 0 && <button onClick={function(){ setShowAddSC(!showAddSC); }} style={{background:"none",border:"1px solid #e2e8f0",borderRadius:6,padding:"4px 10px",fontSize:11,fontWeight:600,cursor:"pointer",color:(TC&&TC.ac||"#0d9488")}}>{showAddSC ? "Cancelar" : "+ Agregar"}</button>}
           </div>
           {shortcuts.length === 0 && !showAddSC && <div style={{textAlign:"center",padding:"14px 0"}}>
-            <button onClick={function(){ setShowAddSC(true); }} style={{background:"#f0fdfa",border:"1px dashed #99f6e4",borderRadius:10,padding:"14px 20px",cursor:"pointer",color:"#0d9488",fontSize:13,fontWeight:600,display:"inline-flex",alignItems:"center",gap:6}}>{"+ Agregar acceso r\u00e1pido"}</button>
+            <button onClick={function(){ setShowAddSC(true); }} style={{background:"#f0fdfa",border:"1px dashed #99f6e4",borderRadius:10,padding:"14px 20px",cursor:"pointer",color:(TC&&TC.ac||"#0d9488"),fontSize:13,fontWeight:600,display:"inline-flex",alignItems:"center",gap:6}}>{"+ Agregar acceso r\u00e1pido"}</button>
             <p style={{fontSize:11,color:"#94a3b8",marginTop:6}}>{"Pod\u00e9s agregar hasta 4 evaluaciones"}</p>
           </div>}
           {shortcuts.length > 0 && <div style={{display:"grid",gridTemplateColumns:shortcuts.length > 2 ? "1fr 1fr" : "1fr",gap:8}}>
             {shortcuts.map(function(scId){ var tool = TOOL_MAP[scId]; if(!tool) return null; return <div key={scId} style={{display:"flex",alignItems:"center",gap:8,padding:"10px 12px",background:"#f8faf9",borderRadius:8,border:"1px solid #e2e8f0",cursor:"pointer"}} onClick={function(){ if(onStartEval) onStartEval(scId); }}><span style={{fontSize:20}}>{tool.icon}</span><span style={{fontSize:12,fontWeight:600,color:"#334155",flex:1}}>{tool.name}</span><button onClick={function(ev){ ev.stopPropagation(); removeShortcut(scId); }} style={{background:"none",border:"none",fontSize:14,color:"#94a3b8",cursor:"pointer",padding:"0 2px"}}>{"\u00d7"}</button></div>; })}
           </div>}
           {showAddSC && <div style={{marginTop:shortcuts.length > 0 ? 10 : 0,background:"#f0fdfa",borderRadius:8,padding:12,border:"1px solid #ccfbf1"}}>
-            <div style={{fontSize:11,fontWeight:600,color:"#0d9488",marginBottom:8}}>{"Seleccionar evaluaci\u00f3n:"}</div>
+            <div style={{fontSize:11,fontWeight:600,color:(TC&&TC.ac||"#0d9488"),marginBottom:8}}>{"Seleccionar evaluaci\u00f3n:"}</div>
             <div style={{display:"flex",flexWrap:"wrap",gap:6}}>{availableToAdd.map(function(toolId){ var tool = TOOL_MAP[toolId]; if(!tool) return null; return <button key={toolId} onClick={function(){ addShortcut(toolId); }} style={{display:"flex",alignItems:"center",gap:6,padding:"8px 12px",background:"#fff",border:"1px solid #e2e8f0",borderRadius:8,cursor:"pointer",fontSize:12,fontWeight:500,color:"#334155"}}><span style={{fontSize:16}}>{tool.icon}</span>{tool.name}</button>; })}</div>
           </div>}
         </div>
@@ -231,12 +232,12 @@ export default function Dashboard({ allEvals, onT, onView, ld, profile, isAdmin,
 
       <div style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",padding:24,marginBottom:20}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}}>
-          <h3 style={{fontSize:16,fontWeight:700,color:"#0a3d2f",margin:0}}>📅 Agenda</h3>
-          {onCalendar && <button onClick={onCalendar} style={{background:"none",border:"1px solid #e2e8f0",borderRadius:8,padding:"6px 14px",fontSize:12,fontWeight:600,cursor:"pointer",color:"#0d9488"}}>Ver completa →</button>}
+          <h3 style={{fontSize:16,fontWeight:700,color:(TC&&TC.sd||"#0a3d2f"),margin:0}}>📅 Agenda</h3>
+          {onCalendar && <button onClick={onCalendar} style={{background:"none",border:"1px solid #e2e8f0",borderRadius:8,padding:"6px 14px",fontSize:12,fontWeight:600,cursor:"pointer",color:(TC&&TC.ac||"#0d9488")}}>Ver completa →</button>}
         </div>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
           <button onClick={prevMonth} style={{background:"#f1f5f9",border:"none",padding:"6px 14px",borderRadius:6,fontSize:13,fontWeight:600,cursor:"pointer",color:"#475569"}}>←</button>
-          <div style={{fontSize:15,fontWeight:700,color:"#0a3d2f"}}>{MESES[calMonth]+" "+calYear}</div>
+          <div style={{fontSize:15,fontWeight:700,color:(TC&&TC.sd||"#0a3d2f")}}>{MESES[calMonth]+" "+calYear}</div>
           <button onClick={nextMonth} style={{background:"#f1f5f9",border:"none",padding:"6px 14px",borderRadius:6,fontSize:13,fontWeight:600,cursor:"pointer",color:"#475569"}}>→</button>
         </div>
         <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:1,marginBottom:16}}>
@@ -245,7 +246,7 @@ export default function Dashboard({ allEvals, onT, onView, ld, profile, isAdmin,
           {Array.from({length:daysInMonth}).map(function(_,i){
             var d = i+1; var dc = getCitasForDay(d); var isT = isToday(d);
             return <div key={d} onClick={function(){ if(onCalendar) onCalendar(); }} style={{minHeight:36,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",borderRadius:6,cursor:onCalendar?"pointer":"default",background:isT?"#ccfbf1":"transparent"}}>
-              <div style={{fontSize:12,fontWeight:isT?700:400,color:isT?"#0d9488":"#1e293b"}}>{d}</div>
+              <div style={{fontSize:12,fontWeight:isT?700:400,color:isT?(TC&&TC.ac||"#0d9488"):"#1e293b"}}>{d}</div>
               {dc.length>0 && <div style={{display:"flex",gap:2,marginTop:1}}>{dc.slice(0,3).map(function(c,ci){ return <div key={ci} style={{width:5,height:5,borderRadius:"50%",background:getHex(c.color)}} />; })}</div>}
             </div>;
           })}
@@ -255,7 +256,7 @@ export default function Dashboard({ allEvals, onT, onView, ld, profile, isAdmin,
           {upcoming.map(function(c){
             var parts = (c.fecha||"").split("-"); var dayNum = parts[2] ? parseInt(parts[2],10) : ""; var monthNum = parts[1] ? parseInt(parts[1],10)-1 : 0;
             return <div key={c._fbId} onClick={function(){ if(onCalendar) onCalendar(); }} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",background:"#f8faf9",borderRadius:8,border:"1px solid #e2e8f0",marginBottom:6,cursor:onCalendar?"pointer":"default",borderLeft:"3px solid "+getHex(c.color)}}>
-              <div style={{textAlign:"center",minWidth:40}}><div style={{fontSize:16,fontWeight:700,color:"#0a3d2f"}}>{dayNum}</div><div style={{fontSize:9,color:K.mt}}>{MESES[monthNum] ? MESES[monthNum].substring(0,3) : ""}</div></div>
+              <div style={{textAlign:"center",minWidth:40}}><div style={{fontSize:16,fontWeight:700,color:(TC&&TC.sd||"#0a3d2f")}}>{dayNum}</div><div style={{fontSize:9,color:K.mt}}>{MESES[monthNum] ? MESES[monthNum].substring(0,3) : ""}</div></div>
               <div style={{flex:1}}><div style={{fontWeight:600,fontSize:13}}>{c.paciente}</div><div style={{fontSize:11,color:K.mt}}>{c.hora ? c.hora.substring(0,5) : ""}{c.tipo ? " · "+c.tipo : ""}</div></div>
               <span style={{background:getHex(c.color)+"22",color:getHex(c.color),padding:"2px 8px",borderRadius:12,fontSize:10,fontWeight:600}}>{c.estado||"pendiente"}</span>
             </div>;

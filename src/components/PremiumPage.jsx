@@ -11,7 +11,7 @@ var PACKS = [
 function fmt(n){ return "$"+n.toLocaleString("es-AR"); }
 function perCredit(p){ return Math.round(p.price/p.credits); }
 
-export default function PremiumPage({ profile, nfy, onBack, authUser }) {
+export default function PremiumPage({ TC, profile, nfy, onBack, authUser }) {
   var _sel = useState("pack-25"), selId = _sel[0], setSelId = _sel[1];
   var _ld = useState(false), loading = _ld[0], setLoading = _ld[1];
 
@@ -46,7 +46,7 @@ export default function PremiumPage({ profile, nfy, onBack, authUser }) {
 
   return (
     <div style={{animation:"fi .3s ease",width:"100%",maxWidth:800}}>
-      <div style={{background:"linear-gradient(135deg,#0a3d2f 0%,#0d9488 50%,#2dd4bf 100%)",borderRadius:20,padding:"36px 32px 32px",color:"#fff",marginBottom:28,position:"relative",overflow:"hidden"}}>
+      <div style={{background:"linear-gradient(135deg,"+(TC&&TC.sd||"#0a3d2f")+" 0%,"+(TC&&TC.ac||"#0d9488")+" 100%)",borderRadius:20,padding:"36px 32px 32px",color:"#fff",marginBottom:28,position:"relative",overflow:"hidden"}}>
         <div style={{position:"absolute",top:-40,right:-40,width:180,height:180,borderRadius:"50%",background:"rgba(255,255,255,.06)"}}></div>
         <div style={{position:"absolute",bottom:-60,left:-30,width:200,height:200,borderRadius:"50%",background:"rgba(255,255,255,.04)"}}></div>
         <div style={{position:"relative",zIndex:1}}>
@@ -74,17 +74,17 @@ export default function PremiumPage({ profile, nfy, onBack, authUser }) {
             }}>
             {pack.popular && <div style={{position:"absolute",top:-1,right:20,background:"linear-gradient(135deg,#f59e0b,#d97706)",color:"#fff",padding:"4px 14px",borderRadius:"0 0 10px 10px",fontSize:10,fontWeight:800,letterSpacing:".5px",textTransform:"uppercase"}}>{"Más elegido"}</div>}
             <div style={{width:64,height:64,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",marginBottom:16,
-              background:active?"linear-gradient(135deg,#0d9488,#2dd4bf)":"linear-gradient(135deg,#f1f5f9,#e2e8f0)",
+              background:active?"linear-gradient(135deg,"+(TC&&TC.ac||"#0d9488")+",#2dd4bf)":"linear-gradient(135deg,#f1f5f9,#e2e8f0)",
               color:active?"#fff":"#64748b",fontSize:22,fontWeight:800,transition:"all .2s"}}>
               {pack.label}
             </div>
             <div style={{fontSize:13,fontWeight:600,color:"#64748b",marginBottom:4}}>{pack.credits+" créditos"}</div>
-            <div style={{fontSize:28,fontWeight:800,color:active?"#0a3d2f":"#334155",marginBottom:4,lineHeight:1}}>{fmt(pack.price)}</div>
+            <div style={{fontSize:28,fontWeight:800,color:active?(TC&&TC.sd||"#0a3d2f"):"#334155",marginBottom:4,lineHeight:1}}>{fmt(pack.price)}</div>
             <div style={{fontSize:12,color:"#94a3b8"}}>{fmt(pp)+" por evaluación"}</div>
             {pack.save > 0 && <div style={{marginTop:10,display:"inline-block",padding:"3px 10px",borderRadius:20,background:"#dcfce7",color:"#059669",fontSize:11,fontWeight:700}}>{"Ahorrás "+pack.save+"%"}</div>}
             <div style={{position:"absolute",top:16,left:16,width:22,height:22,borderRadius:"50%",
               border:active?"2px solid #0d9488":"2px solid #d1d5db",
-              background:active?"#0d9488":"transparent",display:"flex",alignItems:"center",justifyContent:"center",transition:"all .2s"}}>
+              background:active?(TC&&TC.ac||"#0d9488"):"transparent",display:"flex",alignItems:"center",justifyContent:"center",transition:"all .2s"}}>
               {active && <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6L5 9L10 3" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
             </div>
           </div>;
@@ -94,7 +94,7 @@ export default function PremiumPage({ profile, nfy, onBack, authUser }) {
       <button onClick={function(){handleBuy(selId)}} disabled={loading}
         style={{
           width:"100%",padding:"18px 24px",
-          background:loading?"#94a3b8":"linear-gradient(135deg,#0a3d2f,#0d9488)",
+          background:loading?"#94a3b8":"linear-gradient(135deg,"+(TC&&TC.sd||"#0a3d2f")+","+(TC&&TC.ac||"#0d9488")+")",
           color:"#fff",border:"none",borderRadius:14,fontSize:17,fontWeight:800,
           cursor:loading?"wait":"pointer",marginBottom:20,
           boxShadow:"0 6px 24px rgba(13,148,136,.35)",
@@ -114,7 +114,7 @@ export default function PremiumPage({ profile, nfy, onBack, authUser }) {
       </div>
 
       <div style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",padding:24,marginBottom:20}}>
-        <div style={{fontSize:14,fontWeight:700,color:"#0a3d2f",marginBottom:14}}>{"Incluido con tus créditos"}</div>
+        <div style={{fontSize:14,fontWeight:700,color:(TC&&TC.sd||"#0a3d2f"),marginBottom:14}}>{"Incluido con tus créditos"}</div>
         <div style={{display:"grid",gridTemplateColumns:window.innerWidth<600?"1fr":"1fr 1fr",gap:12}}>
           {[
             ["\ud83d\udccb","Todas las herramientas de evaluación"],

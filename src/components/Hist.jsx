@@ -2,7 +2,7 @@ import { useState } from "react";
 import { isVisibleType, typeBadge, HIST_TABS } from "../config/evalTypes.js";
 import { K, ageLabel } from "../lib/fb.js";
 
-export default function Hist({ allEvals, onView, isA, onD, enabledTools }) {
+export default function Hist({ TC, allEvals, onView, isA, onD, enabledTools }) {
   var _q = useState(""), q = _q[0], sQ = _q[1];
   var _tab = useState("all"), tab = _tab[0], sTab = _tab[1];
   var _cf = useState(null), cf = _cf[0], sC = _cf[1];
@@ -31,14 +31,14 @@ export default function Hist({ allEvals, onView, isA, onD, enabledTools }) {
       <div style={{display:"flex",gap:8,marginBottom:14,overflowX:"auto",WebkitOverflowScrolling:"touch",paddingBottom:4}}>
         {HIST_TABS.filter(function(x){ return x[0]==="all" || !enabledTools || enabledTools[x[0]]!==false; }).map(function(x){
           var id=x[0], lb=x[1];
-          return <button key={id} onClick={function(){sTab(id)}} style={{padding:"6px 14px",borderRadius:6,border:tab===id?"2px solid #0d9488":"1px solid #e2e8f0",background:tab===id?"#ccfbf1":"#fff",color:tab===id?"#0d9488":"#64748b",fontSize:13,fontWeight:600,cursor:"pointer"}}>{lb}</button>;
+          return <button key={id} onClick={function(){sTab(id)}} style={{padding:"6px 14px",borderRadius:6,border:tab===id?"2px solid #0d9488":"1px solid #e2e8f0",background:tab===id?"#ccfbf1":"#fff",color:tab===id?(TC&&TC.ac||"#0d9488"):"#64748b",fontSize:13,fontWeight:600,cursor:"pointer"}}>{lb}</button>;
         })}
       </div>
       {/* Search/List toggle */}
       <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:18}}>
         <div style={{display:"flex",borderRadius:8,overflow:"hidden",border:"1px solid #e2e8f0"}}>
-          <button onClick={function(){setSearchMode("search");setSelPatient(null);}} style={{padding:"8px 14px",border:"none",background:searchMode==="search"?"#0d9488":"#fff",color:searchMode==="search"?"#fff":"#64748b",fontSize:12,fontWeight:600,cursor:"pointer"}}>{"Buscar"}</button>
-          <button onClick={function(){setSearchMode("list");sQ("");}} style={{padding:"8px 14px",border:"none",background:searchMode==="list"?"#0d9488":"#fff",color:searchMode==="list"?"#fff":"#64748b",fontSize:12,fontWeight:600,cursor:"pointer"}}>{"Pacientes"}</button>
+          <button onClick={function(){setSearchMode("search");setSelPatient(null);}} style={{padding:"8px 14px",border:"none",background:searchMode==="search"?(TC&&TC.ac||"#0d9488"):"#fff",color:searchMode==="search"?"#fff":"#64748b",fontSize:12,fontWeight:600,cursor:"pointer"}}>{"Buscar"}</button>
+          <button onClick={function(){setSearchMode("list");sQ("");}} style={{padding:"8px 14px",border:"none",background:searchMode==="list"?(TC&&TC.ac||"#0d9488"):"#fff",color:searchMode==="list"?"#fff":"#64748b",fontSize:12,fontWeight:600,cursor:"pointer"}}>{"Pacientes"}</button>
         </div>
         {searchMode==="search" && <input value={q} onChange={function(e){sQ(e.target.value)}} placeholder="Buscar paciente..." style={{flex:1,maxWidth:350,padding:"10px 14px",border:"1px solid #e2e8f0",borderRadius:8,fontSize:14,background:"#fff"}} />}
         {searchMode==="list" && <div style={{flex:1,maxWidth:350,position:"relative"}}>
@@ -46,7 +46,7 @@ export default function Hist({ allEvals, onView, isA, onD, enabledTools }) {
             {selPatient && <button onClick={function(){setSelPatient(null)}} style={{width:"100%",padding:"8px 14px",border:"none",borderBottom:"1px solid #f1f5f9",background:"#f0fdf4",color:"#059669",fontSize:13,fontWeight:600,cursor:"pointer",textAlign:"left"}}>{"✕ Mostrar todos"}</button>}
             {patients.map(function(p){
               var active = selPatient === p.nombre;
-              return <button key={p.nombre} onClick={function(){setSelPatient(active?null:p.nombre)}} style={{width:"100%",padding:"8px 14px",border:"none",borderBottom:"1px solid #f1f5f9",background:active?"#ccfbf1":"#fff",color:active?"#0d9488":"#1e293b",fontSize:13,fontWeight:active?600:400,cursor:"pointer",textAlign:"left",display:"flex",justifyContent:"space-between"}}>
+              return <button key={p.nombre} onClick={function(){setSelPatient(active?null:p.nombre)}} style={{width:"100%",padding:"8px 14px",border:"none",borderBottom:"1px solid #f1f5f9",background:active?"#ccfbf1":"#fff",color:active?(TC&&TC.ac||"#0d9488"):"#1e293b",fontSize:13,fontWeight:active?600:400,cursor:"pointer",textAlign:"left",display:"flex",justifyContent:"space-between"}}>
                 <span>{p.nombre}</span>
                 <span style={{fontSize:11,color:K.mt}}>{p.count}</span>
               </button>;

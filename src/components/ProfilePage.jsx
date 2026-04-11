@@ -3,7 +3,7 @@ import { auth, sendPasswordResetEmail } from "../firebase.js";
 import { db, doc, updateDoc } from "../firebase.js";
 import { K } from "../lib/fb.js";
 
-export default function ProfilePage({ profile, authUser, nfy, onBuyCredits }) {
+export default function ProfilePage({ TC, profile, authUser, nfy, onBuyCredits }) {
   const [resetSending, setResetSending] = useState(false);
   const [resetSent, setResetSent] = useState(false);
   const handlePasswordReset = async () => {
@@ -27,7 +27,7 @@ export default function ProfilePage({ profile, authUser, nfy, onBuyCredits }) {
       <h1 style={{fontSize:22,fontWeight:700,marginBottom:6}}>{"👤 Mi Perfil"}</h1>
       <p style={{color:K.mt,fontSize:14,marginBottom:24}}>{"Información de tu cuenta"}</p>
 
-      <div style={{background:"linear-gradient(135deg,#0a3d2f,#0d9488)",borderRadius:16,padding:"24px 28px",color:"#fff",marginBottom:24,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:16}}>
+      <div style={{background:"linear-gradient(135deg,"+(TC&&TC.sd||"#0a3d2f")+","+(TC&&TC.ac||"#0d9488")+")",borderRadius:16,padding:"24px 28px",color:"#fff",marginBottom:24,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:16}}>
         <div style={{display:"flex",alignItems:"center",gap:16}}>
           <div style={{fontSize:12,opacity:.7}}>{"Créditos restantes"}</div>
           <div style={{fontSize:32,fontWeight:700}}>{credits}</div>
