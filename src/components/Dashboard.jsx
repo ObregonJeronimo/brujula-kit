@@ -28,7 +28,7 @@ var TOOL_MAP = {
   newREP: { icon: "\ud83d\udcdd", name: "Rep. Palabras", color: "#2563eb" },
   newDISC: { icon: "\ud83d\udc42", name: "Disc. Fonol.", color: "#d97706" },
   newRECO: { icon: "\ud83c\udfaf", name: "Reco. Fonol.", color: "#9333ea" },
-  newELDI: { icon: "\ud83e\uddd2", name: "ELDI", color: (TC&&TC.ac||"#0d9488") }
+  newELDI: { icon: "\ud83e\uddd2", name: "ELDI", color: "#0d9488" }
 };
 var TOOL_IDS = ["newOFA","newFON","newREP","newDISC","newRECO"];
 
