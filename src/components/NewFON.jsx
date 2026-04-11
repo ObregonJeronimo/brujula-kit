@@ -48,40 +48,37 @@ if(window.speechSynthesis){
 
 // Correcciones fonéticas para sílabas que el sintetizador pronuncia mal
 var PHON_FIX = {
-  // Estrategia: usar la sílaba dentro de una palabra falsa que fuerce
-  // la pronunciación correcta, o duplicar con pausa
-  // Vocales abiertas que se cierran
-  "to":"tó","so":"só","go":"gó","mo":"mó","no":"nó",
-  "do":"dó","fo":"fó","ko":"kó","lo":"ló","po":"pó","ro":"ró",
-  "su":"sú","tu":"tú","mu":"mú","nu":"nú","lu":"lú",
-  "du":"dú","fu":"fú","ku":"kú","pu":"pú","ru":"rú",
-  // J - usar palabras que empiecen con j + vocal
-  "ja":"ja, ja","je":"je, je","ji":"ji, ji","jo":"jo, jo","ju":"ju, ju",
-  // B - duplicar
-  "ba":"ba, ba","be":"be, be","bi":"bi, bi","bo":"bo, bo","bu":"bu, bu",
-  // CH - duplicar
-  "cha":"cha, cha","che":"che, che","chi":"chi, chi","cho":"cho, cho","chu":"chu, chu",
-  // G
-  "ga":"ga, ga","ge":"je, je","gi":"ji, ji","gu":"gu, gu",
-  // Grupos consonánticos - duplicar
-  "bla":"bla, bla","ble":"ble, ble","bli":"bli, bli","blo":"bló","blu":"blú",
-  "bra":"bra, bra","bre":"bre, bre","bri":"bri, bri","bro":"bró","bru":"bru, bru",
-  "cla":"cla, cla","cle":"cle, cle","cli":"cli, cli","clo":"cló","clu":"clú",
-  "cra":"cra, cra","cre":"cre, cre","cri":"cri, cri","cro":"cró","cru":"crú",
-  "dra":"dra, dra","dre":"dre, dre","dri":"dri, dri","dro":"dró","dru":"drú",
-  "fla":"fla, fla","fle":"fle, fle","fli":"fli, fli","flo":"fló","flu":"flú",
-  "fra":"fra, fra","fre":"fre, fre","fri":"fri, fri","fro":"fró","fru":"frú",
-  "gla":"gla, gla","gle":"gle, gle","gli":"gli, gli","glo":"gló","glu":"glú",
-  "gra":"gra, gra","gre":"gre, gre","gri":"gri, gri","gro":"gró","gru":"grú",
-  "pla":"pla, pla","ple":"ple, ple","pli":"pli, pli","plo":"pló","plu":"plú",
-  "pra":"pra, pra","pre":"pre, pre","pri":"pri, pri","pro":"pró","pru":"prú",
-  "tra":"tra, tra","tre":"tre, tre","tri":"tri, tri","tro":"tró","tru":"trú",
-  // RR - duplicar
-  "rra":"rra, rra","rre":"rre, rre","rri":"rri, rri","rro":"rró","rru":"rru, rru",
+  // Estrategia: agregar punto al final fuerza al sintetizador a
+  // tratar la sílaba como palabra completa sin deletrear.
+  // Solo las que fallan sin corrección.
+  
+  // J - sin punto el sintetizador las lee como Y
+  "ja":"jaa.","je":"jee.","ji":"jii.","jo":"joo.","ju":"juu.",
+  // B - sin punto deletrea
+  "ba":"baa.","be":"bee.","bi":"bii.","bo":"boo.","bu":"buu.",
+  // CH
+  "cha":"chaa.","che":"chee.","chi":"chii.","cho":"choo.","chu":"chuu.",
+  // G - ga/go/gu normales, ge/gi suenan como je/ji
+  "ga":"gaa.","ge":"jee.","gi":"jii.","go":"goo.","gu":"guu.",
+  // Grupos consonánticos
+  "bla":"blaa.","ble":"blee.","bli":"blii.","blo":"bloo.","blu":"bluu.",
+  "bra":"braa.","bre":"bree.","bri":"brii.","bro":"broo.","bru":"bruu.",
+  "cla":"claa.","cle":"clee.","cli":"clii.","clo":"cloo.","clu":"cluu.",
+  "cra":"craa.","cre":"cree.","cri":"crii.","cro":"croo.","cru":"cruu.",
+  "dra":"draa.","dre":"dree.","dri":"drii.","dro":"droo.","dru":"druu.",
+  "fla":"flaa.","fle":"flee.","fli":"flii.","flo":"floo.","flu":"fluu.",
+  "fra":"fraa.","fre":"free.","fri":"frii.","fro":"froo.","fru":"fruu.",
+  "gla":"glaa.","gle":"glee.","gli":"glii.","glo":"gloo.","glu":"gluu.",
+  "gra":"graa.","gre":"gree.","gri":"grii.","gro":"groo.","gru":"gruu.",
+  "pla":"plaa.","ple":"plee.","pli":"plii.","plo":"ploo.","plu":"pluu.",
+  "pra":"praa.","pre":"pree.","pri":"prii.","pro":"proo.","pru":"pruu.",
+  "tra":"traa.","tre":"tree.","tri":"trii.","tro":"troo.","tru":"truu.",
+  // RR
+  "rra":"rraa.","rre":"rree.","rri":"rrii.","rro":"rroo.","rru":"rruu.",
   // Diptongos
-  "au":"áu","ei":"éi","ou":"óu",
+  "au":"aau.","ei":"eei.","ou":"oou.",
   // ARE y similares
-  "are":"a re","ere":"e re","ire":"i re","ore":"o re","ure":"u re"
+  "are":"aare.","ere":"eere.","ire":"iire.","ore":"oore.","ure":"uure."
 };
 
 var speak = function(text){
