@@ -4,7 +4,7 @@ import { PEFF_SECTIONS } from "../data/peffSections.js";
 import { PF_CATEGORIES, ALL_PROCESSES } from "../data/peffProcesos.js";
 import EvalShell from "./EvalShell.jsx";
 import { detectProceso } from "../lib/detectProceso.js";
-import { db, doc, getDoc, setDoc, collection, getDocs, deleteDoc } from "../firebase.js";
+import { db, doc, setDoc, collection, getDocs, deleteDoc } from "../firebase.js";
 
 var FON_SECTION_RAW = PEFF_SECTIONS.find(function(s){ return s.id === "fon"; });
 // Filter out Vocales and clean titles (remove "X años")
@@ -146,30 +146,7 @@ export default function NewFON({ onS, nfy, userId, draft, therapistInfo, isAdmin
     getDocs(collection(db,"fon_audios")).then(function(snap){
       var audios = {};
       snap.docs.forEach(function(d){ audios[d.id] = d.data().audio; });
-      // Si la colección nueva está vacía, migrar del documento viejo
-      if(Object.keys(audios).length === 0){
-        getDoc(doc(db,"config","fon_audios")).then(function(oldSnap){
-          if(oldSnap.exists()){
-            var oldData = oldSnap.data();
-            var keys = Object.keys(oldData);
-            if(keys.length > 0){
-              // Migrar cada audio a documento individual
-              var promises = keys.map(function(k){
-                return setDoc(doc(db,"fon_audios",k), {audio: oldData[k], updatedAt: new Date().toISOString()});
-              });
-              Promise.all(promises).then(function(){
-                setSavedAudios(oldData);
-              }).catch(function(){
-                setSavedAudios(oldData); // usar en memoria aunque falle guardar
-              });
-              return;
-            }
-          }
-          setSavedAudios({});
-        }).catch(function(){ setSavedAudios({}); });
-      } else {
-        setSavedAudios(audios);
-      }
+      setSavedAudios(audios);
     }).catch(function(){ setSavedAudios({}); });
   },[]);
 
@@ -261,7 +238,7 @@ export default function NewFON({ onS, nfy, userId, draft, therapistInfo, isAdmin
         return <div key={item.id} style={{marginBottom:isError?12:4}}>
           <div style={{display:"flex",alignItems:"center",gap:10,padding:"8px 14px",background:isError?"#fef2f2":v==="ok"?"#f0fdf4":"#fff",borderRadius:isError?"8px 8px 0 0":8,border:"1px solid "+(isError?"#fecaca":v==="ok"?"#bbf7d0":"#e2e8f0"),flexWrap:isAdmin?"wrap":"nowrap"}}>
             {savedAudios[item.word.toLowerCase()] ? <button onClick={function(){playWord(item.word)}} style={{background:"#059669",border:"none",borderRadius:6,padding:"4px 8px",fontSize:12,cursor:"pointer",color:"#fff"}}>{"\ud83d\udd0a Escuchar"}</button> : <button onClick={function(){playWord(item.word)}} disabled={recording===item.word.toLowerCase()} style={{background:recording===item.word.toLowerCase()?"#dc2626":"#ede9fe",border:"1px solid "+(recording===item.word.toLowerCase()?"#dc2626":"#c4b5fd"),borderRadius:6,padding:"4px 8px",fontSize:12,cursor:recording===item.word.toLowerCase()?"wait":"pointer",color:recording===item.word.toLowerCase()?"#fff":"#6d28d9"}}>{recording===item.word.toLowerCase()?"\ud83d\udd34 Grabando...":"Escuchar"}</button>}
-            {isAdmin && savedAudios[item.word.toLowerCase()] && <button onClick={function(){ var next = Object.assign({},savedAudios); delete next[item.word.toLowerCase()]; setSavedAudios(next); setDoc(doc(db,"config","fon_audios"),next).catch(function(){}); }} style={{background:"#f1f5f9",border:"1px solid #e2e8f0",borderRadius:6,padding:"4px 8px",fontSize:11,cursor:"pointer",color:"#64748b"}}>{"Reemplazar"}</button>}
+            {isAdmin && savedAudios[item.word.toLowerCase()] && <button onClick={function(){ deleteDoc(doc(db,"fon_audios",item.word.toLowerCase())).catch(function(){}); var next = Object.assign({},savedAudios); delete next[item.word.toLowerCase()]; setSavedAudios(next); }} style={{background:"#f1f5f9",border:"1px solid #e2e8f0",borderRadius:6,padding:"4px 8px",fontSize:11,cursor:"pointer",color:"#64748b"}}>{"Reemplazar"}</button>}
             {isAdmin && savedAudios[item.word.toLowerCase()] && <span style={{fontSize:11,color:"#059669",fontWeight:600}}>{"\u2705 Guardado"}</span>}
             <span style={{fontWeight:700,fontSize:16,minWidth:50,color:"#6d28d9"}}>{item.word}</span>
             {isAdmin && !savedAudios[item.word.toLowerCase()] && <input value={overrideWords[item.word.toLowerCase()]||PHON_FIX[item.word.toLowerCase()]||item.word} onChange={function(e){ var w=item.word.toLowerCase(); setOverrideWords(function(p){ var n=Object.assign({},p); n[w]=e.target.value; return n; }); }} style={{width:80,padding:"2px 6px",border:"1px solid #e2e8f0",borderRadius:4,fontSize:11,color:"#475569",background:"#f8faf9"}} title={"Texto que se pasa al sintetizador"} />}

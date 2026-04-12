@@ -21,23 +21,14 @@ export default function AdminPanel({ nfy }) {
   var _fonAudios = useState(null), fonAudios = _fonAudios[0], setFonAudios = _fonAudios[1];
   var _playingAudio = useState(null), playingAudio = _playingAudio[0], setPlayingAudio = _playingAudio[1];
 
-  // Cargar audios cuando se abre la tab (colección nueva + documento viejo)
+  // Cargar audios cuando se abre la tab
   useEffect(function(){
     if(tab === "audios" && fonAudios === null){
-      Promise.all([
-        getDocs(collection(db,"fon_audios")).catch(function(){ return {docs:[]}; }),
-        getDoc(doc(db,"config","fon_audios")).catch(function(){ return {exists:function(){return false}}; })
-      ]).then(function(res){
+      getDocs(collection(db,"fon_audios")).then(function(snap){
         var audios = {};
-        // Primero cargar del documento viejo
-        if(res[1].exists && res[1].exists()) {
-          var oldData = res[1].data();
-          Object.keys(oldData).forEach(function(k){ audios[k] = oldData[k]; });
-        }
-        // Después sobrescribir con la colección nueva (tiene prioridad)
-        res[0].docs.forEach(function(d){ audios[d.id] = d.data().audio; });
+        snap.docs.forEach(function(d){ audios[d.id] = d.data().audio; });
         setFonAudios(audios);
-      });
+      }).catch(function(){ setFonAudios({}); });
     }
   },[tab, fonAudios]);
 
@@ -230,22 +221,12 @@ export default function AdminPanel({ nfy }) {
                   <button onClick={function(){
                     var ok = window.confirm("Eliminar audio de '"+k+"'?");
                     if(!ok) return;
-                    // Eliminar de colección nueva
-                    deleteDoc(doc(db,"fon_audios",k)).catch(function(){});
-                    // También eliminar del documento viejo si existe
-                    getDoc(doc(db,"config","fon_audios")).then(function(snap){
-                      if(snap.exists()){
-                        var oldData = snap.data();
-                        if(oldData[k]){
-                          delete oldData[k];
-                          setDoc(doc(db,"config","fon_audios"), oldData).catch(function(){});
-                        }
-                      }
-                    }).catch(function(){});
-                    var next = Object.assign({}, fonAudios);
-                    delete next[k];
-                    setFonAudios(next);
-                    nfy("Audio '"+k+"' eliminado","ok");
+                    deleteDoc(doc(db,"fon_audios",k)).then(function(){
+                      var next = Object.assign({}, fonAudios);
+                      delete next[k];
+                      setFonAudios(next);
+                      nfy("Audio '"+k+"' eliminado","ok");
+                    }).catch(function(e){ nfy("Error: "+e.message,"er"); });
                   }} style={{background:"none",border:"none",fontSize:14,color:"#dc2626",cursor:"pointer",padding:2,flexShrink:0}}>{"\u00d7"}</button>
                 </div>;
               })}
@@ -254,14 +235,12 @@ export default function AdminPanel({ nfy }) {
               <button onClick={function(){
                 var ok = window.confirm("Eliminar TODOS los "+keys.length+" audios grabados?\n\nEsta accion es irreversible.");
                 if(!ok) return;
-                // Borrar colección nueva
                 getDocs(collection(db,"fon_audios")).then(function(snap){
                   return Promise.all(snap.docs.map(function(d){ return deleteDoc(doc(db,"fon_audios",d.id)); }));
-                }).catch(function(){});
-                // Borrar documento viejo
-                setDoc(doc(db,"config","fon_audios"), {}).catch(function(){});
-                setFonAudios({});
-                nfy("Todos los audios eliminados","ok");
+                }).then(function(){
+                  setFonAudios({});
+                  nfy("Todos los audios eliminados","ok");
+                }).catch(function(e){ nfy("Error: "+e.message,"er"); });
               }} style={{padding:"10px 20px",background:"#dc2626",color:"#fff",border:"none",borderRadius:8,fontSize:12,fontWeight:600,cursor:"pointer"}}>{"Eliminar todos los audios"}</button>
             </div>
           </div>;
