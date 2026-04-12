@@ -137,69 +137,71 @@ function buildPayloadExtra(responses, obsMap){
 
 export default function NewFON({ onS, nfy, userId, draft, therapistInfo, isAdmin }){
   var _procData = useState({}), procData = _procData[0], setProcData = _procData[1];
-  // Audio guardado por admin (clave: sílaba, valor: base64 audio)
   var _savedAudios = useState({}), savedAudios = _savedAudios[0], setSavedAudios = _savedAudios[1];
   var _recording = useState(null), recording = _recording[0], setRecording = _recording[1];
-  var _mediaRec = useState(null), mediaRec = _mediaRec[0], setMediaRec = _mediaRec[1];
 
-  // Cargar audios guardados de Firestore al montar
   useEffect(function(){
     getDoc(doc(db,"config","fon_audios")).then(function(snap){
       if(snap.exists()) setSavedAudios(snap.data());
     }).catch(function(){});
   },[]);
 
-  // Grabar audio con micrófono
-  var startRecording = function(word){
+  // Guardar audio en Firestore
+  var saveAudio = function(word, base64){
+    setSavedAudios(function(prev){
+      var next = Object.assign({}, prev);
+      next[word.toLowerCase()] = base64;
+      setDoc(doc(db,"config","fon_audios"), next).catch(function(){});
+      return next;
+    });
+    setRecording(null);
+  };
+
+  // Admin: reproducir sintetizador + grabar con micrófono al mismo tiempo
+  var speakAndRecord = function(word){
+    setRecording(word.toLowerCase());
     navigator.mediaDevices.getUserMedia({audio:true}).then(function(stream){
       var mr = new MediaRecorder(stream, {mimeType: MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "audio/mp4"});
       var chunks = [];
-      mr.ondataavailable = function(e){ chunks.push(e.data); };
+      mr.ondataavailable = function(e){ if(e.data.size > 0) chunks.push(e.data); };
       mr.onstop = function(){
         stream.getTracks().forEach(function(t){t.stop()});
+        if(chunks.length === 0){ setRecording(null); return; }
         var blob = new Blob(chunks, {type: mr.mimeType});
         var reader = new FileReader();
-        reader.onloadend = function(){
-          var base64 = reader.result;
-          // Guardar en state y Firestore
-          setSavedAudios(function(prev){
-            var next = Object.assign({}, prev);
-            next[word.toLowerCase()] = base64;
-            // Guardar en Firestore
-            setDoc(doc(db,"config","fon_audios"), next).then(function(){
-              nfy("Audio guardado para '"+word+"'", "ok");
-            }).catch(function(e){ nfy("Error: "+e.message,"er"); });
-            return next;
-          });
-          setRecording(null);
-        };
+        reader.onloadend = function(){ saveAudio(word, reader.result); };
         reader.readAsDataURL(blob);
       };
       mr.start();
-      setRecording(word.toLowerCase());
-      setMediaRec(mr);
-      nfy("Grabando... Pronunci\u00e1 '"+word+"'","ok");
-    }).catch(function(e){
-      nfy("No se pudo acceder al micr\u00f3fono","er");
+      // Reproducir sintetizador
+      if(!window.speechSynthesis){ mr.stop(); return; }
+      window.speechSynthesis.cancel();
+      var fixed = PHON_FIX[word.toLowerCase()] || word;
+      var u = new SpeechSynthesisUtterance(fixed);
+      u.lang = "es-AR"; u.rate = 0.72; u.pitch = 1.05; u.volume = 1;
+      if(_cachedVoice) u.voice = _cachedVoice;
+      // Cuando termina de hablar, parar grabación automáticamente
+      u.onend = function(){
+        setTimeout(function(){ if(mr.state === "recording") mr.stop(); }, 300);
+      };
+      u.onerror = function(){ if(mr.state === "recording") mr.stop(); };
+      window.speechSynthesis.speak(u);
+    }).catch(function(){
+      setRecording(null);
+      // Si no hay micrófono, solo reproducir
+      speak(word);
     });
   };
 
-  var stopRecording = function(){
-    if(mediaRec && mediaRec.state === "recording"){
-      mediaRec.stop();
-      setMediaRec(null);
-    }
-  };
-
-  // Reproducir: audio guardado si existe, sino sintetizador
+  // Reproducir: audio guardado si existe, sino sintetizador (o grabar si admin)
   var playWord = function(word){
     var key = word.toLowerCase();
     if(savedAudios[key]){
       var audio = new Audio(savedAudios[key]);
-      audio.play().catch(function(){
-        // Fallback al sintetizador si falla
-        speak(word);
-      });
+      audio.play().catch(function(){ speak(word); });
+    } else if(isAdmin) {
+      // Admin sin audio guardado: reproducir + grabar
+      speakAndRecord(word);
     } else {
       speak(word);
     }
@@ -241,7 +243,7 @@ export default function NewFON({ onS, nfy, userId, draft, therapistInfo, isAdmin
         return <div key={item.id} style={{marginBottom:isError?12:4}}>
           <div style={{display:"flex",alignItems:"center",gap:10,padding:"8px 14px",background:isError?"#fef2f2":v==="ok"?"#f0fdf4":"#fff",borderRadius:isError?"8px 8px 0 0":8,border:"1px solid "+(isError?"#fecaca":v==="ok"?"#bbf7d0":"#e2e8f0")}}>
             <button onClick={function(){playWord(item.word)}} style={{background:"#ede9fe",border:"1px solid #c4b5fd",borderRadius:6,padding:"4px 8px",fontSize:12,cursor:"pointer",color:"#6d28d9"}}>{savedAudios[item.word.toLowerCase()] ? "\ud83d\udd0a Escuchar" : "Escuchar"}</button>
-            {isAdmin && (recording === item.word.toLowerCase() ? <button onClick={stopRecording} style={{background:"#dc2626",border:"none",borderRadius:6,padding:"4px 8px",fontSize:11,cursor:"pointer",color:"#fff",animation:"pulse 1s infinite"}}>{"⏹ Parar"}</button> : <button onClick={function(){startRecording(item.word)}} style={{background:savedAudios[item.word.toLowerCase()]?"#059669":"#f1f5f9",border:"1px solid "+(savedAudios[item.word.toLowerCase()]?"#059669":"#e2e8f0"),borderRadius:6,padding:"4px 8px",fontSize:11,cursor:"pointer",color:savedAudios[item.word.toLowerCase()]?"#fff":"#64748b"}}>{savedAudios[item.word.toLowerCase()] ? "\u2713 Grabado" : "\ud83c\udfa4 Grabar"}</button>)}
+            {isAdmin && (recording === item.word.toLowerCase() ? <span style={{fontSize:11,color:"#dc2626",fontWeight:600,animation:"pulse 1s infinite"}}>{"\ud83d\udd34 Grabando..."}</span> : savedAudios[item.word.toLowerCase()] ? <span style={{fontSize:11,color:"#059669",fontWeight:600}}>{"\u2705"}</span> : null)}
             <span style={{fontWeight:700,fontSize:16,minWidth:50,color:"#6d28d9"}}>{item.word}</span>
             <span style={{fontSize:12,color:"#64748b",flex:1}}>{item.target}</span>
             <div style={{display:"flex",gap:4}}>
@@ -287,7 +289,7 @@ export default function NewFON({ onS, nfy, userId, draft, therapistInfo, isAdmin
         <button onClick={function(){ props.setStep(props.step+1); props.scrollTop(); }} style={{background:"#6d28d9",color:"#fff",border:"none",padding:"10px 22px",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer"}}>{props.step < props.RESULT_STEP - 1 ? "Siguiente" : "Ver Resultados"}</button>
       </div>
     </div>;
-  },[procData, recording, savedAudios, mediaRec, isAdmin]);
+  },[procData, recording, savedAudios, isAdmin]);
 
   var renderTechDetails = function(results){
     var sc = sevColor[results.severity] || "#6d28d9";
