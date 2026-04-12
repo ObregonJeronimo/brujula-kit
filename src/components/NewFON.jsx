@@ -146,8 +146,31 @@ export default function NewFON({ onS, nfy, userId, draft, therapistInfo, isAdmin
     getDocs(collection(db,"fon_audios")).then(function(snap){
       var audios = {};
       snap.docs.forEach(function(d){ audios[d.id] = d.data().audio; });
-      setSavedAudios(audios);
-    }).catch(function(){});
+      // Si la colección nueva está vacía, migrar del documento viejo
+      if(Object.keys(audios).length === 0){
+        getDoc(doc(db,"config","fon_audios")).then(function(oldSnap){
+          if(oldSnap.exists()){
+            var oldData = oldSnap.data();
+            var keys = Object.keys(oldData);
+            if(keys.length > 0){
+              // Migrar cada audio a documento individual
+              var promises = keys.map(function(k){
+                return setDoc(doc(db,"fon_audios",k), {audio: oldData[k], updatedAt: new Date().toISOString()});
+              });
+              Promise.all(promises).then(function(){
+                setSavedAudios(oldData);
+              }).catch(function(){
+                setSavedAudios(oldData); // usar en memoria aunque falle guardar
+              });
+              return;
+            }
+          }
+          setSavedAudios({});
+        }).catch(function(){ setSavedAudios({}); });
+      } else {
+        setSavedAudios(audios);
+      }
+    }).catch(function(){ setSavedAudios({}); });
   },[]);
 
   // Guardar audio individual en Firestore (1 doc por sílaba, sin límite de 1MB)
