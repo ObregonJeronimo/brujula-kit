@@ -77,7 +77,7 @@ export default async function handler(req, res) {
 
   try {
     const result = await resend.emails.send({
-      from: "Br\u00fajula KIT <onboarding@resend.dev>",
+      from: "Br\u00fajula KIT <noreply@brujulakit.com>",
       to: [to],
       subject: "Recordatorio de cita - " + paciente + " - " + fechaFormateada,
       html: html
