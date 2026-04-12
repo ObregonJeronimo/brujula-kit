@@ -139,6 +139,8 @@ export default function NewFON({ onS, nfy, userId, draft, therapistInfo, isAdmin
   var _procData = useState({}), procData = _procData[0], setProcData = _procData[1];
   var _savedAudios = useState({}), savedAudios = _savedAudios[0], setSavedAudios = _savedAudios[1];
   var _recording = useState(null), recording = _recording[0], setRecording = _recording[1];
+  // Override temporal del texto que se pasa al sintetizador (editable por admin)
+  var _overrideWords = useState({}), overrideWords = _overrideWords[0], setOverrideWords = _overrideWords[1];
 
   useEffect(function(){
     getDoc(doc(db,"config","fon_audios")).then(function(snap){
@@ -176,8 +178,9 @@ export default function NewFON({ onS, nfy, userId, draft, therapistInfo, isAdmin
       // Reproducir sintetizador
       if(!window.speechSynthesis){ mr.stop(); return; }
       window.speechSynthesis.cancel();
-      var fixed = PHON_FIX[word.toLowerCase()] || word;
-      var u = new SpeechSynthesisUtterance(fixed);
+      var key = word.toLowerCase();
+      var textToSpeak = overrideWords[key] || PHON_FIX[key] || word;
+      var u = new SpeechSynthesisUtterance(textToSpeak);
       u.lang = "es-AR"; u.rate = 0.72; u.pitch = 1.05; u.volume = 1;
       if(_cachedVoice) u.voice = _cachedVoice;
       // Cuando termina de hablar, parar grabación automáticamente
@@ -241,10 +244,12 @@ export default function NewFON({ onS, nfy, userId, draft, therapistInfo, isAdmin
         var isError = v==="D"||v==="O"||v==="S";
         var pd = procData[item.id] || {};
         return <div key={item.id} style={{marginBottom:isError?12:4}}>
-          <div style={{display:"flex",alignItems:"center",gap:10,padding:"8px 14px",background:isError?"#fef2f2":v==="ok"?"#f0fdf4":"#fff",borderRadius:isError?"8px 8px 0 0":8,border:"1px solid "+(isError?"#fecaca":v==="ok"?"#bbf7d0":"#e2e8f0")}}>
-            <button onClick={function(){playWord(item.word)}} style={{background:"#ede9fe",border:"1px solid #c4b5fd",borderRadius:6,padding:"4px 8px",fontSize:12,cursor:"pointer",color:"#6d28d9"}}>{savedAudios[item.word.toLowerCase()] ? "\ud83d\udd0a Escuchar" : "Escuchar"}</button>
-            {isAdmin && (recording === item.word.toLowerCase() ? <span style={{fontSize:11,color:"#dc2626",fontWeight:600,animation:"pulse 1s infinite"}}>{"\ud83d\udd34 Grabando..."}</span> : savedAudios[item.word.toLowerCase()] ? <span style={{fontSize:11,color:"#059669",fontWeight:600}}>{"\u2705"}</span> : null)}
+          <div style={{display:"flex",alignItems:"center",gap:10,padding:"8px 14px",background:isError?"#fef2f2":v==="ok"?"#f0fdf4":"#fff",borderRadius:isError?"8px 8px 0 0":8,border:"1px solid "+(isError?"#fecaca":v==="ok"?"#bbf7d0":"#e2e8f0"),flexWrap:isAdmin?"wrap":"nowrap"}}>
+            {savedAudios[item.word.toLowerCase()] ? <button onClick={function(){playWord(item.word)}} style={{background:"#059669",border:"none",borderRadius:6,padding:"4px 8px",fontSize:12,cursor:"pointer",color:"#fff"}}>{"\ud83d\udd0a Escuchar"}</button> : <button onClick={function(){playWord(item.word)}} disabled={recording===item.word.toLowerCase()} style={{background:recording===item.word.toLowerCase()?"#dc2626":"#ede9fe",border:"1px solid "+(recording===item.word.toLowerCase()?"#dc2626":"#c4b5fd"),borderRadius:6,padding:"4px 8px",fontSize:12,cursor:recording===item.word.toLowerCase()?"wait":"pointer",color:recording===item.word.toLowerCase()?"#fff":"#6d28d9"}}>{recording===item.word.toLowerCase()?"\ud83d\udd34 Grabando...":"Escuchar"}</button>}
+            {isAdmin && savedAudios[item.word.toLowerCase()] && <button onClick={function(){ var next = Object.assign({},savedAudios); delete next[item.word.toLowerCase()]; setSavedAudios(next); setDoc(doc(db,"config","fon_audios"),next).catch(function(){}); }} style={{background:"#f1f5f9",border:"1px solid #e2e8f0",borderRadius:6,padding:"4px 8px",fontSize:11,cursor:"pointer",color:"#64748b"}}>{"Reemplazar"}</button>}
+            {isAdmin && savedAudios[item.word.toLowerCase()] && <span style={{fontSize:11,color:"#059669",fontWeight:600}}>{"\u2705 Guardado"}</span>}
             <span style={{fontWeight:700,fontSize:16,minWidth:50,color:"#6d28d9"}}>{item.word}</span>
+            {isAdmin && !savedAudios[item.word.toLowerCase()] && <input value={overrideWords[item.word.toLowerCase()]||PHON_FIX[item.word.toLowerCase()]||item.word} onChange={function(e){ var w=item.word.toLowerCase(); setOverrideWords(function(p){ var n=Object.assign({},p); n[w]=e.target.value; return n; }); }} style={{width:80,padding:"2px 6px",border:"1px solid #e2e8f0",borderRadius:4,fontSize:11,color:"#475569",background:"#f8faf9"}} title={"Texto que se pasa al sintetizador"} />}
             <span style={{fontSize:12,color:"#64748b",flex:1}}>{item.target}</span>
             <div style={{display:"flex",gap:4}}>
               {[{v:"ok",l:"\u2713",bg:"#059669"},{v:"D",l:"D",bg:"#f59e0b"},{v:"O",l:"O",bg:"#dc2626"},{v:"S",l:"S",bg:"#7c3aed"}].map(function(o){
@@ -289,7 +294,7 @@ export default function NewFON({ onS, nfy, userId, draft, therapistInfo, isAdmin
         <button onClick={function(){ props.setStep(props.step+1); props.scrollTop(); }} style={{background:"#6d28d9",color:"#fff",border:"none",padding:"10px 22px",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer"}}>{props.step < props.RESULT_STEP - 1 ? "Siguiente" : "Ver Resultados"}</button>
       </div>
     </div>;
-  },[procData, recording, savedAudios, isAdmin]);
+  },[procData, recording, savedAudios, isAdmin, overrideWords]);
 
   var renderTechDetails = function(results){
     var sc = sevColor[results.severity] || "#6d28d9";
