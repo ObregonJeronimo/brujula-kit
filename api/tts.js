@@ -8,12 +8,14 @@ export default async function handler(req, res) {
   if (!text) return res.status(400).json({ error: "text required" });
   
   var apiKey = process.env.VOICERSS_API_KEY || "62a89bc58a174c9da9a30e7cde5af090";
+  var hl = req.body.hl || "es-mx";
+  var r = req.body.r || "-2";
   
   var params = new URLSearchParams({
     key: apiKey,
-    hl: "es-mx",
+    hl: hl,
     src: text,
-    r: "-2",
+    r: r,
     c: "MP3",
     f: "44khz_16bit_mono",
     b64: "true"

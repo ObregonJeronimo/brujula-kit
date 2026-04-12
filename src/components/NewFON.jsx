@@ -141,6 +141,13 @@ export default function NewFON({ onS, nfy, userId, draft, therapistInfo, isAdmin
   var _recording = useState(null), recording = _recording[0], setRecording = _recording[1];
   // Override temporal del texto que se pasa al sintetizador (editable por admin)
   var _overrideWords = useState({}), overrideWords = _overrideWords[0], setOverrideWords = _overrideWords[1];
+  var _ttsConfig = useState({hl:"es-mx",r:"-2"}), ttsConfig = _ttsConfig[0], setTtsConfig = _ttsConfig[1];
+
+  useEffect(function(){
+    getDoc(doc(db,"config","tts_config")).then(function(snap){
+      if(snap.exists()) setTtsConfig(snap.data());
+    }).catch(function(){});
+  },[]);
 
   useEffect(function(){
     getDocs(collection(db,"fon_audios")).then(function(snap){
@@ -171,7 +178,7 @@ export default function NewFON({ onS, nfy, userId, draft, therapistInfo, isAdmin
     fetch("/api/tts", {
       method: "POST",
       headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({text: textToSpeak})
+      body: JSON.stringify({text: textToSpeak, hl: ttsConfig.hl, r: ttsConfig.r})
     }).then(function(r){ return r.json(); })
     .then(function(data){
       if(data.success && data.audio){

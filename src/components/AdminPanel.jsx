@@ -20,6 +20,32 @@ export default function AdminPanel({ nfy }) {
   // Audios de evaluación fonética
   var _fonAudios = useState(null), fonAudios = _fonAudios[0], setFonAudios = _fonAudios[1];
   var _playingAudio = useState(null), playingAudio = _playingAudio[0], setPlayingAudio = _playingAudio[1];
+  var _ttsLoading = useState(null), ttsLoading = _ttsLoading[0], setTtsLoading = _ttsLoading[1];
+  var _ttsConfig = useState({hl:"es-mx",r:"-2"}), ttsConfig = _ttsConfig[0], setTtsConfig = _ttsConfig[1];
+
+  var TTS_VOICES = [
+    {hl:"es-mx",name:"Espa\u00f1ol M\u00e9xico",desc:"Acento mexicano, claro y neutro"},
+    {hl:"es-es",name:"Espa\u00f1ol Espa\u00f1a",desc:"Acento castellano"},
+    {hl:"es-ar",name:"Espa\u00f1ol Argentina",desc:"Acento rioplatense"}
+  ];
+  var TTS_SPEEDS = [
+    {r:"-4",name:"Muy lenta"},{r:"-2",name:"Lenta"},{r:"0",name:"Normal"},{r:"2",name:"R\u00e1pida"}
+  ];
+
+  var testVoice = function(hl, r){
+    setTtsLoading(hl+r);
+    fetch("/api/tts",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({text:"ma me mi mo mu",hl:hl,r:r})}).then(function(res){return res.json()}).then(function(data){
+      setTtsLoading(null);
+      if(data.success && data.audio){ new Audio(data.audio).play(); }
+      else { nfy("Error: "+(data.error||""),"er"); }
+    }).catch(function(e){ setTtsLoading(null); nfy("Error: "+e.message,"er"); });
+  };
+
+  var saveVoiceConfig = function(){
+    setDoc(doc(db,"config","tts_config"),ttsConfig).then(function(){
+      nfy("Voz guardada como predeterminada","ok");
+    }).catch(function(e){ nfy("Error: "+e.message,"er"); });
+  };
 
   // Cargar audios cuando se abre la tab
   useEffect(function(){
@@ -196,6 +222,44 @@ export default function AdminPanel({ nfy }) {
       </div>}
 
       {tab==="audios" && <div>
+        {/* Selector de voz */}
+        <div style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",padding:20,marginBottom:20}}>
+          <div style={{fontSize:14,fontWeight:700,color:"#1e293b",marginBottom:12}}>{"Configuraci\u00f3n de voz TTS"}</div>
+          <div style={{fontSize:12,color:K.mt,marginBottom:16}}>{"Seleccion\u00e1 la voz y velocidad para generar los audios. Escuch\u00e1 el ejemplo antes de elegir."}</div>
+
+          <div style={{marginBottom:16}}>
+            <div style={{fontSize:12,fontWeight:600,color:K.mt,marginBottom:8}}>{"Voz / Idioma"}</div>
+            <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+              {TTS_VOICES.map(function(v){
+                var sel = ttsConfig.hl === v.hl;
+                var loading = ttsLoading === v.hl+ttsConfig.r;
+                return <div key={v.hl} style={{background:sel?"#f0fdf4":"#fff",border:sel?"2px solid #059669":"1px solid #e2e8f0",borderRadius:10,padding:"12px 16px",cursor:"pointer",flex:"1",minWidth:150}} onClick={function(){ setTtsConfig(function(p){return Object.assign({},p,{hl:v.hl})}); }}>
+                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}}>
+                    <div style={{fontSize:13,fontWeight:700,color:sel?"#059669":"#1e293b"}}>{v.name}</div>
+                    {sel && <span style={{color:"#059669",fontSize:14}}>{"\u2713"}</span>}
+                  </div>
+                  <div style={{fontSize:11,color:K.mt,marginBottom:8}}>{v.desc}</div>
+                  <button onClick={function(e){ e.stopPropagation(); testVoice(v.hl, ttsConfig.r); }} disabled={loading} style={{padding:"4px 12px",background:sel?"#059669":"#f1f5f9",color:sel?"#fff":"#64748b",border:"none",borderRadius:6,fontSize:11,fontWeight:600,cursor:loading?"wait":"pointer"}}>
+                    {loading ? "Cargando..." : "\ud83d\udd0a Escuchar ejemplo"}
+                  </button>
+                </div>;
+              })}
+            </div>
+          </div>
+
+          <div style={{marginBottom:16}}>
+            <div style={{fontSize:12,fontWeight:600,color:K.mt,marginBottom:8}}>{"Velocidad"}</div>
+            <div style={{display:"flex",gap:8}}>
+              {TTS_SPEEDS.map(function(s){
+                var sel = ttsConfig.r === s.r;
+                return <button key={s.r} onClick={function(){ setTtsConfig(function(p){return Object.assign({},p,{r:s.r})}); }} style={{padding:"8px 16px",borderRadius:8,border:sel?"2px solid #059669":"1px solid #e2e8f0",background:sel?"#f0fdf4":"#fff",color:sel?"#059669":"#64748b",fontSize:12,fontWeight:600,cursor:"pointer"}}>{s.name}</button>;
+              })}
+            </div>
+          </div>
+
+          <button onClick={saveVoiceConfig} style={{padding:"10px 20px",background:"#059669",color:"#fff",border:"none",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer"}}>{"Guardar voz predeterminada"}</button>
+        </div>
+
         <p style={{fontSize:13,color:K.mt,marginBottom:16}}>{"Audios grabados para la Evaluaci\u00f3n Fon\u00e9tica. Se reproducen en vez del sintetizador de voz."}</p>
         {fonAudios === null ? <div style={{textAlign:"center",padding:20,color:K.mt,fontSize:14}}>{"Cargando audios..."}</div> : (function(){
           var keys = Object.keys(fonAudios).sort();
