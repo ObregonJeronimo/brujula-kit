@@ -186,40 +186,28 @@ export default function NewFON({ onS, nfy, userId, draft, therapistInfo, isAdmin
     setRecording(null);
   };
 
-  // Admin: reproducir sintetizador + grabar con micrófono al mismo tiempo
+  // Admin: generar audio con API TTS, reproducir y guardar automaticamente
   var speakAndRecord = function(word){
-    setRecording(word.toLowerCase());
-    navigator.mediaDevices.getUserMedia({audio:true}).then(function(stream){
-      var mr = new MediaRecorder(stream, {mimeType: MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "audio/mp4"});
-      var chunks = [];
-      mr.ondataavailable = function(e){ if(e.data.size > 0) chunks.push(e.data); };
-      mr.onstop = function(){
-        stream.getTracks().forEach(function(t){t.stop()});
-        if(chunks.length === 0){ setRecording(null); return; }
-        var blob = new Blob(chunks, {type: mr.mimeType});
-        var reader = new FileReader();
-        reader.onloadend = function(){ saveAudio(word, reader.result); };
-        reader.readAsDataURL(blob);
-      };
-      mr.start();
-      // Reproducir sintetizador
-      if(!window.speechSynthesis){ mr.stop(); return; }
-      window.speechSynthesis.cancel();
-      var key = word.toLowerCase();
-      var textToSpeak = overrideWords[key] || PHON_FIX[key] || word;
-      var u = new SpeechSynthesisUtterance(textToSpeak);
-      u.lang = "es-AR"; u.rate = 0.72; u.pitch = 1.05; u.volume = 1;
-      if(_cachedVoice) u.voice = _cachedVoice;
-      // Cuando termina de hablar, parar grabación automáticamente
-      u.onend = function(){
-        setTimeout(function(){ if(mr.state === "recording") mr.stop(); }, 300);
-      };
-      u.onerror = function(){ if(mr.state === "recording") mr.stop(); };
-      window.speechSynthesis.speak(u);
-    }).catch(function(){
+    var key = word.toLowerCase();
+    var textToSpeak = overrideWords[key] || PHON_FIX[key] || word;
+    setRecording(key);
+    fetch("/api/tts", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({text: textToSpeak})
+    }).then(function(r){ return r.json(); })
+    .then(function(data){
+      if(data.success && data.audio){
+        var audio = new Audio(data.audio);
+        audio.play().catch(function(){});
+        saveAudio(word, data.audio);
+      } else {
+        nfy("Error TTS: "+(data.error||"desconocido"),"er");
+        setRecording(null);
+      }
+    }).catch(function(e){
+      nfy("Error: "+e.message,"er");
       setRecording(null);
-      // Si no hay micrófono, solo reproducir
-      speak(word);
     });
   };
 
