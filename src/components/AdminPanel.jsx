@@ -21,6 +21,17 @@ export default function AdminPanel({ nfy }) {
   var _fonAudios = useState(null), fonAudios = _fonAudios[0], setFonAudios = _fonAudios[1];
   var _playingAudio = useState(null), playingAudio = _playingAudio[0], setPlayingAudio = _playingAudio[1];
 
+  // Cargar audios cuando se abre la tab
+  useEffect(function(){
+    if(tab === "audios" && fonAudios === null){
+      getDocs(collection(db,"fon_audios")).then(function(snap){
+        var audios = {};
+        snap.docs.forEach(function(d){ audios[d.id] = d.data().audio; });
+        setFonAudios(audios);
+      }).catch(function(){ setFonAudios({}); });
+    }
+  },[tab, fonAudios]);
+
   useEffect(function(){
     getDoc(doc(db, "config", "tools")).then(function(snap){
       if(snap.exists()){ setToolsConfig(snap.data()); }
@@ -186,23 +197,14 @@ export default function AdminPanel({ nfy }) {
 
       {tab==="audios" && <div>
         <p style={{fontSize:13,color:K.mt,marginBottom:16}}>{"Audios grabados para la Evaluaci\u00f3n Fon\u00e9tica. Se reproducen en vez del sintetizador de voz."}</p>
-        {fonAudios === null ? <div>
-          <button onClick={function(){
-            getDoc(doc(db,"config","fon_audios")).then(function(snap){
-              setFonAudios(snap.exists() ? snap.data() : {});
-            }).catch(function(){ setFonAudios({}); });
-          }} style={{padding:"12px 24px",background:K.ac,color:"#fff",border:"none",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer"}}>{"Cargar audios"}</button>
-        </div> : (function(){
+        {fonAudios === null ? <div style={{textAlign:"center",padding:20,color:K.mt,fontSize:14}}>{"Cargando audios..."}</div> : (function(){
           var keys = Object.keys(fonAudios).sort();
           if(keys.length === 0) return <div style={{background:"#f8faf9",borderRadius:10,padding:20,textAlign:"center",color:K.mt,fontSize:14}}>{"No hay audios grabados. And\u00e1 a Herramientas \u2192 Evaluaci\u00f3n Fon\u00e9tica para grabar."}</div>;
           return <div>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
               <div style={{fontSize:14,fontWeight:700,color:"#1e293b"}}>{keys.length + " audios grabados"}</div>
               <button onClick={function(){
-                getDoc(doc(db,"config","fon_audios")).then(function(snap){
-                  setFonAudios(snap.exists() ? snap.data() : {});
-                  nfy("Audios recargados","ok");
-                });
+                setFonAudios(null); // triggers reload via useEffect
               }} style={{padding:"6px 14px",background:"#f1f5f9",border:"1px solid #e2e8f0",borderRadius:6,fontSize:11,fontWeight:600,cursor:"pointer",color:K.mt}}>{"Recargar"}</button>
             </div>
             <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(140px,1fr))",gap:8}}>
@@ -219,9 +221,9 @@ export default function AdminPanel({ nfy }) {
                   <button onClick={function(){
                     var ok = window.confirm("Eliminar audio de '"+k+"'?");
                     if(!ok) return;
-                    var next = Object.assign({}, fonAudios);
-                    delete next[k];
-                    setDoc(doc(db,"config","fon_audios"), next).then(function(){
+                    deleteDoc(doc(db,"fon_audios",k)).then(function(){
+                      var next = Object.assign({}, fonAudios);
+                      delete next[k];
                       setFonAudios(next);
                       nfy("Audio '"+k+"' eliminado","ok");
                     }).catch(function(e){ nfy("Error: "+e.message,"er"); });

@@ -4,7 +4,7 @@ import { PEFF_SECTIONS } from "../data/peffSections.js";
 import { PF_CATEGORIES, ALL_PROCESSES } from "../data/peffProcesos.js";
 import EvalShell from "./EvalShell.jsx";
 import { detectProceso } from "../lib/detectProceso.js";
-import { db, doc, getDoc, setDoc } from "../firebase.js";
+import { db, doc, getDoc, setDoc, collection, getDocs, deleteDoc } from "../firebase.js";
 
 var FON_SECTION_RAW = PEFF_SECTIONS.find(function(s){ return s.id === "fon"; });
 // Filter out Vocales and clean titles (remove "X años")
@@ -143,19 +143,23 @@ export default function NewFON({ onS, nfy, userId, draft, therapistInfo, isAdmin
   var _overrideWords = useState({}), overrideWords = _overrideWords[0], setOverrideWords = _overrideWords[1];
 
   useEffect(function(){
-    getDoc(doc(db,"config","fon_audios")).then(function(snap){
-      if(snap.exists()) setSavedAudios(snap.data());
+    getDocs(collection(db,"fon_audios")).then(function(snap){
+      var audios = {};
+      snap.docs.forEach(function(d){ audios[d.id] = d.data().audio; });
+      setSavedAudios(audios);
     }).catch(function(){});
   },[]);
 
-  // Guardar audio en Firestore
+  // Guardar audio individual en Firestore (1 doc por sílaba, sin límite de 1MB)
   var saveAudio = function(word, base64){
-    setSavedAudios(function(prev){
-      var next = Object.assign({}, prev);
-      next[word.toLowerCase()] = base64;
-      setDoc(doc(db,"config","fon_audios"), next).catch(function(){});
-      return next;
-    });
+    var key = word.toLowerCase();
+    setDoc(doc(db,"fon_audios",key), {audio: base64, updatedAt: new Date().toISOString()}).then(function(){
+      setSavedAudios(function(prev){
+        var next = Object.assign({}, prev);
+        next[key] = base64;
+        return next;
+      });
+    }).catch(function(e){ nfy("Error: "+e.message,"er"); });
     setRecording(null);
   };
 
