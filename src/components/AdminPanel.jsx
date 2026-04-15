@@ -24,13 +24,15 @@ export default function AdminPanel({ nfy }) {
   var _ttsConfig = useState({hl:"es-mx",r:"-2"}), ttsConfig = _ttsConfig[0], setTtsConfig = _ttsConfig[1];
 
   var TTS_VOICES = [
-    {hl:"browser-google-es",v:"",name:"Google espa\u00f1ol (Navegador)",desc:"Voz masculina de Chrome. Solo funciona en Chrome."},
-    {hl:"es-mx",v:"",name:"Espa\u00f1ol M\u00e9xico - Por defecto",desc:"Voz femenina mexicana"},
-    {hl:"es-es",v:"",name:"Espa\u00f1ol Espa\u00f1a - Por defecto",desc:"Voz femenina castellana"},
-    {hl:"es-mx",v:"Juan",name:"Espa\u00f1ol M\u00e9xico - Juan",desc:"Voz masculina mexicana"},
-    {hl:"es-es",v:"Diego",name:"Espa\u00f1ol Espa\u00f1a - Diego",desc:"Voz masculina castellana"},
-    {hl:"es-mx",v:"Lucia",name:"Espa\u00f1ol M\u00e9xico - Lucia",desc:"Voz femenina mexicana alt."},
-    {hl:"es-es",v:"Elvira",name:"Espa\u00f1ol Espa\u00f1a - Elvira",desc:"Voz femenina castellana alt."}
+    {hl:"browser-google-es",v:"",name:"Google espa\u00f1ol (Navegador)",desc:"Voz masculina de Chrome. Solo reproduce, no guarda."},
+    {hl:"es-mx",v:"Jose",name:"Jose - M\u00e9xico (Masculina)",desc:"Voz masculina mexicana"},
+    {hl:"es-es",v:"Diego",name:"Diego - Espa\u00f1a (Masculina)",desc:"Voz masculina castellana"},
+    {hl:"es-mx",v:"Juana",name:"Juana - M\u00e9xico (Femenina)",desc:"Voz femenina mexicana (por defecto)"},
+    {hl:"es-mx",v:"Silvia",name:"Silvia - M\u00e9xico (Femenina)",desc:"Voz femenina mexicana alternativa"},
+    {hl:"es-mx",v:"Teresa",name:"Teresa - M\u00e9xico (Femenina)",desc:"Voz femenina mexicana alternativa"},
+    {hl:"es-es",v:"Camila",name:"Camila - Espa\u00f1a (Femenina)",desc:"Voz femenina castellana (por defecto)"},
+    {hl:"es-es",v:"Sofia",name:"Sofia - Espa\u00f1a (Femenina)",desc:"Voz femenina castellana alternativa"},
+    {hl:"es-es",v:"Luna",name:"Luna - Espa\u00f1a (Femenina)",desc:"Voz femenina castellana alternativa"}
   ];
   var TTS_SPEEDS = [
     {r:"-4",name:"Muy lenta"},{r:"-2",name:"Lenta"},{r:"0",name:"Normal"},{r:"2",name:"R\u00e1pida"}
