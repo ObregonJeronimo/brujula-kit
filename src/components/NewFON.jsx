@@ -69,6 +69,57 @@ function buildPayloadExtra(responses, obsMap){
 export default function NewFON({ onS, nfy, userId, draft, therapistInfo }){
   var _procData = useState({}), procData = _procData[0], setProcData = _procData[1];
   var _savedAudios = useState({}), savedAudios = _savedAudios[0], setSavedAudios = _savedAudios[1];
+  var _aiLoading = useState(null), aiLoading = _aiLoading[0], setAiLoading = _aiLoading[1];
+  var _aiSuggestion = useState({}), aiSuggestion = _aiSuggestion[0], setAiSuggestion = _aiSuggestion[1];
+
+  var suggestProceso = function(itemId, word, production, errorType){
+    setAiLoading(itemId);
+    fetch("/api/suggest-proceso", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({word: word, production: production, errorType: errorType})
+    }).then(function(r){ return r.json(); })
+    .then(function(data){
+      setAiLoading(null);
+      if(data.success && data.suggestion){
+        setAiSuggestion(function(prev){ var n = Object.assign({},prev); n[itemId] = data.suggestion; return n; });
+        // Auto-seleccionar el proceso sugerido
+        var sug = data.suggestion;
+        var matchId = findProcesoId(sug.proceso);
+        if(matchId){
+          spfGlobal(itemId, "proceso", matchId);
+          spfGlobal(itemId, "autoDetected", true);
+          spfGlobal(itemId, "manualProceso", false);
+        }
+      } else {
+        nfy("No se pudo obtener sugerencia","er");
+      }
+    }).catch(function(e){
+      setAiLoading(null);
+      nfy("Error: "+e.message,"er");
+    });
+  };
+
+  // Buscar el ID del proceso por nombre (fuzzy match)
+  var findProcesoId = function(name){
+    if(!name) return null;
+    var lower = name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+    var all = PF_CATEGORIES.flatMap(function(c){ return c.processes; });
+    // Exact match first
+    var exact = all.find(function(p){ return p.name.toLowerCase() === name.toLowerCase(); });
+    if(exact) return exact.id;
+    // Fuzzy match
+    var fuzzy = all.find(function(p){
+      var pLower = p.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+      return pLower.indexOf(lower) >= 0 || lower.indexOf(pLower) >= 0;
+    });
+    return fuzzy ? fuzzy.id : null;
+  };
+
+  // spf global (fuera de renderEval)
+  var spfGlobal = function(itemId, field, val){
+    setProcData(function(prev){ var n = Object.assign({}, prev); if(!n[itemId]) n[itemId] = {}; n[itemId][field] = val; return n; });
+  };
 
   // Cargar audios guardados de Firestore al montar
   useEffect(function(){
@@ -151,14 +202,24 @@ export default function NewFON({ onS, nfy, userId, draft, therapistInfo }){
                   {"Proceso fonologico"}
                   {pd.autoDetected && !pd.manualProceso && <span style={{marginLeft:6,fontSize:9,color:"#7c3aed",background:"#ede9fe",padding:"1px 6px",borderRadius:4,fontWeight:600}}>{"auto-detectado"}</span>}
                 </label>
-                <select value={pd.proceso||""} onChange={function(e){spf(item.id,"proceso",e.target.value);spf(item.id,"manualProceso",true);spf(item.id,"autoDetected",false)}} style={Object.assign({},I,{fontSize:13,padding:"6px 10px",background:pd.autoDetected&&!pd.manualProceso?"#f5f3ff":"#fff",cursor:"pointer",borderColor:pd.autoDetected&&!pd.manualProceso?"#a78bfa":"#e2e8f0"})}>
-                  <option value="">-- Clasificar --</option>
-                  {PF_CATEGORIES.map(function(cat){ return <optgroup key={cat.id} label={cat.title}>
-                    {cat.processes.map(function(pr){ return <option key={pr.id} value={pr.id}>{pr.name}</option>; })}
-                  </optgroup>; })}
-                </select>
+                <div style={{display:"flex",gap:6,alignItems:"center"}}>
+                  <select value={pd.proceso||""} onChange={function(e){spf(item.id,"proceso",e.target.value);spf(item.id,"manualProceso",true);spf(item.id,"autoDetected",false)}} style={Object.assign({},I,{fontSize:13,padding:"6px 10px",background:pd.autoDetected&&!pd.manualProceso?"#f5f3ff":"#fff",cursor:"pointer",borderColor:pd.autoDetected&&!pd.manualProceso?"#a78bfa":"#e2e8f0",flex:1})}>
+                    <option value="">-- Clasificar --</option>
+                    {PF_CATEGORIES.map(function(cat){ return <optgroup key={cat.id} label={cat.title}>
+                      {cat.processes.map(function(pr){ return <option key={pr.id} value={pr.id}>{pr.name}</option>; })}
+                    </optgroup>; })}
+                  </select>
+                  {pd.produccion && <button onClick={function(){ suggestProceso(item.id, item.word, pd.produccion, v); }} disabled={aiLoading===item.id} style={{background:aiLoading===item.id?"#a78bfa":"#7c3aed",color:"#fff",border:"none",borderRadius:6,padding:"6px 10px",fontSize:11,fontWeight:600,cursor:aiLoading===item.id?"wait":"pointer",whiteSpace:"nowrap",flexShrink:0}}>{aiLoading===item.id?"\u23f3...":"\ud83e\udd16 Sugerir"}</button>}
+                </div>
               </div>
             </div>
+            {aiSuggestion[item.id] && <div style={{marginTop:8,background:"#f5f3ff",border:"1px solid #c4b5fd",borderRadius:8,padding:"8px 12px"}}>
+              <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:4}}>
+                <span style={{fontSize:12,fontWeight:700,color:"#7c3aed"}}>{"\ud83e\udd16 Sugerencia IA"}</span>
+                <span style={{fontSize:10,padding:"1px 6px",borderRadius:4,fontWeight:600,background:aiSuggestion[item.id].confianza==="alta"?"#dcfce7":aiSuggestion[item.id].confianza==="media"?"#fef9c3":"#fee2e2",color:aiSuggestion[item.id].confianza==="alta"?"#059669":aiSuggestion[item.id].confianza==="media"?"#ca8a04":"#dc2626"}}>{aiSuggestion[item.id].confianza}</span>
+              </div>
+              <div style={{fontSize:12,color:"#475569"}}>{aiSuggestion[item.id].explicacion}</div>
+            </div>}
           </div>}
         </div>;
       })}
@@ -168,7 +229,7 @@ export default function NewFON({ onS, nfy, userId, draft, therapistInfo }){
         <button onClick={function(){ props.setStep(props.step+1); props.scrollTop(); }} style={{background:"#6d28d9",color:"#fff",border:"none",padding:"10px 22px",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer"}}>{props.step < props.RESULT_STEP - 1 ? "Siguiente" : "Ver Resultados"}</button>
       </div>
     </div>;
-  },[procData, savedAudios]);
+  },[procData, savedAudios, aiLoading, aiSuggestion]);
 
   var renderTechDetails = function(results){
     var sc = sevColor[results.severity] || "#6d28d9";
