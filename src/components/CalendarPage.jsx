@@ -63,7 +63,7 @@ export default function CalendarPage({ userId, nfy, userSettings, profesionalNom
   const [form, setForm] = useState({ paciente: "", tipo: EVAL_TYPES[0], notas: "", hora: "09:00", estado: "pendiente", color: "blue", pacienteDni: "", pacienteFechaNac: "" });
   const [pacientes, setPacientes] = useState([]);
   const [showPacSearch, setShowPacSearch] = useState(false);
-  const [pacSearchDni, setPacSearchDni] = useState("");
+  const [pacSearchQuery, setPacSearchQuery] = useState("");
   const [selectedPac, setSelectedPac] = useState(null);
 
   const loadCitas = useCallback(async () => { if (!userId) return; setLoading(true); try { const q2 = query(collection(db, "citas"), where("userId", "==", userId)); const snap = await getDocs(q2); setCitas(snap.docs.map(d => ({ _fbId: d.id, ...d.data() }))); } catch (e) { console.error("Error cargando citas:", e); } setLoading(false); }, [userId, year, month]);
@@ -80,13 +80,31 @@ export default function CalendarPage({ userId, nfy, userSettings, profesionalNom
   const isToday = (d) => today.getFullYear() === year && today.getMonth() === month && today.getDate() === d;
   const getCitasForDay = (d) => { const key = dateKey(year, month, d); return citas.filter(c => c.fecha === key); };
 
-  const openNewForm = (d) => { setSelDay(d); setEditId(null); setSelectedPac(null); setShowPacSearch(false); setPacSearchDni(""); setForm({ paciente: "", tipo: EVAL_TYPES[0], notas: "", hora: "09:00", estado: "pendiente", color: "blue", pacienteDni: "", pacienteFechaNac: "" }); setShowForm(true); };
+  const openNewForm = (d) => { setSelDay(d); setEditId(null); setSelectedPac(null); setShowPacSearch(false); setPacSearchQuery(""); setForm({ paciente: "", tipo: EVAL_TYPES[0], notas: "", hora: "09:00", estado: "pendiente", color: "blue", pacienteDni: "", pacienteFechaNac: "" }); setShowForm(true); };
   const openDayView = (d) => { setSelDay(d); setShowForm(false); setEditId(null); };
   const handleDayClick = (d) => { const dc = getCitasForDay(d); if (dc.length > 0) openDayView(d); else openNewForm(d); };
-  const startEdit = (cita) => { setEditId(cita._fbId); setSelectedPac(null); setShowPacSearch(false); setPacSearchDni(""); setForm({ paciente: cita.paciente || "", tipo: cita.tipo || EVAL_TYPES[0], notas: cita.notas || "", hora: cita.hora || "09:00", estado: cita.estado || "pendiente", color: cita.color || "blue", pacienteDni: cita.pacienteDni || "", pacienteFechaNac: cita.pacienteFechaNac || "" }); setShowForm(true); };
+  const startEdit = (cita) => { setEditId(cita._fbId); setSelectedPac(null); setShowPacSearch(false); setPacSearchQuery(""); setForm({ paciente: cita.paciente || "", tipo: cita.tipo || EVAL_TYPES[0], notas: cita.notas || "", hora: cita.hora || "09:00", estado: cita.estado || "pendiente", color: cita.color || "blue", pacienteDni: cita.pacienteDni || "", pacienteFechaNac: cita.pacienteFechaNac || "" }); setShowForm(true); };
 
-  const handlePacSearch = (dniVal) => { setPacSearchDni(dniVal); if(dniVal.length >= 7){ var found = pacientes.find(p => p.dni === dniVal); if(found){ setSelectedPac(found); setForm(p => ({ ...p, paciente: found.nombre, pacienteDni: found.dni, pacienteFechaNac: found.fechaNac || "" })); } else { setSelectedPac(null); } } else { setSelectedPac(null); } };
-  const clearPacSelection = () => { setSelectedPac(null); setPacSearchDni(""); setShowPacSearch(false); setForm(p => ({ ...p, paciente: "", pacienteDni: "", pacienteFechaNac: "" })); };
+  // Dynamic search: filter pacientes by DNI or name
+  const getFilteredPacientes = () => {
+    const q = pacSearchQuery.trim().toLowerCase();
+    if (!q) return [];
+    const dniOnly = q.replace(/\D/g, "");
+    var results = pacientes.filter(function(p) {
+      if (dniOnly && p.dni && p.dni.indexOf(dniOnly) === 0) return true;
+      if (p.nombre && p.nombre.toLowerCase().indexOf(q) >= 0) return true;
+      return false;
+    });
+    return results.slice(0, 6);
+  };
+
+  const selectPaciente = (pac) => {
+    setSelectedPac(pac);
+    setPacSearchQuery("");
+    setForm(p => ({ ...p, paciente: pac.nombre, pacienteDni: pac.dni, pacienteFechaNac: pac.fechaNac || "" }));
+  };
+
+  const clearPacSelection = () => { setSelectedPac(null); setPacSearchQuery(""); setShowPacSearch(false); setForm(p => ({ ...p, paciente: "", pacienteDni: "", pacienteFechaNac: "" })); };
 
   const saveCita = async () => {
     if (!form.paciente.trim()) { nfy("Ingrese nombre del paciente", "er"); return; }
@@ -105,6 +123,7 @@ export default function CalendarPage({ userId, nfy, userSettings, profesionalNom
   const getColorHex = (id) => COLORS.find(c => c.id === id)?.hex || "#2563eb";
   const I = { width: "100%", padding: "10px 14px", border: "1px solid #e2e8f0", borderRadius: 8, fontSize: 14, background: "#f8faf9" };
   const dayCitas = selDay ? getCitasForDay(selDay) : [];
+  const filteredPacs = showPacSearch && !selectedPac ? getFilteredPacientes() : [];
 
   return (
     <div style={{ animation: "fi .3s ease", width: "100%", maxWidth: 900 }}>
@@ -158,13 +177,24 @@ export default function CalendarPage({ userId, nfy, userSettings, profesionalNom
             <label style={{ fontSize: 12, fontWeight: 600, color: K.mt, display: "block", marginBottom: 4 }}>Nombre del paciente</label>
             <div style={{ display: "flex", gap: 8 }}>
               <input value={form.paciente} onChange={e => setForm(p => ({ ...p, paciente: e.target.value }))} style={Object.assign({},I,{flex:1})} placeholder="Nombre y apellido" disabled={!!selectedPac} />
-              {!selectedPac && <button onClick={() => setShowPacSearch(!showPacSearch)} style={{ background: showPacSearch ? "#0d9488" : "#f0fdfa", color: showPacSearch ? "#fff" : "#0d9488", border: "1px solid #99f6e4", borderRadius: 8, padding: "8px 14px", fontSize: 12, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" }}>{showPacSearch ? "Cancelar" : "Seleccionar paciente"}</button>}
+              {!selectedPac && <button onClick={() => { setShowPacSearch(!showPacSearch); setPacSearchQuery(""); }} style={{ background: showPacSearch ? "#0d9488" : "#f0fdfa", color: showPacSearch ? "#fff" : "#0d9488", border: "1px solid #99f6e4", borderRadius: 8, padding: "8px 14px", fontSize: 12, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" }}>{showPacSearch ? "Cancelar" : "Seleccionar paciente"}</button>}
               {selectedPac && <button onClick={clearPacSelection} style={{ background: "#fef2f2", color: "#dc2626", border: "1px solid #fecaca", borderRadius: 8, padding: "8px 14px", fontSize: 12, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" }}>Quitar</button>}
             </div>
             {showPacSearch && !selectedPac && <div style={{ marginTop: 8, padding: "10px 14px", background: "#f0f9ff", borderRadius: 8, border: "1px solid #bae6fd" }}>
-              <label style={{ fontSize: 11, fontWeight: 600, color: "#0369a1", display: "block", marginBottom: 4 }}>Buscar por DNI</label>
-              <input value={pacSearchDni} onChange={e => handlePacSearch(e.target.value.replace(/\D/g,"").slice(0,8))} style={Object.assign({},I,{background:"#fff"})} placeholder="Introducir DNI del paciente" maxLength={8} inputMode="numeric" />
-              {pacSearchDni.length >= 7 && !selectedPac && <div style={{ fontSize: 11, color: "#dc2626", marginTop: 4 }}>{"No se encontró paciente con ese DNI"}</div>}
+              <label style={{ fontSize: 11, fontWeight: 600, color: "#0369a1", display: "block", marginBottom: 4 }}>Buscar por DNI o nombre</label>
+              <input value={pacSearchQuery} onChange={e => setPacSearchQuery(e.target.value)} style={Object.assign({},I,{background:"#fff"})} placeholder="Escribí DNI o nombre del paciente..." autoFocus />
+              {pacSearchQuery.trim().length > 0 && filteredPacs.length > 0 && <div style={{ marginTop: 6, display: "flex", flexDirection: "column", gap: 4 }}>
+                {filteredPacs.map(function(pac) {
+                  return <button key={pac._fbId} onClick={function(){ selectPaciente(pac); setShowPacSearch(false); }} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", background: "#fff", border: "1px solid #e2e8f0", borderRadius: 8, cursor: "pointer", textAlign: "left", transition: "background .1s" }} onMouseEnter={function(e){ e.currentTarget.style.background = "#f0fdf4"; }} onMouseLeave={function(e){ e.currentTarget.style.background = "#fff"; }}>
+                    <div style={{ width: 32, height: 32, borderRadius: 8, background: "#f0f9ff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>{"👤"}</div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: "#1e293b", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{pac.nombre} <span style={{ fontWeight: 400, color: K.mt }}>{"- DNI: " + pac.dni}</span></div>
+                      {pac.fechaNac && <div style={{ fontSize: 11, color: K.mt }}>{calcAge(pac.fechaNac)}</div>}
+                    </div>
+                  </button>;
+                })}
+              </div>}
+              {pacSearchQuery.trim().length > 0 && filteredPacs.length === 0 && <div style={{ fontSize: 11, color: "#dc2626", marginTop: 6 }}>{"No se encontraron pacientes"}</div>}
             </div>}
             {selectedPac && <div style={{ marginTop: 8, padding: "10px 14px", background: "#f0fdf4", borderRadius: 8, border: "1px solid #bbf7d0" }}>
               <div style={{ fontSize: 12, fontWeight: 700, color: "#059669", marginBottom: 4 }}>Paciente seleccionado</div>
