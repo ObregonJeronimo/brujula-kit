@@ -272,7 +272,7 @@ export default function NewFON({ onS, nfy, userId, draft, therapistInfo, isAdmin
               var key = item.word.toLowerCase();
               var textToSpeak = overrideWords[key] || PHON_FIX[key] || item.word;
               setRecording(key);
-              fetch("/api/tts",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({text:textToSpeak,hl:ttsConfig.hl==="browser-google-es"?"es-es":ttsConfig.hl,r:ttsConfig.r})}).then(function(r){return r.json()}).then(function(data){
+              fetch("/api/tts",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({text:textToSpeak,hl:ttsConfig.hl==="browser-google-es"?"es-es":ttsConfig.hl,r:ttsConfig.r,v:ttsConfig.v||""})}).then(function(r){return r.json()}).then(function(data){
                 if(data.success && data.audio){
                   new Audio(data.audio).play().catch(function(){});
                   saveAudio(item.word, data.audio);

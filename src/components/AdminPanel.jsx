@@ -24,15 +24,19 @@ export default function AdminPanel({ nfy }) {
   var _ttsConfig = useState({hl:"es-mx",r:"-2"}), ttsConfig = _ttsConfig[0], setTtsConfig = _ttsConfig[1];
 
   var TTS_VOICES = [
-    {hl:"browser-google-es",name:"Google espa\u00f1ol (Navegador)",desc:"Voz de Google Chrome, masculina, clara. Solo funciona en Chrome."},
-    {hl:"es-mx",name:"Espa\u00f1ol M\u00e9xico (VoiceRSS)",desc:"Acento mexicano, claro y neutro"},
-    {hl:"es-es",name:"Espa\u00f1ol Espa\u00f1a (VoiceRSS)",desc:"Acento castellano"}
+    {hl:"browser-google-es",v:"",name:"Google espa\u00f1ol (Navegador)",desc:"Voz masculina de Chrome. Solo funciona en Chrome."},
+    {hl:"es-mx",v:"",name:"Espa\u00f1ol M\u00e9xico - Por defecto",desc:"Voz femenina mexicana"},
+    {hl:"es-es",v:"",name:"Espa\u00f1ol Espa\u00f1a - Por defecto",desc:"Voz femenina castellana"},
+    {hl:"es-mx",v:"Juan",name:"Espa\u00f1ol M\u00e9xico - Juan",desc:"Voz masculina mexicana"},
+    {hl:"es-es",v:"Diego",name:"Espa\u00f1ol Espa\u00f1a - Diego",desc:"Voz masculina castellana"},
+    {hl:"es-mx",v:"Lucia",name:"Espa\u00f1ol M\u00e9xico - Lucia",desc:"Voz femenina mexicana alt."},
+    {hl:"es-es",v:"Elvira",name:"Espa\u00f1ol Espa\u00f1a - Elvira",desc:"Voz femenina castellana alt."}
   ];
   var TTS_SPEEDS = [
     {r:"-4",name:"Muy lenta"},{r:"-2",name:"Lenta"},{r:"0",name:"Normal"},{r:"2",name:"R\u00e1pida"}
   ];
 
-  var testVoice = function(hl, r){
+  var testVoice = function(hl, r, voiceName){
     if(hl === "browser-google-es"){
       if(!window.speechSynthesis){ nfy("Sintetizador no disponible","er"); return; }
       var trySpeak = function(){
@@ -59,7 +63,7 @@ export default function AdminPanel({ nfy }) {
       return;
     }
     setTtsLoading(hl+r);
-    fetch("/api/tts",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({text:"ma me mi mo mu",hl:hl,r:r})}).then(function(res){return res.json()}).then(function(data){
+    fetch("/api/tts",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({text:"ma me mi mo mu",hl:hl,r:r,v:voiceName||""})}).then(function(res){return res.json()}).then(function(data){
       setTtsLoading(null);
       if(data.success && data.audio){ new Audio(data.audio).play(); }
       else { nfy("Error: "+(data.error||""),"er"); }
@@ -256,15 +260,15 @@ export default function AdminPanel({ nfy }) {
             <div style={{fontSize:12,fontWeight:600,color:K.mt,marginBottom:8}}>{"Voz / Idioma"}</div>
             <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
               {TTS_VOICES.map(function(v){
-                var sel = ttsConfig.hl === v.hl;
+                var sel = ttsConfig.hl === v.hl && (ttsConfig.v||"") === (v.v||"");
                 var loading = ttsLoading === v.hl+ttsConfig.r;
-                return <div key={v.hl} style={{background:sel?"#f0fdf4":"#fff",border:sel?"2px solid #059669":"1px solid #e2e8f0",borderRadius:10,padding:"12px 16px",cursor:"pointer",flex:"1",minWidth:150}} onClick={function(){ setTtsConfig(function(p){return Object.assign({},p,{hl:v.hl})}); }}>
+                return <div key={v.hl+v.v} style={{background:sel?"#f0fdf4":"#fff",border:sel?"2px solid #059669":"1px solid #e2e8f0",borderRadius:10,padding:"12px 16px",cursor:"pointer",flex:"1",minWidth:150}} onClick={function(){ setTtsConfig(function(p){return Object.assign({},p,{hl:v.hl,v:v.v})}); }}>
                   <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}}>
                     <div style={{fontSize:13,fontWeight:700,color:sel?"#059669":"#1e293b"}}>{v.name}</div>
                     {sel && <span style={{color:"#059669",fontSize:14}}>{"\u2713"}</span>}
                   </div>
                   <div style={{fontSize:11,color:K.mt,marginBottom:8}}>{v.desc}</div>
-                  <button onClick={function(e){ e.stopPropagation(); testVoice(v.hl, ttsConfig.r); }} disabled={loading} style={{padding:"4px 12px",background:sel?"#059669":"#f1f5f9",color:sel?"#fff":"#64748b",border:"none",borderRadius:6,fontSize:11,fontWeight:600,cursor:loading?"wait":"pointer"}}>
+                  <button onClick={function(e){ e.stopPropagation(); testVoice(v.hl, ttsConfig.r, v.v); }} disabled={loading} style={{padding:"4px 12px",background:sel?"#059669":"#f1f5f9",color:sel?"#fff":"#64748b",border:"none",borderRadius:6,fontSize:11,fontWeight:600,cursor:loading?"wait":"pointer"}}>
                     {loading ? "Cargando..." : "\ud83d\udd0a Escuchar ejemplo"}
                   </button>
                 </div>;

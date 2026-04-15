@@ -10,6 +10,7 @@ export default async function handler(req, res) {
   var apiKey = process.env.VOICERSS_API_KEY || "62a89bc58a174c9da9a30e7cde5af090";
   var hl = req.body.hl || "es-mx";
   var r = req.body.r || "-2";
+  var v = req.body.v || "";
   
   var params = new URLSearchParams({
     key: apiKey,
@@ -20,6 +21,7 @@ export default async function handler(req, res) {
     f: "44khz_16bit_mono",
     b64: "true"
   });
+  if(v) params.set("v", v);
 
   try {
     var data = await new Promise(function(resolve, reject) {
