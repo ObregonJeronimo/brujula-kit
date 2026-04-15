@@ -21,7 +21,14 @@ export default function AdminPanel({ nfy }) {
   var _fonAudios = useState(null), fonAudios = _fonAudios[0], setFonAudios = _fonAudios[1];
   var _playingAudio = useState(null), playingAudio = _playingAudio[0], setPlayingAudio = _playingAudio[1];
   var _ttsLoading = useState(null), ttsLoading = _ttsLoading[0], setTtsLoading = _ttsLoading[1];
-  var _ttsConfig = useState({hl:"es-mx",r:"-2"}), ttsConfig = _ttsConfig[0], setTtsConfig = _ttsConfig[1];
+  var _ttsConfig = useState({hl:"es-mx",r:"-2",v:"Juana"}), ttsConfig = _ttsConfig[0], setTtsConfig = _ttsConfig[1];
+
+  // Cargar config de voz guardada
+  useEffect(function(){
+    getDoc(doc(db,"config","tts_config")).then(function(snap){
+      if(snap.exists()) setTtsConfig(function(prev){ return Object.assign({},prev,snap.data()); });
+    }).catch(function(){});
+  },[]);
 
   var TTS_VOICES = [
     {hl:"browser-google-es",v:"",name:"Google espa\u00f1ol (Navegador)",desc:"Voz masculina de Chrome. Solo reproduce, no guarda."},
