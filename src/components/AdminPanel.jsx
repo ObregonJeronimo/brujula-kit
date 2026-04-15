@@ -219,7 +219,7 @@ export default function AdminPanel({ nfy }) {
                   }} style={{background:playingAudio===k?"#059669":"#ede9fe",border:"none",borderRadius:6,width:28,height:28,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:12,color:playingAudio===k?"#fff":"#6d28d9",flexShrink:0}}>{playingAudio===k?"\u23f9":"\u25b6"}</button>
                   <span style={{fontSize:14,fontWeight:700,color:"#1e293b",flex:1}}>{k}</span>
                   <button onClick={function(){
-                    var ok = window.confirm("Eliminar audio de '"+k+"'?");
+                    var ok = window.confirm("\u26a0\ufe0f Eliminar audio de '"+k+"'?\n\nEste audio fue grabado manualmente y no se puede recuperar.\n\u00bfEst\u00e1s seguro?");
                     if(!ok) return;
                     deleteDoc(doc(db,"fon_audios",k)).then(function(){
                       var next = Object.assign({}, fonAudios);
@@ -230,18 +230,6 @@ export default function AdminPanel({ nfy }) {
                   }} style={{background:"none",border:"none",fontSize:14,color:"#dc2626",cursor:"pointer",padding:2,flexShrink:0}}>{"\u00d7"}</button>
                 </div>;
               })}
-            </div>
-            <div style={{marginTop:16}}>
-              <button onClick={function(){
-                var ok = window.confirm("Eliminar TODOS los "+keys.length+" audios grabados?\n\nEsta accion es irreversible.");
-                if(!ok) return;
-                getDocs(collection(db,"fon_audios")).then(function(snap){
-                  return Promise.all(snap.docs.map(function(d){ return deleteDoc(doc(db,"fon_audios",d.id)); }));
-                }).then(function(){
-                  setFonAudios({});
-                  nfy("Todos los audios eliminados","ok");
-                }).catch(function(e){ nfy("Error: "+e.message,"er"); });
-              }} style={{padding:"10px 20px",background:"#dc2626",color:"#fff",border:"none",borderRadius:8,fontSize:12,fontWeight:600,cursor:"pointer"}}>{"Eliminar todos los audios"}</button>
             </div>
           </div>;
         })()}
