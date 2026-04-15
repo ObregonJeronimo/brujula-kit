@@ -15,6 +15,9 @@ export default async function handler(req, res) {
   const fechaFormateada = parts[2] + " de " + MESES[parseInt(parts[1],10)-1] + " de " + parts[0];
   const horaStr = hora ? hora.substring(0,5) + " hs" : "Sin horario definido";
 
+  // Use consultorio name as sender name, fallback to generic
+  const senderName = (consultorio && consultorio.nombre) ? consultorio.nombre : "Recordatorio de Cita";
+
   let consultorioHtml = "";
   if (consultorio && (consultorio.nombre || consultorio.direccion || consultorio.telefono || consultorio.email)) {
     consultorioHtml = `
@@ -35,8 +38,7 @@ export default async function handler(req, res) {
   <div style="max-width:520px;margin:32px auto;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.08)">
     
     <div style="background:linear-gradient(135deg,#0a3d2f,#0d9488);padding:28px 32px;text-align:center">
-      <div style="font-size:22px;font-weight:700;color:#ffffff;letter-spacing:0.5px">Recordatorio de Cita</div>
-      <div style="font-size:12px;color:#5eead4;margin-top:4px;font-weight:600;letter-spacing:1px">BR\u00daJULA KIT</div>
+      <div style="font-size:22px;font-weight:700;color:#ffffff;letter-spacing:0.5px">Recordatorio de Cita Fonoaudiol\u00f3gica</div>
     </div>
 
     <div style="padding:28px 32px">
@@ -67,8 +69,8 @@ export default async function handler(req, res) {
       </div>
     </div>
 
-    <div style="padding:16px 32px;background:#f8fafc;border-top:1px solid #e2e8f0;text-align:center">
-      <div style="font-size:10px;color:#94a3b8">Este es un mensaje autom\u00e1tico enviado por Br\u00fajula KIT</div>
+    <div style="padding:18px 32px;background:#f8fafc;border-top:1px solid #e2e8f0;text-align:center">
+      <div style="font-size:12px;color:#64748b;line-height:1.5">Este es un mensaje autom\u00e1tico enviado por Br\u00fajula KIT &mdash; Sistema profesional de fonoaudiolog\u00eda</div>
     </div>
   </div>
 </body>
@@ -77,7 +79,7 @@ export default async function handler(req, res) {
 
   try {
     const result = await resend.emails.send({
-      from: "Br\u00fajula KIT <noreply@brujulakit.com>",
+      from: senderName + " <noreply@brujulakit.com>",
       to: [to],
       subject: "Recordatorio de cita - " + paciente + " - " + fechaFormateada,
       html: html
