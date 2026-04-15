@@ -21,7 +21,7 @@ export default function AdminPanel({ nfy }) {
   var _fonAudios = useState(null), fonAudios = _fonAudios[0], setFonAudios = _fonAudios[1];
   var _playingAudio = useState(null), playingAudio = _playingAudio[0], setPlayingAudio = _playingAudio[1];
   var _ttsLoading = useState(null), ttsLoading = _ttsLoading[0], setTtsLoading = _ttsLoading[1];
-  var _ttsConfig = useState({hl:"es-mx",r:"-2",v:"Juana"}), ttsConfig = _ttsConfig[0], setTtsConfig = _ttsConfig[1];
+  var _ttsConfig = useState({hl:"edge",r:"0%",v:"es-AR-TomasNeural"}), ttsConfig = _ttsConfig[0], setTtsConfig = _ttsConfig[1];
 
   // Cargar config de voz guardada
   useEffect(function(){
@@ -32,17 +32,17 @@ export default function AdminPanel({ nfy }) {
 
   var TTS_VOICES = [
     {hl:"browser-google-es",v:"",name:"Google espa\u00f1ol (Navegador)",desc:"Voz masculina de Chrome. Solo reproduce, no guarda."},
-    {hl:"es-mx",v:"Jose",name:"Jose - M\u00e9xico (Masculina)",desc:"Voz masculina mexicana"},
-    {hl:"es-es",v:"Diego",name:"Diego - Espa\u00f1a (Masculina)",desc:"Voz masculina castellana"},
-    {hl:"es-mx",v:"Juana",name:"Juana - M\u00e9xico (Femenina)",desc:"Voz femenina mexicana (por defecto)"},
-    {hl:"es-mx",v:"Silvia",name:"Silvia - M\u00e9xico (Femenina)",desc:"Voz femenina mexicana alternativa"},
-    {hl:"es-mx",v:"Teresa",name:"Teresa - M\u00e9xico (Femenina)",desc:"Voz femenina mexicana alternativa"},
-    {hl:"es-es",v:"Camila",name:"Camila - Espa\u00f1a (Femenina)",desc:"Voz femenina castellana (por defecto)"},
-    {hl:"es-es",v:"Sofia",name:"Sofia - Espa\u00f1a (Femenina)",desc:"Voz femenina castellana alternativa"},
-    {hl:"es-es",v:"Luna",name:"Luna - Espa\u00f1a (Femenina)",desc:"Voz femenina castellana alternativa"}
+    {hl:"edge",v:"es-AR-TomasNeural",name:"Tomas - Argentina (Masculina)",desc:"Voz masculina argentina, neural"},
+    {hl:"edge",v:"es-AR-ElenaNeural",name:"Elena - Argentina (Femenina)",desc:"Voz femenina argentina, neural"},
+    {hl:"edge",v:"es-MX-JorgeNeural",name:"Jorge - M\u00e9xico (Masculina)",desc:"Voz masculina mexicana, neural"},
+    {hl:"edge",v:"es-MX-DaliaNeural",name:"Dalia - M\u00e9xico (Femenina)",desc:"Voz femenina mexicana, neural"},
+    {hl:"edge",v:"es-ES-AlvaroNeural",name:"Alvaro - Espa\u00f1a (Masculina)",desc:"Voz masculina castellana, neural"},
+    {hl:"edge",v:"es-ES-ElviraNeural",name:"Elvira - Espa\u00f1a (Femenina)",desc:"Voz femenina castellana, neural"},
+    {hl:"edge",v:"es-CO-GonzaloNeural",name:"Gonzalo - Colombia (Masculina)",desc:"Voz masculina colombiana, neural"},
+    {hl:"edge",v:"es-CO-SalomeNeural",name:"Salome - Colombia (Femenina)",desc:"Voz femenina colombiana, neural"}
   ];
   var TTS_SPEEDS = [
-    {r:"-4",name:"Muy lenta"},{r:"-2",name:"Lenta"},{r:"0",name:"Normal"},{r:"2",name:"R\u00e1pida"}
+    {r:"-30%",name:"Muy lenta"},{r:"-15%",name:"Lenta"},{r:"0%",name:"Normal"},{r:"+15%",name:"R\u00e1pida"}
   ];
 
   var testVoice = function(hl, r, voiceName){

@@ -141,7 +141,7 @@ export default function NewFON({ onS, nfy, userId, draft, therapistInfo, isAdmin
   var _recording = useState(null), recording = _recording[0], setRecording = _recording[1];
   // Override temporal del texto que se pasa al sintetizador (editable por admin)
   var _overrideWords = useState({}), overrideWords = _overrideWords[0], setOverrideWords = _overrideWords[1];
-  var _ttsConfig = useState({hl:"es-mx",r:"-2",v:"Juana"}), ttsConfig = _ttsConfig[0], setTtsConfig = _ttsConfig[1];
+  var _ttsConfig = useState({hl:"edge",r:"0%",v:"es-AR-TomasNeural"}), ttsConfig = _ttsConfig[0], setTtsConfig = _ttsConfig[1];
 
   useEffect(function(){
     getDoc(doc(db,"config","tts_config")).then(function(snap){

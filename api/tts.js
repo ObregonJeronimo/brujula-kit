@@ -1,47 +1,27 @@
-// Vercel serverless function for VoiceRSS Text-to-Speech
-import https from "https";
+// Vercel serverless function — Edge TTS (Microsoft Neural Voices)
+// Free, unlimited, no API key needed
+import { EdgeTTS } from "@andresaya/edge-tts";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "POST only" });
-  
+
   var text = req.body && req.body.text;
   if (!text) return res.status(400).json({ error: "text required" });
-  
-  var apiKey = process.env.VOICERSS_API_KEY || "62a89bc58a174c9da9a30e7cde5af090";
-  var hl = req.body.hl || "es-mx";
-  var r = req.body.r || "-2";
-  var v = req.body.v || "";
-  
-  var params = new URLSearchParams({
-    key: apiKey,
-    hl: hl,
-    src: text,
-    r: r,
-    c: "MP3",
-    f: "44khz_16bit_mono",
-    b64: "true"
-  });
-  if(v) params.set("v", v);
+
+  var voice = req.body.v || "es-AR-TomasNeural";
+  var rate = req.body.r || "0%";
 
   try {
-    var data = await new Promise(function(resolve, reject) {
-      var url = "https://api.voicerss.org/?" + params.toString();
-      https.get(url, function(response) {
-        var chunks = [];
-        response.on("data", function(chunk) { chunks.push(chunk); });
-        response.on("end", function() { resolve(Buffer.concat(chunks).toString()); });
-        response.on("error", reject);
-      }).on("error", reject);
-    });
+    var tts = new EdgeTTS();
+    await tts.synthesize(text, voice, { rate: rate });
+    var audioBuffer = await tts.toBuffer();
+    
+    // Convert to base64 data URI
+    var base64 = audioBuffer.toString("base64");
+    var mimeType = "audio/mp3";
+    var dataUri = "data:" + mimeType + ";base64," + base64;
 
-    if (data.startsWith("ERROR")) {
-      return res.status(500).json({ error: data });
-    }
-
-    res.status(200).json({
-      success: true,
-      audio: data
-    });
+    res.status(200).json({ success: true, audio: dataUri });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
