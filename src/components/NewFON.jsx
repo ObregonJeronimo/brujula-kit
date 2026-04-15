@@ -4,7 +4,7 @@ import { PEFF_SECTIONS } from "../data/peffSections.js";
 import { PF_CATEGORIES, ALL_PROCESSES } from "../data/peffProcesos.js";
 import EvalShell from "./EvalShell.jsx";
 import { detectProceso } from "../lib/detectProceso.js";
-import { db, doc, setDoc, collection, getDocs, deleteDoc } from "../firebase.js";
+import { db, doc, getDoc, setDoc, collection, getDocs, deleteDoc } from "../firebase.js";
 
 var FON_SECTION_RAW = PEFF_SECTIONS.find(function(s){ return s.id === "fon"; });
 // Filter out Vocales and clean titles (remove "X años")
