@@ -20,70 +20,6 @@ export default function AdminPanel({ nfy }) {
   // Audios de evaluación fonética
   var _fonAudios = useState(null), fonAudios = _fonAudios[0], setFonAudios = _fonAudios[1];
   var _playingAudio = useState(null), playingAudio = _playingAudio[0], setPlayingAudio = _playingAudio[1];
-  var _ttsLoading = useState(null), ttsLoading = _ttsLoading[0], setTtsLoading = _ttsLoading[1];
-  var _ttsConfig = useState({hl:"edge",r:"0%",v:"es-AR-TomasNeural"}), ttsConfig = _ttsConfig[0], setTtsConfig = _ttsConfig[1];
-
-  // Cargar config de voz guardada
-  useEffect(function(){
-    getDoc(doc(db,"config","tts_config")).then(function(snap){
-      if(snap.exists()) setTtsConfig(function(prev){ return Object.assign({},prev,snap.data()); });
-    }).catch(function(){});
-  },[]);
-
-  var TTS_VOICES = [
-    {hl:"browser-google-es",v:"",name:"Google espa\u00f1ol (Navegador)",desc:"Voz masculina de Chrome. Solo reproduce, no guarda."},
-    {hl:"edge",v:"es-AR-TomasNeural",name:"Tomas - Argentina (Masculina)",desc:"Voz masculina argentina, neural"},
-    {hl:"edge",v:"es-AR-ElenaNeural",name:"Elena - Argentina (Femenina)",desc:"Voz femenina argentina, neural"},
-    {hl:"edge",v:"es-MX-JorgeNeural",name:"Jorge - M\u00e9xico (Masculina)",desc:"Voz masculina mexicana, neural"},
-    {hl:"edge",v:"es-MX-DaliaNeural",name:"Dalia - M\u00e9xico (Femenina)",desc:"Voz femenina mexicana, neural"},
-    {hl:"edge",v:"es-ES-AlvaroNeural",name:"Alvaro - Espa\u00f1a (Masculina)",desc:"Voz masculina castellana, neural"},
-    {hl:"edge",v:"es-ES-ElviraNeural",name:"Elvira - Espa\u00f1a (Femenina)",desc:"Voz femenina castellana, neural"},
-    {hl:"edge",v:"es-CO-GonzaloNeural",name:"Gonzalo - Colombia (Masculina)",desc:"Voz masculina colombiana, neural"},
-    {hl:"edge",v:"es-CO-SalomeNeural",name:"Salome - Colombia (Femenina)",desc:"Voz femenina colombiana, neural"}
-  ];
-  var TTS_SPEEDS = [
-    {r:"-30%",name:"Muy lenta"},{r:"-15%",name:"Lenta"},{r:"0%",name:"Normal"},{r:"+15%",name:"R\u00e1pida"}
-  ];
-
-  var testVoice = function(hl, r, voiceName){
-    if(hl === "browser-google-es"){
-      if(!window.speechSynthesis){ nfy("Sintetizador no disponible","er"); return; }
-      var trySpeak = function(){
-        var voices = window.speechSynthesis.getVoices();
-        var gv = voices.find(function(v){return v.name === "Google espa\u00f1ol"});
-        if(!gv) return false;
-        window.speechSynthesis.cancel();
-        var u = new SpeechSynthesisUtterance("ma me mi mo mu");
-        u.voice = gv;
-        var speeds = {"-4":0.5,"-2":0.72,"0":1,"2":1.3};
-        u.rate = speeds[r] || 0.72;
-        u.pitch = 1.05;
-        window.speechSynthesis.speak(u);
-        return true;
-      };
-      if(!trySpeak()){
-        // Voces no cargadas aún, esperar y reintentar
-        window.speechSynthesis.onvoiceschanged = function(){
-          if(!trySpeak()) nfy("Voz 'Google espa\u00f1ol' no encontrada","er");
-        };
-        // Forzar carga
-        window.speechSynthesis.getVoices();
-      }
-      return;
-    }
-    setTtsLoading(hl+r);
-    fetch("/api/tts",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({text:"ma me mi mo mu",hl:hl,r:r,v:voiceName||""})}).then(function(res){return res.json()}).then(function(data){
-      setTtsLoading(null);
-      if(data.success && data.audio){ new Audio(data.audio).play(); }
-      else { nfy("Error: "+(data.error||""),"er"); }
-    }).catch(function(e){ setTtsLoading(null); nfy("Error: "+e.message,"er"); });
-  };
-
-  var saveVoiceConfig = function(){
-    setDoc(doc(db,"config","tts_config"),ttsConfig).then(function(){
-      nfy("Voz guardada como predeterminada","ok");
-    }).catch(function(e){ nfy("Error: "+e.message,"er"); });
-  };
 
   // Cargar audios cuando se abre la tab
   useEffect(function(){
@@ -260,45 +196,7 @@ export default function AdminPanel({ nfy }) {
       </div>}
 
       {tab==="audios" && <div>
-        {/* Selector de voz */}
-        <div style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",padding:20,marginBottom:20}}>
-          <div style={{fontSize:14,fontWeight:700,color:"#1e293b",marginBottom:12}}>{"Configuraci\u00f3n de voz TTS"}</div>
-          <div style={{fontSize:12,color:K.mt,marginBottom:16}}>{"Seleccion\u00e1 la voz y velocidad para generar los audios. Escuch\u00e1 el ejemplo antes de elegir."}</div>
-
-          <div style={{marginBottom:16}}>
-            <div style={{fontSize:12,fontWeight:600,color:K.mt,marginBottom:8}}>{"Voz / Idioma"}</div>
-            <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-              {TTS_VOICES.map(function(v){
-                var sel = ttsConfig.hl === v.hl && (ttsConfig.v||"") === (v.v||"");
-                var loading = ttsLoading === v.hl+ttsConfig.r;
-                return <div key={v.hl+v.v} style={{background:sel?"#f0fdf4":"#fff",border:sel?"2px solid #059669":"1px solid #e2e8f0",borderRadius:10,padding:"12px 16px",cursor:"pointer",flex:"1",minWidth:150}} onClick={function(){ setTtsConfig(function(p){return Object.assign({},p,{hl:v.hl,v:v.v})}); }}>
-                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}}>
-                    <div style={{fontSize:13,fontWeight:700,color:sel?"#059669":"#1e293b"}}>{v.name}</div>
-                    {sel && <span style={{color:"#059669",fontSize:14}}>{"\u2713"}</span>}
-                  </div>
-                  <div style={{fontSize:11,color:K.mt,marginBottom:8}}>{v.desc}</div>
-                  <button onClick={function(e){ e.stopPropagation(); testVoice(v.hl, ttsConfig.r, v.v); }} disabled={loading} style={{padding:"4px 12px",background:sel?"#059669":"#f1f5f9",color:sel?"#fff":"#64748b",border:"none",borderRadius:6,fontSize:11,fontWeight:600,cursor:loading?"wait":"pointer"}}>
-                    {loading ? "Cargando..." : "\ud83d\udd0a Escuchar ejemplo"}
-                  </button>
-                </div>;
-              })}
-            </div>
-          </div>
-
-          <div style={{marginBottom:16}}>
-            <div style={{fontSize:12,fontWeight:600,color:K.mt,marginBottom:8}}>{"Velocidad"}</div>
-            <div style={{display:"flex",gap:8}}>
-              {TTS_SPEEDS.map(function(s){
-                var sel = ttsConfig.r === s.r;
-                return <button key={s.r} onClick={function(){ setTtsConfig(function(p){return Object.assign({},p,{r:s.r})}); }} style={{padding:"8px 16px",borderRadius:8,border:sel?"2px solid #059669":"1px solid #e2e8f0",background:sel?"#f0fdf4":"#fff",color:sel?"#059669":"#64748b",fontSize:12,fontWeight:600,cursor:"pointer"}}>{s.name}</button>;
-              })}
-            </div>
-          </div>
-
-          <button onClick={saveVoiceConfig} style={{padding:"10px 20px",background:"#059669",color:"#fff",border:"none",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer"}}>{"Guardar voz predeterminada"}</button>
-        </div>
-
-        <p style={{fontSize:13,color:K.mt,marginBottom:16}}>{"Audios grabados para la Evaluaci\u00f3n Fon\u00e9tica. Se reproducen en vez del sintetizador de voz."}</p>
+        <p style={{fontSize:13,color:K.mt,marginBottom:16}}>{"Audios guardados para la Evaluaci\u00f3n Fon\u00e9tica. Se reproducen cuando el usuario toca Escuchar."}</p>
         {fonAudios === null ? <div style={{textAlign:"center",padding:20,color:K.mt,fontSize:14}}>{"Cargando audios..."}</div> : (function(){
           var keys = Object.keys(fonAudios).sort();
           if(keys.length === 0) return <div style={{background:"#f8faf9",borderRadius:10,padding:20,textAlign:"center",color:K.mt,fontSize:14}}>{"No hay audios grabados. And\u00e1 a Herramientas \u2192 Evaluaci\u00f3n Fon\u00e9tica para grabar."}</div>;

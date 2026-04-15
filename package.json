@@ -9,7 +9,6 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@andresaya/edge-tts": "^1.8.0",
     "firebase": "^10.8.0",
     "firebase-admin": "^12.0.0",
     "jspdf": "^2.5.1",

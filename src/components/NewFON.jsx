@@ -4,7 +4,7 @@ import { PEFF_SECTIONS } from "../data/peffSections.js";
 import { PF_CATEGORIES, ALL_PROCESSES } from "../data/peffProcesos.js";
 import EvalShell from "./EvalShell.jsx";
 import { detectProceso } from "../lib/detectProceso.js";
-import { db, doc, getDoc, setDoc, collection, getDocs, deleteDoc } from "../firebase.js";
+import { db, collection, getDocs } from "../firebase.js";
 
 var FON_SECTION_RAW = PEFF_SECTIONS.find(function(s){ return s.id === "fon"; });
 // Filter out Vocales and clean titles (remove "X años")
@@ -22,77 +22,8 @@ var FON_SECTION = {
 };
 var I = {width:"100%",padding:"10px 14px",border:"1px solid #e2e8f0",borderRadius:8,fontSize:14,background:"#f8faf9"};
 
-// Preload voices
-var _cachedVoice = null;
-var _voicesLoaded = false;
-var findBestVoice = function(){
-  var voices = window.speechSynthesis.getVoices();
-  if(!voices.length) return null;
-  return voices.find(function(v){return /es[-_]AR/i.test(v.lang) && /Google|Microsoft/i.test(v.name)})
-    || voices.find(function(v){return /es/i.test(v.lang) && /Google/i.test(v.name)})
-    || voices.find(function(v){return /es/i.test(v.lang) && /Microsoft/i.test(v.name)})
-    || voices.find(function(v){return /es[-_]AR/i.test(v.lang)})
-    || voices.find(function(v){return /es[-_]MX/i.test(v.lang)})
-    || voices.find(function(v){return /es[-_]ES/i.test(v.lang)})
-    || voices.find(function(v){return v.lang.startsWith("es")});
-};
-if(window.speechSynthesis){
-  window.speechSynthesis.getVoices();
-  window.speechSynthesis.onvoiceschanged = function(){
-    _cachedVoice = findBestVoice();
-    _voicesLoaded = true;
-  };
-  // Try immediately in case voices are already loaded
-  var imm = findBestVoice();
-  if(imm){ _cachedVoice = imm; _voicesLoaded = true; }
-}
 
-// Correcciones fonéticas para sílabas que el sintetizador pronuncia mal
-var PHON_FIX = {
-  // Estrategia: agregar punto al final fuerza al sintetizador a
-  // tratar la sílaba como palabra completa sin deletrear.
-  // Solo las que fallan sin corrección.
-  
-  // J - sin punto el sintetizador las lee como Y
-  "ja":"jaa.","je":"jee.","ji":"jii.","jo":"joo.","ju":"juu.",
-  // B - sin punto deletrea
-  "ba":"baa.","be":"bee.","bi":"bii.","bo":"boo.","bu":"buu.",
-  // CH
-  "cha":"chaa.","che":"chee.","chi":"chii.","cho":"choo.","chu":"chuu.",
-  // G - ga/go/gu normales, ge/gi suenan como je/ji
-  "ga":"gaa.","ge":"jee.","gi":"jii.","go":"goo.","gu":"guu.",
-  // Grupos consonánticos
-  "bla":"blaa.","ble":"blee.","bli":"blii.","blo":"bloo.","blu":"bluu.",
-  "bra":"braa.","bre":"bree.","bri":"brii.","bro":"broo.","bru":"bruu.",
-  "cla":"claa.","cle":"clee.","cli":"clii.","clo":"cloo.","clu":"cluu.",
-  "cra":"craa.","cre":"cree.","cri":"crii.","cro":"croo.","cru":"cruu.",
-  "dra":"draa.","dre":"dree.","dri":"drii.","dro":"droo.","dru":"druu.",
-  "fla":"flaa.","fle":"flee.","fli":"flii.","flo":"floo.","flu":"fluu.",
-  "fra":"fraa.","fre":"free.","fri":"frii.","fro":"froo.","fru":"fruu.",
-  "gla":"glaa.","gle":"glee.","gli":"glii.","glo":"gloo.","glu":"gluu.",
-  "gra":"graa.","gre":"gree.","gri":"grii.","gro":"groo.","gru":"gruu.",
-  "pla":"plaa.","ple":"plee.","pli":"plii.","plo":"ploo.","plu":"pluu.",
-  "pra":"praa.","pre":"pree.","pri":"prii.","pro":"proo.","pru":"pruu.",
-  "tra":"traa.","tre":"tree.","tri":"trii.","tro":"troo.","tru":"truu.",
-  // RR
-  "rra":"rraa.","rre":"rree.","rri":"rrii.","rro":"rroo.","rru":"rruu.",
-  // Diptongos
-  "au":"aau.","ei":"eei.","ou":"oou.",
-  // ARE y similares
-  "are":"aare.","ere":"eere.","ire":"iire.","ore":"oore.","ure":"uure."
-};
 
-var speak = function(text){
-  if(!window.speechSynthesis) return;
-  window.speechSynthesis.cancel();
-  // Aplicar corrección fonética
-  var fixed = PHON_FIX[text.toLowerCase()] || text;
-  var u = new SpeechSynthesisUtterance(fixed);
-  u.lang = "es-AR"; u.rate = 0.72; u.pitch = 1.05; u.volume = 1;
-  if(!_cachedVoice && !_voicesLoaded){ _cachedVoice = findBestVoice(); }
-  if(_cachedVoice) u.voice = _cachedVoice;
-  window.speechSynthesis.speak(u);
-};
 
 var sevCalc = function(pct){
   if(pct >= 100) return "Adecuado";
@@ -135,20 +66,11 @@ function buildPayloadExtra(responses, obsMap){
   return { seccionData: responses, procesosData: obsMap };
 }
 
-export default function NewFON({ onS, nfy, userId, draft, therapistInfo, isAdmin }){
+export default function NewFON({ onS, nfy, userId, draft, therapistInfo }){
   var _procData = useState({}), procData = _procData[0], setProcData = _procData[1];
   var _savedAudios = useState({}), savedAudios = _savedAudios[0], setSavedAudios = _savedAudios[1];
-  var _recording = useState(null), recording = _recording[0], setRecording = _recording[1];
-  // Override temporal del texto que se pasa al sintetizador (editable por admin)
-  var _overrideWords = useState({}), overrideWords = _overrideWords[0], setOverrideWords = _overrideWords[1];
-  var _ttsConfig = useState({hl:"edge",r:"0%",v:"es-AR-TomasNeural"}), ttsConfig = _ttsConfig[0], setTtsConfig = _ttsConfig[1];
 
-  useEffect(function(){
-    getDoc(doc(db,"config","tts_config")).then(function(snap){
-      if(snap.exists()) setTtsConfig(snap.data());
-    }).catch(function(){});
-  },[]);
-
+  // Cargar audios guardados de Firestore al montar
   useEffect(function(){
     getDocs(collection(db,"fon_audios")).then(function(snap){
       var audios = {};
@@ -157,78 +79,11 @@ export default function NewFON({ onS, nfy, userId, draft, therapistInfo, isAdmin
     }).catch(function(){ setSavedAudios({}); });
   },[]);
 
-  // Guardar audio individual en Firestore (1 doc por sílaba, sin límite de 1MB)
-  var saveAudio = function(word, base64){
-    var key = word.toLowerCase();
-    setDoc(doc(db,"fon_audios",key), {audio: base64, updatedAt: new Date().toISOString()}).then(function(){
-      setSavedAudios(function(prev){
-        var next = Object.assign({}, prev);
-        next[key] = base64;
-        return next;
-      });
-    }).catch(function(e){ nfy("Error: "+e.message,"er"); });
-    setRecording(null);
-  };
-
-  // Admin: generar audio con API TTS, reproducir y guardar automaticamente
-  // Hablar con Google español del navegador
-  var speakBrowser = function(word){
-    if(!window.speechSynthesis) return;
-    window.speechSynthesis.cancel();
-    var key = word.toLowerCase();
-    var textToSpeak = overrideWords[key] || PHON_FIX[key] || word;
-    var u = new SpeechSynthesisUtterance(textToSpeak);
-    var voices = window.speechSynthesis.getVoices();
-    var gv = voices.find(function(v){return v.name === "Google espa\u00f1ol"});
-    if(gv) u.voice = gv;
-    u.lang = "es-ES";
-    var speeds = {"-4":0.5,"-2":0.72,"0":1,"2":1.3};
-    u.rate = speeds[ttsConfig.r] || 0.72;
-    u.pitch = 1.05; u.volume = 1;
-    window.speechSynthesis.speak(u);
-  };
-
-  var speakAndRecord = function(word){
-    var key = word.toLowerCase();
-    var textToSpeak = overrideWords[key] || PHON_FIX[key] || word;
-    // Si es voz del navegador, solo reproducir (no se puede guardar)
-    if(ttsConfig.hl === "browser-google-es"){
-      speakBrowser(word);
-      return;
-    }
-    setRecording(key);
-    fetch("/api/tts", {
-      method: "POST",
-      headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({text: textToSpeak, hl: ttsConfig.hl, r: ttsConfig.r, v: ttsConfig.v||""})
-    }).then(function(r){ return r.json(); })
-    .then(function(data){
-      if(data.success && data.audio){
-        var audio = new Audio(data.audio);
-        audio.play().catch(function(){});
-        saveAudio(word, data.audio);
-      } else {
-        nfy("Error TTS: "+(data.error||"desconocido"),"er");
-        setRecording(null);
-      }
-    }).catch(function(e){
-      nfy("Error: "+e.message,"er");
-      setRecording(null);
-    });
-  };
-
-  // Reproducir: audio guardado si existe, sino sintetizador (o grabar si admin)
+  // Reproducir audio guardado
   var playWord = function(word){
     var key = word.toLowerCase();
     if(savedAudios[key]){
-      var audio = new Audio(savedAudios[key]);
-      audio.play().catch(function(){ speakBrowser(word); });
-    } else if(ttsConfig.hl === "browser-google-es") {
-      speakBrowser(word);
-    } else if(isAdmin) {
-      speakAndRecord(word);
-    } else {
-      speak(word);
+      new Audio(savedAudios[key]).play().catch(function(){});
     }
   };
 
@@ -266,23 +121,9 @@ export default function NewFON({ onS, nfy, userId, draft, therapistInfo, isAdmin
         var isError = v==="D"||v==="O"||v==="S";
         var pd = procData[item.id] || {};
         return <div key={item.id} style={{marginBottom:isError?12:4}}>
-          <div style={{display:"flex",alignItems:"center",gap:10,padding:"8px 14px",background:isError?"#fef2f2":v==="ok"?"#f0fdf4":"#fff",borderRadius:isError?"8px 8px 0 0":8,border:"1px solid "+(isError?"#fecaca":v==="ok"?"#bbf7d0":"#e2e8f0"),flexWrap:isAdmin?"wrap":"nowrap"}}>
-            {savedAudios[item.word.toLowerCase()] ? <button onClick={function(){playWord(item.word)}} style={{background:"#059669",border:"none",borderRadius:6,padding:"4px 8px",fontSize:12,cursor:"pointer",color:"#fff"}}>{"\ud83d\udd0a Escuchar"}</button> : <button onClick={function(){playWord(item.word)}} style={{background:"#ede9fe",border:"1px solid #c4b5fd",borderRadius:6,padding:"4px 8px",fontSize:12,cursor:"pointer",color:"#6d28d9"}}>{"Escuchar"}</button>}
-            {isAdmin && !savedAudios[item.word.toLowerCase()] && <button onClick={function(){
-              var key = item.word.toLowerCase();
-              var textToSpeak = overrideWords[key] || PHON_FIX[key] || item.word;
-              setRecording(key);
-              fetch("/api/tts",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({text:textToSpeak,hl:ttsConfig.hl==="browser-google-es"?"es-es":ttsConfig.hl,r:ttsConfig.r,v:ttsConfig.v||""})}).then(function(r){return r.json()}).then(function(data){
-                if(data.success && data.audio){
-                  new Audio(data.audio).play().catch(function(){});
-                  saveAudio(item.word, data.audio);
-                } else { nfy("Error: "+(data.error||""),"er"); setRecording(null); }
-              }).catch(function(e){ nfy("Error: "+e.message,"er"); setRecording(null); });
-            }} disabled={recording===item.word.toLowerCase()} style={{background:"#2563eb",border:"none",borderRadius:6,padding:"4px 8px",fontSize:11,cursor:recording===item.word.toLowerCase()?"wait":"pointer",color:"#fff"}}>{recording===item.word.toLowerCase()?"\u23f3 Guardando...":"\ud83d\udcbe Guardar"}</button>}
-            {isAdmin && savedAudios[item.word.toLowerCase()] && <button onClick={function(){ deleteDoc(doc(db,"fon_audios",item.word.toLowerCase())).catch(function(){}); var next = Object.assign({},savedAudios); delete next[item.word.toLowerCase()]; setSavedAudios(next); }} style={{background:"#f1f5f9",border:"1px solid #e2e8f0",borderRadius:6,padding:"4px 8px",fontSize:11,cursor:"pointer",color:"#64748b"}}>{"Reemplazar"}</button>}
-            {isAdmin && savedAudios[item.word.toLowerCase()] && <span style={{fontSize:11,color:"#059669",fontWeight:600}}>{"\u2705 Guardado"}</span>}
+          <div style={{display:"flex",alignItems:"center",gap:10,padding:"8px 14px",background:isError?"#fef2f2":v==="ok"?"#f0fdf4":"#fff",borderRadius:isError?"8px 8px 0 0":8,border:"1px solid "+(isError?"#fecaca":v==="ok"?"#bbf7d0":"#e2e8f0")}}>
+            {savedAudios[item.word.toLowerCase()] ? <button onClick={function(){playWord(item.word)}} style={{background:"#059669",border:"none",borderRadius:6,padding:"4px 8px",fontSize:12,cursor:"pointer",color:"#fff"}}>{"\ud83d\udd0a Escuchar"}</button> : <span style={{fontSize:11,color:"#94a3b8",padding:"4px 8px"}}>{"Sin audio"}</span>}
             <span style={{fontWeight:700,fontSize:16,minWidth:50,color:"#6d28d9"}}>{item.word}</span>
-            {isAdmin && !savedAudios[item.word.toLowerCase()] && <input value={overrideWords[item.word.toLowerCase()]||PHON_FIX[item.word.toLowerCase()]||item.word} onChange={function(e){ var w=item.word.toLowerCase(); setOverrideWords(function(p){ var n=Object.assign({},p); n[w]=e.target.value; return n; }); }} style={{width:80,padding:"2px 6px",border:"1px solid #e2e8f0",borderRadius:4,fontSize:11,color:"#475569",background:"#f8faf9"}} title={"Texto que se pasa al sintetizador"} />}
             <span style={{fontSize:12,color:"#64748b",flex:1}}>{item.target}</span>
             <div style={{display:"flex",gap:4}}>
               {[{v:"ok",l:"\u2713",bg:"#059669"},{v:"D",l:"D",bg:"#f59e0b"},{v:"O",l:"O",bg:"#dc2626"},{v:"S",l:"S",bg:"#7c3aed"}].map(function(o){
@@ -327,7 +168,7 @@ export default function NewFON({ onS, nfy, userId, draft, therapistInfo, isAdmin
         <button onClick={function(){ props.setStep(props.step+1); props.scrollTop(); }} style={{background:"#6d28d9",color:"#fff",border:"none",padding:"10px 22px",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer"}}>{props.step < props.RESULT_STEP - 1 ? "Siguiente" : "Ver Resultados"}</button>
       </div>
     </div>;
-  },[procData, recording, savedAudios, isAdmin, overrideWords]);
+  },[procData, savedAudios]);
 
   var renderTechDetails = function(results){
     var sc = sevColor[results.severity] || "#6d28d9";
@@ -348,7 +189,7 @@ export default function NewFON({ onS, nfy, userId, draft, therapistInfo, isAdmin
     </div>;
   };
 
-  return <><style>{"@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}"}</style><EvalShell
+  return <EvalShell
     onS={onS} nfy={nfy} userId={userId}
     config={config}
     renderEval={renderEval}
@@ -356,6 +197,5 @@ export default function NewFON({ onS, nfy, userId, draft, therapistInfo, isAdmin
     buildPayloadExtra={buildPayloadExtra}
     renderTechDetails={renderTechDetails}
     draft={draft} therapistInfo={therapistInfo}
-    isAdmin={isAdmin}
-  /></>;
+  />;
 }
