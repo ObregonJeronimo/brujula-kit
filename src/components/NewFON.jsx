@@ -267,7 +267,18 @@ export default function NewFON({ onS, nfy, userId, draft, therapistInfo, isAdmin
         var pd = procData[item.id] || {};
         return <div key={item.id} style={{marginBottom:isError?12:4}}>
           <div style={{display:"flex",alignItems:"center",gap:10,padding:"8px 14px",background:isError?"#fef2f2":v==="ok"?"#f0fdf4":"#fff",borderRadius:isError?"8px 8px 0 0":8,border:"1px solid "+(isError?"#fecaca":v==="ok"?"#bbf7d0":"#e2e8f0"),flexWrap:isAdmin?"wrap":"nowrap"}}>
-            {savedAudios[item.word.toLowerCase()] ? <button onClick={function(){playWord(item.word)}} style={{background:"#059669",border:"none",borderRadius:6,padding:"4px 8px",fontSize:12,cursor:"pointer",color:"#fff"}}>{"\ud83d\udd0a Escuchar"}</button> : <button onClick={function(){playWord(item.word)}} disabled={recording===item.word.toLowerCase()} style={{background:recording===item.word.toLowerCase()?"#dc2626":"#ede9fe",border:"1px solid "+(recording===item.word.toLowerCase()?"#dc2626":"#c4b5fd"),borderRadius:6,padding:"4px 8px",fontSize:12,cursor:recording===item.word.toLowerCase()?"wait":"pointer",color:recording===item.word.toLowerCase()?"#fff":"#6d28d9"}}>{recording===item.word.toLowerCase()?"\ud83d\udd34 Grabando...":"Escuchar"}</button>}
+            {savedAudios[item.word.toLowerCase()] ? <button onClick={function(){playWord(item.word)}} style={{background:"#059669",border:"none",borderRadius:6,padding:"4px 8px",fontSize:12,cursor:"pointer",color:"#fff"}}>{"\ud83d\udd0a Escuchar"}</button> : <button onClick={function(){playWord(item.word)}} style={{background:"#ede9fe",border:"1px solid #c4b5fd",borderRadius:6,padding:"4px 8px",fontSize:12,cursor:"pointer",color:"#6d28d9"}}>{"Escuchar"}</button>}
+            {isAdmin && !savedAudios[item.word.toLowerCase()] && <button onClick={function(){
+              var key = item.word.toLowerCase();
+              var textToSpeak = overrideWords[key] || PHON_FIX[key] || item.word;
+              setRecording(key);
+              fetch("/api/tts",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({text:textToSpeak,hl:ttsConfig.hl==="browser-google-es"?"es-es":ttsConfig.hl,r:ttsConfig.r})}).then(function(r){return r.json()}).then(function(data){
+                if(data.success && data.audio){
+                  new Audio(data.audio).play().catch(function(){});
+                  saveAudio(item.word, data.audio);
+                } else { nfy("Error: "+(data.error||""),"er"); setRecording(null); }
+              }).catch(function(e){ nfy("Error: "+e.message,"er"); setRecording(null); });
+            }} disabled={recording===item.word.toLowerCase()} style={{background:"#2563eb",border:"none",borderRadius:6,padding:"4px 8px",fontSize:11,cursor:recording===item.word.toLowerCase()?"wait":"pointer",color:"#fff"}}>{recording===item.word.toLowerCase()?"\u23f3 Guardando...":"\ud83d\udcbe Guardar"}</button>}
             {isAdmin && savedAudios[item.word.toLowerCase()] && <button onClick={function(){ deleteDoc(doc(db,"fon_audios",item.word.toLowerCase())).catch(function(){}); var next = Object.assign({},savedAudios); delete next[item.word.toLowerCase()]; setSavedAudios(next); }} style={{background:"#f1f5f9",border:"1px solid #e2e8f0",borderRadius:6,padding:"4px 8px",fontSize:11,cursor:"pointer",color:"#64748b"}}>{"Reemplazar"}</button>}
             {isAdmin && savedAudios[item.word.toLowerCase()] && <span style={{fontSize:11,color:"#059669",fontWeight:600}}>{"\u2705 Guardado"}</span>}
             <span style={{fontWeight:700,fontSize:16,minWidth:50,color:"#6d28d9"}}>{item.word}</span>
