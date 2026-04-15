@@ -171,9 +171,31 @@ export default function NewFON({ onS, nfy, userId, draft, therapistInfo, isAdmin
   };
 
   // Admin: generar audio con API TTS, reproducir y guardar automaticamente
+  // Hablar con Google español del navegador
+  var speakBrowser = function(word){
+    if(!window.speechSynthesis) return;
+    window.speechSynthesis.cancel();
+    var key = word.toLowerCase();
+    var textToSpeak = overrideWords[key] || PHON_FIX[key] || word;
+    var u = new SpeechSynthesisUtterance(textToSpeak);
+    var voices = window.speechSynthesis.getVoices();
+    var gv = voices.find(function(v){return v.name === "Google espa\u00f1ol"});
+    if(gv) u.voice = gv;
+    u.lang = "es-ES";
+    var speeds = {"-4":0.5,"-2":0.72,"0":1,"2":1.3};
+    u.rate = speeds[ttsConfig.r] || 0.72;
+    u.pitch = 1.05; u.volume = 1;
+    window.speechSynthesis.speak(u);
+  };
+
   var speakAndRecord = function(word){
     var key = word.toLowerCase();
     var textToSpeak = overrideWords[key] || PHON_FIX[key] || word;
+    // Si es voz del navegador, solo reproducir (no se puede guardar)
+    if(ttsConfig.hl === "browser-google-es"){
+      speakBrowser(word);
+      return;
+    }
     setRecording(key);
     fetch("/api/tts", {
       method: "POST",
@@ -200,9 +222,10 @@ export default function NewFON({ onS, nfy, userId, draft, therapistInfo, isAdmin
     var key = word.toLowerCase();
     if(savedAudios[key]){
       var audio = new Audio(savedAudios[key]);
-      audio.play().catch(function(){ speak(word); });
+      audio.play().catch(function(){ speakBrowser(word); });
+    } else if(ttsConfig.hl === "browser-google-es") {
+      speakBrowser(word);
     } else if(isAdmin) {
-      // Admin sin audio guardado: reproducir + grabar
       speakAndRecord(word);
     } else {
       speak(word);

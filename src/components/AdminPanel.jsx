@@ -24,15 +24,30 @@ export default function AdminPanel({ nfy }) {
   var _ttsConfig = useState({hl:"es-mx",r:"-2"}), ttsConfig = _ttsConfig[0], setTtsConfig = _ttsConfig[1];
 
   var TTS_VOICES = [
-    {hl:"es-mx",name:"Espa\u00f1ol M\u00e9xico",desc:"Acento mexicano, claro y neutro"},
-    {hl:"es-es",name:"Espa\u00f1ol Espa\u00f1a",desc:"Acento castellano"},
-    {hl:"es-ar",name:"Espa\u00f1ol Argentina",desc:"Acento rioplatense"}
+    {hl:"browser-google-es",name:"Google espa\u00f1ol (Navegador)",desc:"Voz de Google Chrome, masculina, clara. Solo funciona en Chrome."},
+    {hl:"es-mx",name:"Espa\u00f1ol M\u00e9xico (VoiceRSS)",desc:"Acento mexicano, claro y neutro"},
+    {hl:"es-es",name:"Espa\u00f1ol Espa\u00f1a (VoiceRSS)",desc:"Acento castellano"}
   ];
   var TTS_SPEEDS = [
     {r:"-4",name:"Muy lenta"},{r:"-2",name:"Lenta"},{r:"0",name:"Normal"},{r:"2",name:"R\u00e1pida"}
   ];
 
   var testVoice = function(hl, r){
+    if(hl === "browser-google-es"){
+      // Usar sintetizador del navegador
+      if(!window.speechSynthesis){ nfy("Sintetizador no disponible","er"); return; }
+      var voices = window.speechSynthesis.getVoices();
+      var gv = voices.find(function(v){return v.name === "Google espa\u00f1ol"});
+      if(!gv){ nfy("Voz 'Google espa\u00f1ol' no encontrada en este navegador","er"); return; }
+      window.speechSynthesis.cancel();
+      var u = new SpeechSynthesisUtterance("ma me mi mo mu");
+      u.voice = gv;
+      var speeds = {"-4":0.5,"-2":0.72,"0":1,"2":1.3};
+      u.rate = speeds[r] || 0.72;
+      u.pitch = 1.05;
+      window.speechSynthesis.speak(u);
+      return;
+    }
     setTtsLoading(hl+r);
     fetch("/api/tts",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({text:"ma me mi mo mu",hl:hl,r:r})}).then(function(res){return res.json()}).then(function(data){
       setTtsLoading(null);
