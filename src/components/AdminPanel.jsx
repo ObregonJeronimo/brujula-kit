@@ -34,18 +34,28 @@ export default function AdminPanel({ nfy }) {
 
   var testVoice = function(hl, r){
     if(hl === "browser-google-es"){
-      // Usar sintetizador del navegador
       if(!window.speechSynthesis){ nfy("Sintetizador no disponible","er"); return; }
-      var voices = window.speechSynthesis.getVoices();
-      var gv = voices.find(function(v){return v.name === "Google espa\u00f1ol"});
-      if(!gv){ nfy("Voz 'Google espa\u00f1ol' no encontrada en este navegador","er"); return; }
-      window.speechSynthesis.cancel();
-      var u = new SpeechSynthesisUtterance("ma me mi mo mu");
-      u.voice = gv;
-      var speeds = {"-4":0.5,"-2":0.72,"0":1,"2":1.3};
-      u.rate = speeds[r] || 0.72;
-      u.pitch = 1.05;
-      window.speechSynthesis.speak(u);
+      var trySpeak = function(){
+        var voices = window.speechSynthesis.getVoices();
+        var gv = voices.find(function(v){return v.name === "Google espa\u00f1ol"});
+        if(!gv) return false;
+        window.speechSynthesis.cancel();
+        var u = new SpeechSynthesisUtterance("ma me mi mo mu");
+        u.voice = gv;
+        var speeds = {"-4":0.5,"-2":0.72,"0":1,"2":1.3};
+        u.rate = speeds[r] || 0.72;
+        u.pitch = 1.05;
+        window.speechSynthesis.speak(u);
+        return true;
+      };
+      if(!trySpeak()){
+        // Voces no cargadas aún, esperar y reintentar
+        window.speechSynthesis.onvoiceschanged = function(){
+          if(!trySpeak()) nfy("Voz 'Google espa\u00f1ol' no encontrada","er");
+        };
+        // Forzar carga
+        window.speechSynthesis.getVoices();
+      }
       return;
     }
     setTtsLoading(hl+r);
