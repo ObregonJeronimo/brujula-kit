@@ -1,0 +1,118 @@
+/* ============================================
+   BRÚJULA KIT — RptGeneric (visor genérico)
+   ============================================
+   Visor de informes para evaluaciones sin
+   componente Rpt específico.
+   ============================================ */
+
+.rpt-gen {
+  animation: fi 0.3s ease;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* ── Header ── */
+.rpt-gen-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.rpt-gen-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.rpt-gen-icon {
+  font-size: var(--fs-4xl);
+}
+
+.rpt-gen-title {
+  font-size: var(--fs-xl);
+  font-weight: var(--fw-bold);
+  margin: 0;
+}
+
+/* ── Botón eliminar ── */
+.rpt-gen-del-btn {
+  padding: 8px 16px;
+  background: var(--c-error-light);
+  color: var(--c-error);
+  border: 1px solid var(--c-error-border);
+  border-radius: var(--radius-md);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  cursor: pointer;
+}
+
+/* ── Toggle datos técnicos ── */
+.rpt-gen-tech-toggle {
+  width: 100%;
+  padding: 14px;
+  background: var(--c-primary);
+  color: #fff;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-lg);
+  font-size: var(--fs-md);
+  font-weight: var(--fw-semibold);
+  cursor: pointer;
+  margin-bottom: 20px;
+}
+
+.rpt-gen-tech-toggle.is-open {
+  background: var(--c-surface-hover);
+  color: var(--c-text);
+  margin-bottom: 16px;
+}
+
+/* ── Panel de datos técnicos ── */
+.rpt-gen-tech {
+  background: var(--c-surface);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--c-border);
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.rpt-gen-tech-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.rpt-gen-tech-label {
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  color: var(--c-text-muted);
+}
+
+.rpt-gen-tech-value {
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-semibold);
+}
+
+.rpt-gen-tech-value--plain {
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-normal);
+}
+
+.rpt-gen-tech-results-label {
+  font-size: var(--fs-base);
+  font-weight: var(--fw-bold);
+  color: var(--c-primary);
+  margin-bottom: 8px;
+}
+
+.rpt-gen-tech-results-pre {
+  background: var(--c-surface-alt);
+  padding: 14px;
+  border-radius: var(--radius-md);
+  font-size: var(--fs-base);
+  overflow: auto;
+  max-height: 300px;
+  border: 1px solid var(--c-border);
+  white-space: pre-wrap;
+}

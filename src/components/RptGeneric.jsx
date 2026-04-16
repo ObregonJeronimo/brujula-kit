@@ -1,8 +1,9 @@
 // RptGeneric — generic report viewer for evaluations without specific Rpt components
 import { useState } from "react";
 import AIReportPanel from "./AIReportPanel.jsx";
-import { K, ageLabel } from "../lib/fb.js";
+import { ageLabel } from "../lib/fb.js";
 import { getEvalType } from "../config/evalTypes.js";
+import "../styles/RptGeneric.css";
 
 export default function RptGeneric({ ev, onD, therapistInfo }) {
   var _showTech = useState(false), showTech = _showTech[0], setShowTech = _showTech[1];
@@ -10,13 +11,13 @@ export default function RptGeneric({ ev, onD, therapistInfo }) {
   var label = evalConfig ? evalConfig.fullName : (ev.tipo || "").toUpperCase();
   var icon = evalConfig ? evalConfig.icon : "";
 
-  return <div style={{animation:"fi .3s ease",maxWidth:1200,margin:"0 auto"}}>
-    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
-      <div style={{display:"flex",alignItems:"center",gap:10}}>
-        <span style={{fontSize:28}}>{icon}</span>
-        <h2 style={{fontSize:18,fontWeight:700,margin:0}}>{label}</h2>
+  return <div className="rpt-gen">
+    <div className="rpt-gen-head">
+      <div className="rpt-gen-title-wrap">
+        <span className="rpt-gen-icon">{icon}</span>
+        <h2 className="rpt-gen-title">{label}</h2>
       </div>
-      {onD && <button onClick={function(){if(window.confirm("Eliminar esta evaluacion?")) onD(ev._fbId||ev.id)}} style={{padding:"8px 16px",background:"#fef2f2",color:"#dc2626",border:"1px solid #fecaca",borderRadius:8,fontSize:12,fontWeight:600,cursor:"pointer"}}>Eliminar</button>}
+      {onD && <button onClick={function(){if(window.confirm("Eliminar esta evaluacion?")) onD(ev._fbId||ev.id)}} className="rpt-gen-del-btn">Eliminar</button>}
     </div>
 
     <AIReportPanel
@@ -26,18 +27,18 @@ export default function RptGeneric({ ev, onD, therapistInfo }) {
       evalLabel={label} therapistInfo={therapistInfo}
     />
 
-    <button onClick={function(){setShowTech(!showTech)}} style={{width:"100%",padding:"14px",background:showTech?"#f1f5f9":"#0a3d2f",color:showTech?"#1e293b":"#fff",border:"1px solid #e2e8f0",borderRadius:10,fontSize:14,fontWeight:600,cursor:"pointer",marginBottom:showTech?16:20}}>{showTech ? "Ocultar datos tecnicos" : "Ver datos tecnicos de la evaluacion"}</button>
+    <button onClick={function(){setShowTech(!showTech)}} className={"rpt-gen-tech-toggle"+(showTech?" is-open":"")}>{showTech ? "Ocultar datos tecnicos" : "Ver datos tecnicos de la evaluacion"}</button>
 
-    {showTech && <div style={{background:"#fff",borderRadius:12,border:"1px solid #e2e8f0",padding:20,marginBottom:20}}>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:16}}>
-        <div><div style={{fontSize:11,fontWeight:600,color:K.mt}}>Paciente</div><div style={{fontSize:15,fontWeight:600}}>{ev.paciente}</div></div>
-        <div><div style={{fontSize:11,fontWeight:600,color:K.mt}}>DNI</div><div style={{fontSize:15}}>{ev.pacienteDni || "N/A"}</div></div>
-        <div><div style={{fontSize:11,fontWeight:600,color:K.mt}}>Edad</div><div style={{fontSize:15}}>{ageLabel(ev.edadMeses||0)}</div></div>
-        <div><div style={{fontSize:11,fontWeight:600,color:K.mt}}>Fecha</div><div style={{fontSize:15}}>{ev.fechaEvaluacion || ""}</div></div>
+    {showTech && <div className="rpt-gen-tech">
+      <div className="rpt-gen-tech-grid">
+        <div><div className="rpt-gen-tech-label">Paciente</div><div className="rpt-gen-tech-value">{ev.paciente}</div></div>
+        <div><div className="rpt-gen-tech-label">DNI</div><div className="rpt-gen-tech-value--plain">{ev.pacienteDni || "N/A"}</div></div>
+        <div><div className="rpt-gen-tech-label">Edad</div><div className="rpt-gen-tech-value--plain">{ageLabel(ev.edadMeses||0)}</div></div>
+        <div><div className="rpt-gen-tech-label">Fecha</div><div className="rpt-gen-tech-value--plain">{ev.fechaEvaluacion || ""}</div></div>
       </div>
       {ev.resultados && <div>
-        <div style={{fontSize:13,fontWeight:700,color:K.sd,marginBottom:8}}>Resultados</div>
-        <pre style={{background:"#f8faf9",padding:14,borderRadius:8,fontSize:12,overflow:"auto",maxHeight:300,border:"1px solid #e2e8f0",whiteSpace:"pre-wrap"}}>{JSON.stringify(ev.resultados, null, 2)}</pre>
+        <div className="rpt-gen-tech-results-label">Resultados</div>
+        <pre className="rpt-gen-tech-results-pre">{JSON.stringify(ev.resultados, null, 2)}</pre>
       </div>}
     </div>}
   </div>;
