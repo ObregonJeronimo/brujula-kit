@@ -1,0 +1,272 @@
+/* ============================================
+   BRÚJULA KIT — Global Styles
+   ============================================
+   Estilos base aplicados a toda la app.
+   Importar después de theme.css.
+   ============================================ */
+
+/* ── Reset mínimo ── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-family);
+  color: var(--c-text);
+  background: var(--c-bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Inputs base ── */
+.input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-md);
+  font-size: var(--fs-md);
+  font-family: var(--font-family);
+  background: var(--c-surface-alt);
+  color: var(--c-text);
+  transition: var(--transition);
+  outline: none;
+}
+
+.input:focus {
+  border-color: var(--c-accent);
+  box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.1);
+}
+
+.input::placeholder {
+  color: var(--c-text-faint);
+}
+
+.input-sm {
+  padding: 6px 10px;
+  font-size: var(--fs-base);
+}
+
+/* ── Select base ── */
+.select {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-md);
+  font-size: var(--fs-md);
+  font-family: var(--font-family);
+  background: var(--c-surface);
+  color: var(--c-text);
+  cursor: pointer;
+  outline: none;
+  transition: var(--transition);
+}
+
+.select:focus {
+  border-color: var(--c-accent);
+}
+
+/* ── Botones base ── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  padding: 10px 20px;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: var(--fs-md);
+  font-weight: var(--fw-semibold);
+  font-family: var(--font-family);
+  cursor: pointer;
+  transition: var(--transition);
+  white-space: nowrap;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: var(--c-accent);
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+.btn-success {
+  background: var(--c-success);
+  color: white;
+}
+
+.btn-error {
+  background: var(--c-error);
+  color: white;
+}
+
+.btn-purple {
+  background: var(--c-purple);
+  color: white;
+}
+
+.btn-ghost {
+  background: var(--c-surface-hover);
+  color: var(--c-text-muted);
+  border: 1px solid var(--c-border);
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background: var(--c-border);
+}
+
+.btn-sm {
+  padding: 4px 8px;
+  font-size: var(--fs-sm);
+  border-radius: var(--radius);
+}
+
+.btn-lg {
+  padding: 14px 28px;
+  font-size: 15px;
+  font-weight: var(--fw-bold);
+  border-radius: var(--radius-lg);
+}
+
+/* ── Cards ── */
+.card {
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-xl);
+  padding: var(--sp-6);
+}
+
+.card-sm {
+  padding: var(--sp-4);
+  border-radius: var(--radius-lg);
+}
+
+/* ── Labels ── */
+.label {
+  display: block;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  color: var(--c-text-muted);
+  margin-bottom: var(--sp-1);
+}
+
+/* ── Badge/Chip ── */
+.badge {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+}
+
+.badge-success {
+  background: var(--c-success-light);
+  color: var(--c-success);
+}
+
+.badge-error {
+  background: var(--c-error-light);
+  color: var(--c-error);
+}
+
+.badge-purple {
+  background: var(--c-purple-light);
+  color: var(--c-purple);
+}
+
+/* ── Utilidades ── */
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.justify-center { justify-content: center; }
+.gap-1 { gap: var(--sp-1); }
+.gap-2 { gap: var(--sp-2); }
+.gap-3 { gap: var(--sp-3); }
+.gap-4 { gap: var(--sp-4); }
+.text-center { text-align: center; }
+.w-full { width: 100%; }
+.flex-1 { flex: 1; }
+.flex-wrap { flex-wrap: wrap; }
+
+/* ── Animaciones ── */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes fi {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Toast (notificación) ── */
+.toast {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 999;
+  padding: 10px 18px;
+  border-radius: var(--radius-md);
+  font-size: var(--fs-base);
+  font-weight: var(--fw-medium);
+  color: white;
+  box-shadow: var(--shadow-md);
+  animation: fi 0.3s ease;
+}
+
+.toast-ok { background: var(--c-success); }
+.toast-er { background: var(--c-error); }
+
+/* ── Modal overlay ── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1001;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  padding: 20px;
+}
+
+.modal-content {
+  background: var(--c-surface);
+  border-radius: var(--radius-3xl);
+  padding: 36px 28px;
+  max-width: 92vw;
+  box-shadow: var(--shadow-xl);
+  text-align: center;
+}
+
+/* ── Scrollbar personalizada ── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--c-text-faint);
+  border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--c-text-muted);
+}

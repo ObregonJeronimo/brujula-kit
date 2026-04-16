@@ -1,0 +1,103 @@
+/* ============================================
+   BRÚJULA KIT — Design Tokens (CSS Variables)
+   ============================================
+   Fuente de verdad para colores, tipografía,
+   espaciado, bordes y sombras de toda la app.
+   
+   Los colores dinámicos del admin (--c-primary,
+   --c-accent) se actualizan desde JS al cargar
+   el tema de Firestore.
+   ============================================ */
+
+:root {
+  /* ── Colores del tema (dinámicos desde admin) ── */
+  --c-primary: #0a3d2f;       /* sidebar, headers, textos principales */
+  --c-accent: #0d9488;        /* botones, links, acentos */
+  --c-accent-light: #ccfbf1;  /* fondos suaves del acento */
+
+  /* ── Colores base (estáticos) ── */
+  --c-bg: #f0f5f3;            /* fondo principal de la app */
+  --c-surface: #ffffff;        /* fondo de cards, modales */
+  --c-surface-alt: #f8faf9;   /* fondo alternativo sutil */
+  --c-surface-hover: #f1f5f9; /* hover de elementos */
+
+  /* ── Textos ── */
+  --c-text: #1e293b;          /* texto principal */
+  --c-text-secondary: #475569;/* texto secundario */
+  --c-text-muted: #64748b;    /* texto apagado, labels */
+  --c-text-faint: #94a3b8;    /* texto muy sutil, placeholders */
+
+  /* ── Bordes ── */
+  --c-border: #e2e8f0;        /* borde por defecto */
+  --c-border-light: #f1f5f9;  /* borde muy sutil */
+
+  /* ── Estados ── */
+  --c-success: #059669;       /* éxito, correcto, guardado */
+  --c-success-light: #f0fdf4; /* fondo éxito */
+  --c-success-border: #bbf7d0;
+  --c-warning: #f59e0b;       /* advertencia, distorsión */
+  --c-warning-dark: #d97706;
+  --c-warning-light: #fffbeb;
+  --c-error: #dc2626;         /* error, omisión, peligro */
+  --c-error-light: #fef2f2;   /* fondo error */
+  --c-error-border: #fecaca;
+  --c-purple: #7c3aed;        /* sustitución, acentos violeta */
+  --c-purple-light: #ede9fe;  /* fondo violeta */
+  --c-purple-border: #c4b5fd;
+  --c-info: #3498db;          /* info, links */
+  --c-info-light: #f0f9ff;
+
+  /* ── Sidebar ── */
+  --c-sidebar-text: rgba(255, 255, 255, 0.55);
+  --c-sidebar-active: #5eead4;
+  --c-sidebar-active-bg: rgba(94, 234, 212, 0.12);
+  --c-sidebar-border: rgba(255, 255, 255, 0.1);
+
+  /* ── Tipografía ── */
+  --font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
+  --fs-xs: 9px;
+  --fs-sm: 11px;
+  --fs-base: 13px;
+  --fs-md: 14px;
+  --fs-lg: 16px;
+  --fs-xl: 18px;
+  --fs-2xl: 20px;
+  --fs-3xl: 24px;
+  --fs-4xl: 28px;
+  --fs-5xl: 36px;
+  --fw-normal: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+
+  /* ── Espaciado ── */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+  --sp-10: 40px;
+
+  /* ── Bordes redondeados ── */
+  --radius-sm: 4px;
+  --radius: 6px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-xl: 12px;
+  --radius-2xl: 16px;
+  --radius-3xl: 20px;
+  --radius-full: 9999px;
+
+  /* ── Sombras ── */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.12);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.15);
+  --shadow-xl: 0 20px 60px rgba(0, 0, 0, 0.25);
+
+  /* ── Transiciones ── */
+  --transition: all 0.15s ease;
+  --transition-slow: all 0.3s ease;
+}

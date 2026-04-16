@@ -3,6 +3,7 @@ import { db, auth, doc, updateDoc, getDoc, getDocs, collection, query, where, in
 import { fbGetAll, fbGetFiltered, fbAdd, fbDelete, getUserProfile, K } from "./lib/fb.js";
 import { acquireSessionLock, releaseSessionLock, useSessionHeartbeat } from "./lib/sessionLock.js";
 import { VISIBLE_TYPES, EVAL_TYPES, rptViewFor } from "./config/evalTypes.js";
+import { applyThemeToCSS } from "./styles/themeBridge.js";
 
 import AuthScreen from "./components/AuthScreen.jsx";
 import VerifyEmailScreen from "./components/VerifyEmail.jsx";
@@ -247,6 +248,8 @@ export default function App() {
   var tSd = theme && theme.primary ? mixColor(theme.primary, theme.primaryAlpha != null ? theme.primaryAlpha : 100) : K.sd;
   var tAc = theme && theme.secondary ? mixColor(theme.secondary, theme.secondaryAlpha != null ? theme.secondaryAlpha : 100) : K.ac;
   var TC = {sd:tSd, ac:tAc};
+  // Sincronizar colores dinámicos con CSS variables
+  applyThemeToCSS(tSd, tAc);
 
   return (
     <div style={{display:"flex",height:"100vh",width:"100vw",fontFamily:"'DM Sans',system-ui,sans-serif",background:K.bg,color:"#1e293b",overflow:"hidden"}}>
