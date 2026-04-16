@@ -62,7 +62,31 @@ export default function PacientesPage({ TC, userId, nfy, allEvals, therapistInfo
     updateDoc(doc(db,"pacientes",selected._fbId), { dni: dni, nombre: nombre, colegio: (editForm.colegio||"").trim(), fechaNac: editForm.fechaNac, responsable: responsable }).then(function(){ nfy("Paciente actualizado","ok"); setEditing(false); setSelected(null); loadPacientes(); }).catch(function(e){ nfy("Error: " + e.message,"er"); });
   };
 
-  var deletePaciente = function(){ if(!selected) return; deleteDoc(doc(db,"pacientes",selected._fbId)).then(function(){ nfy("Paciente eliminado","ok"); setConfirmDelPac(false); setSelected(null); loadPacientes(); }).catch(function(e){ nfy("Error: " + e.message,"er"); }); };
+  var deletePaciente = function(){
+    if(!selected) return;
+    var pacDni = selected.dni || "";
+    var pacNombre = selected.nombre || "";
+    // Buscar todas las evaluaciones del paciente
+    var pacEvals = (allEvals||[]).filter(function(ev){
+      return (ev.pacienteDni||ev.dni||"") === pacDni || ev.paciente === pacNombre;
+    });
+    // Eliminar paciente
+    deleteDoc(doc(db,"pacientes",selected._fbId)).then(function(){
+      // Eliminar todas las evaluaciones asociadas
+      if(pacEvals.length > 0){
+        var deletions = pacEvals.map(function(ev){
+          return deleteDoc(doc(db,"evaluaciones",ev._fbId));
+        });
+        Promise.all(deletions).then(function(){
+          nfy("Paciente y "+pacEvals.length+" evaluaci\u00f3n"+(pacEvals.length!==1?"es":"")+" eliminado"+(pacEvals.length!==1?"s":""),"ok");
+          setConfirmDelPac(false); setSelected(null); loadPacientes();
+        }).catch(function(e){ nfy("Paciente eliminado pero falló al eliminar evaluaciones: " + e.message,"er"); setConfirmDelPac(false); setSelected(null); loadPacientes(); });
+      } else {
+        nfy("Paciente eliminado","ok");
+        setConfirmDelPac(false); setSelected(null); loadPacientes();
+      }
+    }).catch(function(e){ nfy("Error: " + e.message,"er"); });
+  };
 
   var openEdit = function(pac){
     setSelected(pac);
@@ -154,13 +178,26 @@ export default function PacientesPage({ TC, userId, nfy, allEvals, therapistInfo
             <button onClick={function(){ setSelected(null); setConfirmDelPac(false); }} className="pac-btn-close">×</button>
           </div>
         </div>
-        {confirmDelPac && <div className="pac-confirm-delete">
-          <div className="pac-confirm-msg">{"¿Eliminar este paciente?"}</div>
-          <div className="pac-confirm-actions">
-            <button onClick={deletePaciente} className="pac-btn-confirm-delete">{"Sí, eliminar"}</button>
-            <button onClick={function(){ setConfirmDelPac(false); }} className="pac-btn-confirm-cancel">Cancelar</button>
-          </div>
-        </div>}
+        {confirmDelPac && (function(){
+          var pacDni = selected.dni || "";
+          var pacNombre = selected.nombre || "";
+          var pacEvalsCount = (allEvals||[]).filter(function(ev){
+            return (ev.pacienteDni||ev.dni||"") === pacDni || ev.paciente === pacNombre;
+          }).length;
+          return <div className="pac-confirm-delete">
+            <div className="pac-confirm-msg">
+              {"\u26a0\ufe0f \u00bfEliminar este paciente?"}
+              {pacEvalsCount > 0 && <div style={{fontSize:12,fontWeight:500,color:"#b91c1c",marginTop:6}}>
+                {"Tambi\u00e9n se eliminar\u00e1n "+pacEvalsCount+" evaluaci\u00f3n"+(pacEvalsCount!==1?"es":"")+" asociada"+(pacEvalsCount!==1?"s":"")+". Esta acci\u00f3n no se puede deshacer."}
+              </div>}
+              {pacEvalsCount === 0 && <div style={{fontSize:12,fontWeight:500,color:"#b91c1c",marginTop:6}}>Esta acci\u00f3n no se puede deshacer.</div>}
+            </div>
+            <div className="pac-confirm-actions">
+              <button onClick={deletePaciente} className="pac-btn-confirm-delete">{"S\u00ed, eliminar todo"}</button>
+              <button onClick={function(){ setConfirmDelPac(false); }} className="pac-btn-confirm-cancel">Cancelar</button>
+            </div>
+          </div>;
+        })()}
         <div className="pac-grid-2">
           <div><div className="pac-info-label">DNI</div><div className="pac-info-value">{selected.dni}</div></div>
           <div><div className="pac-info-label">Edad</div><div className="pac-info-value">{calcAge(selected.fechaNac)}</div></div>

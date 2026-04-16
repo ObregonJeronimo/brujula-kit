@@ -2,7 +2,7 @@ import { useState } from "react";
 import { isVisibleType, typeBadge, HIST_TABS } from "../config/evalTypes.js";
 import { K, ageLabel } from "../lib/fb.js";
 
-export default function Hist({ TC, allEvals, onView, isA, onD, enabledTools }) {
+export default function Hist({ TC, allEvals, onView, isA, onD, enabledTools, pacientes }) {
   var _q = useState(""), q = _q[0], sQ = _q[1];
   var _tab = useState("all"), tab = _tab[0], sTab = _tab[1];
   var _cf = useState(null), cf = _cf[0], sC = _cf[1];
@@ -12,10 +12,28 @@ export default function Hist({ TC, allEvals, onView, isA, onD, enabledTools }) {
   var all = (allEvals || []).filter(function(e){ return isVisibleType(e.tipo); })
     .sort(function(a, b){ return (b.fechaGuardado || "").localeCompare(a.fechaGuardado || ""); });
 
-  // Get unique patients from evals
-  var patientsMap = {};
-  all.forEach(function(e){ if(e.paciente && !patientsMap[e.paciente]) patientsMap[e.paciente] = { nombre: e.paciente, count: 0 }; if(e.paciente) patientsMap[e.paciente].count++; });
-  var patients = Object.values(patientsMap).sort(function(a,b){ return a.nombre.localeCompare(b.nombre); });
+  // Contar evaluaciones por paciente (por DNI si existe, sino por nombre)
+  var evalsByPatient = {};
+  all.forEach(function(e){
+    var key = e.pacienteDni || e.paciente || "";
+    if(!key) return;
+    evalsByPatient[key] = (evalsByPatient[key] || 0) + 1;
+  });
+
+  // Lista de pacientes REGISTRADOS (no de historial)
+  // Si no hay pacientes registrados como prop, fallback a los del historial
+  var patientsList = [];
+  if(pacientes && pacientes.length > 0){
+    patientsList = pacientes.map(function(p){
+      var count = (evalsByPatient[p.dni] || 0) + (evalsByPatient[p.nombre] || 0);
+      return { nombre: p.nombre, dni: p.dni || "", count: count };
+    }).sort(function(a,b){ return a.nombre.localeCompare(b.nombre); });
+  } else {
+    // Fallback: usar pacientes del historial
+    var patientsMap = {};
+    all.forEach(function(e){ if(e.paciente && !patientsMap[e.paciente]) patientsMap[e.paciente] = { nombre: e.paciente, count: 0 }; if(e.paciente) patientsMap[e.paciente].count++; });
+    patientsList = Object.values(patientsMap).sort(function(a,b){ return a.nombre.localeCompare(b.nombre); });
+  }
 
   var f = all.filter(function(e){
     if(searchMode === "search" && q && !(e.paciente || "").toLowerCase().includes(q.toLowerCase())) return false;
@@ -44,14 +62,14 @@ export default function Hist({ TC, allEvals, onView, isA, onD, enabledTools }) {
         {searchMode==="list" && <div style={{flex:1,maxWidth:350,position:"relative"}}>
           <div style={{background:"#fff",border:"1px solid #e2e8f0",borderRadius:8,maxHeight:180,overflowY:"auto"}}>
             {selPatient && <button onClick={function(){setSelPatient(null)}} style={{width:"100%",padding:"8px 14px",border:"none",borderBottom:"1px solid #f1f5f9",background:"#f0fdf4",color:"#059669",fontSize:13,fontWeight:600,cursor:"pointer",textAlign:"left"}}>{"✕ Mostrar todos"}</button>}
-            {patients.map(function(p){
+            {patientsList.map(function(p){
               var active = selPatient === p.nombre;
-              return <button key={p.nombre} onClick={function(){setSelPatient(active?null:p.nombre)}} style={{width:"100%",padding:"8px 14px",border:"none",borderBottom:"1px solid #f1f5f9",background:active?"#ccfbf1":"#fff",color:active?(TC&&TC.ac||"#0d9488"):"#1e293b",fontSize:13,fontWeight:active?600:400,cursor:"pointer",textAlign:"left",display:"flex",justifyContent:"space-between"}}>
+              return <button key={p.dni||p.nombre} onClick={function(){setSelPatient(active?null:p.nombre)}} style={{width:"100%",padding:"8px 14px",border:"none",borderBottom:"1px solid #f1f5f9",background:active?"#ccfbf1":"#fff",color:active?(TC&&TC.ac||"#0d9488"):"#1e293b",fontSize:13,fontWeight:active?600:400,cursor:"pointer",textAlign:"left",display:"flex",justifyContent:"space-between"}}>
                 <span>{p.nombre}</span>
-                <span style={{fontSize:11,color:K.mt}}>{p.count}</span>
+                <span style={{fontSize:11,color:K.mt}}>{p.count+(p.count===1?" eval":" evals")}</span>
               </button>;
             })}
-            {patients.length===0 && <div style={{padding:"12px 14px",color:K.mt,fontSize:13}}>Sin pacientes</div>}
+            {patientsList.length===0 && <div style={{padding:"12px 14px",color:K.mt,fontSize:13}}>Sin pacientes</div>}
           </div>
         </div>}
       </div>

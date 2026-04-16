@@ -108,6 +108,7 @@ export default function App() {
   var _pr = useState(null), profile = _pr[0], setProfile = _pr[1];
   var _vw = useState("dash"), view = _vw[0], sV = _vw[1];
   var _ae = useState([]), allEvals = _ae[0], setAllEvals = _ae[1];
+  var _pac = useState([]), allPacientes = _pac[0], setAllPacientes = _pac[1];
   var _sl = useState(null), sel = _sl[0], sS = _sl[1];
   var _tt = useState(null), toast = _tt[0], sT = _tt[1];
   var _ld = useState(false), loading = _ld[0], sL = _ld[1];
@@ -181,6 +182,9 @@ export default function App() {
     if(!profile) return; sL(true);
     var p = profile.role==="admin" ? fbGetAll("evaluaciones") : fbGetFiltered("evaluaciones",authUser.uid);
     p.then(function(res){ if(profile.role==="admin") res.sort(function(a,b){return(b.fechaGuardado||"").localeCompare(a.fechaGuardado||"")}); setAllEvals(res); }).catch(function(e){console.error("loadEvals error:",e); setAllEvals([]);}).finally(function(){sL(false)});
+    // También cargar pacientes registrados
+    var pp = profile.role==="admin" ? fbGetAll("pacientes") : fbGetFiltered("pacientes",authUser.uid);
+    pp.then(function(res){ setAllPacientes(res); }).catch(function(){ setAllPacientes([]); });
   },[profile,authUser]);
 
   useEffect(function(){ if(profile && !sessionBlocked) loadEvals(); },[profile,loadEvals,sessionBlocked]);
@@ -280,7 +284,7 @@ export default function App() {
         {view==="tools"&&<Tools TC={TC} onSel={startEval} credits={isAdmin?999:(profile.creditos||0)} onBuy={goToPremium} enabledTools={enabledTools} toolsConfig={toolsConfig} userId={authUser?.uid} onResumeDraft={resumeDraft} allEvals={allEvals} nfy={nfy} therapistInfo={profile?.reportHeader} deductCredit={deductCredit} isAdmin={isAdmin} />}
         <Suspense fallback={LazyFallback}>
           {NEW_COMPONENTS[view] && (function(){ var C = NEW_COMPONENTS[view]; return <C onS={onEvalDone} nfy={nfy} userId={authUser?.uid} draft={activeDraft} therapistInfo={profile?.reportHeader} deductCredit={deductCredit} isAdmin={isAdmin} userSettings={userSettings} />; })()}
-          {view==="hist"&&<Hist TC={TC} allEvals={allEvals} onView={viewReport} isA={isAdmin} onD={deleteEval} enabledTools={enabledTools} />}
+          {view==="hist"&&<Hist TC={TC} allEvals={allEvals} onView={viewReport} isA={isAdmin} onD={deleteEval} enabledTools={enabledTools} pacientes={allPacientes} />}
           {RPT_COMPONENTS[view] && sel && (function(){ var C = RPT_COMPONENTS[view]; return <C ev={sel} onD={deleteEval} userSettings={userSettings} therapistInfo={profile?.reportHeader} />; })()}
           {view==="profile"&&<ProfilePage TC={TC} profile={profile} authUser={authUser} nfy={nfy} onBuyCredits={goToPremium} />}
           {view==="pacientes"&&<PacientesPage TC={TC} userId={authUser?.uid} nfy={nfy} allEvals={allEvals} therapistInfo={profile?.reportHeader} />}
