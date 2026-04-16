@@ -1,0 +1,178 @@
+/* ============================================
+   ProfilePage — Mi Perfil
+   ============================================ */
+
+.profile-page {
+  animation: fi 0.3s ease;
+  width: 100%;
+  max-width: 600px;
+}
+
+.profile-title {
+  font-size: 22px;
+  font-weight: var(--fw-bold);
+  margin-bottom: 6px;
+}
+
+.profile-subtitle {
+  color: var(--c-text-muted);
+  font-size: var(--fs-md);
+  margin-bottom: 24px;
+}
+
+/* Credits banner */
+.profile-credits-banner {
+  background: linear-gradient(135deg, var(--c-primary), var(--c-accent));
+  border-radius: var(--radius-2xl);
+  padding: 24px 28px;
+  color: #fff;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.profile-credits-info {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.profile-credits-label {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.profile-credits-value {
+  font-size: 32px;
+  font-weight: var(--fw-bold);
+}
+
+.profile-buy-btn {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #fff;
+  border: none;
+  padding: 12px 22px;
+  border-radius: var(--radius-xl);
+  font-size: var(--fs-md);
+  font-weight: var(--fw-bold);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 16px rgba(245, 158, 11, 0.35);
+  transition: var(--transition);
+  letter-spacing: 0.3px;
+  font-family: var(--font-family);
+}
+
+.profile-buy-btn:hover {
+  filter: brightness(1.1);
+}
+
+/* Info card */
+.profile-card {
+  background: var(--c-surface);
+  border-radius: 14px;
+  border: 1px solid var(--c-border);
+  padding: 8px 24px;
+  margin-bottom: 20px;
+}
+
+/* Info row */
+.profile-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--c-border-light);
+}
+
+.profile-row:last-child {
+  border-bottom: none;
+}
+
+.profile-row-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-lg);
+  background: var(--c-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.profile-row-content {
+  flex: 1;
+}
+
+.profile-row-label {
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  color: var(--c-text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 2px;
+}
+
+.profile-row-value {
+  font-size: 15px;
+  font-weight: var(--fw-medium);
+  color: var(--c-text);
+}
+
+/* Security section */
+.profile-security {
+  background: var(--c-surface);
+  border-radius: 14px;
+  border: 1px solid var(--c-border);
+  padding: 20px 24px;
+}
+
+.profile-security-title {
+  font-size: var(--fs-md);
+  font-weight: var(--fw-semibold);
+  color: var(--c-text);
+  margin-bottom: 4px;
+}
+
+.profile-security-desc {
+  font-size: var(--fs-base);
+  color: var(--c-text-faint);
+  margin-bottom: 14px;
+}
+
+.profile-reset-btn {
+  padding: 10px 20px;
+  background: var(--c-surface-alt);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-lg);
+  font-size: var(--fs-base);
+  font-weight: var(--fw-semibold);
+  cursor: pointer;
+  color: var(--c-text);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: var(--transition);
+  font-family: var(--font-family);
+}
+
+.profile-reset-btn:hover:not(:disabled) {
+  background: var(--c-border);
+}
+
+.profile-reset-btn--sent {
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+  color: var(--c-success);
+  cursor: default;
+}
+
+.profile-reset-btn:disabled {
+  cursor: wait;
+}

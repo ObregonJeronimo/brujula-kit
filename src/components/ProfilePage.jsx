@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { auth, sendPasswordResetEmail } from "../firebase.js";
-import { db, doc, updateDoc } from "../firebase.js";
-import { K } from "../lib/fb.js";
+import "../styles/ProfilePage.css";
 
 export default function ProfilePage({ TC, profile, authUser, nfy, onBuyCredits }) {
   const [resetSending, setResetSending] = useState(false);
@@ -14,44 +13,42 @@ export default function ProfilePage({ TC, profile, authUser, nfy, onBuyCredits }
   const isAdm = profile?.role === "admin";
   const credits = isAdm ? "\u221e" : (profile?.creditos || 0);
   const InfoRow = ({ label, value, icon }) => (
-    <div style={{display:"flex",alignItems:"center",gap:14,padding:"16px 0",borderBottom:"1px solid #f1f5f9"}}>
-      <div style={{width:40,height:40,borderRadius:10,background:"#f0f5f3",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>{icon}</div>
-      <div style={{flex:1}}>
-        <div style={{fontSize:11,fontWeight:600,color:"#94a3b8",textTransform:"uppercase",letterSpacing:".5px",marginBottom:2}}>{label}</div>
-        <div style={{fontSize:15,fontWeight:500,color:"#1e293b"}}>{value}</div>
+    <div className="profile-row">
+      <div className="profile-row-icon">{icon}</div>
+      <div className="profile-row-content">
+        <div className="profile-row-label">{label}</div>
+        <div className="profile-row-value">{value}</div>
       </div>
     </div>
   );
   return (
-    <div style={{animation:"fi .3s ease",width:"100%",maxWidth:600}}>
-      <h1 style={{fontSize:22,fontWeight:700,marginBottom:6}}>{"👤 Mi Perfil"}</h1>
-      <p style={{color:K.mt,fontSize:14,marginBottom:24}}>{"Información de tu cuenta"}</p>
+    <div className="profile-page">
+      <h1 className="profile-title">{"\ud83d\udc64 Mi Perfil"}</h1>
+      <p className="profile-subtitle">{"Informaci\u00f3n de tu cuenta"}</p>
 
-      <div style={{background:"linear-gradient(135deg,"+(TC&&TC.sd||"#0a3d2f")+","+(TC&&TC.ac||"#0d9488")+")",borderRadius:16,padding:"24px 28px",color:"#fff",marginBottom:24,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:16}}>
-        <div style={{display:"flex",alignItems:"center",gap:16}}>
-          <div style={{fontSize:12,opacity:.7}}>{"Créditos restantes"}</div>
-          <div style={{fontSize:32,fontWeight:700}}>{credits}</div>
+      <div className="profile-credits-banner">
+        <div className="profile-credits-info">
+          <div className="profile-credits-label">{"Cr\u00e9ditos restantes"}</div>
+          <div className="profile-credits-value">{credits}</div>
         </div>
-        {!isAdm && <button onClick={onBuyCredits} style={{background:"linear-gradient(135deg,#f59e0b,#d97706)",color:"#fff",border:"none",padding:"12px 22px",borderRadius:12,fontSize:14,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",gap:8,boxShadow:"0 4px 16px rgba(245,158,11,.35)",transition:"all .2s",letterSpacing:".3px"}}>
-          {"+ Agregar créditos"}
+        {!isAdm && <button onClick={onBuyCredits} className="profile-buy-btn">
+          {"+ Agregar cr\u00e9ditos"}
         </button>}
       </div>
 
-      <div style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",padding:"8px 24px",marginBottom:20}}>
-        <InfoRow icon={"📧"} label="Email" value={profile?.email || authUser?.email || "\u2014"} />
-        <InfoRow icon={"👤"} label="Nombre de usuario" value={profile?.username || "\u2014"} />
-        <InfoRow icon={"🪪"} label="DNI" value={profile?.dni || "\u2014"} />
-        <InfoRow icon={"📝"} label="Nombre completo" value={profile?.nombre && profile?.apellido ? `${profile.nombre} ${profile.apellido}` : "\u2014"} />
-        <InfoRow icon={"🌸"} label={"Créditos restantes"} value={isAdm ? "Ilimitados" : `${profile?.creditos || 0} evaluaciones`} />
-        <div style={{display:"flex",alignItems:"center",gap:14,padding:"16px 0"}}>
-          <div style={{width:40,height:40,borderRadius:10,background:"#f0f5f3",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>{"📅"}</div>
-          <div style={{flex:1}}><div style={{fontSize:11,fontWeight:600,color:"#94a3b8",textTransform:"uppercase",letterSpacing:".5px",marginBottom:2}}>Miembro desde</div><div style={{fontSize:15,fontWeight:500,color:"#1e293b"}}>{profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString("es-AR",{year:"numeric",month:"long",day:"numeric"}) : "\u2014"}</div></div>
-        </div>
+      <div className="profile-card">
+        <InfoRow icon={"\ud83d\udce7"} label="Email" value={profile?.email || authUser?.email || "\u2014"} />
+        <InfoRow icon={"\ud83d\udc64"} label="Nombre de usuario" value={profile?.username || "\u2014"} />
+        <InfoRow icon={"\ud83e\udeaa"} label="DNI" value={profile?.dni || "\u2014"} />
+        <InfoRow icon={"\ud83d\udcdd"} label="Nombre completo" value={profile?.nombre && profile?.apellido ? profile.nombre + " " + profile.apellido : "\u2014"} />
+        <InfoRow icon={"\ud83c\udf38"} label="Cr\u00e9ditos restantes" value={isAdm ? "Ilimitados" : (profile?.creditos || 0) + " evaluaciones"} />
+        <InfoRow icon={"\ud83d\udcc5"} label="Miembro desde" value={profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString("es-AR",{year:"numeric",month:"long",day:"numeric"}) : "\u2014"} />
       </div>
-      {profile?.authProvider !== "google" && <div style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",padding:"20px 24px"}}>
-        <div style={{fontSize:14,fontWeight:600,color:"#1e293b",marginBottom:4}}>Seguridad</div>
-        <p style={{fontSize:13,color:"#94a3b8",marginBottom:14}}>{"Se enviar\u00e1 un enlace a tu email para establecer una nueva contrase\u00f1a."}</p>
-        <button onClick={handlePasswordReset} disabled={resetSending||resetSent} style={{padding:"10px 20px",background:resetSent?"#ecfdf5":"#f8faf9",border:resetSent?"1px solid #a7f3d0":"1px solid #e2e8f0",borderRadius:10,fontSize:13,fontWeight:600,cursor:resetSending?"wait":resetSent?"default":"pointer",color:resetSent?"#059669":"#1e293b",display:"flex",alignItems:"center",gap:8,transition:"all .2s"}}>
+
+      {profile?.authProvider !== "google" && <div className="profile-security">
+        <div className="profile-security-title">Seguridad</div>
+        <p className="profile-security-desc">{"Se enviar\u00e1 un enlace a tu email para establecer una nueva contrase\u00f1a."}</p>
+        <button onClick={handlePasswordReset} disabled={resetSending||resetSent} className={"profile-reset-btn"+(resetSent?" profile-reset-btn--sent":"")}>
           {resetSent?"Email enviado":(resetSending?"Enviando...":"Cambiar contrase\u00f1a")}
         </button>
       </div>}
