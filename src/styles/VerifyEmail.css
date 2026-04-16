@@ -1,0 +1,93 @@
+/* VerifyEmail.css — pantalla de verificación de email */
+
+.vem-screen {
+  --vem-bg: var(--c-primary);
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--vem-bg);
+  font-family: var(--font-family);
+}
+
+.vem-card {
+  background: rgba(255, 255, 255, 0.97);
+  border-radius: 16px;
+  padding: 44px 36px;
+  width: 420px;
+  max-width: 92vw;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+  text-align: center;
+}
+
+.vem-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.vem-title {
+  font-size: var(--fs-2xl);
+  font-weight: var(--fw-bold);
+  color: var(--c-primary);
+  margin-bottom: 10px;
+}
+
+.vem-desc {
+  color: var(--c-text-secondary);
+  font-size: var(--fs-md);
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+
+.vem-email {
+  color: var(--c-accent);
+}
+
+.vem-spam-hint {
+  color: var(--c-text-faint);
+  font-size: 12px;
+  margin-bottom: 20px;
+}
+
+.vem-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.vem-btn-verified {
+  background: var(--c-accent);
+  color: #fff;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: var(--fs-md);
+  font-weight: var(--fw-semibold);
+  cursor: pointer;
+}
+
+.vem-btn-resend {
+  background: var(--c-surface-alt);
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: var(--fs-md);
+  cursor: pointer;
+  color: var(--c-text-secondary);
+}
+
+.vem-btn-resend:disabled {
+  cursor: wait;
+}
+
+.vem-btn-logout {
+  margin-top: 20px;
+  background: none;
+  border: none;
+  color: var(--c-text-faint);
+  font-size: 12px;
+  cursor: pointer;
+  text-decoration: underline;
+}
