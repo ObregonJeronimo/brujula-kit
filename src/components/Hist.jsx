@@ -13,30 +13,52 @@ export default function Hist({ TC, allEvals, onView, isA, onD, enabledTools, pac
   var all = (allEvals || []).filter(function(e){ return isVisibleType(e.tipo); })
     .sort(function(a, b){ return (b.fechaGuardado || "").localeCompare(a.fechaGuardado || ""); });
 
-  // Contar evaluaciones por paciente
-  var evalsByPatient = {};
+  // Contar evaluaciones por paciente (por DNI y por nombre normalizado)
+  var evalsByDni = {};
+  var evalsByName = {};
   all.forEach(function(e){
-    var key = e.pacienteDni || e.paciente || "";
-    if(!key) return;
-    evalsByPatient[key] = (evalsByPatient[key] || 0) + 1;
+    var dni = e.pacienteDni || e.dni || "";
+    var name = (e.paciente||"").toLowerCase().trim();
+    if(dni) evalsByDni[dni] = (evalsByDni[dni] || 0) + 1;
+    if(name) evalsByName[name] = (evalsByName[name] || 0) + 1;
   });
 
   // Lista de pacientes REGISTRADOS
   var patientsList = [];
   if(pacientes && pacientes.length > 0){
     patientsList = pacientes.map(function(p){
-      var count = (evalsByPatient[p.dni] || 0) + (evalsByPatient[p.nombre] || 0);
+      // Preferir DNI si existe, sino caer en nombre
+      var count = 0;
+      if(p.dni && evalsByDni[p.dni]) count = evalsByDni[p.dni];
+      else if(p.nombre) count = evalsByName[(p.nombre||"").toLowerCase().trim()] || 0;
       return { nombre: p.nombre, dni: p.dni || "", count: count };
     }).sort(function(a,b){ return a.nombre.localeCompare(b.nombre); });
   } else {
+    // Fallback: agrupar por nombre normalizado
     var patientsMap = {};
-    all.forEach(function(e){ if(e.paciente && !patientsMap[e.paciente]) patientsMap[e.paciente] = { nombre: e.paciente, count: 0 }; if(e.paciente) patientsMap[e.paciente].count++; });
+    all.forEach(function(e){
+      if(!e.paciente) return;
+      var key = e.paciente.toLowerCase().trim();
+      if(!patientsMap[key]) patientsMap[key] = { nombre: e.paciente, dni: e.pacienteDni||e.dni||"", count: 0 };
+      patientsMap[key].count++;
+    });
     patientsList = Object.values(patientsMap).sort(function(a,b){ return a.nombre.localeCompare(b.nombre); });
   }
 
   var f = all.filter(function(e){
     if(searchMode === "search" && q && !(e.paciente || "").toLowerCase().includes(q.toLowerCase())) return false;
-    if(searchMode === "list" && selPatient && e.paciente !== selPatient) return false;
+    if(searchMode === "list" && selPatient){
+      // Comparar primero por DNI si existe, sino por nombre (case-insensitive)
+      var selDni = selPatient.dni || "";
+      var evDni = e.pacienteDni || e.dni || "";
+      var evName = (e.paciente||"").toLowerCase().trim();
+      var selName = (selPatient.nombre||"").toLowerCase().trim();
+      if(selDni && evDni){
+        if(selDni !== evDni) return false;
+      } else {
+        if(evName !== selName) return false;
+      }
+    }
     if(tab !== "all" && e.tipo !== tab) return false;
     return true;
   });
@@ -61,8 +83,8 @@ export default function Hist({ TC, allEvals, onView, isA, onD, enabledTools, pac
           <div className="hist-patients-box">
             {selPatient && <button onClick={function(){setSelPatient(null)}} className="hist-patients-clear">{"\u2715 Mostrar todos"}</button>}
             {patientsList.map(function(p){
-              var active = selPatient === p.nombre;
-              return <button key={p.dni||p.nombre} onClick={function(){setSelPatient(active?null:p.nombre)}} className={"hist-patient-item"+(active?" hist-patient-item--active":"")}>
+              var active = selPatient && (selPatient.dni ? selPatient.dni===p.dni : selPatient.nombre===p.nombre);
+              return <button key={p.dni||p.nombre} onClick={function(){setSelPatient(active?null:p)}} className={"hist-patient-item"+(active?" hist-patient-item--active":"")}>
                 <span>{p.nombre}</span>
                 <span className="hist-patient-count">{p.count+(p.count===1?" eval":" evals")}</span>
               </button>;

@@ -5,7 +5,7 @@ import { loadDrafts, deleteDraft } from "../lib/drafts.js";
 import { renderReportText } from "../lib/evalUtils.jsx";
 import "../styles/Tools.css";
 
-export default function Tools({ TC, onSel, credits, onBuy, enabledTools, toolsConfig, userId, onResumeDraft, allEvals, nfy, therapistInfo, deductCredit, isAdmin }) {
+export default function Tools({ TC, onSel, credits, onBuy, enabledTools, toolsConfig, userId, onResumeDraft, allEvals, nfy, therapistInfo, deductCredit, isAdmin, onReload }) {
   var _drafts = useState([]), drafts = _drafts[0], setDrafts = _drafts[1];
   var _openArea = useState(null), openArea = _openArea[0], setOpenArea = _openArea[1];
   var _info = useState(null), showInfo = _info[0], setShowInfo = _info[1];
@@ -101,7 +101,16 @@ export default function Tools({ TC, onSel, credits, onBuy, enabledTools, toolsCo
           resultados: { cantEvals: selected.length, evaluacionesIncluidas: selected.map(function(ev){ return { tipo: ev.tipo, fecha: ev.fechaEvaluacion || ev.fechaGuardado }; }) }
         };
         fbAdd("evaluaciones", payload).then(function(r){
-          if(r.success && nfy) nfy("Informe complementario guardado en historial", "ok");
+          if(r.success){
+            if(nfy) nfy("Informe complementario guardado en historial", "ok");
+            if(onReload) onReload();
+          } else {
+            if(nfy) nfy("Error al guardar: " + (r.error||"desconocido"),"er");
+            console.error("Error guardando complementario:", r.error);
+          }
+        }).catch(function(e){
+          if(nfy) nfy("Error al guardar: " + e.message,"er");
+          console.error("Error guardando complementario:", e);
         });
       }
       else { if(nfy) nfy("Error: " + (data.error||""),"er"); }
