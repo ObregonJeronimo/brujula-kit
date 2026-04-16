@@ -4,6 +4,7 @@ import { ALL_EVAL_TYPES } from "../config/evalTypes.js";
 import { K } from "../lib/fb.js";
 import Admin from "./Admin.jsx";
 import ChangelogAdmin from "./ChangelogAdmin.jsx";
+import AgentManager from "./AgentManager.jsx";
 import "../styles/AdminPanel.css";
 
 export default function AdminPanel({ nfy }) {
@@ -44,7 +45,7 @@ export default function AdminPanel({ nfy }) {
 
   var saveTheme = function(){
     setThemeSaving(true);
-    setDoc(doc(db, "config", "theme"), themeColors).then(function(){ nfy("Colores guardados. Recargá la página para ver los cambios.", "ok"); setThemeSaving(false); }).catch(function(e){ nfy("Error: "+e.message,"er"); setThemeSaving(false); });
+    setDoc(doc(db, "config", "theme"), themeColors).then(function(){ nfy("Colores guardados. Recarga la pagina para ver los cambios.", "ok"); setThemeSaving(false); }).catch(function(e){ nfy("Error: "+e.message,"er"); setThemeSaving(false); });
   };
 
   var PALETTE = [
@@ -72,12 +73,12 @@ export default function AdminPanel({ nfy }) {
     setDoc(doc(db, "config", "tools"), updated).then(function(){ nfy("Guardado", "ok"); setEditTitle(function(p){ var n = Object.assign({},p); delete n[id]; return n; }); setEditDesc(function(p){ var n = Object.assign({},p); delete n[id]; return n; }); setEditAge(function(p){ var n = Object.assign({},p); delete n[id]; return n; }); setEditTime(function(p){ var n = Object.assign({},p); delete n[id]; return n; }); setSaving(false); }).catch(function(e){ nfy("Error: " + e.message, "er"); setSaving(false); });
   };
 
-  var ADMIN_TABS = [["usuarios","\ud83d\udc65 Usuarios"],["changelog","\ud83d\udcdd Changelog"],["herramientas","\ud83e\uddf0 Herramientas"],["colores","\ud83c\udfa8 Colores"],["audios","\ud83c\udfa4 Audios"],["datos","\ud83d\uddd1\ufe0f Datos"]];
+  var ADMIN_TABS = [["usuarios","\ud83d\udc65 Usuarios"],["agentes","\ud83d\udee1\ufe0f Equipo de Soporte"],["changelog","\ud83d\udcdd Changelog"],["herramientas","\ud83e\uddf0 Herramientas"],["colores","\ud83c\udfa8 Colores"],["audios","\ud83c\udfa4 Audios"],["datos","\ud83d\uddd1\ufe0f Datos"]];
 
   return (
     <div className="adm-page">
-      <h1 className="adm-title">{"⚙️ Administrar"}</h1>
-      <p className="adm-subtitle">Panel de administración del sistema</p>
+      <h1 className="adm-title">{"\u2699\ufe0f Administrar"}</h1>
+      <p className="adm-subtitle">Panel de administracion del sistema</p>
 
       <div className="adm-tabs">
         {ADMIN_TABS.map(function(t){
@@ -86,10 +87,11 @@ export default function AdminPanel({ nfy }) {
       </div>
 
       {tab==="usuarios" && <Admin nfy={nfy} />}
+      {tab==="agentes" && <AgentManager nfy={nfy} />}
       {tab==="changelog" && <ChangelogAdmin nfy={nfy} />}
 
       {tab==="herramientas" && <div>
-        <p className="adm-desc">{"Activá o desactivá herramientas para los usuarios. Podés editar el título y descripción."}</p>
+        <p className="adm-desc">{"Activa o desactiva herramientas para los usuarios. Podes editar el titulo y descripcion."}</p>
         <div className="adm-tools-list">
           {ALL_EVAL_TYPES.map(function(t){
             var cfg = (toolsConfig && toolsConfig[t.id]) || { enabled: true, title: t.fullName, desc: t.desc };
@@ -104,7 +106,7 @@ export default function AdminPanel({ nfy }) {
                   <span className="adm-tool-icon">{t.icon}</span>
                   <div>
                     <div className={"adm-tool-name"+(isEnabled?"":" adm-tool-name--disabled")}>{cfg.title || t.fullName}</div>
-                    <div className={"adm-tool-meta"+(isEnabled?"":" adm-tool-meta--disabled")}>{t.id.toUpperCase()+" · "+(cfg.age||t.age||"")+" · "+(cfg.time||t.time||"")}</div>
+                    <div className={"adm-tool-meta"+(isEnabled?"":" adm-tool-meta--disabled")}>{t.id.toUpperCase()+" \u00b7 "+(cfg.age||t.age||"")+" \u00b7 "+(cfg.time||t.time||"")}</div>
                   </div>
                 </div>
                 <button onClick={function(){toggleTool(t.id)}} className={"adm-toggle "+(isEnabled?"adm-toggle--on":"adm-toggle--off")}>
@@ -153,7 +155,7 @@ export default function AdminPanel({ nfy }) {
                     <button onClick={function(){ setEditTitle(function(p){ var n=Object.assign({},p); delete n[t.id]; return n; }); setEditDesc(function(p){ var n=Object.assign({},p); delete n[t.id]; return n; }); setEditAge(function(p){ var n=Object.assign({},p); delete n[t.id]; return n; }); setEditTime(function(p){ var n=Object.assign({},p); delete n[t.id]; return n; }); }} className="adm-btn-cancel">Cancelar</button>
                   </div>
                 </div>}
-                {!isEnabled && <div className="adm-disabled-warn">{"⚠ Desactivada — no visible para usuarios"}</div>}
+                {!isEnabled && <div className="adm-disabled-warn">{"\u26a0 Desactivada \u2014 no visible para usuarios"}</div>}
               </div>
             </div>;
           })}
@@ -166,10 +168,10 @@ export default function AdminPanel({ nfy }) {
         "--adm-secondary": themeColors.secondary,
         "--adm-secondary-alpha": themeColors.secondaryAlpha/100
       }}>
-        <p className="adm-desc">{"Personalizá los colores de la aplicación. Los cambios se aplican para todos los usuarios."}</p>
+        <p className="adm-desc">{"Personaliza los colores de la aplicacion. Los cambios se aplican para todos los usuarios."}</p>
         <div className="adm-colors-card">
           <div className="adm-colors-title">Color Primario</div>
-          <div className="adm-colors-desc">{"Sidebar, encabezados principales y botones de acción"}</div>
+          <div className="adm-colors-desc">{"Sidebar, encabezados principales y botones de accion"}</div>
           <div className="adm-palette">{PALETTE.map(function(p){ var sel = themeColors.primary===p.c; return <button key={p.c} onClick={function(){setThemeColors(function(prev){return Object.assign({},prev,{primary:p.c})})}} title={p.n} className={"adm-palette-swatch"+(sel?" adm-palette-swatch--sel":"")} style={{background:p.c}} />; })}</div>
           <div className="adm-alpha-row"><span className="adm-alpha-label">Intensidad</span><input type="range" min="30" max="100" value={themeColors.primaryAlpha} onChange={function(e){setThemeColors(function(prev){return Object.assign({},prev,{primaryAlpha:parseInt(e.target.value)})})}} className="adm-alpha-slider" /><span className="adm-alpha-value">{themeColors.primaryAlpha+"%"}</span></div>
           <div className="adm-preview">Vista previa</div>
@@ -186,7 +188,7 @@ export default function AdminPanel({ nfy }) {
           <div className="adm-preview-combo">
             <div className="adm-preview-sidebar">Sidebar</div>
             <div className="adm-preview-content">
-              <div className="adm-preview-btn">{"Botón"}</div>
+              <div className="adm-preview-btn">{"Boton"}</div>
               <div className="adm-preview-link">Enlace</div>
             </div>
           </div>
@@ -197,10 +199,10 @@ export default function AdminPanel({ nfy }) {
       </div>}
 
       {tab==="audios" && <div>
-        <p className="adm-desc">{"Audios guardados para la Evaluación Fonética. Se reproducen cuando el usuario toca Escuchar."}</p>
+        <p className="adm-desc">{"Audios guardados para la Evaluacion Fonetica. Se reproducen cuando el usuario toca Escuchar."}</p>
         {fonAudios === null ? <div className="adm-audios-loading">{"Cargando audios..."}</div> : (function(){
           var keys = Object.keys(fonAudios).sort();
-          if(keys.length === 0) return <div className="adm-audios-empty">{"No hay audios grabados. Andá a Herramientas → Evaluación Fonética para grabar."}</div>;
+          if(keys.length === 0) return <div className="adm-audios-empty">{"No hay audios grabados. Anda a Herramientas \u2192 Evaluacion Fonetica para grabar."}</div>;
           return <div>
             <div className="adm-audios-header">
               <div className="adm-audios-count">{keys.length + " audios grabados"}</div>
@@ -218,7 +220,7 @@ export default function AdminPanel({ nfy }) {
                   }} className={"adm-audio-play"+(playingAudio===k?" adm-audio-play--playing":"")}>{playingAudio===k?"\u23f9":"\u25b6"}</button>
                   <span className="adm-audio-name">{k}</span>
                   <button onClick={function(){
-                    var ok = window.confirm("\u26a0\ufe0f Eliminar audio de '"+k+"'?\n\nEste audio fue grabado manualmente y no se puede recuperar.\n\u00bfEst\u00e1s seguro?");
+                    var ok = window.confirm("\u26a0\ufe0f Eliminar audio de '"+k+"'?\n\nEste audio fue grabado manualmente y no se puede recuperar.\n\u00bfEstas seguro?");
                     if(!ok) return;
                     deleteDoc(doc(db,"fon_audios",k)).then(function(){
                       var next = Object.assign({}, fonAudios);
@@ -239,11 +241,11 @@ export default function AdminPanel({ nfy }) {
 
         <div className="adm-danger-card">
           <div className="adm-danger-title">{"Borrar todas las evaluaciones"}</div>
-          <div className="adm-danger-desc">{"Elimina todas las evaluaciones e informes complementarios de la base de datos. Los usuarios y créditos no se ven afectados."}</div>
+          <div className="adm-danger-desc">{"Elimina todas las evaluaciones e informes complementarios de la base de datos. Los usuarios y creditos no se ven afectados."}</div>
           <button onClick={function(){
-            var ok = window.confirm("ATENCION: Esto borrar\u00e1 TODAS las evaluaciones de TODOS los usuarios.\n\nEsta acci\u00f3n es IRREVERSIBLE.\n\n\u00bfEst\u00e1s seguro?");
+            var ok = window.confirm("ATENCION: Esto borrara TODAS las evaluaciones de TODOS los usuarios.\n\nEsta accion es IRREVERSIBLE.\n\nEstas seguro?");
             if(!ok) return;
-            var ok2 = window.confirm("ULTIMA CONFIRMACION:\n\nSe borrar\u00e1n todas las evaluaciones y estad\u00edsticas volver\u00e1n a 0.\n\nEscrib\u00ed OK para confirmar... (cancel para cancelar)");
+            var ok2 = window.confirm("ULTIMA CONFIRMACION:\n\nSe borraran todas las evaluaciones y estadisticas volveran a 0.\n\nEscribi OK para confirmar... (cancel para cancelar)");
             if(!ok2) return;
             getDocs(collection(db,"evaluaciones")).then(function(snap){
               var promises = snap.docs.map(function(d){ return deleteDoc(doc(db,"evaluaciones",d.id)); });
@@ -254,9 +256,9 @@ export default function AdminPanel({ nfy }) {
 
         <div className="adm-danger-card">
           <div className="adm-danger-title">{"Borrar historial de pagos"}</div>
-          <div className="adm-danger-desc">{"Elimina todos los registros de pagos. Los créditos actuales de los usuarios no se modifican."}</div>
+          <div className="adm-danger-desc">{"Elimina todos los registros de pagos. Los creditos actuales de los usuarios no se modifican."}</div>
           <button onClick={function(){
-            var ok = window.confirm("Esto borrar\u00e1 todos los registros de pagos.\n\nLos cr\u00e9ditos de los usuarios NO se modifican.\n\n\u00bfEst\u00e1s seguro?");
+            var ok = window.confirm("Esto borrara todos los registros de pagos.\n\nLos creditos de los usuarios NO se modifican.\n\nEstas seguro?");
             if(!ok) return;
             getDocs(collection(db,"pagos")).then(function(snap){
               var promises = snap.docs.map(function(d){ return deleteDoc(doc(db,"pagos",d.id)); });
@@ -267,9 +269,9 @@ export default function AdminPanel({ nfy }) {
 
         <div className="adm-danger-card">
           <div className="adm-danger-title">{"Resetear TODO (evaluaciones + pagos)"}</div>
-          <div className="adm-danger-desc">{"Borra todas las evaluaciones y todos los pagos. Las estadísticas vuelven a 0. Los usuarios y sus créditos actuales no se tocan."}</div>
+          <div className="adm-danger-desc">{"Borra todas las evaluaciones y todos los pagos. Las estadisticas vuelven a 0. Los usuarios y sus creditos actuales no se tocan."}</div>
           <button onClick={function(){
-            var ok = window.confirm("RESETEAR TODO:\n\nSe borrar\u00e1n TODAS las evaluaciones y TODOS los pagos.\n\nEsta acci\u00f3n es IRREVERSIBLE.\n\n\u00bfEst\u00e1s completamente seguro?");
+            var ok = window.confirm("RESETEAR TODO:\n\nSe borraran TODAS las evaluaciones y TODOS los pagos.\n\nEsta accion es IRREVERSIBLE.\n\nEstas completamente seguro?");
             if(!ok) return;
             Promise.all([
               getDocs(collection(db,"evaluaciones")).then(function(snap){ return Promise.all(snap.docs.map(function(d){ return deleteDoc(doc(db,"evaluaciones",d.id)); })); }),
