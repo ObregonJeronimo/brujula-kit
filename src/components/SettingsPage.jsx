@@ -137,14 +137,14 @@ var SettingsPage = forwardRef(function SettingsPageInner({ userId, nfy, profile,
       <div className="settings-block-separator">
         <h3 className="settings-h3">{"Datos del consultorio"}</h3>
         <p className="settings-desc">{"Esta información se incluye en los informes de pacientes y en los emails automáticos de recordatorio de citas."}</p>
-        <div className={"settings-toggle-row"+(showInReport?" settings-toggle-row--active":"")} style={{marginBottom:18}}>
+        <div className={"settings-toggle-row settings-toggle-row--spaced"+(showInReport?" settings-toggle-row--active":"")}>
           <div>
             <div className="settings-toggle-row-title">Mostrar en informe de paciente</div>
             {!allFieldsFilled && <div className="settings-toggle-row-warn">{"Completá todos los campos del consultorio para activar"}</div>}
           </div>
           <Toggle value={showInReport} onChange={function(v){ if(v && !allFieldsFilled){ nfy("Completá todos los campos del consultorio primero","er"); return; } setShowInReport(v); }} />
         </div>
-        <div className="settings-grid-2" style={{marginBottom:14}}>
+        <div className="settings-grid-2 settings-grid-2--spaced">
           <div><label className="settings-label">Nombre del consultorio</label><input value={cName} onChange={function(e){ setCName(e.target.value); }} className="settings-input" placeholder="Ej: Consultorio Fonos" /></div>
           <div><label className="settings-label">{"Teléfono del consultorio"}</label><input value={cTel} onChange={function(e){ setCTel(e.target.value); }} className="settings-input" placeholder="Ej: +54 351 1234567" /></div>
         </div>
@@ -170,8 +170,8 @@ var SettingsPage = forwardRef(function SettingsPageInner({ userId, nfy, profile,
         </div>
         <Toggle value={autoEmail} onChange={setAutoEmail} />
       </div>
-      <div className={"settings-toggle-row"+(citaReminder?" settings-toggle-row--active":"")} style={{display:"block",marginBottom:20}}>
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+      <div className={"settings-toggle-row settings-toggle-row--stacked"+(citaReminder?" settings-toggle-row--active":"")}>
+        <div className="settings-toggle-row-header">
           <div>
             <div className="settings-toggle-row-title">{"Avisar cuando una cita es próxima"}</div>
             <div className="settings-toggle-row-desc">{"Recibí recordatorios de citas en el panel principal"}</div>

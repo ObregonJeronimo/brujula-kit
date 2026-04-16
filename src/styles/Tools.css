@@ -318,6 +318,14 @@
   margin-bottom: 12px;
 }
 
+.tools-consol-step-title--inline {
+  margin-bottom: 0;
+}
+
+.tools-consol-eval-main {
+  flex: 1;
+}
+
 .tools-consol-empty {
   font-size: var(--fs-base);
   color: var(--c-text-muted);

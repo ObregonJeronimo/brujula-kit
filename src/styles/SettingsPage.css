@@ -109,6 +109,10 @@
   gap: 14px;
 }
 
+.settings-grid-2--spaced {
+  margin-bottom: 14px;
+}
+
 .settings-field {
   margin-bottom: 14px;
 }
@@ -156,6 +160,21 @@
 .settings-toggle-row--active {
   background: #f0fdfa;
   border-color: #99f6e4;
+}
+
+.settings-toggle-row--spaced {
+  margin-bottom: 18px;
+}
+
+.settings-toggle-row--stacked {
+  display: block;
+  margin-bottom: 20px;
+}
+
+.settings-toggle-row-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .settings-toggle-row-title {

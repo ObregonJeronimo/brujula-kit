@@ -138,7 +138,7 @@ export default function AdminPanel({ nfy }) {
                   <div className="adm-edit-grid">
                     <div>
                       <div className="adm-edit-label-row">
-                        <label className="adm-edit-label" style={{marginBottom:0}}>Edad recomendada</label>
+                        <label className="adm-edit-label adm-edit-label--inline">Edad recomendada</label>
                         <button onClick={function(){ var updated = Object.assign({}, toolsConfig); if(!updated[t.id]) updated[t.id] = { enabled: true }; updated[t.id] = Object.assign({}, updated[t.id], { showAge: !cfg.showAge }); setToolsConfig(updated); setDoc(doc(db, "config", "tools"), updated); }} className="adm-age-inline-btn" style={{color:cfg.showAge!==false?"#059669":"#dc2626"}}>
                           <span className="adm-toggle-mini" style={{background:cfg.showAge!==false?"#059669":"#dc2626"}}><span className="adm-toggle-mini-knob" style={{left:cfg.showAge!==false?"18px":"2px"}}></span></span>
                           {cfg.showAge!==false?"Visible":"Oculta"}
@@ -177,7 +177,7 @@ export default function AdminPanel({ nfy }) {
           <div className="adm-preview" style={{background:themeColors.secondary,opacity:themeColors.secondaryAlpha/100}}>Vista previa</div>
         </div>
         <div className="adm-colors-card">
-          <div className="adm-colors-title" style={{marginBottom:12}}>Vista previa combinada</div>
+          <div className="adm-colors-title adm-colors-title--spaced">Vista previa combinada</div>
           <div className="adm-preview-combo">
             <div className="adm-preview-sidebar" style={{background:themeColors.primary,opacity:themeColors.primaryAlpha/100}}>Sidebar</div>
             <div className="adm-preview-content">

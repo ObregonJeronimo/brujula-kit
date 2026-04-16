@@ -1,0 +1,20 @@
+/* evalUtils.css — estilos para renderReportText */
+
+.eval-report-spacer {
+  height: 8px;
+}
+
+.eval-report-title {
+  font-size: var(--fs-md);
+  font-weight: var(--fw-bold);
+  color: var(--c-primary);
+  margin-top: 14px;
+  margin-bottom: 4px;
+}
+
+.eval-report-line {
+  font-size: var(--fs-base);
+  color: var(--c-text);
+  line-height: 1.7;
+  margin-bottom: 1px;
+}

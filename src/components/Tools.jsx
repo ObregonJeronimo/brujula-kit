@@ -259,7 +259,7 @@ export default function Tools({ TC, onSel, credits, onBuy, enabledTools, toolsCo
             {/* Step 2: Select evaluations */}
             {consolPatient && !consolReport && !consolGenerating && <div>
               <div className="tools-consol-step-header">
-                <div className="tools-consol-step-title" style={{marginBottom:0}}>{"2. Selecciona evaluaciones para " + consolPatient.nombre}</div>
+                <div className="tools-consol-step-title tools-consol-step-title--inline">{"2. Selecciona evaluaciones para " + consolPatient.nombre}</div>
                 <button onClick={function(){ setConsolPatient(null); setConsolSelected({}); }} className="tools-consol-change-btn">{"Cambiar paciente"}</button>
               </div>
               {patientEvals.length < 2 && <div className="tools-consol-warn">{"Este paciente tiene menos de 2 evaluaciones. Se necesitan al menos 2 para generar un informe complementario."}</div>}
@@ -270,7 +270,7 @@ export default function Tools({ TC, onSel, credits, onBuy, enabledTools, toolsCo
                   return <label key={ev._fbId} className={"tools-consol-eval"+(checked?" tools-consol-eval--checked":"")}>
                     <input type="checkbox" checked={checked} onChange={function(){ setConsolSelected(function(prev){ var n = Object.assign({},prev); n[ev._fbId] = !prev[ev._fbId]; return n; }); }} className="tools-consol-checkbox" style={{accentColor:"var(--c-accent)"}} />
                     <span className="tools-consol-eval-icon">{t ? t.icon : ""}</span>
-                    <div style={{flex:1}}>
+                    <div className="tools-consol-eval-main">
                       <div className="tools-consol-eval-name">{t ? t.fullName : ev.tipo}</div>
                       <div className="tools-consol-eval-date">{new Date(ev.fechaGuardado||ev.fechaEvaluacion).toLocaleDateString("es-AR")}</div>
                     </div>

@@ -169,7 +169,7 @@ export default function Dashboard({ TC, allEvals, onT, onView, ld, profile, isAd
         <div className="dash-welcome">
           <div className="dash-welcome-icon">{"\ud83c\udf89"}</div>
           <div className="dash-welcome-title">{"\u00a1Bienvenido/a a Br\u00fajula KIT!"}</div>
-          <div className="dash-welcome-desc">{"Te regalamos "}<b style={{color:"var(--c-success)"}}>{"5 cr\u00e9ditos gratis"}</b>{" para que puedas probar todas las evaluaciones disponibles."}</div>
+          <div className="dash-welcome-desc">{"Te regalamos "}<b className="dash-welcome-highlight">{"5 cr\u00e9ditos gratis"}</b>{" para que puedas probar todas las evaluaciones disponibles."}</div>
           <div className="dash-welcome-credits">
             <div className="dash-welcome-credits-big">{"5"}</div>
             <div className="dash-welcome-credits-label">{"cr\u00e9ditos disponibles"}</div>
@@ -206,7 +206,7 @@ export default function Dashboard({ TC, allEvals, onT, onView, ld, profile, isAd
           </div>}
           {showAddSC && <div className="dash-shortcuts-picker">
             <div className="dash-shortcuts-picker-title">{"Seleccionar evaluaci\u00f3n:"}</div>
-            <div className="dash-shortcuts-picker-list">{availableToAdd.map(function(toolId){ var tool = TOOL_MAP[toolId]; if(!tool) return null; return <button key={toolId} onClick={function(){ addShortcut(toolId); }} className="dash-shortcut-pick-btn"><span className="dash-shortcut-icon" style={{fontSize:16}}>{tool.icon}</span>{tool.name}</button>; })}</div>
+            <div className="dash-shortcuts-picker-list">{availableToAdd.map(function(toolId){ var tool = TOOL_MAP[toolId]; if(!tool) return null; return <button key={toolId} onClick={function(){ addShortcut(toolId); }} className="dash-shortcut-pick-btn"><span className="dash-shortcut-icon dash-shortcut-icon--sm">{tool.icon}</span>{tool.name}</button>; })}</div>
           </div>}
         </div>
       </div>}
@@ -224,7 +224,7 @@ export default function Dashboard({ TC, allEvals, onT, onView, ld, profile, isAd
       {/* Consolidated report tip */}
       {uniquePatients > 0 && visibleEvals.length >= 2 && <div className="dash-consol-tip">
         <span className="dash-consol-icon">{"📋"}</span>
-        <div style={{flex:1}}>
+        <div className="dash-consol-body">
           <div className="dash-consol-title">{"Informe Complementario disponible"}</div>
           <div className="dash-consol-desc">{_isMob ? "Pod\u00e9s generar un informe que integre varias evaluaciones de un mismo paciente. Ingres\u00e1 en modo escritorio para acceder." : "Pod\u00e9s generar un informe que integre varias evaluaciones de un mismo paciente. Encontralo en Herramientas."}</div>
         </div>
@@ -264,7 +264,7 @@ export default function Dashboard({ TC, allEvals, onT, onView, ld, profile, isAd
           })}
         </div>}
         {upcoming.length===0 && !citasLoading && <div className="dash-upcoming-empty">No hay citas próximas</div>}
-        {citasLoading && <div className="dash-upcoming-empty" style={{fontStyle:"normal"}}>Cargando agenda...</div>}
+        {citasLoading && <div className="dash-upcoming-empty dash-upcoming-empty--loading">Cargando agenda...</div>}
       </div>
     </div>
   );

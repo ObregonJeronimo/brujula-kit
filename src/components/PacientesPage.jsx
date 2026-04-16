@@ -187,10 +187,10 @@ export default function PacientesPage({ TC, userId, nfy, allEvals, therapistInfo
           return <div className="pac-confirm-delete">
             <div className="pac-confirm-msg">
               {"\u26a0\ufe0f \u00bfEliminar este paciente?"}
-              {pacEvalsCount > 0 && <div style={{fontSize:12,fontWeight:500,color:"#b91c1c",marginTop:6}}>
+              {pacEvalsCount > 0 && <div className="pac-del-warn">
                 {"Tambi\u00e9n se eliminar\u00e1n "+pacEvalsCount+" evaluaci\u00f3n"+(pacEvalsCount!==1?"es":"")+" asociada"+(pacEvalsCount!==1?"s":"")+". Esta acci\u00f3n no se puede deshacer."}
               </div>}
-              {pacEvalsCount === 0 && <div style={{fontSize:12,fontWeight:500,color:"#b91c1c",marginTop:6}}>Esta acci\u00f3n no se puede deshacer.</div>}
+              {pacEvalsCount === 0 && <div className="pac-del-warn">Esta acci\u00f3n no se puede deshacer.</div>}
             </div>
             <div className="pac-confirm-actions">
               <button onClick={deletePaciente} className="pac-btn-confirm-delete">{"S\u00ed, eliminar todo"}</button>
@@ -220,7 +220,7 @@ export default function PacientesPage({ TC, userId, nfy, allEvals, therapistInfo
           if(!last) return <div className="pac-last-none">Sin evaluaciones registradas</div>;
           return <div className="pac-last-box">
             <div className="pac-last-label">{"Última evaluación"}</div>
-            <div style={{fontSize:14}}><span className="pac-last-type">{last.tipo}</span>{" - "}{last.fecha ? new Date(last.fecha).toLocaleDateString("es-AR") : "-"}</div>
+            <div className="pac-last-eval"><span className="pac-last-type">{last.tipo}</span>{" - "}{last.fecha ? new Date(last.fecha).toLocaleDateString("es-AR") : "-"}</div>
           </div>;
         })()}
       </div>}

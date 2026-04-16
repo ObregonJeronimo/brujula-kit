@@ -241,6 +241,10 @@
   margin-bottom: 3px;
 }
 
+.adm-edit-label--inline {
+  margin-bottom: 0;
+}
+
 .adm-edit-input {
   width: 100%;
   padding: 8px 12px;
@@ -332,6 +336,10 @@
   font-weight: var(--fw-bold);
   color: var(--c-text);
   margin-bottom: 4px;
+}
+
+.adm-colors-title--spaced {
+  margin-bottom: 12px;
 }
 
 .adm-colors-desc {

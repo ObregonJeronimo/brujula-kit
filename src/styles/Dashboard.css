@@ -223,6 +223,10 @@
   margin-bottom: 16px;
 }
 
+.dash-welcome-highlight {
+  color: var(--c-success);
+}
+
 .dash-welcome-credits {
   background: var(--c-success-light);
   border: 1px solid var(--c-success-border);
@@ -429,6 +433,10 @@
   font-size: var(--fs-2xl);
 }
 
+.dash-shortcut-icon--sm {
+  font-size: 16px;
+}
+
 .dash-shortcut-name {
   font-size: 12px;
   font-weight: var(--fw-semibold);
@@ -539,6 +547,10 @@
 .dash-consol-icon {
   font-size: 28px;
   flex-shrink: 0;
+}
+
+.dash-consol-body {
+  flex: 1;
 }
 
 .dash-consol-title {
@@ -744,4 +756,8 @@
   color: var(--c-text-muted);
   font-size: 12px;
   font-style: italic;
+}
+
+.dash-upcoming-empty--loading {
+  font-style: normal;
 }

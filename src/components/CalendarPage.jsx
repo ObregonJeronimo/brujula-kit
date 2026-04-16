@@ -183,7 +183,7 @@ export default function CalendarPage({ userId, nfy, userSettings, profesionalNom
       {showForm && selDay && (<div className="cal-form-card">
         <div className="cal-detail-header">
           <h3 className="cal-detail-title">{editId ? "Editar cita" : "Nueva cita"} – {selDay} de {MONTHS[month]}</h3>
-          <button onClick={() => { setShowForm(false); setEditId(null); setSelectedPac(null); setShowPacSearch(false); }} style={{ background: "none", border: "none", fontSize: 18, color: "var(--c-text-muted)", cursor: "pointer" }}>×</button>
+          <button onClick={() => { setShowForm(false); setEditId(null); setSelectedPac(null); setShowPacSearch(false); }} className="cal-detail-close">×</button>
         </div>
         <div className="cal-form-grid">
           <div className="cal-form-field-full">

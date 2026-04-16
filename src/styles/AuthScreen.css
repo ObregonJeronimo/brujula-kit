@@ -270,6 +270,10 @@
   cursor: wait;
 }
 
+.auth-submit--spaced {
+  margin-bottom: 10px;
+}
+
 /* Forgot password */
 .auth-forgot {
   background: none;

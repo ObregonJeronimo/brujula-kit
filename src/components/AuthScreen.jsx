@@ -152,7 +152,7 @@ export default function AuthScreen({ onDone, themeColor }) {
             <div className="auth-field"><input type="email" value={resetEmail} onChange={function(e){setResetEmail(e.target.value)}} className="auth-input" placeholder="Tu email de registro" required/></div>
             {err && <div className="auth-error">{err}</div>}
             {info && <div className="auth-success">{info}</div>}
-            <button type="submit" disabled={ld} className="auth-submit" style={{marginBottom:10}}>Enviar enlace de recuperación</button>
+            <button type="submit" disabled={ld} className="auth-submit auth-submit--spaced">Enviar enlace de recuperación</button>
             <button type="button" onClick={function(){setShowReset(false);setErr("");setInfo("")}} className="auth-reset-back">Volver</button>
           </form>
         </div> : <form onSubmit={mode==="login"?handleLogin:handleRegister}>

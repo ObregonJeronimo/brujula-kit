@@ -191,6 +191,14 @@
   color: var(--c-primary);
 }
 
+.cal-detail-close {
+  background: none;
+  border: none;
+  font-size: 18px;
+  color: var(--c-text-muted);
+  cursor: pointer;
+}
+
 .cal-detail-actions {
   display: flex;
   gap: 8px;

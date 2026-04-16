@@ -230,6 +230,13 @@
   text-align: center;
 }
 
+.pac-del-warn {
+  font-size: 12px;
+  font-weight: var(--fw-medium);
+  color: var(--c-error);
+  margin-top: 6px;
+}
+
 .pac-confirm-actions {
   display: flex;
   gap: 8px;
@@ -325,6 +332,10 @@
   font-weight: var(--fw-semibold);
   color: var(--c-text-muted);
   margin-bottom: 4px;
+}
+
+.pac-last-eval {
+  font-size: var(--fs-md);
 }
 
 .pac-last-type {
