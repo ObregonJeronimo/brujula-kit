@@ -1,0 +1,556 @@
+/* ============================================
+   RptREP — Reporte de Repetición de Palabras
+   ============================================ */
+
+.rpt-rep {
+  animation: fi 0.3s ease;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* ── Header ── */
+.rpt-rep-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--sp-5);
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+}
+
+.rpt-rep-title {
+  font-size: var(--fs-2xl);
+  font-weight: var(--fw-bold);
+}
+
+.rpt-rep-actions {
+  display: flex;
+  gap: var(--sp-2);
+}
+
+/* ── Botón eliminar ── */
+.rpt-rep-del-btn {
+  padding: 11px 22px;
+  background: var(--c-error-light);
+  color: var(--c-error);
+  border: 1px solid var(--c-error-border);
+  border-radius: var(--radius);
+  font-size: var(--fs-md);
+  font-weight: var(--fw-semibold);
+  cursor: pointer;
+}
+
+.rpt-rep-del-confirm {
+  background: var(--c-error-light);
+  border: 1px solid var(--c-error-border);
+  border-radius: var(--radius-md);
+  padding: 14px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.rpt-rep-del-title {
+  font-size: var(--fs-base);
+  font-weight: var(--fw-semibold);
+  color: var(--c-error);
+  text-align: center;
+}
+
+.rpt-rep-del-sub {
+  font-size: var(--fs-sm);
+  color: var(--c-text-muted);
+  text-align: center;
+}
+
+.rpt-rep-del-actions {
+  display: flex;
+  gap: var(--sp-2);
+}
+
+.rpt-rep-del-confirm-btn {
+  background: var(--c-error);
+  color: #fff;
+  border: none;
+  padding: 8px 20px;
+  border-radius: var(--radius);
+  font-size: var(--fs-base);
+  font-weight: var(--fw-semibold);
+  cursor: pointer;
+}
+
+.rpt-rep-del-cancel-btn {
+  background: var(--c-surface-hover);
+  border: 1px solid var(--c-border);
+  padding: 8px 20px;
+  border-radius: var(--radius);
+  font-size: var(--fs-base);
+  cursor: pointer;
+  color: var(--c-text-muted);
+}
+
+/* ── Toggle técnico ── */
+.rpt-rep-tech-toggle {
+  width: 100%;
+  padding: 14px;
+  background: var(--c-primary);
+  color: #fff;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-md);
+  font-size: var(--fs-md);
+  font-weight: var(--fw-semibold);
+  cursor: pointer;
+  margin-bottom: var(--sp-5);
+}
+
+.rpt-rep-tech-toggle.is-open {
+  background: var(--c-surface-hover);
+  color: var(--c-text);
+  margin-bottom: var(--sp-4);
+}
+
+/* ── Panel técnico ── */
+.rpt-rep-tech {
+  background: var(--c-surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--c-border);
+  padding: 28px;
+  margin-bottom: var(--sp-5);
+}
+
+.rpt-rep-pdf-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: var(--sp-4);
+}
+
+.rpt-rep-pdf-btn {
+  padding: 9px 18px;
+  background: var(--c-accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  font-size: var(--fs-base);
+  font-weight: var(--fw-semibold);
+  cursor: pointer;
+}
+
+/* ── Meta del paciente ── */
+.rpt-rep-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: var(--sp-5);
+  padding-bottom: var(--sp-4);
+  border-bottom: 2px solid var(--c-border);
+}
+
+.rpt-rep-meta-eyebrow {
+  font-size: 10px;
+  color: var(--c-text-muted);
+  font-weight: var(--fw-semibold);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.rpt-rep-meta-name {
+  font-size: var(--fs-xl);
+  font-weight: var(--fw-bold);
+  margin-top: 4px;
+}
+
+.rpt-rep-meta-sub {
+  font-size: var(--fs-base);
+  color: var(--c-text-muted);
+  margin-top: 2px;
+}
+
+.rpt-rep-meta-line {
+  font-size: var(--fs-sm);
+  color: var(--c-text-muted);
+  margin-top: 2px;
+}
+
+.rpt-rep-meta-right {
+  text-align: right;
+}
+
+.rpt-rep-meta-right .rpt-rep-meta-line {
+  font-size: var(--fs-sm);
+  color: var(--c-text-muted);
+  margin-top: 0;
+}
+
+/* ── Stat cards (PCC / Severidad / Correctos) ── */
+.rpt-rep-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-6);
+}
+
+.rpt-rep-stat {
+  border-radius: var(--radius-md);
+  padding: var(--sp-4);
+  text-align: center;
+}
+
+.rpt-rep-stat--pcc {
+  background: var(--c-success-light);
+}
+
+.rpt-rep-stat--sev {
+  background: var(--rpt-rep-sev-bg, var(--c-success-light));
+}
+
+.rpt-rep-stat--correct {
+  background: var(--c-surface-alt);
+}
+
+.rpt-rep-stat-big {
+  font-size: var(--fs-4xl);
+  font-weight: 800;
+  color: var(--c-accent);
+}
+
+.rpt-rep-stat-md {
+  font-size: var(--fs-2xl);
+  font-weight: var(--fw-bold);
+}
+
+.rpt-rep-stat-md--sev {
+  color: var(--rpt-rep-sev-color, var(--c-success));
+}
+
+.rpt-rep-stat-md--correct {
+  color: var(--c-primary);
+}
+
+.rpt-rep-stat-lbl {
+  font-size: var(--fs-sm);
+  color: var(--c-text-muted);
+  font-weight: var(--fw-semibold);
+}
+
+.rpt-rep-stat-extra {
+  font-size: 10px;
+  color: var(--c-text-muted);
+}
+
+/* ── Headings ── */
+.rpt-rep-h3 {
+  font-size: var(--fs-md);
+  font-weight: var(--fw-bold);
+  margin-bottom: var(--sp-2);
+}
+
+.rpt-rep-h3--err {
+  color: var(--c-error);
+}
+
+/* ── Grid de posiciones ── */
+.rpt-rep-pos-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-5);
+}
+
+.rpt-rep-pos {
+  background: var(--c-surface-alt);
+  border-radius: var(--radius);
+  padding: var(--sp-3);
+  text-align: center;
+  border: 1px solid var(--c-border);
+}
+
+.rpt-rep-pos-code {
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-bold);
+  color: var(--c-accent);
+}
+
+.rpt-rep-pos-full {
+  font-size: var(--fs-xs);
+  color: var(--c-text-muted);
+  margin-bottom: 4px;
+}
+
+.rpt-rep-pos-pct {
+  font-size: var(--fs-xl);
+  font-weight: var(--fw-bold);
+}
+
+.rpt-rep-pos-pct--ok { color: var(--c-success); }
+.rpt-rep-pos-pct--warn { color: var(--c-warning-dark); }
+.rpt-rep-pos-pct--err { color: var(--c-error); }
+
+.rpt-rep-pos-fraction {
+  font-size: 10px;
+  color: var(--c-text-muted);
+}
+
+.rpt-rep-pos-empty {
+  font-size: 10px;
+  color: #cbd5e1;
+}
+
+/* ── Tablas ── */
+.rpt-rep-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: var(--sp-5);
+}
+
+.rpt-rep-table--cat {
+  font-size: var(--fs-sm);
+}
+
+.rpt-rep-table--ph,
+.rpt-rep-table--err {
+  font-size: var(--fs-sm);
+}
+
+.rpt-rep-table thead tr {
+  border-bottom: 2px solid var(--c-border);
+  background: var(--c-surface-alt);
+}
+
+.rpt-rep-table thead tr.is-err {
+  background: var(--c-error-light);
+}
+
+.rpt-rep-table th {
+  padding: 6px 8px;
+  color: var(--c-text-muted);
+  font-weight: var(--fw-semibold);
+  text-align: center;
+}
+
+.rpt-rep-table th.rpt-rep-th-left {
+  text-align: left;
+}
+
+.rpt-rep-table th.rpt-rep-th--ok {
+  color: var(--c-success);
+}
+
+.rpt-rep-table th.rpt-rep-th--err {
+  color: var(--c-error);
+}
+
+.rpt-rep-table tbody tr {
+  border-bottom: 1px solid var(--c-border-light);
+}
+
+.rpt-rep-table tbody tr.is-err-row {
+  background: var(--c-error-light);
+}
+
+.rpt-rep-table tbody tr.is-warn-row {
+  background: var(--c-warning-light);
+}
+
+.rpt-rep-table td {
+  padding: 6px 8px;
+  text-align: center;
+}
+
+.rpt-rep-table td.rpt-rep-td-left {
+  text-align: left;
+}
+
+.rpt-rep-td-cat {
+  font-weight: var(--fw-semibold);
+}
+
+.rpt-rep-td-ok {
+  color: var(--c-success);
+  font-weight: var(--fw-semibold);
+}
+
+.rpt-rep-td-err {
+  color: var(--c-error);
+  font-weight: var(--fw-semibold);
+}
+
+.rpt-rep-td-neutral {
+  color: var(--c-success);
+  font-weight: var(--fw-semibold);
+}
+
+.rpt-rep-td-muted {
+  color: #d1d5db;
+  font-weight: var(--fw-semibold);
+}
+
+/* Badge % en tabla categorías */
+.rpt-rep-pct-badge {
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+}
+
+.rpt-rep-pct-badge--ok {
+  background: #dcfce7;
+  color: var(--c-success);
+}
+
+.rpt-rep-pct-badge--warn {
+  background: #fef3c7;
+  color: var(--c-warning-dark);
+}
+
+.rpt-rep-pct-badge--err {
+  background: var(--c-error-light);
+  color: var(--c-error);
+}
+
+/* Estado fonema (ALTERADO / EN DESARROLLO / ADECUADO) */
+.rpt-rep-status {
+  padding: 1px 6px;
+  border-radius: 8px;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-bold);
+}
+
+.rpt-rep-status--alt {
+  background: var(--c-error-light);
+  color: var(--c-error);
+}
+
+.rpt-rep-status--dev {
+  background: #fef3c7;
+  color: var(--c-warning-dark);
+}
+
+.rpt-rep-status--ok {
+  background: #dcfce7;
+  color: var(--c-success);
+}
+
+/* Fonema en tabla */
+.rpt-rep-ph-name {
+  padding: 5px 8px;
+  font-weight: var(--fw-bold);
+}
+
+.rpt-rep-td-phoneme-err {
+  padding: 5px 8px;
+  font-weight: var(--fw-bold);
+  color: var(--c-accent);
+}
+
+.rpt-rep-td-pos {
+  text-align: center;
+  padding: 5px;
+  font-size: 10px;
+  font-weight: var(--fw-semibold);
+  color: var(--c-text-muted);
+}
+
+.rpt-rep-td-prod {
+  padding: 5px 8px;
+  color: var(--c-error);
+  font-weight: var(--fw-semibold);
+}
+
+/* ── Bloque de errores ── */
+.rpt-rep-err-block {
+  margin-bottom: var(--sp-5);
+}
+
+/* ── Resumen de alterados ── */
+.rpt-rep-all-ok {
+  background: #dcfce7;
+  border-radius: var(--radius-lg);
+  padding: var(--sp-5);
+  margin-bottom: var(--sp-4);
+  text-align: center;
+}
+
+.rpt-rep-all-ok-icon {
+  font-size: 24px;
+}
+
+.rpt-rep-all-ok-text {
+  font-size: var(--fs-md);
+  font-weight: var(--fw-semibold);
+  color: var(--c-success);
+  margin-top: var(--sp-2);
+}
+
+.rpt-rep-alt {
+  background: var(--c-error-light);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--c-error-border);
+  padding: var(--sp-5);
+  margin-bottom: var(--sp-4);
+}
+
+.rpt-rep-alt-title {
+  font-size: 15px;
+  font-weight: var(--fw-bold);
+  color: var(--c-error);
+  margin-bottom: var(--sp-2);
+}
+
+.rpt-rep-alt-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+
+.rpt-rep-alt-chip {
+  background: var(--c-surface);
+  border-radius: var(--radius);
+  padding: 8px 14px;
+  border: 1px solid var(--c-error-border);
+}
+
+.rpt-rep-alt-chip-ph {
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-lg);
+}
+
+.rpt-rep-alt-chip-count {
+  font-size: var(--fs-sm);
+  color: var(--c-error);
+  margin-left: 6px;
+}
+
+.rpt-rep-alt-chip-words {
+  font-size: 10px;
+  color: var(--c-text-muted);
+  margin-top: 2px;
+}
+
+/* ── Observaciones ── */
+.rpt-rep-obs {
+  margin-top: var(--sp-3);
+  padding: var(--sp-3);
+  background: var(--c-surface-alt);
+  border-radius: var(--radius);
+}
+
+.rpt-rep-obs-label {
+  font-size: var(--fs-sm);
+}
+
+.rpt-rep-obs-text {
+  font-size: var(--fs-sm);
+  color: var(--c-text-muted);
+  margin-top: 4px;
+}
+
+/* ── Footer ── */
+.rpt-rep-foot {
+  margin-top: var(--sp-6);
+  padding-top: var(--sp-3);
+  border-top: 1px solid var(--c-border);
+  font-size: 10px;
+  color: var(--c-text-faint);
+  text-align: center;
+}
