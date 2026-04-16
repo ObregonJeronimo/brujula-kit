@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { db, collection, getDocs, query, where } from "../firebase.js";
-import { K } from "../lib/fb.js";
-var I = {width:"100%",padding:"10px 14px",border:"1px solid #e2e8f0",borderRadius:8,fontSize:14,background:"#f8faf9"};
+import "../styles/PatientLookup.css";
 
 function calcAge(birthStr){
   if(!birthStr) return "";
@@ -24,7 +23,10 @@ export default function PatientLookup({ userId, onSelect, selected, color }){
   var _mode = useState("search"), mode = _mode[0], setMode = _mode[1];
   var _allPats = useState([]), allPats = _allPats[0], setAllPats = _allPats[1];
   var _listLoading = useState(false), listLoading = _listLoading[0], setListLoading = _listLoading[1];
-  var accent = color || "#0d9488";
+
+  // Inyectamos el color dinámico como CSS variable local al wrapper.
+  // Si no llega prop, CSS hace fallback a var(--c-accent).
+  var wrapperStyle = color ? { "--plk-accent": color } : undefined;
 
   var isNumeric = function(str){ return /^\d+$/.test(str); };
 
@@ -78,32 +80,46 @@ export default function PatientLookup({ userId, onSelect, selected, color }){
   var clearSelection = function(){ onSelect(null); setSearchInput(""); setResults([]); setStatus("idle"); };
 
   var renderPatientCard = function(pac){
-    return <div key={pac._fbId} onClick={function(){ onSelect(pac); }}
-      style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",background:"#fff",borderRadius:8,border:"1px solid #e2e8f0",cursor:"pointer",marginBottom:4,transition:"all .15s"}}>
-      <div style={{width:32,height:32,borderRadius:8,background:"#f0f9ff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,flexShrink:0}}>{"\ud83d\udc64"}</div>
-      <div style={{flex:1}}>
-        <div style={{fontWeight:600,fontSize:13}}>{pac.nombre}</div>
-        <div style={{fontSize:11,color:K.mt}}>{"DNI: "+(pac.dni||"N/A")+" \u00b7 "+calcAge(pac.fechaNac)+(pac.colegio ? " \u00b7 "+pac.colegio : "")}</div>
+    return <div key={pac._fbId} onClick={function(){ onSelect(pac); }} className="plk-card">
+      <div className="plk-card-avatar">{"\ud83d\udc64"}</div>
+      <div className="plk-card-info">
+        <div className="plk-card-name">{pac.nombre}</div>
+        <div className="plk-card-meta">{"DNI: "+(pac.dni||"N/A")+" \u00b7 "+calcAge(pac.fechaNac)+(pac.colegio ? " \u00b7 "+pac.colegio : "")}</div>
       </div>
-      <span style={{color:accent,fontSize:12,fontWeight:600}}>Seleccionar</span>
+      <span className="plk-card-action">Seleccionar</span>
     </div>;
   };
 
   // SELECTED STATE
   if(selected){
     return (
-      <div style={{marginBottom:20}}>
-        <div style={{background:"#f0fdf4",border:"1px solid #bbf7d0",borderRadius:10,padding:16}}>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-            <div style={{fontSize:13,fontWeight:700,color:"#059669"}}>{"Paciente seleccionado"}</div>
-            <button onClick={clearSelection} style={{background:"#fef2f2",border:"1px solid #fecaca",borderRadius:6,padding:"4px 12px",fontSize:11,fontWeight:600,cursor:"pointer",color:"#dc2626"}}>Cambiar</button>
+      <div className="plk" style={wrapperStyle}>
+        <div className="plk-selected">
+          <div className="plk-selected-header">
+            <div className="plk-selected-title">{"Paciente seleccionado"}</div>
+            <button onClick={clearSelection} className="plk-btn-change">Cambiar</button>
           </div>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-            <div><div style={{fontSize:10,fontWeight:600,color:K.mt}}>DNI</div><div style={{fontSize:14,fontWeight:600}}>{selected.dni||"N/A"}</div></div>
-            <div><div style={{fontSize:10,fontWeight:600,color:K.mt}}>Edad</div><div style={{fontSize:14,fontWeight:600}}>{calcAge(selected.fechaNac)}</div></div>
-            <div style={{gridColumn:"1/-1"}}><div style={{fontSize:10,fontWeight:600,color:K.mt}}>Nombre completo</div><div style={{fontSize:14,fontWeight:700}}>{selected.nombre}</div></div>
-            <div><div style={{fontSize:10,fontWeight:600,color:K.mt}}>Fecha de nacimiento</div><div style={{fontSize:14}}>{selected.fechaNac ? new Date(selected.fechaNac+"T12:00:00").toLocaleDateString("es-AR") : "-"}</div></div>
-            <div><div style={{fontSize:10,fontWeight:600,color:K.mt}}>{"Jard\u00edn / Colegio"}</div><div style={{fontSize:14}}>{selected.colegio || "-"}</div></div>
+          <div className="plk-selected-grid">
+            <div className="plk-field">
+              <div className="plk-field-label">DNI</div>
+              <div className="plk-field-value">{selected.dni||"N/A"}</div>
+            </div>
+            <div className="plk-field">
+              <div className="plk-field-label">Edad</div>
+              <div className="plk-field-value">{calcAge(selected.fechaNac)}</div>
+            </div>
+            <div className="plk-field plk-field--full">
+              <div className="plk-field-label">Nombre completo</div>
+              <div className="plk-field-value plk-field-value--strong">{selected.nombre}</div>
+            </div>
+            <div className="plk-field">
+              <div className="plk-field-label">Fecha de nacimiento</div>
+              <div className="plk-field-value--plain">{selected.fechaNac ? new Date(selected.fechaNac+"T12:00:00").toLocaleDateString("es-AR") : "-"}</div>
+            </div>
+            <div className="plk-field">
+              <div className="plk-field-label">{"Jard\u00edn / Colegio"}</div>
+              <div className="plk-field-value--plain">{selected.colegio || "-"}</div>
+            </div>
           </div>
         </div>
       </div>
@@ -112,32 +128,37 @@ export default function PatientLookup({ userId, onSelect, selected, color }){
 
   // UNSELECTED STATE
   return (
-    <div style={{marginBottom:20}}>
+    <div className="plk" style={wrapperStyle}>
       {/* Toggle: Buscar / Ver lista */}
-      <div style={{display:"flex",gap:0,marginBottom:12,borderRadius:8,overflow:"hidden",border:"1px solid #e2e8f0"}}>
-        <button onClick={function(){ setMode("search"); }} style={{flex:1,padding:"9px 0",background:mode==="search"?accent:"#f8fafc",color:mode==="search"?"#fff":K.mt,border:"none",fontSize:13,fontWeight:600,cursor:"pointer",transition:"all .15s"}}>
-          {"\ud83d\udd0d Buscar paciente"}
-        </button>
-        <button onClick={function(){ setMode("list"); }} style={{flex:1,padding:"9px 0",background:mode==="list"?accent:"#f8fafc",color:mode==="list"?"#fff":K.mt,border:"none",fontSize:13,fontWeight:600,cursor:"pointer",transition:"all .15s",borderLeft:"1px solid #e2e8f0"}}>
-          {"\ud83d\udccb Mis pacientes"}
-        </button>
+      <div className="plk-toggle">
+        <button
+          onClick={function(){ setMode("search"); }}
+          className={"plk-toggle-btn" + (mode==="search" ? " plk-toggle-btn--active" : "")}
+        >{"\ud83d\udd0d Buscar paciente"}</button>
+        <button
+          onClick={function(){ setMode("list"); }}
+          className={"plk-toggle-btn" + (mode==="list" ? " plk-toggle-btn--active" : "")}
+        >{"\ud83d\udccb Mis pacientes"}</button>
       </div>
 
       {/* SEARCH MODE */}
       {mode === "search" && <div>
-        <label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>{"Buscar por DNI o nombre"}</label>
-        <div style={{display:"flex",gap:8}}>
-          <input value={searchInput}
+        <label className="plk-label">{"Buscar por DNI o nombre"}</label>
+        <div className="plk-search-row">
+          <input
+            value={searchInput}
             onChange={function(e){ setSearchInput(e.target.value); onSelect(null); }}
-            style={Object.assign({},I,{flex:1})} placeholder="Introducir DNI o Nombre y Apellido" />
-          <button onClick={doSearch} style={{background:accent,color:"#fff",border:"none",padding:"10px 18px",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer",flexShrink:0}}>Buscar</button>
+            className="plk-input"
+            placeholder="Introducir DNI o Nombre y Apellido"
+          />
+          <button onClick={doSearch} className="plk-btn-search">Buscar</button>
         </div>
-        {status==="searching" && <div style={{marginTop:8,fontSize:12,color:K.mt}}>Buscando...</div>}
-        {status==="empty" && <div style={{marginTop:8,fontSize:12,color:"#dc2626"}}>{"No se encontr\u00f3 paciente. Cargalo primero en la secci\u00f3n Pacientes."}</div>}
-        {status==="error" && <div style={{marginTop:8,fontSize:12,color:"#dc2626"}}>Error al buscar. Intente nuevamente.</div>}
+        {status==="searching" && <div className="plk-status plk-status--muted">Buscando...</div>}
+        {status==="empty" && <div className="plk-status plk-status--error">{"No se encontr\u00f3 paciente. Cargalo primero en la secci\u00f3n Pacientes."}</div>}
+        {status==="error" && <div className="plk-status plk-status--error">Error al buscar. Intente nuevamente.</div>}
         {status==="found" && results.length > 0 && !selected && (
-          <div style={{marginTop:8}}>
-            <div style={{fontSize:11,color:K.mt,marginBottom:4}}>{results.length === 1 ? "1 paciente encontrado:" : results.length+" pacientes encontrados:"}</div>
+          <div className="plk-results">
+            <div className="plk-results-count">{results.length === 1 ? "1 paciente encontrado:" : results.length+" pacientes encontrados:"}</div>
             {results.map(renderPatientCard)}
           </div>
         )}
@@ -145,11 +166,11 @@ export default function PatientLookup({ userId, onSelect, selected, color }){
 
       {/* LIST MODE */}
       {mode === "list" && <div>
-        {listLoading && <div style={{textAlign:"center",padding:20,color:K.mt,fontSize:13}}>Cargando pacientes...</div>}
-        {!listLoading && allPats.length === 0 && <div style={{textAlign:"center",padding:20,color:K.mt,fontSize:13}}>{"No ten\u00e9s pacientes registrados. And\u00e1 a la secci\u00f3n Pacientes para cargar uno."}</div>}
+        {listLoading && <div className="plk-list-empty">Cargando pacientes...</div>}
+        {!listLoading && allPats.length === 0 && <div className="plk-list-empty">{"No ten\u00e9s pacientes registrados. And\u00e1 a la secci\u00f3n Pacientes para cargar uno."}</div>}
         {!listLoading && allPats.length > 0 && <div>
-          <div style={{fontSize:11,color:K.mt,marginBottom:8}}>{allPats.length+" paciente"+(allPats.length>1?"s":"")+" registrado"+(allPats.length>1?"s":"")}</div>
-          <div style={{maxHeight:300,overflowY:"auto",borderRadius:8,border:"1px solid #e2e8f0",padding:6}}>
+          <div className="plk-list-count">{allPats.length+" paciente"+(allPats.length>1?"s":"")+" registrado"+(allPats.length>1?"s":"")}</div>
+          <div className="plk-list-scroll">
             {allPats.map(renderPatientCard)}
           </div>
         </div>}
