@@ -1,0 +1,472 @@
+/* ============================================
+   RptDISC — Reporte de Discriminación Fonológica
+   ============================================ */
+
+.rpt-disc {
+  animation: fi 0.3s ease;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* ── Header ── */
+.rpt-disc-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--sp-5);
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+}
+
+.rpt-disc-title {
+  font-size: var(--fs-2xl);
+  font-weight: var(--fw-bold);
+}
+
+.rpt-disc-actions {
+  display: flex;
+  gap: var(--sp-2);
+}
+
+/* ── Eliminar ── */
+.rpt-disc-del-btn {
+  padding: 11px 22px;
+  background: var(--c-error-light);
+  color: var(--c-error);
+  border: 1px solid var(--c-error-border);
+  border-radius: var(--radius);
+  font-size: var(--fs-md);
+  font-weight: var(--fw-semibold);
+  cursor: pointer;
+}
+
+.rpt-disc-del-confirm {
+  background: var(--c-error-light);
+  border: 1px solid var(--c-error-border);
+  border-radius: var(--radius-md);
+  padding: 14px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.rpt-disc-del-title {
+  font-size: var(--fs-base);
+  font-weight: var(--fw-semibold);
+  color: var(--c-error);
+  text-align: center;
+}
+
+.rpt-disc-del-sub {
+  font-size: var(--fs-sm);
+  color: var(--c-text-muted);
+  text-align: center;
+}
+
+.rpt-disc-del-actions {
+  display: flex;
+  gap: var(--sp-2);
+}
+
+.rpt-disc-del-confirm-btn {
+  background: var(--c-error);
+  color: #fff;
+  border: none;
+  padding: 8px 20px;
+  border-radius: var(--radius);
+  font-size: var(--fs-base);
+  font-weight: var(--fw-semibold);
+  cursor: pointer;
+}
+
+.rpt-disc-del-cancel-btn {
+  background: var(--c-surface-hover);
+  border: 1px solid var(--c-border);
+  padding: 8px 20px;
+  border-radius: var(--radius);
+  font-size: var(--fs-base);
+  cursor: pointer;
+  color: var(--c-text-muted);
+}
+
+/* ── Toggle técnico ── */
+.rpt-disc-tech-toggle {
+  width: 100%;
+  padding: 14px;
+  background: var(--c-primary);
+  color: #fff;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-md);
+  font-size: var(--fs-md);
+  font-weight: var(--fw-semibold);
+  cursor: pointer;
+  margin-bottom: var(--sp-5);
+}
+
+.rpt-disc-tech-toggle.is-open {
+  background: var(--c-surface-hover);
+  color: var(--c-text);
+  margin-bottom: var(--sp-4);
+}
+
+/* ── Panel técnico ── */
+.rpt-disc-tech {
+  background: var(--c-surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--c-border);
+  padding: 28px;
+}
+
+.rpt-disc-pdf-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: var(--sp-4);
+}
+
+.rpt-disc-pdf-btn {
+  padding: 9px 18px;
+  background: var(--c-accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  font-size: var(--fs-base);
+  font-weight: var(--fw-semibold);
+  cursor: pointer;
+}
+
+/* ── Meta del paciente ── */
+.rpt-disc-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: var(--sp-5);
+  padding-bottom: var(--sp-4);
+  border-bottom: 2px solid var(--c-border);
+}
+
+.rpt-disc-meta-eyebrow {
+  font-size: 10px;
+  color: var(--c-text-muted);
+  font-weight: var(--fw-semibold);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.rpt-disc-meta-name {
+  font-size: var(--fs-xl);
+  font-weight: var(--fw-bold);
+  margin-top: 4px;
+}
+
+.rpt-disc-meta-sub {
+  font-size: var(--fs-base);
+  color: var(--c-text-muted);
+  margin-top: 2px;
+}
+
+.rpt-disc-meta-line {
+  font-size: var(--fs-sm);
+  color: var(--c-text-muted);
+  margin-top: 2px;
+}
+
+.rpt-disc-meta-right {
+  text-align: right;
+}
+
+.rpt-disc-meta-right .rpt-disc-meta-line {
+  margin-top: 0;
+}
+
+/* ── Stat cards ── */
+.rpt-disc-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-6);
+}
+
+.rpt-disc-stat {
+  border-radius: var(--radius-md);
+  padding: var(--sp-4);
+  text-align: center;
+}
+
+.rpt-disc-stat--pct {
+  background: var(--c-success-light);
+}
+
+.rpt-disc-stat--sev {
+  background: var(--rpt-disc-sev-bg, var(--c-success-light));
+}
+
+.rpt-disc-stat--correct {
+  background: var(--c-surface-alt);
+}
+
+.rpt-disc-stat-big {
+  font-size: var(--fs-4xl);
+  font-weight: 800;
+  color: var(--c-accent);
+}
+
+.rpt-disc-stat-md {
+  font-size: var(--fs-2xl);
+  font-weight: var(--fw-bold);
+}
+
+.rpt-disc-stat-md--sev {
+  color: var(--rpt-disc-sev-color, var(--c-success));
+}
+
+.rpt-disc-stat-md--correct {
+  color: var(--c-primary);
+}
+
+.rpt-disc-stat-lbl {
+  font-size: var(--fs-sm);
+  color: var(--c-text-muted);
+  font-weight: var(--fw-semibold);
+}
+
+.rpt-disc-stat-extra {
+  font-size: 10px;
+  color: var(--c-text-muted);
+}
+
+/* ── Headings ── */
+.rpt-disc-h3 {
+  font-size: var(--fs-md);
+  font-weight: var(--fw-bold);
+  margin-bottom: var(--sp-2);
+}
+
+.rpt-disc-h3--err {
+  color: var(--c-error);
+}
+
+.rpt-disc-h3--purple {
+  color: var(--c-purple);
+}
+
+/* ── Tablas ── */
+.rpt-disc-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: var(--sp-5);
+}
+
+.rpt-disc-table--main {
+  font-size: var(--fs-sm);
+}
+
+.rpt-disc-table--errs {
+  font-size: var(--fs-sm);
+}
+
+.rpt-disc-table thead tr {
+  border-bottom: 2px solid var(--c-border);
+  background: var(--c-surface-alt);
+}
+
+.rpt-disc-table thead tr.is-err {
+  background: var(--c-error-light);
+}
+
+.rpt-disc-table th {
+  padding: 6px 8px;
+  color: var(--c-text-muted);
+  font-weight: var(--fw-semibold);
+  text-align: center;
+}
+
+.rpt-disc-table th.rpt-disc-th-left {
+  text-align: left;
+}
+
+.rpt-disc-table th.rpt-disc-th-n { width: 36px; }
+.rpt-disc-table th.rpt-disc-th-clave { width: 50px; }
+.rpt-disc-table th.rpt-disc-th-resp { width: 50px; }
+.rpt-disc-table th.rpt-disc-th-res { width: 70px; }
+
+.rpt-disc-table tbody tr {
+  border-bottom: 1px solid var(--c-border-light);
+}
+
+.rpt-disc-table tbody tr.is-ok-row {
+  background: var(--c-success-light);
+}
+
+.rpt-disc-table tbody tr.is-err-row {
+  background: var(--c-error-light);
+}
+
+.rpt-disc-table tbody tr.is-warn-row {
+  background: var(--c-warning-light);
+}
+
+.rpt-disc-table td {
+  padding: 6px 8px;
+  text-align: center;
+}
+
+.rpt-disc-table td.rpt-disc-td-left {
+  text-align: left;
+}
+
+/* ── Celdas específicas tabla principal ── */
+.rpt-disc-td-num {
+  font-weight: var(--fw-bold);
+  color: var(--c-text-muted);
+}
+
+.rpt-disc-td-pair {
+  font-weight: var(--fw-medium);
+}
+
+.rpt-disc-td-key {
+  font-weight: var(--fw-bold);
+}
+
+.rpt-disc-td-key--i { color: #2563eb; }
+.rpt-disc-td-key--d { color: #be185d; }
+.rpt-disc-td-key--none { color: var(--c-text-faint); }
+
+.rpt-disc-res {
+  font-size: 10px;
+  font-weight: var(--fw-semibold);
+}
+
+.rpt-disc-res--none {
+  color: #92400e;
+}
+
+.rpt-disc-res--ok {
+  color: var(--c-success);
+  font-weight: var(--fw-bold);
+}
+
+.rpt-disc-res--err {
+  color: var(--c-error);
+  font-weight: var(--fw-bold);
+}
+
+.rpt-disc-td-obs {
+  font-size: var(--fs-sm);
+  color: var(--c-text-muted);
+}
+
+/* Celdas tabla de errores */
+.rpt-disc-table--errs th,
+.rpt-disc-table--errs td {
+  padding: 5px 8px;
+}
+
+.rpt-disc-td-pair-strong {
+  font-weight: var(--fw-semibold);
+}
+
+.rpt-disc-td-resp-err {
+  font-weight: var(--fw-bold);
+  color: var(--c-error);
+}
+
+.rpt-disc-td-contrast {
+  color: var(--c-text-muted);
+}
+
+/* ── Error block ── */
+.rpt-disc-err-block {
+  margin-bottom: var(--sp-5);
+}
+
+/* ── Perfil perceptivo (purple) ── */
+.rpt-disc-profile {
+  margin-bottom: var(--sp-5);
+}
+
+.rpt-disc-profile-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+
+.rpt-disc-profile-chip {
+  background: var(--c-purple-light);
+  border-radius: var(--radius);
+  padding: 8px 14px;
+  border: 1px solid var(--c-purple-border);
+}
+
+.rpt-disc-profile-chip-key {
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-base);
+  color: #5b21b6;
+}
+
+.rpt-disc-profile-chip-count {
+  font-size: var(--fs-sm);
+  color: #6b21a8;
+  margin-left: var(--sp-2);
+}
+
+/* ── Sin errores ── */
+.rpt-disc-all-ok {
+  background: #dcfce7;
+  border-radius: var(--radius-lg);
+  padding: var(--sp-5);
+  margin-bottom: var(--sp-4);
+  text-align: center;
+}
+
+.rpt-disc-all-ok-icon {
+  font-size: 24px;
+}
+
+.rpt-disc-all-ok-text {
+  font-size: var(--fs-md);
+  font-weight: var(--fw-semibold);
+  color: var(--c-success);
+  margin-top: var(--sp-2);
+}
+
+/* ── Criterios clínicos (info) ── */
+.rpt-disc-criteria {
+  background: var(--c-info-light);
+  border: 1px solid #bae6fd;
+  border-radius: var(--radius-md);
+  padding: 14px;
+  margin-bottom: var(--sp-5);
+  font-size: var(--fs-sm);
+  color: #0369a1;
+  line-height: 1.6;
+}
+
+/* ── Observaciones ── */
+.rpt-disc-obs {
+  margin-top: var(--sp-3);
+  padding: var(--sp-3);
+  background: var(--c-surface-alt);
+  border-radius: var(--radius);
+}
+
+.rpt-disc-obs-label {
+  font-size: var(--fs-sm);
+}
+
+.rpt-disc-obs-text {
+  font-size: var(--fs-sm);
+  color: var(--c-text-muted);
+  margin-top: 4px;
+}
+
+/* ── Footer ── */
+.rpt-disc-foot {
+  margin-top: var(--sp-6);
+  padding-top: var(--sp-3);
+  border-top: 1px solid var(--c-border);
+  font-size: 10px;
+  color: var(--c-text-faint);
+  text-align: center;
+}
