@@ -69,6 +69,7 @@ var NEW_COMPONENTS = { newPEFF: NewPEFF, newELDI: NewELDI, newOFA: NewOFA, newFO
 var RPT_COMPONENTS = { rptP: RptPEFF, rptR: RptREP, rptD: RptDISC, rptRC: RptRECO, rptEL: RptELDI, rptGen: RptGeneric };
 var ALL_NEW_VIEWS = Object.keys(NEW_COMPONENTS);
 var isMobile = function(){ return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) && window.innerWidth < 900; };
+var AGENT_ROLES = ["agent", "agent_senior"];
 
 var mixColor = function(hex, alpha){ if(!hex || alpha >= 100) return hex; var r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16); var a = Math.max(30, Math.min(100, alpha)) / 100; var mr = Math.round(r * a + 255 * (1-a)), mg = Math.round(g * a + 255 * (1-a)), mb = Math.round(b * a + 255 * (1-a)); return "#" + ((1<<24)+(mr<<16)+(mg<<8)+mb).toString(16).slice(1); };
 
@@ -175,13 +176,41 @@ export default function App() {
 
   useEffect(function(){
     var unsub = onAuthStateChanged(auth, function(u){
-      if(u){ setAuthUser(u); if(u.emailVerified){ setProfileLoading(true); getUserProfile(u.uid).then(function(prof){ if(prof && prof.profileComplete){ var _mob = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) && window.innerWidth < 900; if(_mob){ setSessionBlocked(false); setProfile(prof); if(prof.settings) setUserSettings(prof.settings); } else { acquireSessionLock(u.uid, prof.role==="admin").then(function(canLogin){ if(!canLogin){ setSessionBlocked(true); setAuthUser(u); setProfile(prof); return; } setSessionBlocked(false); setProfile(prof); if(prof.settings) setUserSettings(prof.settings); }); } } else setProfile(null); }).finally(function(){ setProfileLoading(false); }); } else { setProfileLoading(false); } } else { setAuthUser(null); setProfile(null); setProfileLoading(false); }
+      if(u){
+        setAuthUser(u);
+        // For agents: skip email verification, load profile directly
+        // For regular users: require email verification first
+        var shouldLoadProfile = u.emailVerified;
+        if(!shouldLoadProfile){
+          // Check if this is an agent account (email not verified but has a profile with agent role)
+          setProfileLoading(true);
+          getUserProfile(u.uid).then(function(prof){
+            if(prof && AGENT_ROLES.indexOf(prof.role) !== -1){
+              // Agent account — skip email verification
+              setProfile(prof);
+              setSessionBlocked(false);
+            } else {
+              // Regular user without verified email — stay on verify screen
+              setProfile(null);
+            }
+          }).finally(function(){ setProfileLoading(false); });
+          return;
+        }
+        // Email is verified — normal flow
+        setProfileLoading(true);
+        getUserProfile(u.uid).then(function(prof){
+          if(prof && prof.profileComplete){
+            var _mob = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) && window.innerWidth < 900;
+            if(_mob){ setSessionBlocked(false); setProfile(prof); if(prof.settings) setUserSettings(prof.settings); }
+            else { acquireSessionLock(u.uid, prof.role==="admin").then(function(canLogin){ if(!canLogin){ setSessionBlocked(true); setAuthUser(u); setProfile(prof); return; } setSessionBlocked(false); setProfile(prof); if(prof.settings) setUserSettings(prof.settings); }); }
+          } else setProfile(null);
+        }).finally(function(){ setProfileLoading(false); });
+      } else { setAuthUser(null); setProfile(null); setProfileLoading(false); }
     }); return unsub;
   },[]);
 
   var loadEvals = useCallback(function(){
     if(!profile) return; sL(true);
-    // Agents don't need evals/pacientes
     if(isAgent){ sL(false); return; }
     var p = profile.role==="admin" ? fbGetAll("evaluaciones") : fbGetFiltered("evaluaciones",authUser.uid);
     p.then(function(res){ if(profile.role==="admin") res.sort(function(a,b){return(b.fechaGuardado||"").localeCompare(a.fechaGuardado||"")}); setAllEvals(res); }).catch(function(e){console.error("loadEvals error:",e); setAllEvals([]);}).finally(function(){sL(false)});
@@ -239,18 +268,17 @@ export default function App() {
 
   if(authUser===undefined) return (<div className="ek-loading-screen" style={{"--ek-loading-bg":_cachedBg}}><div className="ek-loading-inner"><img src="/img/logo_96.png" alt="Br\u00fajula KIT" className="ek-loading-logo" /><div className="ek-loading-text">Cargando...</div></div></div>);
   if(!authUser) return <AuthScreen onDone={function(u,p){setAuthUser(u);setProfile(p)}} themeColor={_cachedBg} />;
-  if(authUser && !authUser.emailVerified) return <VerifyEmailScreen user={authUser} onLogout={handleLogout} themeColor={_cachedBg} />;
-  if(authUser && authUser.emailVerified && profileLoading) return (<div className="ek-loading-screen" style={{"--ek-loading-bg":_cachedBg}}><div className="ek-loading-inner"><img src="/img/logo_96.png" alt="Br\u00fajula KIT" className="ek-loading-logo" /><div className="ek-loading-text">Cargando...</div></div></div>);
-  if(authUser && authUser.emailVerified && !profile) return <CompleteProfileScreen uid={authUser.uid} email={authUser.email} onDone={function(p){setProfile(p)}} themeColor={_cachedBg} />;
+  // Show verify email screen only for non-agent users without verified email
+  if(authUser && !authUser.emailVerified && !profile) return <VerifyEmailScreen user={authUser} onLogout={handleLogout} themeColor={_cachedBg} />;
+  if(authUser && profileLoading) return (<div className="ek-loading-screen" style={{"--ek-loading-bg":_cachedBg}}><div className="ek-loading-inner"><img src="/img/logo_96.png" alt="Br\u00fajula KIT" className="ek-loading-logo" /><div className="ek-loading-text">Cargando...</div></div></div>);
+  if(authUser && (authUser.emailVerified || isAgent) && !profile) return <CompleteProfileScreen uid={authUser.uid} email={authUser.email} onDone={function(p){setProfile(p)}} themeColor={_cachedBg} />;
 
   if(sessionBlocked) return (<div className="ek-session-blocked" style={{"--ek-loading-bg":_cachedBg}}><div className="ek-session-card"><div className="ek-session-icon">{"🔒"}</div><h2 className="ek-session-title">{"¿Sesión ocupada?"}</h2><p className="ek-session-msg">{"Otro usuario ya está conectado en este momento."}</p><p className="ek-session-hint">{"Si cree que es un error, espere unos minutos e intente nuevamente."}</p><div className="ek-session-actions"><button onClick={function(){acquireSessionLock(authUser.uid,false).then(function(canLogin){if(canLogin){setSessionBlocked(false);window.location.reload()}else{nfy("La sesión sigue ocupada","er")}})}} className="ek-session-retry">Reintentar</button><button onClick={handleLogout} className="ek-session-logout">{"Cerrar sesión"}</button></div></div></div>);
 
   // Build navigation based on role
   var nav;
   if(isAgent){
-    // Agents only see Support + Logout (handled separately)
     nav = [["support","support","Soporte"]];
-    // Default to support view for agents
     if(view === "dash") sV("support");
   } else {
     nav = [["dash","dash","Panel"],["tools","tools","Herramientas"],["hist","hist","Historial"],["pacientes","pacientes","Pacientes"],["calendario","calendario","Calendario"],["premium","premium","Cr\u00e9ditos"],["profile","profile","Perfil"],["config","config","Configuraci\u00f3n"]];
