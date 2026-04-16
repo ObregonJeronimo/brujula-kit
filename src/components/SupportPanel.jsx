@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { db, collection, getDocs, doc, updateDoc, query, where, orderBy, onSnapshot } from "../firebase.js";
-import { sendSupportMessage, subscribeToMessages } from "../lib/support.js";
+import { sendSupportMessage, subscribeToMessages, escalateCase, transferCase, changeUrgency, getAgentsList, cleanupOldCases } from "../lib/support.js";
 
 var K = { sd:"#0a3d2f", ac:"#0d9488", mt:"#64748b" };
 
@@ -40,11 +40,29 @@ export default function SupportPanel({ nfy, agentUid, agentName, agentRole }) {
   var _input = useState(""), input = _input[0], setInput = _input[1];
   var _sending = useState(false), sending = _sending[0], setSending = _sending[1];
   var _search = useState(""), search = _search[0], setSearch = _search[1];
+  var _showEscalate = useState(false), showEscalate = _showEscalate[0], setShowEscalate = _showEscalate[1];
+  var _escUrgency = useState("medium"), escUrgency = _escUrgency[0], setEscUrgency = _escUrgency[1];
+  var _showTransfer = useState(false), showTransfer = _showTransfer[0], setShowTransfer = _showTransfer[1];
+  var _agents = useState([]), agents = _agents[0], setAgents = _agents[1];
+  var _showUrgency = useState(false), showUrgency = _showUrgency[0], setShowUrgency = _showUrgency[1];
   var bodyRef = useRef(null);
   var unsubCasesRef = useRef(null);
   var unsubMsgsRef = useRef(null);
+  var cleanupDoneRef = useRef(false);
 
   var isSuperAdmin = agentRole === "admin";
+  var isSenior = agentRole === "agent_senior";
+  var canEscalate = isSuperAdmin || isSenior;
+
+  // Cleanup old cases on first load (Super Admin only)
+  useEffect(function() {
+    if (isSuperAdmin && !cleanupDoneRef.current) {
+      cleanupDoneRef.current = true;
+      cleanupOldCases().then(function(n) {
+        if (n > 0) nfy(n + " caso(s) cerrados hace +15 dias eliminados", "ok");
+      }).catch(function() {});
+    }
+  }, [isSuperAdmin]);
 
   // Subscribe to cases (real-time)
   useEffect(function() {
@@ -72,7 +90,6 @@ export default function SupportPanel({ nfy, agentUid, agentName, agentRole }) {
     unsubMsgsRef.current = subscribeToMessages(openCase._id, function(msgs) {
       setMessages(msgs);
     });
-    // Mark as read by agent
     updateDoc(doc(db, "support_cases", openCase._id), { unreadByAgent: false }).catch(function() {});
     return function() { if (unsubMsgsRef.current) { unsubMsgsRef.current(); unsubMsgsRef.current = null; } };
   }, [openCase]);
@@ -86,10 +103,9 @@ export default function SupportPanel({ nfy, agentUid, agentName, agentRole }) {
   var filteredCases = cases.filter(function(c) {
     if (tab === "mine") return c.assignedTo && c.assignedTo.uid === agentUid;
     if (tab === "unassigned") return !c.assignedTo;
-    return true; // "all" tab
+    return true;
   });
 
-  // Apply search filter
   if (search.trim()) {
     var sq = search.trim().toLowerCase();
     filteredCases = filteredCases.filter(function(c) {
@@ -98,7 +114,6 @@ export default function SupportPanel({ nfy, agentUid, agentName, agentRole }) {
     });
   }
 
-  // Sort: urgency high first, then by lastMessageAt
   filteredCases.sort(function(a, b) {
     var urgOrder = { high: 0, medium: 1, low: 2 };
     var ua = urgOrder[a.urgency] !== undefined ? urgOrder[a.urgency] : 2;
@@ -112,27 +127,55 @@ export default function SupportPanel({ nfy, agentUid, agentName, agentRole }) {
   // Actions
   var takeCase = async function(c) {
     try {
-      await updateDoc(doc(db, "support_cases", c._id), {
-        assignedTo: { uid: agentUid, nombre: agentName },
-        status: "in_review"
-      });
+      await updateDoc(doc(db, "support_cases", c._id), { assignedTo: { uid: agentUid, nombre: agentName }, status: "in_review" });
       nfy("Caso " + c.caseNumber + " tomado", "ok");
-      if (openCase && openCase._id === c._id) {
-        setOpenCase(Object.assign({}, openCase, { assignedTo: { uid: agentUid, nombre: agentName }, status: "in_review" }));
-      }
+      if (openCase && openCase._id === c._id) setOpenCase(Object.assign({}, openCase, { assignedTo: { uid: agentUid, nombre: agentName }, status: "in_review" }));
     } catch (e) { nfy("Error: " + e.message, "er"); }
   };
 
   var closeCase = async function(c) {
     if (!window.confirm("Cerrar el caso " + c.caseNumber + "?")) return;
     try {
-      await updateDoc(doc(db, "support_cases", c._id), {
-        status: "closed",
-        closedAt: new Date().toISOString()
-      });
+      await updateDoc(doc(db, "support_cases", c._id), { status: "closed", closedAt: new Date().toISOString() });
       nfy("Caso " + c.caseNumber + " cerrado", "ok");
       setOpenCase(null);
     } catch (e) { nfy("Error: " + e.message, "er"); }
+  };
+
+  var handleEscalate = async function() {
+    if (!openCase) return;
+    try {
+      var newNum = await escalateCase(openCase._id, escUrgency);
+      nfy("Caso escalado a " + newNum, "ok");
+      setOpenCase(Object.assign({}, openCase, { type: "case", caseNumber: newNum, urgency: escUrgency }));
+      setShowEscalate(false);
+    } catch (e) { nfy("Error: " + e.message, "er"); }
+  };
+
+  var handleTransfer = async function(agent) {
+    if (!openCase) return;
+    try {
+      await transferCase(openCase._id, agent.uid, agent.nombre);
+      nfy("Caso transferido a " + agent.nombre, "ok");
+      setOpenCase(Object.assign({}, openCase, { assignedTo: { uid: agent.uid, nombre: agent.nombre } }));
+      setShowTransfer(false);
+    } catch (e) { nfy("Error: " + e.message, "er"); }
+  };
+
+  var handleChangeUrgency = async function(newUrg) {
+    if (!openCase) return;
+    try {
+      await changeUrgency(openCase._id, newUrg);
+      nfy("Urgencia cambiada a " + urgencyInfo(newUrg).text, "ok");
+      setOpenCase(Object.assign({}, openCase, { urgency: newUrg }));
+      setShowUrgency(false);
+    } catch (e) { nfy("Error: " + e.message, "er"); }
+  };
+
+  var openTransferModal = async function() {
+    var list = await getAgentsList();
+    setAgents(list.filter(function(a) { return a.uid !== agentUid; }));
+    setShowTransfer(true);
   };
 
   var handleSend = async function() {
@@ -140,22 +183,16 @@ export default function SupportPanel({ nfy, agentUid, agentName, agentRole }) {
     if (!text || !openCase || sending) return;
     setSending(true);
     setInput("");
-    try {
-      await sendSupportMessage(openCase._id, text, "agent");
-    } catch (e) { console.error(e); }
+    try { await sendSupportMessage(openCase._id, text, "agent"); } catch (e) { console.error(e); }
     setSending(false);
   };
 
-  var handleKeyDown = function(e) {
-    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); }
-  };
+  var handleKeyDown = function(e) { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } };
 
   // ========== RENDER ==========
 
-  // Case list view
   var renderCaseList = function() {
     return <div>
-      {/* Tabs */}
       <div style={{ display: "flex", gap: 0, marginBottom: 16, borderBottom: "2px solid #e2e8f0" }}>
         {[
           ["mine", "Mis casos"],
@@ -180,12 +217,10 @@ export default function SupportPanel({ nfy, agentUid, agentName, agentRole }) {
         })}
       </div>
 
-      {/* Search */}
       <div style={{ marginBottom: 16 }}>
         <input value={search} onChange={function(e) { setSearch(e.target.value); }} style={Object.assign({}, I, { background: "#fff" })} placeholder="Buscar por numero de caso o nombre..." />
       </div>
 
-      {/* Cases */}
       {loading ? <div style={{ textAlign: "center", padding: 40, color: K.mt, fontSize: 13 }}>Cargando casos...</div> :
         filteredCases.length === 0 ? <div style={{ textAlign: "center", padding: 40, color: K.mt, fontSize: 13, fontStyle: "italic" }}>No hay casos en esta categoria</div> :
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -193,7 +228,7 @@ export default function SupportPanel({ nfy, agentUid, agentName, agentRole }) {
             var st = statusInfo(c.status);
             var urg = urgencyInfo(c.urgency);
             var isCase = c.type === "case";
-            return <div key={c._id} onClick={function() { setOpenCase(c); }} style={{
+            return <div key={c._id} onClick={function() { setOpenCase(c); setShowEscalate(false); setShowTransfer(false); setShowUrgency(false); }} style={{
               display: "flex", alignItems: "center", gap: 12, padding: "14px 16px",
               background: c.unreadByAgent ? "#f0fdfa" : "#fff",
               borderRadius: 10, border: "1px solid " + (c.unreadByAgent ? "#99f6e4" : "#e2e8f0"),
@@ -220,7 +255,6 @@ export default function SupportPanel({ nfy, agentUid, agentName, agentRole }) {
     </div>;
   };
 
-  // Chat view
   var renderChatView = function() {
     if (!openCase) return null;
     var st = statusInfo(openCase.status);
@@ -228,28 +262,82 @@ export default function SupportPanel({ nfy, agentUid, agentName, agentRole }) {
     var isAssignedToMe = openCase.assignedTo && openCase.assignedTo.uid === agentUid;
     var isUnassigned = !openCase.assignedTo;
     var isClosed = openCase.status === "closed" || openCase.status === "resolved";
+    var isTemporal = openCase.type === "temporal";
 
     return <div style={{ display: "flex", flexDirection: "column", height: "calc(100vh - 180px)", minHeight: 400 }}>
       {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 18px", background: "#f8faf9", borderRadius: "12px 12px 0 0", border: "1px solid #e2e8f0", borderBottom: "none", flexShrink: 0 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <button onClick={function() { setOpenCase(null); }} style={{ background: "none", border: "none", cursor: "pointer", color: K.mt, fontSize: 18, padding: 0 }}>{"<"}</button>
-          <div>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ fontWeight: 700, fontSize: 15, color: K.sd }}>{openCase.caseNumber}</span>
-              <span style={{ fontWeight: 600, fontSize: 14 }}>{openCase.userName}</span>
-            </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 2 }}>
-              <span style={{ padding: "2px 8px", borderRadius: 20, fontSize: 9, fontWeight: 700, color: st.color, background: st.bg }}>{st.text}</span>
-              {openCase.type === "case" && <span style={{ padding: "2px 8px", borderRadius: 20, fontSize: 9, fontWeight: 700, color: urg.color, background: urg.bg }}>{"Urgencia: " + urg.text}</span>}
-              {openCase.assignedTo && <span style={{ fontSize: 10, color: K.mt }}>{"Asignado a: " + openCase.assignedTo.nombre}</span>}
+      <div style={{ padding: "14px 18px", background: "#f8faf9", borderRadius: "12px 12px 0 0", border: "1px solid #e2e8f0", borderBottom: "none", flexShrink: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <button onClick={function() { setOpenCase(null); setShowEscalate(false); setShowTransfer(false); setShowUrgency(false); }} style={{ background: "none", border: "none", cursor: "pointer", color: K.mt, fontSize: 18, padding: 0 }}>{"<"}</button>
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ fontWeight: 700, fontSize: 15, color: K.sd }}>{openCase.caseNumber}</span>
+                <span style={{ fontWeight: 600, fontSize: 14 }}>{openCase.userName}</span>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 2, flexWrap: "wrap" }}>
+                <span style={{ padding: "2px 8px", borderRadius: 20, fontSize: 9, fontWeight: 700, color: st.color, background: st.bg }}>{st.text}</span>
+                {openCase.type === "case" && <span style={{ padding: "2px 8px", borderRadius: 20, fontSize: 9, fontWeight: 700, color: urg.color, background: urg.bg }}>{"Urgencia: " + urg.text}</span>}
+                {openCase.assignedTo && <span style={{ fontSize: 10, color: K.mt }}>{"Asignado a: " + openCase.assignedTo.nombre}</span>}
+              </div>
             </div>
           </div>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+            {isUnassigned && <button onClick={function() { takeCase(openCase); }} style={{ padding: "7px 14px", background: K.ac, color: "#fff", border: "none", borderRadius: 8, fontSize: 11, fontWeight: 600, cursor: "pointer" }}>Tomar caso</button>}
+            {!isClosed && (isAssignedToMe || isSuperAdmin) && <button onClick={function() { closeCase(openCase); }} style={{ padding: "7px 14px", background: "#fef2f2", color: "#dc2626", border: "1px solid #fecaca", borderRadius: 8, fontSize: 11, fontWeight: 600, cursor: "pointer" }}>Cerrar</button>}
+          </div>
         </div>
-        <div style={{ display: "flex", gap: 6 }}>
-          {isUnassigned && <button onClick={function() { takeCase(openCase); }} style={{ padding: "8px 16px", background: K.ac, color: "#fff", border: "none", borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Tomar caso</button>}
-          {!isClosed && (isAssignedToMe || isSuperAdmin) && <button onClick={function() { closeCase(openCase); }} style={{ padding: "8px 16px", background: "#fef2f2", color: "#dc2626", border: "1px solid #fecaca", borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Cerrar caso</button>}
-        </div>
+        {/* Action buttons row */}
+        {!isClosed && (isAssignedToMe || isSuperAdmin) && <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+          {isTemporal && canEscalate && <button onClick={function() { setShowEscalate(!showEscalate); setShowTransfer(false); setShowUrgency(false); }} style={{ padding: "6px 12px", background: showEscalate ? "#4f46e5" : "#f0f9ff", color: showEscalate ? "#fff" : "#4f46e5", border: "1px solid " + (showEscalate ? "#4f46e5" : "#c7d2fe"), borderRadius: 6, fontSize: 11, fontWeight: 600, cursor: "pointer" }}>Escalar a caso</button>}
+          {!isTemporal && canEscalate && <button onClick={function() { setShowUrgency(!showUrgency); setShowEscalate(false); setShowTransfer(false); }} style={{ padding: "6px 12px", background: showUrgency ? "#d97706" : "#fef9c3", color: showUrgency ? "#fff" : "#92400e", border: "1px solid " + (showUrgency ? "#d97706" : "#fef3c7"), borderRadius: 6, fontSize: 11, fontWeight: 600, cursor: "pointer" }}>Cambiar urgencia</button>}
+          <button onClick={function() { openTransferModal(); setShowEscalate(false); setShowUrgency(false); }} style={{ padding: "6px 12px", background: showTransfer ? "#0369a1" : "#f0f9ff", color: showTransfer ? "#fff" : "#0369a1", border: "1px solid " + (showTransfer ? "#0369a1" : "#bae6fd"), borderRadius: 6, fontSize: 11, fontWeight: 600, cursor: "pointer" }}>Transferir</button>
+        </div>}
+
+        {/* Escalate panel */}
+        {showEscalate && <div style={{ marginTop: 10, padding: "12px 14px", background: "#f5f3ff", borderRadius: 8, border: "1px solid #e0e7ff" }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: "#4f46e5", marginBottom: 8 }}>Escalar #{openCase.caseNumber} a caso formal</div>
+          <div style={{ fontSize: 11, color: K.mt, marginBottom: 8 }}>Selecciona el nivel de urgencia:</div>
+          <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
+            {["low", "medium", "high"].map(function(u) {
+              var ui = urgencyInfo(u);
+              return <button key={u} onClick={function() { setEscUrgency(u); }} style={{ padding: "6px 16px", borderRadius: 6, border: escUrgency === u ? "2px solid " + ui.color : "1px solid #e2e8f0", background: escUrgency === u ? ui.bg : "#fff", color: ui.color, fontSize: 11, fontWeight: 600, cursor: "pointer" }}>{ui.text}</button>;
+            })}
+          </div>
+          <div style={{ display: "flex", gap: 6 }}>
+            <button onClick={handleEscalate} style={{ padding: "8px 18px", background: "#4f46e5", color: "#fff", border: "none", borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Confirmar escalamiento</button>
+            <button onClick={function() { setShowEscalate(false); }} style={{ padding: "8px 14px", background: "#f1f5f9", border: "none", borderRadius: 6, fontSize: 12, cursor: "pointer", color: K.mt }}>Cancelar</button>
+          </div>
+        </div>}
+
+        {/* Transfer panel */}
+        {showTransfer && <div style={{ marginTop: 10, padding: "12px 14px", background: "#f0f9ff", borderRadius: 8, border: "1px solid #bae6fd" }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: "#0369a1", marginBottom: 8 }}>Transferir caso a otro agente</div>
+          {agents.length === 0 ? <div style={{ fontSize: 11, color: K.mt, fontStyle: "italic" }}>No hay otros agentes disponibles</div> :
+            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              {agents.map(function(a) {
+                var roleLabel = a.role === "admin" ? "Super Admin" : a.role === "agent_senior" ? "Senior" : "Agente";
+                return <button key={a.uid} onClick={function() { handleTransfer(a); }} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 12px", background: "#fff", border: "1px solid #e2e8f0", borderRadius: 6, cursor: "pointer", textAlign: "left" }}>
+                  <span style={{ fontSize: 12, fontWeight: 600 }}>{a.nombre}</span>
+                  <span style={{ fontSize: 10, color: K.mt }}>{roleLabel}</span>
+                </button>;
+              })}
+            </div>}
+          <button onClick={function() { setShowTransfer(false); }} style={{ marginTop: 8, padding: "6px 14px", background: "#f1f5f9", border: "none", borderRadius: 6, fontSize: 11, cursor: "pointer", color: K.mt }}>Cancelar</button>
+        </div>}
+
+        {/* Change urgency panel */}
+        {showUrgency && <div style={{ marginTop: 10, padding: "12px 14px", background: "#fef9c3", borderRadius: 8, border: "1px solid #fef3c7" }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: "#92400e", marginBottom: 8 }}>Cambiar urgencia del caso</div>
+          <div style={{ display: "flex", gap: 6 }}>
+            {["low", "medium", "high"].map(function(u) {
+              var ui = urgencyInfo(u);
+              var isCurrent = openCase.urgency === u;
+              return <button key={u} onClick={function() { if (!isCurrent) handleChangeUrgency(u); }} style={{ padding: "6px 16px", borderRadius: 6, border: isCurrent ? "2px solid " + ui.color : "1px solid #e2e8f0", background: isCurrent ? ui.bg : "#fff", color: ui.color, fontSize: 11, fontWeight: 600, cursor: isCurrent ? "default" : "pointer", opacity: isCurrent ? .6 : 1 }}>{ui.text}{isCurrent ? " (actual)" : ""}</button>;
+            })}
+          </div>
+          <button onClick={function() { setShowUrgency(false); }} style={{ marginTop: 8, padding: "6px 14px", background: "#f1f5f9", border: "none", borderRadius: 6, fontSize: 11, cursor: "pointer", color: K.mt }}>Cerrar</button>
+        </div>}
       </div>
 
       {/* Messages */}
