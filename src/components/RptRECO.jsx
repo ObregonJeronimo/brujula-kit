@@ -1,15 +1,14 @@
+import "../styles/RptRECO.css";
 import { useState, useRef } from "react";
 import { RECO_GROUPS, computeRecoResults } from "../data/recoFonData.js";
 import AIReportPanel from "./AIReportPanel.jsx";
-import { K as _K, ageLabel } from "../lib/fb.js";
-var K = Object.assign({}, _K, { ac: "#9333ea" });
+import { ageLabel } from "../lib/fb.js";
 
 export default function RptRECO({ ev, onD, therapistInfo }){
   var _cd = useState(false), cd = _cd[0], sCD = _cd[1];
   var _showTech = useState(false), showTech = _showTech[0], setShowTech = _showTech[1];
   var printRef = useRef(null);
   var rawResponses = ev.responses || {};
-  var obsMap = ev.obsMap || {};
 
   // Recompute results from raw responses for consistency
   var res = computeRecoResults(rawResponses);
@@ -26,76 +25,77 @@ export default function RptRECO({ ev, onD, therapistInfo }){
 
   var sevColor = res.severity==="Adecuado"?"#059669":res.severity==="Leve"?"#d97706":"#dc2626";
   var sevBg = res.severity==="Adecuado"?"#f0fdf4":res.severity==="Leve"?"#fffbeb":"#fef2f2";
+  var sevStyle = { "--rpt-reco-sev-bg": sevBg, "--rpt-reco-sev-color": sevColor };
 
   return (
-    <div style={{animation:"fi .3s ease",maxWidth:1200,margin:"0 auto"}}>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20,flexWrap:"wrap",gap:12}}>
-        <h1 style={{fontSize:20,fontWeight:700}}>{"\ud83e\udde0 Reconocimiento Fonológico"}</h1>
-        <div style={{display:"flex",gap:8}}>
+    <div className="rpt-reco">
+      <div className="rpt-reco-head">
+        <h1 className="rpt-reco-title">{"\ud83e\udde0 Reconocimiento Fonológico"}</h1>
+        <div className="rpt-reco-actions">
           {cd
-            ?<div style={{background:"#fef2f2",border:"1px solid #fecaca",borderRadius:10,padding:"14px 20px",display:"flex",flexDirection:"column",alignItems:"center",gap:10}}>
-              <div style={{fontSize:13,fontWeight:600,color:"#dc2626",textAlign:"center"}}>{"¿Está seguro que desea eliminar?"}</div>
-              <div style={{fontSize:12,color:"#64748b",textAlign:"center"}}>{"Esta acción es irreversible"}</div>
-              <div style={{display:"flex",gap:8}}>
-                <button onClick={function(){onD(ev._fbId)}} style={{background:"#dc2626",color:"#fff",border:"none",padding:"8px 20px",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer"}}>{"Sí, eliminar"}</button>
-                <button onClick={function(){sCD(false)}} style={{background:"#f1f5f9",border:"1px solid #e2e8f0",padding:"8px 20px",borderRadius:8,fontSize:13,cursor:"pointer",color:"#64748b"}}>Cancelar</button>
+            ?<div className="rpt-reco-del-confirm">
+              <div className="rpt-reco-del-title">{"¿Está seguro que desea eliminar?"}</div>
+              <div className="rpt-reco-del-sub">{"Esta acción es irreversible"}</div>
+              <div className="rpt-reco-del-actions">
+                <button onClick={function(){onD(ev._fbId)}} className="rpt-reco-del-confirm-btn">{"Sí, eliminar"}</button>
+                <button onClick={function(){sCD(false)}} className="rpt-reco-del-cancel-btn">Cancelar</button>
               </div>
             </div>
-            :<button onClick={function(){sCD(true)}} style={{padding:"11px 22px",background:"#fef2f2",color:"#dc2626",border:"1px solid #fecaca",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer"}}>{"Eliminar"}</button>
+            :<button onClick={function(){sCD(true)}} className="rpt-reco-del-btn">{"Eliminar"}</button>
           }
         </div>
       </div>
 
       <AIReportPanel ev={ev} evalType="reco" collectionName="evaluaciones" evalLabel="Reconocimiento Fonológico" therapistInfo={therapistInfo} />
 
-      <button onClick={function(){ setShowTech(!showTech); }} style={{width:"100%",padding:"14px",background:showTech?"#f1f5f9":"#0a3d2f",color:showTech?"#1e293b":"#fff",border:"1px solid #e2e8f0",borderRadius:10,fontSize:14,fontWeight:600,cursor:"pointer",marginBottom:showTech?16:20}}>
+      <button onClick={function(){ setShowTech(!showTech); }} className={"rpt-reco-tech-toggle"+(showTech?" is-open":"")}>
         {showTech ? "\u25b2 Ocultar datos técnicos" : "\u25bc Ver datos técnicos de la evaluación"}
       </button>
 
-      {showTech && <div ref={printRef} style={{background:"#fff",borderRadius:12,border:"1px solid "+K.bd,padding:28,marginBottom:20}}>
-        <div style={{display:"flex",justifyContent:"flex-end",marginBottom:16}}>
-          <button onClick={handlePDF} style={{padding:"9px 18px",background:K.ac,color:"#fff",border:"none",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer"}}>{"\ud83d\udcc4 PDF datos técnicos"}</button>
+      {showTech && <div ref={printRef} className="rpt-reco-tech">
+        <div className="rpt-reco-pdf-row">
+          <button onClick={handlePDF} className="rpt-reco-pdf-btn">{"\ud83d\udcc4 PDF datos técnicos"}</button>
         </div>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:20,paddingBottom:16,borderBottom:"2px solid "+K.bd}}>
+        <div className="rpt-reco-meta">
           <div>
-            <div style={{fontSize:10,color:K.mt,fontWeight:600,textTransform:"uppercase",letterSpacing:1}}>{"Reconocimiento Fonológico"}</div>
-            <div style={{fontSize:18,fontWeight:700,marginTop:4}}>{ev.paciente}</div>
-            <div style={{fontSize:13,color:K.mt,marginTop:2}}>{"DNI: "+(ev.pacienteDni||"N/A")+" · Edad: "+ageLabel(ev.edadMeses||0)}</div>
-            {ev.derivadoPor && <div style={{fontSize:12,color:K.mt,marginTop:2}}>{"Derivado por: "+ev.derivadoPor}</div>}
+            <div className="rpt-reco-meta-eyebrow">{"Reconocimiento Fonológico"}</div>
+            <div className="rpt-reco-meta-name">{ev.paciente}</div>
+            <div className="rpt-reco-meta-sub">{"DNI: "+(ev.pacienteDni||"N/A")+" · Edad: "+ageLabel(ev.edadMeses||0)}</div>
+            {ev.derivadoPor && <div className="rpt-reco-meta-line">{"Derivado por: "+ev.derivadoPor}</div>}
           </div>
-          <div style={{textAlign:"right"}}>
-            <div style={{fontSize:12,color:K.mt}}>{"Fecha: "+ev.fechaEvaluacion}</div>
-            {ev.evaluador && <div style={{fontSize:12,color:K.mt}}>{"Evaluador: "+ev.evaluador}</div>}
+          <div className="rpt-reco-meta-right">
+            <div className="rpt-reco-meta-line">{"Fecha: "+ev.fechaEvaluacion}</div>
+            {ev.evaluador && <div className="rpt-reco-meta-line">{"Evaluador: "+ev.evaluador}</div>}
           </div>
         </div>
 
         {/* Summary cards */}
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12,marginBottom:24}}>
-          <div style={{background:"#f3e8ff",borderRadius:10,padding:16,textAlign:"center"}}>
-            <div style={{fontSize:28,fontWeight:800,color:K.ac}}>{res.pct+"%"}</div>
-            <div style={{fontSize:11,color:K.mt,fontWeight:600}}>{"Aciertos globales"}</div>
+        <div className="rpt-reco-stats" style={sevStyle}>
+          <div className="rpt-reco-stat rpt-reco-stat--pct">
+            <div className="rpt-reco-stat-big">{res.pct+"%"}</div>
+            <div className="rpt-reco-stat-lbl">{"Aciertos globales"}</div>
           </div>
-          <div style={{background:sevBg,borderRadius:10,padding:16,textAlign:"center"}}>
-            <div style={{fontSize:20,fontWeight:700,color:sevColor}}>{res.severity||"-"}</div>
-            <div style={{fontSize:11,color:K.mt,fontWeight:600}}>{"Severidad"}</div>
+          <div className="rpt-reco-stat rpt-reco-stat--sev">
+            <div className="rpt-reco-stat-md rpt-reco-stat-md--sev">{res.severity||"-"}</div>
+            <div className="rpt-reco-stat-lbl">{"Severidad"}</div>
           </div>
-          <div style={{background:"#f8fafc",borderRadius:10,padding:16,textAlign:"center"}}>
-            <div style={{fontSize:20,fontWeight:700,color:K.sd}}>{res.correct+"/"+res.total}</div>
-            <div style={{fontSize:11,color:K.mt,fontWeight:600}}>{"Contrastes reconocidos"}</div>
+          <div className="rpt-reco-stat rpt-reco-stat--correct">
+            <div className="rpt-reco-stat-md rpt-reco-stat-md--correct">{res.correct+"/"+res.total}</div>
+            <div className="rpt-reco-stat-lbl">{"Contrastes reconocidos"}</div>
           </div>
         </div>
 
         {/* Detail table */}
-        <h3 style={{fontSize:14,fontWeight:700,marginBottom:8}}>{"Detalle por grupo de contraste"}</h3>
-        <table style={{width:"100%",borderCollapse:"collapse",fontSize:12,marginBottom:20}}>
-          <thead><tr style={{borderBottom:"2px solid "+K.bd,background:"#f8fafc"}}>
-            <th style={{textAlign:"center",padding:"6px 8px",color:K.mt,width:36}}>{"Gr."}</th>
-            <th style={{textAlign:"left",padding:"6px 8px",color:K.mt}}>{"Tipo de contraste"}</th>
-            <th style={{textAlign:"center",padding:"6px",color:K.mt,width:50}}>{"Lám."}</th>
-            <th style={{textAlign:"left",padding:"6px 8px",color:K.mt}}>{"Par de palabras"}</th>
-            <th style={{textAlign:"center",padding:"6px 8px",color:K.mt,width:90}}>{"Palabra dicha"}</th>
-            <th style={{textAlign:"center",padding:"6px 8px",color:K.mt,width:90}}>{"Señaló"}</th>
-            <th style={{textAlign:"center",padding:"6px",color:K.mt,width:70}}>{"Resultado"}</th>
+        <h3 className="rpt-reco-h3">{"Detalle por grupo de contraste"}</h3>
+        <table className="rpt-reco-table">
+          <thead><tr>
+            <th className="rpt-reco-th-gr">{"Gr."}</th>
+            <th className="rpt-reco-th-left">{"Tipo de contraste"}</th>
+            <th className="rpt-reco-th-lam">{"Lám."}</th>
+            <th className="rpt-reco-th-left">{"Par de palabras"}</th>
+            <th className="rpt-reco-th-word">{"Palabra dicha"}</th>
+            <th className="rpt-reco-th-word">{"Señaló"}</th>
+            <th className="rpt-reco-th-res">{"Resultado"}</th>
           </tr></thead>
           <tbody>
             {RECO_GROUPS.map(function(group){
@@ -105,18 +105,18 @@ export default function RptRECO({ ev, onD, therapistInfo }){
                 var isCorrect = hasResponse && r.objetivo === r.seleccion;
                 var palabraObjetivo = hasResponse ? (r.objetivo === "w1" ? item.w1 : item.w2) : null;
                 var palabraSeleccion = hasResponse ? (r.seleccion === "w1" ? item.w1 : item.w2) : null;
-                var bgRow = !hasResponse ? "#fffbeb" : isCorrect ? "#f0fdf4" : "#fef2f2";
-                return <tr key={item.lam} style={{borderBottom:"1px solid #f1f5f9",background:bgRow}}>
-                  {idx === 0 && <td rowSpan={group.items.length} style={{textAlign:"center",padding:"6px 8px",fontWeight:800,color:K.ac,verticalAlign:"top",borderRight:"1px solid #f1f5f9"}}>{group.id}</td>}
-                  {idx === 0 && <td rowSpan={group.items.length} style={{padding:"6px 8px",fontSize:11,color:"#334155",verticalAlign:"top",borderRight:"1px solid #f1f5f9"}}>{group.label}</td>}
-                  <td style={{textAlign:"center",padding:"6px 8px",fontWeight:700,color:K.mt}}>{item.lam}</td>
-                  <td style={{padding:"6px 8px",fontSize:12,fontWeight:600}}>{item.w1+" / "+item.w2}</td>
-                  <td style={{textAlign:"center",padding:"6px 8px",fontSize:11}}>{palabraObjetivo ? <span style={{fontWeight:600}}>{"\""+palabraObjetivo+"\""}</span> : <span style={{color:"#94a3b8"}}>-</span>}</td>
-                  <td style={{textAlign:"center",padding:"6px 8px",fontSize:11}}>{palabraSeleccion ? <span style={{fontWeight:600}}>{"\""+palabraSeleccion+"\""}</span> : <span style={{color:"#94a3b8"}}>-</span>}</td>
-                  <td style={{textAlign:"center",padding:"6px"}}>
-                    {!hasResponse && <span style={{fontSize:10,color:"#92400e",fontWeight:600}}>{"Sin resp."}</span>}
-                    {hasResponse && isCorrect && <span style={{fontSize:10,color:"#059669",fontWeight:700}}>{"\u2714 Correcto"}</span>}
-                    {hasResponse && !isCorrect && <span style={{fontSize:10,color:"#dc2626",fontWeight:700}}>{"\u2718 Error"}</span>}
+                var rowClass = !hasResponse ? "is-warn-row" : isCorrect ? "is-ok-row" : "is-err-row";
+                return <tr key={item.lam} className={rowClass}>
+                  {idx === 0 && <td rowSpan={group.items.length} className="rpt-reco-td-group">{group.id}</td>}
+                  {idx === 0 && <td rowSpan={group.items.length} className="rpt-reco-td-left rpt-reco-td-group-label">{group.label}</td>}
+                  <td className="rpt-reco-td-lam">{item.lam}</td>
+                  <td className="rpt-reco-td-left rpt-reco-td-pair">{item.w1+" / "+item.w2}</td>
+                  <td className="rpt-reco-word">{palabraObjetivo ? <span className="rpt-reco-word-val">{"\""+palabraObjetivo+"\""}</span> : <span className="rpt-reco-word-empty">-</span>}</td>
+                  <td className="rpt-reco-word">{palabraSeleccion ? <span className="rpt-reco-word-val">{"\""+palabraSeleccion+"\""}</span> : <span className="rpt-reco-word-empty">-</span>}</td>
+                  <td>
+                    {!hasResponse && <span className="rpt-reco-res rpt-reco-res--none">{"Sin resp."}</span>}
+                    {hasResponse && isCorrect && <span className="rpt-reco-res rpt-reco-res--ok">{"\u2714 Correcto"}</span>}
+                    {hasResponse && !isCorrect && <span className="rpt-reco-res rpt-reco-res--err">{"\u2718 Error"}</span>}
                   </td>
                 </tr>;
               });
@@ -125,49 +125,52 @@ export default function RptRECO({ ev, onD, therapistInfo }){
         </table>
 
         {/* Group summary */}
-        {res.groupResults && <div style={{marginBottom:20}}>
-          <h3 style={{fontSize:14,fontWeight:700,color:K.ac,marginBottom:8}}>{"Resumen por grupo"}</h3>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
+        {res.groupResults && <div className="rpt-reco-groups">
+          <h3 className="rpt-reco-h3 rpt-reco-h3--accent">{"Resumen por grupo"}</h3>
+          <div className="rpt-reco-groups-grid">
             {res.groupResults.map(function(g){
               var isOk = g.correct === g.total && g.total > 0;
-              return <div key={g.id} style={{padding:"8px 12px",borderRadius:8,border:"1px solid "+(isOk?"#bbf7d0":"#fecaca"),background:isOk?"#f0fdf4":"#fef2f2",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                <div><span style={{fontWeight:800,color:isOk?"#059669":"#dc2626",marginRight:6,fontSize:13}}>{g.id}</span><span style={{fontSize:11,color:"#334155"}}>{g.label}</span></div>
-                <span style={{fontSize:12,fontWeight:700,color:isOk?"#059669":"#dc2626"}}>{g.correct+"/"+g.total}</span>
+              return <div key={g.id} className={"rpt-reco-group"+(isOk?" is-ok":"")}>
+                <div>
+                  <span className="rpt-reco-group-id">{g.id}</span>
+                  <span className="rpt-reco-group-label">{g.label}</span>
+                </div>
+                <span className="rpt-reco-group-count">{g.correct+"/"+g.total}</span>
               </div>;
             })}
           </div>
         </div>}
 
         {/* Error details */}
-        {res.errorGroups && res.errorGroups.length > 0 && <div style={{marginBottom:20}}>
-          <h3 style={{fontSize:14,fontWeight:700,color:"#dc2626",marginBottom:8}}>{"\u26a0 Grupos con dificultades"}</h3>
+        {res.errorGroups && res.errorGroups.length > 0 && <div className="rpt-reco-err-block">
+          <h3 className="rpt-reco-h3 rpt-reco-h3--err">{"\u26a0 Grupos con dificultades"}</h3>
           {res.errorGroups.map(function(g){
             var failedItems = g.items.filter(function(it){ return it.reconoce === false; });
-            return <div key={g.id} style={{padding:"10px 14px",background:"#fef2f2",borderRadius:8,marginBottom:6,border:"1px solid #fecaca"}}>
-              <div style={{fontSize:12,fontWeight:700,color:"#dc2626"}}>{g.id+" - "+g.label}</div>
+            return <div key={g.id} className="rpt-reco-err-group">
+              <div className="rpt-reco-err-group-title">{g.id+" - "+g.label}</div>
               {failedItems.map(function(it){
-                return <div key={it.lam} style={{fontSize:11,color:"#7f1d1d",marginTop:3}}>{"Lám. "+it.lam+": Se dijo \""+it.palabraObjetivo+"\" — Señaló \""+it.palabraSeleccionada+"\""}</div>;
+                return <div key={it.lam} className="rpt-reco-err-item">{"Lám. "+it.lam+": Se dijo \""+it.palabraObjetivo+"\" — Señaló \""+it.palabraSeleccionada+"\""}</div>;
               })}
             </div>;
           })}
         </div>}
 
-        {res.errorGroups && res.errorGroups.length === 0 && <div style={{background:"#dcfce7",borderRadius:12,padding:20,marginBottom:16,textAlign:"center"}}>
-          <span style={{fontSize:24}}>{"\u2705"}</span>
-          <p style={{fontSize:14,fontWeight:600,color:"#059669",marginTop:8}}>{"Reconocimiento fonológico adecuado."}</p>
+        {res.errorGroups && res.errorGroups.length === 0 && <div className="rpt-reco-all-ok">
+          <span className="rpt-reco-all-ok-icon">{"\u2705"}</span>
+          <p className="rpt-reco-all-ok-text">{"Reconocimiento fonológico adecuado."}</p>
         </div>}
 
-        <div style={{background:"#f3e8ff",border:"1px solid #d8b4fe",borderRadius:10,padding:14,marginBottom:20,fontSize:12,color:"#6b21a8",lineHeight:1.6}}>
+        <div className="rpt-reco-criteria">
           <strong>{"\u2139\ufe0f Criterios de clasificación:"}</strong><br/>
           {"Adecuado: \u226595% \u00b7 Leve: 80-94% \u00b7 Moderado: 60-79% \u00b7 Severo: <60%"}
         </div>
 
-        {ev.observaciones && <div style={{marginTop:12,padding:12,background:"#f8fafc",borderRadius:8}}>
-          <strong style={{fontSize:12}}>Observaciones:</strong>
-          <p style={{fontSize:12,color:K.mt,marginTop:4}}>{ev.observaciones}</p>
+        {ev.observaciones && <div className="rpt-reco-obs">
+          <strong className="rpt-reco-obs-label">Observaciones:</strong>
+          <p className="rpt-reco-obs-text">{ev.observaciones}</p>
         </div>}
 
-        <div style={{marginTop:24,paddingTop:12,borderTop:"1px solid "+K.bd,fontSize:10,color:"#94a3b8",textAlign:"center"}}>
+        <div className="rpt-reco-foot">
           {"Brújula KIT — Reconocimiento Fonológico — Generado el "+new Date().toLocaleDateString("es-AR")}
         </div>
       </div>}
