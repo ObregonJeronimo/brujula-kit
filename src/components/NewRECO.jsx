@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import { RECO_GROUPS, TOTAL_ITEMS, computeRecoResults, getImageUrl } from "../data/recoFonData.js";
 import EvalShell from "./EvalShell.jsx";
 import { K } from "../lib/fb.js";
+import "../styles/NewRECO.css";
 
 var SHELL_CONFIG = {
   title: "Reconocimiento Fonológico Visual",
@@ -24,6 +25,7 @@ function recoRenderEval(props) {
 
   var answeredCount = 0;
   Object.keys(responses).forEach(function(k) { var r = responses[k]; if (r && r.objetivo && r.seleccion) answeredCount++; });
+  var pctWidth = Math.round(answeredCount / TOTAL_ITEMS * 100);
 
   // Use obsMap with special keys to track image visibility (avoids hooks in non-component)
   var isImgVisible = function(lam) { return obsMap["_img_" + lam] === "1"; };
@@ -33,10 +35,10 @@ function recoRenderEval(props) {
   var setSeleccion = function(lam, wordKey) { var current = responses[lam] || {}; if (!current.objetivo) return; setResponse(lam, { objetivo: current.objetivo, seleccion: wordKey }); };
   var resetItem = function(lam) { setResponse(lam, undefined); setOb("_img_" + lam, ""); };
 
-  return <div>
-    <div style={{background:"#f3e8ff",border:"1px solid #c4b5fd",borderRadius:12,padding:"16px 20px",marginBottom:20}}>
-      <div style={{fontSize:14,fontWeight:700,color:"#7c3aed",marginBottom:6}}>{"Protocolo de aplicación"}</div>
-      <div style={{fontSize:13,color:"#475569",lineHeight:1.7}}>
+  return <div className="reco">
+    <div className="reco-instructions">
+      <div className="reco-instructions-title">{"Protocolo de aplicación"}</div>
+      <div className="reco-instructions-body">
         {"1. Seleccione la palabra que va a pronunciar (botón \"Decir\")."}<br/>
         {"2. Presione \"Mostrar ambas imágenes\" para mostrar al paciente."}<br/>
         {"3. Diga la palabra en voz alta al paciente."}<br/>
@@ -45,15 +47,22 @@ function recoRenderEval(props) {
       </div>
     </div>
 
-    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
-      <div style={{fontSize:13,color:"#64748b",fontWeight:600}}>{"Progreso: "+answeredCount+"/"+TOTAL_ITEMS}</div>
-      <div style={{width:120,height:6,background:"#e2e8f0",borderRadius:3,overflow:"hidden"}}><div style={{width:Math.round(answeredCount/TOTAL_ITEMS*100)+"%",height:"100%",background:accentColor,borderRadius:3,transition:"width .3s"}}></div></div>
+    <div className="reco-progress-row">
+      <div className="reco-progress-label">{"Progreso: " + answeredCount + "/" + TOTAL_ITEMS}</div>
+      <div className="reco-progress-bar">
+        <div className="reco-progress-fill" style={{ width: pctWidth + "%", background: accentColor }}></div>
+      </div>
     </div>
 
     {RECO_GROUPS.map(function(group){
-      return <div key={group.id} style={{background:"#fff",borderRadius:12,border:"1px solid #e2e8f0",marginBottom:16,overflow:"hidden"}}>
-        <div style={{background:"linear-gradient(135deg,#9333ea,#7c3aed)",padding:"14px 20px",color:"#fff"}}><div style={{display:"flex",alignItems:"center",gap:10}}><span style={{background:"rgba(255,255,255,.2)",padding:"4px 10px",borderRadius:6,fontSize:14,fontWeight:800}}>{group.id}</span><span style={{fontSize:14,fontWeight:600}}>{group.label}</span></div></div>
-        <div style={{padding:"12px 16px"}}>
+      return <div key={group.id} className="reco-group">
+        <div className="reco-group-head">
+          <div className="reco-group-head-row">
+            <span className="reco-group-badge">{group.id}</span>
+            <span className="reco-group-label">{group.label}</span>
+          </div>
+        </div>
+        <div className="reco-group-body">
           {group.items.map(function(item){
             var r = responses[item.lam] || {};
             var objetivo = r.objetivo || null;
@@ -66,62 +75,62 @@ function recoRenderEval(props) {
             var img1 = getImageUrl(item.w1);
             var img2 = getImageUrl(item.w2);
 
-            return <div key={item.lam} style={{padding:"14px 0",marginBottom:8,borderBottom:"1px solid #f1f5f9"}}>
-              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
-                <div style={{display:"flex",alignItems:"center",gap:8}}>
-                  <span style={{fontSize:13,fontWeight:700,color:"#64748b"}}>{"#"+item.lam}</span>
-                  {!isComplete && !objetivo && <span style={{fontSize:11,color:"#94a3b8"}}>{"Seleccione la palabra que va a pronunciar"}</span>}
-                  {objetivo && !seleccion && <span style={{fontSize:11,color:"#7c3aed",fontWeight:600}}>{"Diga \""+palabraObj+"\" — registre qué imagen señaló"}</span>}
+            return <div key={item.lam} className="reco-item">
+              <div className="reco-item-header">
+                <div className="reco-item-header-left">
+                  <span className="reco-item-id">{"#" + item.lam}</span>
+                  {!isComplete && !objetivo && <span className="reco-item-hint">{"Seleccione la palabra que va a pronunciar"}</span>}
+                  {objetivo && !seleccion && <span className="reco-item-hint reco-item-hint--active">{"Diga \"" + palabraObj + "\" — registre qué imagen señaló"}</span>}
                 </div>
-                {isComplete && <button onClick={function(){resetItem(item.lam)}} style={{fontSize:10,color:"#94a3b8",background:"none",border:"1px solid #e2e8f0",borderRadius:6,padding:"3px 8px",cursor:"pointer"}}>Reiniciar</button>}
+                {isComplete && <button onClick={function(){ resetItem(item.lam); }} className="reco-btn-reset">Reiniciar</button>}
               </div>
 
               {/* Step 1: Choose which word to say */}
               {!objetivo && <div>
-                <div style={{fontSize:11,fontWeight:600,color:"#7c3aed",marginBottom:6}}>{"¿Qué palabra va a decir?"}</div>
-                <div style={{display:"flex",gap:10}}>
-                  <button onClick={function(){setObjetivo(item.lam,"w1")}} style={{flex:1,padding:"12px 16px",borderRadius:10,border:"2px solid #c4b5fd",background:"#faf5ff",cursor:"pointer",fontSize:14,fontWeight:700,color:"#7c3aed",transition:"all .15s"}}>{"Decir: \""+item.w1+"\""}</button>
-                  <button onClick={function(){setObjetivo(item.lam,"w2")}} style={{flex:1,padding:"12px 16px",borderRadius:10,border:"2px solid #c4b5fd",background:"#faf5ff",cursor:"pointer",fontSize:14,fontWeight:700,color:"#7c3aed",transition:"all .15s"}}>{"Decir: \""+item.w2+"\""}</button>
+                <div className="reco-step-label">{"¿Qué palabra va a decir?"}</div>
+                <div className="reco-word-row">
+                  <button onClick={function(){ setObjetivo(item.lam, "w1"); }} className="reco-word-btn">{"Decir: \"" + item.w1 + "\""}</button>
+                  <button onClick={function(){ setObjetivo(item.lam, "w2"); }} className="reco-word-btn">{"Decir: \"" + item.w2 + "\""}</button>
                 </div>
               </div>}
 
               {/* Step 2: Show images button + record selection */}
               {objetivo && !seleccion && <div>
-                {!imgsVisible && <button onClick={function(){toggleImgs(item.lam)}} style={{width:"100%",padding:"10px",borderRadius:10,border:"2px dashed #c4b5fd",background:"#faf5ff",cursor:"pointer",fontSize:13,fontWeight:600,color:"#7c3aed",marginBottom:12,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+                {!imgsVisible && <button onClick={function(){ toggleImgs(item.lam); }} className="reco-btn-show-imgs">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
                   {"Mostrar ambas imágenes"}
                 </button>}
-                {imgsVisible && <button onClick={function(){toggleImgs(item.lam)}} style={{width:"100%",padding:"6px",borderRadius:8,border:"1px solid #e2e8f0",background:"#f8fafc",cursor:"pointer",fontSize:11,fontWeight:500,color:"#94a3b8",marginBottom:10,textAlign:"center"}}>{"Ocultar imágenes"}</button>}
+                {imgsVisible && <button onClick={function(){ toggleImgs(item.lam); }} className="reco-btn-hide-imgs">{"Ocultar imágenes"}</button>}
 
-                {imgsVisible && <div style={{display:"flex",gap:12,marginBottom:12}}>
-                  <div style={{flex:1,borderRadius:12,border:"2px solid #e2e8f0",overflow:"hidden",background:"#fff"}}>
-                    {img1 ? <img src={img1} alt={item.w1} style={{width:"100%",height:140,objectFit:"contain",display:"block",padding:8}} /> : <div style={{height:140,display:"flex",alignItems:"center",justifyContent:"center",background:"#f1f5f9",color:"#94a3b8",fontSize:12}}>Sin imagen</div>}
-                    <div style={{textAlign:"center",padding:"6px",fontSize:12,fontWeight:600,color:"#475569",borderTop:"1px solid #f1f5f9"}}>{item.w1}</div>
+                {imgsVisible && <div className="reco-imgs">
+                  <div className="reco-img-card">
+                    {img1 ? <img src={img1} alt={item.w1} className="reco-img" /> : <div className="reco-img-empty">Sin imagen</div>}
+                    <div className="reco-img-caption">{item.w1}</div>
                   </div>
-                  <div style={{flex:1,borderRadius:12,border:"2px solid #e2e8f0",overflow:"hidden",background:"#fff"}}>
-                    {img2 ? <img src={img2} alt={item.w2} style={{width:"100%",height:140,objectFit:"contain",display:"block",padding:8}} /> : <div style={{height:140,display:"flex",alignItems:"center",justifyContent:"center",background:"#f1f5f9",color:"#94a3b8",fontSize:12}}>Sin imagen</div>}
-                    <div style={{textAlign:"center",padding:"6px",fontSize:12,fontWeight:600,color:"#475569",borderTop:"1px solid #f1f5f9"}}>{item.w2}</div>
+                  <div className="reco-img-card">
+                    {img2 ? <img src={img2} alt={item.w2} className="reco-img" /> : <div className="reco-img-empty">Sin imagen</div>}
+                    <div className="reco-img-caption">{item.w2}</div>
                   </div>
                 </div>}
 
-                <div style={{fontSize:11,fontWeight:600,color:"#475569",marginBottom:6}}>{"¿Qué imagen señaló el paciente?"}</div>
-                <div style={{display:"flex",gap:12}}>
-                  <div onClick={function(){setSeleccion(item.lam,"w1")}} style={{flex:1,padding:"14px",borderRadius:12,border:"2px solid #e2e8f0",background:"#f8faf9",cursor:"pointer",textAlign:"center",transition:"all .15s"}}>
-                    <div style={{fontSize:14,fontWeight:700,color:"#1e293b"}}>{item.w1}</div>
-                    <div style={{fontSize:10,color:"#94a3b8",marginTop:2}}>{"Señaló esta"}</div>
+                <div className="reco-step-label reco-step-label--neutral">{"¿Qué imagen señaló el paciente?"}</div>
+                <div className="reco-sel-row">
+                  <div onClick={function(){ setSeleccion(item.lam, "w1"); }} className="reco-sel-card">
+                    <div className="reco-sel-word">{item.w1}</div>
+                    <div className="reco-sel-hint">{"Señaló esta"}</div>
                   </div>
-                  <div onClick={function(){setSeleccion(item.lam,"w2")}} style={{flex:1,padding:"14px",borderRadius:12,border:"2px solid #e2e8f0",background:"#f8faf9",cursor:"pointer",textAlign:"center",transition:"all .15s"}}>
-                    <div style={{fontSize:14,fontWeight:700,color:"#1e293b"}}>{item.w2}</div>
-                    <div style={{fontSize:10,color:"#94a3b8",marginTop:2}}>{"Señaló esta"}</div>
+                  <div onClick={function(){ setSeleccion(item.lam, "w2"); }} className="reco-sel-card">
+                    <div className="reco-sel-word">{item.w2}</div>
+                    <div className="reco-sel-hint">{"Señaló esta"}</div>
                   </div>
                 </div>
               </div>}
 
-              {isComplete && <div style={{display:"flex",alignItems:"center",gap:12,padding:"10px 14px",borderRadius:10,background:isCorrect?"#f0fdf4":"#fef2f2",border:isCorrect?"1px solid #bbf7d0":"1px solid #fecaca"}}>
-                <div style={{fontSize:18}}>{isCorrect?"\u2705":"\u274c"}</div>
-                <div style={{flex:1}}>
-                  <div style={{fontSize:12,fontWeight:700,color:isCorrect?"#059669":"#dc2626"}}>{isCorrect?"Correcto":"Incorrecto"}</div>
-                  <div style={{fontSize:11,color:"#475569",marginTop:1}}>{"Se dijo: \""+palabraObj+"\" — Señaló: \""+palabraSel+"\""}</div>
+              {isComplete && <div className={"reco-feedback " + (isCorrect ? "reco-feedback--ok" : "reco-feedback--ko")}>
+                <div className="reco-feedback-icon">{isCorrect ? "\u2705" : "\u274c"}</div>
+                <div className="reco-feedback-body">
+                  <div className={"reco-feedback-title " + (isCorrect ? "reco-feedback-title--ok" : "reco-feedback-title--ko")}>{isCorrect ? "Correcto" : "Incorrecto"}</div>
+                  <div className="reco-feedback-detail">{"Se dijo: \"" + palabraObj + "\" — Señaló: \"" + palabraSel + "\""}</div>
                 </div>
               </div>}
             </div>;
@@ -129,33 +138,83 @@ function recoRenderEval(props) {
         </div>
       </div>;
     })}
-    <div style={{marginTop:16}}><label style={{fontSize:12,fontWeight:600,color:"#64748b"}}>Observaciones generales</label><textarea value={obs} onChange={function(e){setObs(e.target.value)}} rows={3} placeholder="Notas..." style={{width:"100%",padding:"10px 12px",border:"1px solid #e2e8f0",borderRadius:8,fontSize:13,marginTop:4,resize:"vertical",fontFamily:"inherit"}} /></div>
-    <div style={{display:"flex",gap:10,marginTop:20}}>
-      <button onClick={function(){setStep(0);scrollTop();}} style={{flex:1,padding:"12px",background:"#f1f5f9",border:"1px solid #e2e8f0",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer",color:"#64748b"}}>{"Volver"}</button>
-      <button onClick={function(){setStep(2);scrollTop();}} style={{flex:2,padding:"12px",background:"#059669",border:"none",borderRadius:8,fontSize:14,fontWeight:700,cursor:"pointer",color:"#fff"}}>{"Ver Resultados"}</button>
+
+    <div className="reco-obs-wrap">
+      <label className="reco-obs-label">Observaciones generales</label>
+      <textarea
+        value={obs}
+        onChange={function(e){ setObs(e.target.value); }}
+        rows={3}
+        placeholder="Notas..."
+        className="reco-obs-textarea"
+      />
+    </div>
+
+    <div className="reco-nav">
+      <button onClick={function(){ setStep(0); scrollTop(); }} className="reco-btn-back">{"Volver"}</button>
+      <button onClick={function(){ setStep(2); scrollTop(); }} className="reco-btn-results">{"Ver Resultados"}</button>
     </div>
   </div>;
 }
 
 function recoRenderTech(results) {
-  return <div>
-    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12,marginBottom:20}}>
-      <div style={{background:"#f3e8ff",borderRadius:10,padding:16,textAlign:"center"}}><div style={{fontSize:28,fontWeight:800,color:"#9333ea"}}>{results.pct+"%"}</div><div style={{fontSize:11,color:K.mt,fontWeight:600}}>{"Aciertos"}</div></div>
-      <div style={{background:results.severity==="Adecuado"?"#f0fdf4":results.severity==="Leve"?"#fffbeb":"#fef2f2",borderRadius:10,padding:16,textAlign:"center"}}><div style={{fontSize:20,fontWeight:700,color:results.severity==="Adecuado"?"#059669":results.severity==="Leve"?"#d97706":"#dc2626"}}>{results.severity}</div><div style={{fontSize:11,color:K.mt,fontWeight:600}}>{"Severidad"}</div></div>
-      <div style={{background:"#f8fafc",borderRadius:10,padding:16,textAlign:"center"}}><div style={{fontSize:20,fontWeight:700,color:K.sd}}>{results.correct+"/"+results.total}</div><div style={{fontSize:11,color:K.mt,fontWeight:600}}>{"Contrastes reconocidos"}</div></div>
+  var sevClass = "reco-stat--adequate";
+  var sevColorClass = "reco-stat-sev--adequate";
+  if (results.severity === "Leve") {
+    sevClass = "reco-stat--mild";
+    sevColorClass = "reco-stat-sev--mild";
+  } else if (results.severity !== "Adecuado") {
+    sevClass = "reco-stat--severe";
+    sevColorClass = "reco-stat-sev--severe";
+  }
+
+  return <div className="reco">
+    <div className="reco-stats">
+      <div className="reco-stat reco-stat--accent">
+        <div className="reco-stat-big">{results.pct + "%"}</div>
+        <div className="reco-stat-label">{"Aciertos"}</div>
+      </div>
+      <div className={"reco-stat " + sevClass}>
+        <div className={"reco-stat-med " + sevColorClass}>{results.severity}</div>
+        <div className="reco-stat-label">{"Severidad"}</div>
+      </div>
+      <div className="reco-stat reco-stat--neutral">
+        <div className="reco-stat-med">{results.correct + "/" + results.total}</div>
+        <div className="reco-stat-label">{"Contrastes reconocidos"}</div>
+      </div>
     </div>
-    <div style={{background:"#fff",borderRadius:12,border:"1px solid "+K.bd,padding:20,marginBottom:20}}>
-      <h3 style={{fontSize:15,fontWeight:700,color:"#9333ea",marginBottom:12}}>{"Por grupo"}</h3>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>{results.groupResults.map(function(g){ var ok=g.correct===g.total&&g.total>0; return <div key={g.id} style={{padding:"10px 14px",borderRadius:8,border:"1px solid "+(ok?"#bbf7d0":"#fecaca"),background:ok?"#f0fdf4":"#fef2f2",display:"flex",justifyContent:"space-between"}}><div><span style={{fontWeight:800,color:ok?"#059669":"#dc2626",marginRight:6}}>{g.id}</span><span style={{fontSize:12}}>{g.label}</span></div><span style={{fontWeight:700,color:ok?"#059669":"#dc2626"}}>{g.correct+"/"+g.total}</span></div>; })}</div>
+
+    <div className="reco-group-summary-card">
+      <h3 className="reco-group-summary-title">{"Por grupo"}</h3>
+      <div className="reco-group-summary-grid">
+        {results.groupResults.map(function(g){
+          var ok = g.correct === g.total && g.total > 0;
+          return <div key={g.id} className={"reco-group-row " + (ok ? "reco-group-row--ok" : "reco-group-row--ko")}>
+            <div>
+              <span className={"reco-group-row-id " + (ok ? "reco-group-row-id--ok" : "reco-group-row-id--ko")}>{g.id}</span>
+              <span className="reco-group-row-label">{g.label}</span>
+            </div>
+            <span className={"reco-group-row-count " + (ok ? "reco-group-row-count--ok" : "reco-group-row-count--ko")}>{g.correct + "/" + g.total}</span>
+          </div>;
+        })}
+      </div>
     </div>
-    {results.errorGroups.length>0 && <div style={{background:"#fff",borderRadius:12,border:"1px solid "+K.bd,padding:20,marginBottom:20}}>
-      <h3 style={{fontSize:15,fontWeight:700,color:"#dc2626",marginBottom:12}}>{"\u26a0 Dificultades"}</h3>
-      {results.errorGroups.map(function(g){ var f=g.items.filter(function(it){return it.reconoce===false;}); return <div key={g.id} style={{padding:"12px 14px",background:"#fef2f2",borderRadius:8,marginBottom:8}}>
-        <div style={{fontSize:13,fontWeight:700,color:"#dc2626"}}>{g.id+" - "+g.label}</div>
-        {f.map(function(it){ return <div key={it.lam} style={{fontSize:11,color:"#7f1d1d",marginTop:3}}>{"Lám. "+it.lam+": Se dijo \""+it.palabraObjetivo+"\" — Señaló \""+it.palabraSeleccionada+"\""}</div>; })}
-      </div>; })}
+
+    {results.errorGroups.length > 0 && <div className="reco-errors-card">
+      <h3 className="reco-errors-title">{"\u26a0 Dificultades"}</h3>
+      {results.errorGroups.map(function(g){
+        var f = g.items.filter(function(it){ return it.reconoce === false; });
+        return <div key={g.id} className="reco-error-group">
+          <div className="reco-error-group-title">{g.id + " - " + g.label}</div>
+          {f.map(function(it){ return <div key={it.lam} className="reco-error-item">{"Lám. " + it.lam + ": Se dijo \"" + it.palabraObjetivo + "\" — Señaló \"" + it.palabraSeleccionada + "\""}</div>; })}
+        </div>;
+      })}
     </div>}
-    {results.errorGroups.length===0 && <div style={{background:"#dcfce7",borderRadius:12,padding:24,textAlign:"center",marginBottom:20}}><span style={{fontSize:28}}>{"\u2705"}</span><p style={{fontSize:14,fontWeight:600,color:"#059669",marginTop:8}}>{"Reconocimiento adecuado."}</p></div>}
+
+    {results.errorGroups.length === 0 && <div className="reco-empty-ok">
+      <span className="reco-empty-icon">{"\u2705"}</span>
+      <p className="reco-empty-text">{"Reconocimiento adecuado."}</p>
+    </div>}
   </div>;
 }
 
