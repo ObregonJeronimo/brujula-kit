@@ -1,0 +1,449 @@
+/* ============================================
+   NewFON — Evaluación Fonética (sílabas)
+   ============================================ */
+
+/* El color base del componente FON es morado --fon-accent */
+.fon {
+  --fon-accent: #6d28d9;
+  --fon-purple-light: #ede9fe;
+  --fon-purple-border: #c4b5fd;
+  --fon-purple-soft: #f5f3ff;
+  --fon-sub-purple: #7c3aed;
+  --fon-purple-grad: linear-gradient(135deg, #7c3aed, #6d28d9);
+  --fon-purple-grad-loading: #a78bfa;
+}
+
+.fon-title {
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-bold);
+  color: var(--fon-accent);
+  margin: 0 0 4px 0;
+}
+
+.fon-desc {
+  font-size: var(--fs-xs);
+  color: var(--c-text-muted);
+  margin: 0 0 12px 0;
+}
+
+/* ============================================
+   Legend
+   ============================================ */
+.fon-legend {
+  background: var(--fon-purple-light);
+  border: 1px solid var(--fon-purple-border);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  margin-bottom: 16px;
+}
+
+.fon-legend-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.fon-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.fon-legend-badge {
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: var(--fw-bold);
+}
+
+.fon-legend-badge--ok { background: var(--c-success); }
+.fon-legend-badge--d { background: var(--c-warning); }
+.fon-legend-badge--o { background: var(--c-error); }
+.fon-legend-badge--s { background: var(--fon-sub-purple); }
+
+.fon-legend-text {
+  font-size: 11px;
+}
+
+/* ============================================
+   Item row
+   ============================================ */
+.fon-item {
+  margin-bottom: 4px;
+}
+
+.fon-item--error {
+  margin-bottom: 12px;
+}
+
+.fon-item-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  background: var(--c-surface);
+  border-radius: var(--radius);
+  border: 1px solid var(--c-border);
+}
+
+.fon-item-head--ok {
+  background: var(--c-success-light);
+  border-color: var(--c-success-border);
+}
+
+.fon-item-head--error {
+  background: var(--c-error-light);
+  border-color: var(--c-error-border);
+  border-radius: 8px 8px 0 0;
+}
+
+.fon-btn-audio {
+  background: var(--c-success);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 4px 8px;
+  font-size: var(--fs-xs);
+  cursor: pointer;
+  color: #fff;
+  font-family: var(--font-family);
+  transition: opacity 0.15s ease;
+  flex-shrink: 0;
+}
+
+.fon-btn-audio:hover {
+  opacity: 0.9;
+}
+
+.fon-no-audio {
+  font-size: 11px;
+  color: var(--c-text-faint);
+  padding: 4px 8px;
+  flex-shrink: 0;
+}
+
+.fon-word {
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-lg);
+  min-width: 50px;
+  color: var(--fon-accent);
+}
+
+.fon-target {
+  font-size: var(--fs-xs);
+  color: var(--c-text-muted);
+  flex: 1;
+  min-width: 0;
+}
+
+.fon-resp-row {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.fon-resp-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--c-border);
+  background: var(--c-surface);
+  color: var(--c-text-muted);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-bold);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-family);
+  transition: all 0.15s ease;
+}
+
+.fon-resp-btn:hover {
+  border-color: var(--fon-accent);
+}
+
+.fon-resp-btn--ok-active {
+  background: var(--c-success);
+  border: 2px solid var(--c-success);
+  color: #fff;
+}
+
+.fon-resp-btn--d-active {
+  background: var(--c-warning);
+  border: 2px solid var(--c-warning);
+  color: #fff;
+}
+
+.fon-resp-btn--o-active {
+  background: var(--c-error);
+  border: 2px solid var(--c-error);
+  color: #fff;
+}
+
+.fon-resp-btn--s-active {
+  background: var(--fon-sub-purple);
+  border: 2px solid var(--fon-sub-purple);
+  color: #fff;
+}
+
+/* ============================================
+   Error detail panel
+   ============================================ */
+.fon-err-panel {
+  background: #fff5f5;
+  border: 1px solid var(--c-error-border);
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+  padding: 10px 14px;
+}
+
+.fon-err-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.fon-err-col-prod {
+  flex: 1;
+  min-width: 180px;
+}
+
+.fon-err-col-proc {
+  flex: 2;
+  min-width: 220px;
+}
+
+.fon-err-label {
+  font-size: 10px;
+  font-weight: var(--fw-bold);
+  color: var(--c-error);
+  display: block;
+  margin-bottom: 3px;
+}
+
+.fon-auto-badge {
+  margin-left: 6px;
+  font-size: 9px;
+  color: var(--fon-sub-purple);
+  background: var(--fon-purple-light);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-weight: var(--fw-semibold);
+}
+
+.fon-input-sm {
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius);
+  font-size: var(--fs-sm);
+  background: var(--c-surface);
+  color: var(--c-text);
+  font-family: var(--font-family);
+}
+
+.fon-input-sm:focus {
+  outline: none;
+  border-color: var(--fon-accent);
+}
+
+.fon-select-sm {
+  flex: 1;
+  padding: 6px 10px;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius);
+  font-size: var(--fs-sm);
+  background: var(--c-surface);
+  color: var(--c-text);
+  cursor: pointer;
+  font-family: var(--font-family);
+}
+
+.fon-select-sm--auto {
+  background: var(--fon-purple-soft);
+  border-color: #a78bfa;
+}
+
+.fon-select-sm:focus {
+  outline: none;
+  border-color: var(--fon-accent);
+}
+
+.fon-proc-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+/* Botón Sugerir IA */
+.fon-btn-ai {
+  background: var(--fon-purple-grad);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  padding: 7px 14px;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-bold);
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.3);
+  font-family: var(--font-family);
+  transition: opacity 0.15s ease;
+}
+
+.fon-btn-ai:hover {
+  opacity: 0.92;
+}
+
+.fon-btn-ai--loading {
+  background: var(--fon-purple-grad-loading);
+  cursor: wait;
+  box-shadow: none;
+}
+
+.fon-btn-ai--disabled {
+  background: var(--c-text-faint);
+  cursor: not-allowed;
+  opacity: 0.6;
+  box-shadow: none;
+}
+
+/* Sugerencia de IA */
+.fon-ai-suggestion {
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--fon-sub-purple);
+  background: var(--fon-purple-soft);
+  border-radius: var(--radius-sm);
+  padding: 4px 8px;
+  display: inline-block;
+}
+
+/* ============================================
+   Navigation buttons
+   ============================================ */
+.fon-nav {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+  padding-top: 14px;
+  border-top: 1px solid var(--c-border);
+  gap: 8px;
+}
+
+.fon-btn-back {
+  background: var(--c-surface-hover);
+  border: none;
+  padding: 10px 22px;
+  border-radius: var(--radius);
+  font-size: var(--fs-md);
+  font-weight: var(--fw-semibold);
+  cursor: pointer;
+  color: var(--c-text);
+  font-family: var(--font-family);
+  transition: background 0.15s ease;
+}
+
+.fon-btn-back:hover {
+  background: var(--c-border);
+}
+
+.fon-btn-next {
+  background: var(--fon-accent);
+  color: #fff;
+  border: none;
+  padding: 10px 22px;
+  border-radius: var(--radius);
+  font-size: var(--fs-md);
+  font-weight: var(--fw-semibold);
+  cursor: pointer;
+  font-family: var(--font-family);
+  transition: opacity 0.15s ease;
+}
+
+.fon-btn-next:hover {
+  opacity: 0.92;
+}
+
+/* ============================================
+   Tech details (resultados)
+   ============================================ */
+.fon-tech {
+  margin-bottom: 16px;
+}
+
+.fon-severity {
+  /* --fon-sev y --fon-sev-soft inyectados inline con los colores de severidad */
+  background: linear-gradient(135deg, var(--fon-sev-soft, var(--fon-accent)), var(--fon-sev, var(--fon-accent)));
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  color: #fff;
+  margin-bottom: 16px;
+}
+
+.fon-severity-label {
+  font-size: var(--fs-sm);
+  opacity: 0.8;
+  margin-bottom: 4px;
+}
+
+.fon-severity-value {
+  font-size: var(--fs-4xl);
+  font-weight: var(--fw-bold);
+}
+
+.fon-severity-stats {
+  font-size: var(--fs-sm);
+  opacity: 0.9;
+}
+
+.fon-errors-card {
+  background: var(--c-surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--c-border);
+  padding: 20px;
+}
+
+.fon-errors-title {
+  font-size: var(--fs-md);
+  font-weight: var(--fw-bold);
+  margin-bottom: 10px;
+}
+
+.fon-error-row {
+  padding: 8px 12px;
+  background: var(--c-error-light);
+  border-radius: var(--radius);
+  margin-bottom: 4px;
+  font-size: var(--fs-sm);
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .fon-item-head {
+    flex-wrap: wrap;
+  }
+
+  .fon-word {
+    min-width: auto;
+  }
+
+  .fon-target {
+    flex-basis: 100%;
+    order: 5;
+  }
+
+  .fon-proc-row {
+    flex-wrap: wrap;
+  }
+
+  .fon-btn-ai {
+    flex: 1;
+  }
+}

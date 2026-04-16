@@ -5,6 +5,7 @@ import { PF_CATEGORIES, ALL_PROCESSES } from "../data/peffProcesos.js";
 import EvalShell from "./EvalShell.jsx";
 import { detectProceso } from "../lib/detectProceso.js";
 import { db, collection, getDocs } from "../firebase.js";
+import "../styles/NewFON.css";
 
 var FON_SECTION_RAW = PEFF_SECTIONS.find(function(s){ return s.id === "fon"; });
 // Filter out Vocales and clean titles (remove "X años")
@@ -20,10 +21,6 @@ var FON_SECTION = {
     });
   })
 };
-var I = {width:"100%",padding:"10px 14px",border:"1px solid #e2e8f0",borderRadius:8,fontSize:14,background:"#f8faf9"};
-
-
-
 
 var sevCalc = function(pct){
   if(pct >= 100) return "Adecuado";
@@ -33,6 +30,8 @@ var sevCalc = function(pct){
   return "Severo";
 };
 var sevColor = {"Adecuado":"#059669","Leve":"#84cc16","Leve-Moderado":"#f59e0b","Moderado-Severo":"#ea580c","Severo":"#dc2626"};
+// Versión "soft" para el gradient (equivale al alpha dd del hex original)
+var sevColorSoft = {"Adecuado":"#059669dd","Leve":"#84cc16dd","Leve-Moderado":"#f59e0bdd","Moderado-Severo":"#ea580cdd","Severo":"#dc2626dd"};
 
 
 var config = {
@@ -149,20 +148,25 @@ export default function NewFON({ onS, nfy, userId, draft, therapistInfo }){
     };
 
     var legendItems = [
-      {v:"\u2713",bg:"#059669",t:"Correcto"},{v:"D",bg:"#f59e0b",t:"Distorsion"},
-      {v:"O",bg:"#dc2626",t:"Omision"},{v:"S",bg:"#7c3aed",t:"Sustitucion"}
+      {v:"\u2713", cls:"fon-legend-badge fon-legend-badge--ok", t:"Correcto"},
+      {v:"D", cls:"fon-legend-badge fon-legend-badge--d", t:"Distorsion"},
+      {v:"O", cls:"fon-legend-badge fon-legend-badge--o", t:"Omision"},
+      {v:"S", cls:"fon-legend-badge fon-legend-badge--s", t:"Sustitucion"}
     ];
 
-    return <div>
-      <h3 style={{fontSize:16,fontWeight:700,color:"#6d28d9",marginBottom:4}}>{sub.title}</h3>
-      {sub.description && <p style={{fontSize:12,color:"#64748b",marginBottom:12}}>{sub.description}</p>}
+    // Mapeo v -> clase active del botón de respuesta
+    var respBtnActiveClass = { "ok":"fon-resp-btn--ok-active", "D":"fon-resp-btn--d-active", "O":"fon-resp-btn--o-active", "S":"fon-resp-btn--s-active" };
+
+    return <div className="fon">
+      <h3 className="fon-title">{sub.title}</h3>
+      {sub.description && <p className="fon-desc">{sub.description}</p>}
 
       {/* Legend */}
-      <div style={{background:"#ede9fe",border:"1px solid #c4b5fd",borderRadius:10,padding:12,marginBottom:16}}>
-        <div style={{display:"flex",gap:12,flexWrap:"wrap"}}>
-          {legendItems.map(function(o){ return <div key={o.v} style={{display:"flex",alignItems:"center",gap:4}}>
-            <div style={{width:22,height:22,borderRadius:5,background:o.bg,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700}}>{o.v}</div>
-            <span style={{fontSize:11}}>{o.t}</span>
+      <div className="fon-legend">
+        <div className="fon-legend-row">
+          {legendItems.map(function(o){ return <div key={o.v} className="fon-legend-item">
+            <div className={o.cls}>{o.v}</div>
+            <span className="fon-legend-text">{o.t}</span>
           </div>; })}
         </div>
       </div>
@@ -171,72 +175,115 @@ export default function NewFON({ onS, nfy, userId, draft, therapistInfo }){
         var v = props.responses[item.id] || "";
         var isError = v==="D"||v==="O"||v==="S";
         var pd = procData[item.id] || {};
-        return <div key={item.id} style={{marginBottom:isError?12:4}}>
-          <div style={{display:"flex",alignItems:"center",gap:10,padding:"8px 14px",background:isError?"#fef2f2":v==="ok"?"#f0fdf4":"#fff",borderRadius:isError?"8px 8px 0 0":8,border:"1px solid "+(isError?"#fecaca":v==="ok"?"#bbf7d0":"#e2e8f0")}}>
-            {savedAudios[item.word.toLowerCase()] ? <button onClick={function(){playWord(item.word)}} style={{background:"#059669",border:"none",borderRadius:6,padding:"4px 8px",fontSize:12,cursor:"pointer",color:"#fff"}}>{"\ud83d\udd0a Escuchar"}</button> : <span style={{fontSize:11,color:"#94a3b8",padding:"4px 8px"}}>{"Sin audio"}</span>}
-            <span style={{fontWeight:700,fontSize:16,minWidth:50,color:"#6d28d9"}}>{item.word}</span>
-            <span style={{fontSize:12,color:"#64748b",flex:1}}>{item.target}</span>
-            <div style={{display:"flex",gap:4}}>
-              {[{v:"ok",l:"\u2713",bg:"#059669"},{v:"D",l:"D",bg:"#f59e0b"},{v:"O",l:"O",bg:"#dc2626"},{v:"S",l:"S",bg:"#7c3aed"}].map(function(o){
-                return <button key={o.v} onClick={function(){props.setResponse(item.id, v===o.v ? "" : o.v); if(o.v==="ok") setProcData(function(p){var n=Object.assign({},p);delete n[item.id];return n})}} style={{width:30,height:30,borderRadius:6,border:v===o.v?"2px solid "+o.bg:"1px solid #e2e8f0",background:v===o.v?o.bg:"#fff",color:v===o.v?"#fff":"#64748b",fontSize:12,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>{o.l}</button>;
+
+        var headCls = "fon-item-head";
+        if(isError) headCls += " fon-item-head--error";
+        else if(v==="ok") headCls += " fon-item-head--ok";
+
+        return <div key={item.id} className={"fon-item" + (isError ? " fon-item--error" : "")}>
+          <div className={headCls}>
+            {savedAudios[item.word.toLowerCase()]
+              ? <button onClick={function(){playWord(item.word)}} className="fon-btn-audio">{"\ud83d\udd0a Escuchar"}</button>
+              : <span className="fon-no-audio">{"Sin audio"}</span>}
+            <span className="fon-word">{item.word}</span>
+            <span className="fon-target">{item.target}</span>
+            <div className="fon-resp-row">
+              {[{v:"ok",l:"\u2713"},{v:"D",l:"D"},{v:"O",l:"O"},{v:"S",l:"S"}].map(function(o){
+                var btnCls = "fon-resp-btn" + (v===o.v ? " " + respBtnActiveClass[o.v] : "");
+                return <button
+                  key={o.v}
+                  onClick={function(){
+                    props.setResponse(item.id, v===o.v ? "" : o.v);
+                    if(o.v==="ok") setProcData(function(p){var n=Object.assign({},p);delete n[item.id];return n});
+                  }}
+                  className={btnCls}
+                >{o.l}</button>;
               })}
             </div>
           </div>
-          {isError && <div style={{background:"#fff5f5",border:"1px solid #fecaca",borderTop:"none",borderRadius:"0 0 8px 8px",padding:"10px 14px"}}>
-            <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-              <div style={{flex:1,minWidth:180}}>
-                <label style={{fontSize:10,fontWeight:700,color:"#dc2626",display:"block",marginBottom:3}}>{"Produccion del paciente"}</label>
-                <input value={pd.produccion||""} onChange={function(e){
-                  var val = e.target.value;
-                  spf(item.id,"produccion",val);
-                  // Auto-detect proceso fonológico
-                  var detected = detectProceso(item.word, val, v);
-                  if(detected && !(pd.proceso && pd.manualProceso)){
-                    spf(item.id,"proceso",detected);
-                    spf(item.id,"autoDetected",true);
-                  }
-                }} style={Object.assign({},I,{fontSize:13,padding:"6px 10px",background:"#fff"})} placeholder={"Que dijo en vez de "+item.word}/>
+          {isError && <div className="fon-err-panel">
+            <div className="fon-err-row">
+              <div className="fon-err-col-prod">
+                <label className="fon-err-label">{"Produccion del paciente"}</label>
+                <input
+                  value={pd.produccion||""}
+                  onChange={function(e){
+                    var val = e.target.value;
+                    spf(item.id,"produccion",val);
+                    // Auto-detect proceso fonológico
+                    var detected = detectProceso(item.word, val, v);
+                    if(detected && !(pd.proceso && pd.manualProceso)){
+                      spf(item.id,"proceso",detected);
+                      spf(item.id,"autoDetected",true);
+                    }
+                  }}
+                  className="fon-input-sm"
+                  placeholder={"Que dijo en vez de "+item.word}
+                />
               </div>
-              <div style={{flex:2,minWidth:220}}>
-                <label style={{fontSize:10,fontWeight:700,color:"#dc2626",display:"block",marginBottom:3}}>
+              <div className="fon-err-col-proc">
+                <label className="fon-err-label">
                   {"Proceso fonologico"}
-                  {pd.autoDetected && !pd.manualProceso && <span style={{marginLeft:6,fontSize:9,color:"#7c3aed",background:"#ede9fe",padding:"1px 6px",borderRadius:4,fontWeight:600}}>{"auto-detectado"}</span>}
+                  {pd.autoDetected && !pd.manualProceso && <span className="fon-auto-badge">{"auto-detectado"}</span>}
                 </label>
-                <div style={{display:"flex",gap:6,alignItems:"center"}}>
-                  <button onClick={function(){ if(!pd.produccion) { nfy("Escrib\u00ed primero qu\u00e9 dijo el paciente","er"); return; } suggestProceso(item.id, item.word, pd.produccion, v); }} disabled={aiLoading===item.id} title={!pd.produccion?"Escrib\u00ed qu\u00e9 dijo el paciente para sugerir":"Sugerir proceso fonol\u00f3gico con IA"} style={{background:aiLoading===item.id?"#a78bfa":(!pd.produccion?"#cbd5e1":"linear-gradient(135deg,#7c3aed,#6d28d9)"),color:"#fff",border:"none",borderRadius:8,padding:"7px 14px",fontSize:12,fontWeight:700,cursor:aiLoading===item.id?"wait":(!pd.produccion?"not-allowed":"pointer"),whiteSpace:"nowrap",flexShrink:0,boxShadow:pd.produccion?"0 2px 8px rgba(124,58,237,.3)":"none",opacity:!pd.produccion?0.6:1}}>{aiLoading===item.id?"\u23f3 Analizando...":"\ud83e\udd16 Sugerir"}</button>
-                  <select value={pd.proceso||""} onChange={function(e){spf(item.id,"proceso",e.target.value);spf(item.id,"manualProceso",true);spf(item.id,"autoDetected",false);setAiSuggestion(function(prev){var n=Object.assign({},prev);delete n[item.id];return n})}} style={Object.assign({},I,{fontSize:13,padding:"6px 10px",background:pd.autoDetected&&!pd.manualProceso?"#f5f3ff":"#fff",cursor:"pointer",borderColor:pd.autoDetected&&!pd.manualProceso?"#a78bfa":"#e2e8f0",flex:1})}>
+                <div className="fon-proc-row">
+                  <button
+                    onClick={function(){
+                      if(!pd.produccion) { nfy("Escrib\u00ed primero qu\u00e9 dijo el paciente","er"); return; }
+                      suggestProceso(item.id, item.word, pd.produccion, v);
+                    }}
+                    disabled={aiLoading===item.id}
+                    title={!pd.produccion?"Escrib\u00ed qu\u00e9 dijo el paciente para sugerir":"Sugerir proceso fonol\u00f3gico con IA"}
+                    className={
+                      "fon-btn-ai"
+                      + (aiLoading===item.id ? " fon-btn-ai--loading" : "")
+                      + (!pd.produccion && aiLoading!==item.id ? " fon-btn-ai--disabled" : "")
+                    }
+                  >{aiLoading===item.id ? "\u23f3 Analizando..." : "\ud83e\udd16 Sugerir"}</button>
+                  <select
+                    value={pd.proceso||""}
+                    onChange={function(e){
+                      spf(item.id,"proceso",e.target.value);
+                      spf(item.id,"manualProceso",true);
+                      spf(item.id,"autoDetected",false);
+                      setAiSuggestion(function(prev){var n=Object.assign({},prev);delete n[item.id];return n});
+                    }}
+                    className={"fon-select-sm" + (pd.autoDetected && !pd.manualProceso ? " fon-select-sm--auto" : "")}
+                  >
                     <option value="">-- Clasificar --</option>
                     {PF_CATEGORIES.map(function(cat){ return <optgroup key={cat.id} label={cat.title}>
                       {cat.processes.map(function(pr){ return <option key={pr.id} value={pr.id}>{pr.name}</option>; })}
                     </optgroup>; })}
                   </select>
                 </div>
-                {aiSuggestion[item.id] && !pd.manualProceso && <div style={{marginTop:6,fontSize:11,color:"#7c3aed",background:"#f5f3ff",borderRadius:6,padding:"4px 8px",display:"inline-block"}}>{"\ud83e\udd16 "+aiSuggestion[item.id].explicacion+" ("+(aiSuggestion[item.id].confianza)+")"}</div>}
+                {aiSuggestion[item.id] && !pd.manualProceso && <div className="fon-ai-suggestion">{"\ud83e\udd16 "+aiSuggestion[item.id].explicacion+" ("+(aiSuggestion[item.id].confianza)+")"}</div>}
               </div>
             </div>
           </div>}
         </div>;
       })}
 
-      <div style={{display:"flex",justifyContent:"space-between",marginTop:20,paddingTop:14,borderTop:"1px solid #e2e8f0"}}>
-        <button onClick={function(){ props.setStep(props.step-1); props.scrollTop(); }} style={{background:"#f1f5f9",border:"none",padding:"10px 22px",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer"}}>{"Atras"}</button>
-        <button onClick={function(){ props.setStep(props.step+1); props.scrollTop(); }} style={{background:"#6d28d9",color:"#fff",border:"none",padding:"10px 22px",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer"}}>{props.step < props.RESULT_STEP - 1 ? "Siguiente" : "Ver Resultados"}</button>
+      <div className="fon-nav">
+        <button onClick={function(){ props.setStep(props.step-1); props.scrollTop(); }} className="fon-btn-back">{"Atras"}</button>
+        <button onClick={function(){ props.setStep(props.step+1); props.scrollTop(); }} className="fon-btn-next">{props.step < props.RESULT_STEP - 1 ? "Siguiente" : "Ver Resultados"}</button>
       </div>
     </div>;
   },[procData, savedAudios, aiLoading, aiSuggestion]);
 
   var renderTechDetails = function(results){
     var sc = sevColor[results.severity] || "#6d28d9";
-    return <div style={{marginBottom:16}}>
-      <div style={{background:"linear-gradient(135deg,"+sc+"dd,"+sc+")",borderRadius:12,padding:24,color:"#fff",marginBottom:16}}>
-        <div style={{fontSize:13,opacity:.8,marginBottom:4}}>Severidad PCC</div>
-        <div style={{fontSize:36,fontWeight:700}}>{results.severity}</div>
-        <div style={{fontSize:13,opacity:.9}}>{results.ok + "/" + results.evaluated + " correctos (" + results.pct + "%)"}</div>
+    var scSoft = sevColorSoft[results.severity] || "#6d28d9dd";
+    var sevStyle = { "--fon-sev": sc, "--fon-sev-soft": scSoft };
+    return <div className="fon fon-tech">
+      <div className="fon-severity" style={sevStyle}>
+        <div className="fon-severity-label">Severidad PCC</div>
+        <div className="fon-severity-value">{results.severity}</div>
+        <div className="fon-severity-stats">{results.ok + "/" + results.evaluated + " correctos (" + results.pct + "%)"}</div>
       </div>
-      {results.procErrors.length > 0 && <div style={{background:"#fff",borderRadius:12,border:"1px solid #e2e8f0",padding:20}}>
-        <div style={{fontSize:14,fontWeight:700,marginBottom:10}}>{"Errores identificados (" + results.procErrors.length + ")"}</div>
+      {results.procErrors.length > 0 && <div className="fon-errors-card">
+        <div className="fon-errors-title">{"Errores identificados (" + results.procErrors.length + ")"}</div>
         {results.procErrors.map(function(e,i){
-          return <div key={i} style={{padding:"8px 12px",background:"#fef2f2",borderRadius:8,marginBottom:4,fontSize:13}}>
+          return <div key={i} className="fon-error-row">
             <b>{e.word}</b>{" (" + e.target + ") -> " + e.produccion + " | " + e.procesoName}
           </div>;
         })}
