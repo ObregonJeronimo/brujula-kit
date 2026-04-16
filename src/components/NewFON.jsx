@@ -203,23 +203,17 @@ export default function NewFON({ onS, nfy, userId, draft, therapistInfo }){
                   {pd.autoDetected && !pd.manualProceso && <span style={{marginLeft:6,fontSize:9,color:"#7c3aed",background:"#ede9fe",padding:"1px 6px",borderRadius:4,fontWeight:600}}>{"auto-detectado"}</span>}
                 </label>
                 <div style={{display:"flex",gap:6,alignItems:"center"}}>
-                  <select value={pd.proceso||""} onChange={function(e){spf(item.id,"proceso",e.target.value);spf(item.id,"manualProceso",true);spf(item.id,"autoDetected",false)}} style={Object.assign({},I,{fontSize:13,padding:"6px 10px",background:pd.autoDetected&&!pd.manualProceso?"#f5f3ff":"#fff",cursor:"pointer",borderColor:pd.autoDetected&&!pd.manualProceso?"#a78bfa":"#e2e8f0",flex:1})}>
+                  {pd.produccion && <button onClick={function(){ suggestProceso(item.id, item.word, pd.produccion, v); }} disabled={aiLoading===item.id} style={{background:aiLoading===item.id?"#a78bfa":"linear-gradient(135deg,#7c3aed,#6d28d9)",color:"#fff",border:"none",borderRadius:8,padding:"7px 14px",fontSize:12,fontWeight:700,cursor:aiLoading===item.id?"wait":"pointer",whiteSpace:"nowrap",flexShrink:0,boxShadow:"0 2px 8px rgba(124,58,237,.3)"}}>{aiLoading===item.id?"\u23f3 Analizando...":"\ud83e\udd16 Sugerir"}</button>}
+                  <select value={pd.proceso||""} onChange={function(e){spf(item.id,"proceso",e.target.value);spf(item.id,"manualProceso",true);spf(item.id,"autoDetected",false);setAiSuggestion(function(prev){var n=Object.assign({},prev);delete n[item.id];return n})}} style={Object.assign({},I,{fontSize:13,padding:"6px 10px",background:pd.autoDetected&&!pd.manualProceso?"#f5f3ff":"#fff",cursor:"pointer",borderColor:pd.autoDetected&&!pd.manualProceso?"#a78bfa":"#e2e8f0",flex:1})}>
                     <option value="">-- Clasificar --</option>
                     {PF_CATEGORIES.map(function(cat){ return <optgroup key={cat.id} label={cat.title}>
                       {cat.processes.map(function(pr){ return <option key={pr.id} value={pr.id}>{pr.name}</option>; })}
                     </optgroup>; })}
                   </select>
-                  {pd.produccion && <button onClick={function(){ suggestProceso(item.id, item.word, pd.produccion, v); }} disabled={aiLoading===item.id} style={{background:aiLoading===item.id?"#a78bfa":"#7c3aed",color:"#fff",border:"none",borderRadius:6,padding:"6px 10px",fontSize:11,fontWeight:600,cursor:aiLoading===item.id?"wait":"pointer",whiteSpace:"nowrap",flexShrink:0}}>{aiLoading===item.id?"\u23f3...":"\ud83e\udd16 Sugerir"}</button>}
                 </div>
+                {aiSuggestion[item.id] && !pd.manualProceso && <div style={{marginTop:6,fontSize:11,color:"#7c3aed",background:"#f5f3ff",borderRadius:6,padding:"4px 8px",display:"inline-block"}}>{"\ud83e\udd16 "+aiSuggestion[item.id].explicacion+" ("+(aiSuggestion[item.id].confianza)+")"}</div>}
               </div>
             </div>
-            {aiSuggestion[item.id] && <div style={{marginTop:8,background:"#f5f3ff",border:"1px solid #c4b5fd",borderRadius:8,padding:"8px 12px"}}>
-              <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:4}}>
-                <span style={{fontSize:12,fontWeight:700,color:"#7c3aed"}}>{"\ud83e\udd16 Sugerencia IA"}</span>
-                <span style={{fontSize:10,padding:"1px 6px",borderRadius:4,fontWeight:600,background:aiSuggestion[item.id].confianza==="alta"?"#dcfce7":aiSuggestion[item.id].confianza==="media"?"#fef9c3":"#fee2e2",color:aiSuggestion[item.id].confianza==="alta"?"#059669":aiSuggestion[item.id].confianza==="media"?"#ca8a04":"#dc2626"}}>{aiSuggestion[item.id].confianza}</span>
-              </div>
-              <div style={{fontSize:12,color:"#475569"}}>{aiSuggestion[item.id].explicacion}</div>
-            </div>}
           </div>}
         </div>;
       })}

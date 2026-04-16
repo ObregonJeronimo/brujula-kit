@@ -218,9 +218,19 @@ export default function App() {
   var handleUnsavedSave = function(){ if(settingsRef.current && settingsRef.current.save){ setSavingModal(true); settingsRef.current.save().then(function(ok){ setSavingModal(false); configDirtyRef.current = false; var dest = unsavedModal; setUnsavedModal(null); doNav(dest); }); } else { setUnsavedModal(null); } };
 
   // Verificar si el profesional completó sus datos (obligatorio para informes)
-  var needsProfileSetup = profile && !isAdmin && (!profile.reportHeader || !profile.reportHeader.therapist);
+  var rh = profile && profile.reportHeader || {};
+  var configIncomplete = profile && !isAdmin && (!rh.therapist || !rh.license || !rh.phone || !rh.clinic);
   var _forceConfig = useState(false), forceConfig = _forceConfig[0], setForceConfig = _forceConfig[1];
-  useEffect(function(){ if(needsProfileSetup) setForceConfig(true); }, [needsProfileSetup]);
+  useEffect(function(){
+    if(!configIncomplete) return;
+    // Verificar si se cerró hace menos de 24hs
+    var dismissed = localStorage.getItem("configDismissed");
+    if(dismissed){
+      var diff = Date.now() - parseInt(dismissed);
+      if(diff < 24*60*60*1000) return; // Menos de 24hs, no mostrar
+    }
+    setForceConfig(true);
+  }, [configIncomplete]);
 
   if(authUser===undefined) return (<div style={{width:"100vw",height:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:_cachedBg,color:"#fff",fontFamily:"'DM Sans',system-ui,sans-serif"}}><div style={{textAlign:"center"}}><img src="/img/logo_96.png" alt="Br\u00fajula KIT" style={{width:48,height:48,marginBottom:16}} /><div style={{fontSize:20,fontWeight:700}}>Cargando...</div></div></div>);
   if(!authUser) return <AuthScreen onDone={function(u,p){setAuthUser(u);setProfile(p)}} themeColor={_cachedBg} />;
@@ -246,11 +256,13 @@ export default function App() {
       {unsavedModal !== null && <UnsavedChangesModal onDiscard={handleUnsavedDiscard} onCancel={handleUnsavedCancel} onSave={handleUnsavedSave} saving={savingModal} />}
       {showChangelog && authUser?.uid && profile && <ChangelogModal userId={authUser.uid} onClose={function(){ setShowChangelog(false); }} />}
       {forceConfig && !mobile && <div style={{position:"fixed",inset:0,zIndex:1001,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,.6)",backdropFilter:"blur(4px)",padding:20}}>
-        <div style={{background:"#fff",borderRadius:20,padding:"36px 28px",width:440,maxWidth:"92vw",boxShadow:"0 20px 60px rgba(0,0,0,.25)",textAlign:"center"}}>
+        <div style={{background:"#fff",borderRadius:20,padding:"36px 28px",width:480,maxWidth:"92vw",boxShadow:"0 20px 60px rgba(0,0,0,.25)",textAlign:"center"}}>
           <div style={{fontSize:48,marginBottom:12}}>{"\ud83d\udcdd"}</div>
           <div style={{fontSize:20,fontWeight:700,color:"#0a3d2f",marginBottom:8}}>{"Complet\u00e1 tus datos profesionales"}</div>
-          <div style={{fontSize:14,color:"#475569",lineHeight:1.7,marginBottom:20}}>{"Para generar informes con tu encabezado profesional, necesitamos que completes tus datos en Configuraci\u00f3n. Esto se mostrar\u00e1 en cada informe que generes."}</div>
-          <button onClick={function(){ setForceConfig(false); doNav("config"); }} style={{width:"100%",padding:"14px",background:"linear-gradient(135deg,#0d9488,#059669)",color:"#fff",border:"none",borderRadius:12,fontSize:15,fontWeight:700,cursor:"pointer"}}>{"Ir a Configuración"}</button>
+          <div style={{fontSize:14,color:"#475569",lineHeight:1.7,marginBottom:8}}>{"Tus datos profesionales aparecen en el encabezado de cada informe que generes. Sin ellos, los informes se ver\u00e1n incompletos."}</div>
+          <div style={{fontSize:12,color:"#94a3b8",lineHeight:1.6,marginBottom:20}}>{"Complet\u00e1: nombre del profesional, matr\u00edcula, tel\u00e9fono y nombre del consultorio en Configuraci\u00f3n."}</div>
+          <button onClick={function(){ setForceConfig(false); doNav("config"); }} style={{width:"100%",padding:"14px",background:"linear-gradient(135deg,#0d9488,#059669)",color:"#fff",border:"none",borderRadius:12,fontSize:15,fontWeight:700,cursor:"pointer",marginBottom:10}}>{"Ir a Configuraci\u00f3n"}</button>
+          <button onClick={function(){ setForceConfig(false); localStorage.setItem("configDismissed",Date.now().toString()); }} style={{width:"100%",padding:"10px",background:"transparent",border:"none",fontSize:13,color:"#94a3b8",cursor:"pointer"}}>{"Recordarme m\u00e1s tarde"}</button>
         </div>
       </div>}
       <aside style={{width:mobile?60:230,minWidth:mobile?60:230,background:tSd,color:"#fff",display:"flex",flexDirection:"column",padding:"18px 0",flexShrink:0,height:"100vh"}}>

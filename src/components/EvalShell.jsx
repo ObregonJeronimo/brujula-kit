@@ -108,7 +108,7 @@ export default function EvalShell({ onS, nfy, userId, config, renderEval, comput
 
       {/* Step indicators */}
       <div style={{display:"flex",gap:4,marginBottom:24}}>
-        {steps.map(function(lb,i){ var active=step===i,done=step>i; return <div key={i} style={{flex:1,textAlign:"center",padding:"8px 0",borderRadius:8,fontSize:13,fontWeight:active?700:500,background:active?accentColor:done?"#059669":"#f1f5f9",color:active||done?"#fff":K.mt}}>{(i+1)+". "+lb}</div>; })}
+        {steps.map(function(lb,i){ var active=step===i,done=step>i,isResult=i===RESULT_STEP,canClick=!isResult&&i>0&&step>0; return <div key={i} onClick={function(){ if(canClick){ setStep(i); scrollTop(); } }} style={{flex:1,textAlign:"center",padding:"8px 0",borderRadius:8,fontSize:13,fontWeight:active?700:500,background:active?accentColor:done?"#059669":"#f1f5f9",color:active||done?"#fff":K.mt,cursor:canClick?"pointer":"default",opacity:isResult&&!active?0.6:1}}>{(i+1)+". "+lb}</div>; })}
       </div>
 
       {/* Step 0: Patient data */}

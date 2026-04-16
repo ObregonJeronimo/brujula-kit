@@ -56,9 +56,11 @@ export default function PacientesPage({ TC, userId, nfy, allEvals, therapistInfo
 
   var savePaciente = function(){
     var dni = (form.dni||"").replace(/\D/g,"").trim(); var nombre = (form.nombre||"").trim();
-    if(!dni || !nombre || !form.fechaNac){ nfy("Complete DNI, nombre y fecha de nacimiento","er"); return; }
-    if(dni.length < 7 || dni.length > 8){ nfy("El DNI debe tener 7 u 8 dígitos","er"); return; }
-    if(!(form.respTel||"").trim()){ nfy("El teléfono del responsable es obligatorio","er"); return; }
+    if(!dni || !nombre || !form.fechaNac){ nfy("Complet\u00e1 DNI, nombre y fecha de nacimiento","er"); return; }
+    if(dni.length < 7 || dni.length > 8){ nfy("El DNI debe tener 7 u 8 d\u00edgitos","er"); return; }
+    if(!(form.colegio||"").trim()){ nfy("El jard\u00edn / colegio es obligatorio","er"); return; }
+    if(!(form.respNombre||"").trim()){ nfy("El nombre del responsable es obligatorio","er"); return; }
+    if(!(form.respTel||"").trim()){ nfy("El tel\u00e9fono del responsable es obligatorio","er"); return; }
     if(pacientes.find(function(p){ return p.dni === dni; })){ nfy("Ya existe un paciente con DNI " + dni,"er"); return; }
     var responsable = { nombre: (form.respNombre||"").trim(), dni: (form.respDni||"").replace(/\D/g,"").trim(), telefono: (form.respTel||"").trim(), email: (form.respEmail||"").trim(), tipo: form.respTipo === "Otro" ? (form.respTipoOtro||"").trim() || "Otro" : form.respTipo };
     addDoc(collection(db,"pacientes"), { dni: dni, nombre: nombre, colegio: (form.colegio||"").trim(), fechaNac: form.fechaNac, responsable: responsable, userId: userId, createdAt: new Date().toISOString() }).then(function(){ nfy("Paciente guardado","ok"); setForm({dni:"",nombre:"",colegio:"",fechaNac:"",respNombre:"",respDni:"",respTel:"",respEmail:"",respTipo:"Madre",respTipoOtro:""}); setShowForm(false); loadPacientes(); }).catch(function(e){ nfy("Error: " + e.message,"er"); });
@@ -104,13 +106,13 @@ export default function PacientesPage({ TC, userId, nfy, allEvals, therapistInfo
           <div><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>DNI (sin puntos)</label><input value={form.dni} onChange={function(e){ setForm(function(p){ return Object.assign({},p,{dni:e.target.value.replace(/\D/g,"").slice(0,8)}); }); }} style={IS} placeholder="Introducir DNI" maxLength={8} inputMode="numeric" /></div>
           <div><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>Fecha de nacimiento</label><input type="date" value={form.fechaNac} onChange={function(e){ setForm(function(p){ return Object.assign({},p,{fechaNac:e.target.value}); }); }} style={IS} /></div>
           <div style={{gridColumn:"1/-1"}}><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>Nombre completo</label><input value={form.nombre} onChange={function(e){ setForm(function(p){ return Object.assign({},p,{nombre:e.target.value}); }); }} style={IS} placeholder="Apellido Nombre" /></div>
-          <div style={{gridColumn:"1/-1"}}><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>{"Jardín / Colegio"}</label><input value={form.colegio} onChange={function(e){ setForm(function(p){ return Object.assign({},p,{colegio:e.target.value}); }); }} style={IS} placeholder="Establecimiento" /></div>
+          <div style={{gridColumn:"1/-1"}}><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>{"Jard\u00edn / Colegio *"}</label><input value={form.colegio} onChange={function(e){ setForm(function(p){ return Object.assign({},p,{colegio:e.target.value}); }); }} style={IS} placeholder="Establecimiento" /></div>
         </div>
         <div style={{marginTop:20,paddingTop:18,borderTop:"1px solid #e2e8f0"}}>
           <h4 style={{fontSize:14,fontWeight:700,color:(TC&&TC.sd||"#0a3d2f"),marginBottom:4}}>{"Información del responsable"}</h4>
           <p style={{fontSize:11,color:K.mt,marginBottom:14}}>Datos de contacto del adulto responsable del paciente</p>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
-            <div style={{gridColumn:"1/-1"}}><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>Nombre y Apellido</label><input value={form.respNombre} onChange={function(e){ setForm(function(p){ return Object.assign({},p,{respNombre:e.target.value}); }); }} style={IS} placeholder="Nombre del responsable" /></div>
+            <div style={{gridColumn:"1/-1"}}><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>{"Nombre y Apellido *"}</label><input value={form.respNombre} onChange={function(e){ setForm(function(p){ return Object.assign({},p,{respNombre:e.target.value}); }); }} style={IS} placeholder="Nombre del responsable" /></div>
             <div><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>DNI <span style={{fontWeight:400,color:"#94a3b8"}}>(opcional)</span></label><input value={form.respDni} onChange={function(e){ setForm(function(p){ return Object.assign({},p,{respDni:e.target.value.replace(/\D/g,"").slice(0,8)}); }); }} style={IS} placeholder="DNI del responsable" maxLength={8} inputMode="numeric" /></div>
             <div><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>{"Teléfono"} <span style={{color:"#dc2626"}}>*</span></label><input value={form.respTel} onChange={function(e){ setForm(function(p){ return Object.assign({},p,{respTel:e.target.value}); }); }} style={IS} placeholder="Ej: +54 351 1234567" /></div>
             <div><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>Email <span style={{fontWeight:400,color:"#94a3b8"}}>(recomendado)</span></label><input type="email" value={form.respEmail} onChange={function(e){ setForm(function(p){ return Object.assign({},p,{respEmail:e.target.value}); }); }} style={IS} placeholder="correo@ejemplo.com" /></div>
