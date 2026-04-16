@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { db, doc, onSnapshot as onSnapshotDoc } from "../firebase.js";
 import { DEFAULT_FAQ } from "../config/faqData.js";
-import { createSupportCase, sendSupportMessage, getActiveCase, subscribeToMessages, markReadByUser, loadFAQ } from "../lib/support.js";
+import { createSupportCase, sendSupportMessage, getActiveCase, subscribeToMessages, markReadByUser, loadFAQ, loadSupportSettings, isWithinSchedule } from "../lib/support.js";
 
 var S = {
   fab: { position:"fixed", bottom:24, right:24, zIndex:900, width:56, height:56, borderRadius:"50%", background:"linear-gradient(135deg,#0a3d2f,#0d9488)", color:"#fff", border:"none", cursor:"pointer", boxShadow:"0 4px 20px rgba(0,0,0,.25)", display:"flex", alignItems:"center", justifyContent:"center", transition:"transform .2s, box-shadow .2s" },
@@ -41,6 +41,13 @@ function timeAgo(ts) {
   return d.toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit" });
 }
 
+function formatScheduleInfo(settings) {
+  if (!settings || !settings.scheduleEnabled) return null;
+  var dayNames = ["Dom", "Lun", "Mar", "Mie", "Jue", "Vie", "Sab"];
+  var days = (settings.days || []).map(function(d) { return dayNames[d]; }).join(", ");
+  return days + " de " + (settings.startHour || "09:00") + " a " + (settings.endHour || "18:00");
+}
+
 export default function SupportWidget({ userId, userName }) {
   var _open = useState(false), open = _open[0], setOpen = _open[1];
   var _view = useState("home"), view = _view[0], setView = _view[1];
@@ -52,14 +59,20 @@ export default function SupportWidget({ userId, userName }) {
   var _sending = useState(false), sending = _sending[0], setSending = _sending[1];
   var _loading = useState(false), loading = _loading[0], setLoading = _loading[1];
   var _unread = useState(0), unread = _unread[0], setUnread = _unread[1];
+  var _schedule = useState(null), schedule = _schedule[0], setSchedule = _schedule[1];
+  var _isOnline = useState(true), isOnline = _isOnline[0], setIsOnline = _isOnline[1];
   var bodyRef = useRef(null);
   var unsubMsgsRef = useRef(null);
   var unsubCaseRef = useRef(null);
   var prevAgentMsgCount = useRef(0);
 
-  // Load FAQ on mount
+  // Load FAQ and schedule on mount
   useEffect(function() {
     loadFAQ(DEFAULT_FAQ).then(setFaq);
+    loadSupportSettings().then(function(s) {
+      setSchedule(s);
+      setIsOnline(isWithinSchedule(s));
+    });
   }, []);
 
   // Check for active case on mount
@@ -102,7 +115,6 @@ export default function SupportWidget({ userId, userName }) {
     if (!activeCase || !activeCase._id) return;
     unsubMsgsRef.current = subscribeToMessages(activeCase._id, function(msgs) {
       setMessages(msgs);
-      // Count unread from agent when widget is closed
       var agentCount = msgs.filter(function(m) { return m.from === "agent"; }).length;
       if (!open && agentCount > prevAgentMsgCount.current) {
         setUnread(agentCount - prevAgentMsgCount.current);
@@ -111,7 +123,7 @@ export default function SupportWidget({ userId, userName }) {
     return function() { if (unsubMsgsRef.current) { unsubMsgsRef.current(); unsubMsgsRef.current = null; } };
   }, [activeCase ? activeCase._id : null]);
 
-  // Auto-scroll to bottom when messages change
+  // Auto-scroll
   useEffect(function() {
     if (bodyRef.current) bodyRef.current.scrollTop = bodyRef.current.scrollHeight;
   }, [messages, faqChat, view]);
@@ -122,6 +134,10 @@ export default function SupportWidget({ userId, userName }) {
       markReadByUser(activeCase._id).catch(function() {});
       setUnread(0);
       prevAgentMsgCount.current = messages.filter(function(m) { return m.from === "agent"; }).length;
+    }
+    // Re-check schedule when opening
+    if (open && schedule) {
+      setIsOnline(isWithinSchedule(schedule));
     }
   }, [open, messages.length]);
 
@@ -158,7 +174,6 @@ export default function SupportWidget({ userId, userName }) {
     var text = input.trim();
     if (!text || sending) return;
 
-    // If case is closed/resolved, or no active case, create a new one
     if (!activeCase || activeCase.status === "closed" || activeCase.status === "resolved") {
       setSending(true);
       try {
@@ -197,18 +212,15 @@ export default function SupportWidget({ userId, userName }) {
     setOpen(opening);
     if (opening) {
       setUnread(0);
-      // If there's an active non-closed case, show it
       if (activeCase && activeCase.status !== "closed" && activeCase.status !== "resolved") {
         setView("chat");
       } else if (view === "chat") {
-        // Case was closed while widget was closed, go back to home
         setView("home");
       }
     }
   };
 
   var handleNewChat = function() {
-    // Clear old case and start fresh
     if (unsubMsgsRef.current) { unsubMsgsRef.current(); unsubMsgsRef.current = null; }
     if (unsubCaseRef.current) { unsubCaseRef.current(); unsubCaseRef.current = null; }
     setActiveCase(null);
@@ -217,9 +229,23 @@ export default function SupportWidget({ userId, userName }) {
     setFaqChat([]);
   };
 
+  // --- Offline banner ---
+  var renderOfflineBanner = function() {
+    if (isOnline || !schedule || !schedule.scheduleEnabled) return null;
+    var scheduleText = formatScheduleInfo(schedule);
+    var msg = schedule.offlineMessage || "Estamos fuera del horario de atencion.";
+    return <div style={{padding:"12px 16px",background:"#fef9c3",borderBottom:"1px solid #fef3c7",flexShrink:0}}>
+      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
+        <div style={{width:8,height:8,borderRadius:"50%",background:"#d97706",flexShrink:0}} />
+        <div style={{fontSize:12,fontWeight:600,color:"#92400e"}}>Fuera de horario</div>
+      </div>
+      <div style={{fontSize:11,color:"#92400e",lineHeight:1.5}}>{msg}</div>
+      {scheduleText && <div style={{fontSize:10,color:"#a16207",marginTop:4}}>{"Horario: " + scheduleText}</div>}
+    </div>;
+  };
+
   // --- RENDER ---
   var renderHome = function() {
-    // Show "retomar chat" button if there's an active case
     var hasActiveChat = activeCase && activeCase.status !== "closed" && activeCase.status !== "resolved";
     return <div>
       {hasActiveChat && <div style={{marginBottom:14,padding:"12px 16px",background:"#f0fdfa",borderRadius:10,border:"1px solid #99f6e4"}}>
@@ -303,13 +329,11 @@ export default function SupportWidget({ userId, userName }) {
   if (!userId) return null;
 
   return <>
-    {/* FAB */}
     <button onClick={toggleOpen} style={Object.assign({}, S.fab, open?{transform:"scale(0.9)"}:{})} aria-label="Soporte">
       {open ? <CloseIcon /> : <ChatIcon />}
       {unread > 0 && !open && <div style={S.badge}>{unread}</div>}
     </button>
 
-    {/* Panel */}
     {open && <div style={S.panel}>
       <div style={S.header}>
         <div style={{display:"flex",alignItems:"center",gap:8}}>
@@ -321,11 +345,17 @@ export default function SupportWidget({ userId, userName }) {
           </button>}
           <div>
             <div style={{fontSize:15,fontWeight:700}}>{"Soporte"}</div>
-            <div style={{fontSize:10,opacity:.7}}>{"Brujula KIT"}</div>
+            <div style={{display:"flex",alignItems:"center",gap:6}}>
+              <div style={{width:6,height:6,borderRadius:"50%",background:isOnline?"#22c55e":"#d97706"}} />
+              <div style={{fontSize:10,opacity:.7}}>{isOnline ? "En linea" : "Fuera de horario"}</div>
+            </div>
           </div>
         </div>
         <button onClick={toggleOpen} style={{background:"none",border:"none",color:"#fff",cursor:"pointer",display:"flex",padding:0}}><CloseIcon /></button>
       </div>
+
+      {/* Offline banner */}
+      {renderOfflineBanner()}
 
       <div ref={view === "chat" ? null : bodyRef} style={view === "chat" ? {flex:1,display:"flex",flexDirection:"column",overflow:"hidden"} : S.body}>
         {view === "home" && renderHome()}
