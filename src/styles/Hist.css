@@ -1,0 +1,283 @@
+/* ============================================
+   Hist (Historial)
+   ============================================ */
+
+.hist-page {
+  width: 100%;
+  animation: fi 0.3s ease;
+}
+
+.hist-title {
+  font-size: 22px;
+  font-weight: var(--fw-bold);
+  margin-bottom: 6px;
+}
+
+.hist-count {
+  color: var(--c-text-muted);
+  font-size: var(--fs-md);
+  margin-bottom: 14px;
+}
+
+/* Type tabs */
+.hist-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 4px;
+}
+
+.hist-tab {
+  padding: 6px 14px;
+  border-radius: var(--radius);
+  border: 1px solid var(--c-border);
+  background: var(--c-surface);
+  color: var(--c-text-muted);
+  font-size: var(--fs-base);
+  font-weight: var(--fw-semibold);
+  cursor: pointer;
+  font-family: var(--font-family);
+  white-space: nowrap;
+  transition: var(--transition);
+}
+
+.hist-tab--active {
+  border: 2px solid var(--c-accent);
+  background: var(--c-accent-light);
+  color: var(--c-accent);
+}
+
+/* Mode toggle + search */
+.hist-mode-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+
+.hist-mode-switch {
+  display: flex;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--c-border);
+}
+
+.hist-mode-btn {
+  padding: 8px 14px;
+  border: none;
+  background: var(--c-surface);
+  color: var(--c-text-muted);
+  font-size: 12px;
+  font-weight: var(--fw-semibold);
+  cursor: pointer;
+  font-family: var(--font-family);
+}
+
+.hist-mode-btn--active {
+  background: var(--c-accent);
+  color: white;
+}
+
+.hist-search {
+  flex: 1;
+  max-width: 350px;
+  padding: 10px 14px;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-md);
+  font-size: var(--fs-md);
+  background: var(--c-surface);
+  font-family: var(--font-family);
+  color: var(--c-text);
+}
+
+.hist-search:focus {
+  outline: 2px solid var(--c-accent);
+  outline-offset: -1px;
+}
+
+/* Patients list dropdown */
+.hist-patients {
+  flex: 1;
+  max-width: 350px;
+  position: relative;
+}
+
+.hist-patients-box {
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-md);
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.hist-patients-clear {
+  width: 100%;
+  padding: 8px 14px;
+  border: none;
+  border-bottom: 1px solid var(--c-border-light);
+  background: var(--c-success-light);
+  color: var(--c-success);
+  font-size: var(--fs-base);
+  font-weight: var(--fw-semibold);
+  cursor: pointer;
+  text-align: left;
+  font-family: var(--font-family);
+}
+
+.hist-patient-item {
+  width: 100%;
+  padding: 8px 14px;
+  border: none;
+  border-bottom: 1px solid var(--c-border-light);
+  background: var(--c-surface);
+  color: var(--c-text);
+  font-size: var(--fs-base);
+  font-weight: var(--fw-normal);
+  cursor: pointer;
+  text-align: left;
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-family);
+  transition: var(--transition);
+}
+
+.hist-patient-item:hover {
+  background: var(--c-surface-alt);
+}
+
+.hist-patient-item--active {
+  background: var(--c-accent-light);
+  color: var(--c-accent);
+  font-weight: var(--fw-semibold);
+}
+
+.hist-patient-count {
+  font-size: var(--fs-sm);
+  color: var(--c-text-muted);
+}
+
+.hist-patients-empty {
+  padding: 12px 14px;
+  color: var(--c-text-muted);
+  font-size: var(--fs-base);
+}
+
+/* Results */
+.hist-empty {
+  background: var(--c-surface);
+  border-radius: var(--radius-xl);
+  padding: 40px;
+  text-align: center;
+  border: 1px solid var(--c-border);
+  color: var(--c-text-muted);
+}
+
+.hist-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.hist-item {
+  background: var(--c-surface);
+  border-radius: var(--radius-lg);
+  padding: 14px 20px;
+  border: 1px solid var(--c-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: var(--transition);
+}
+
+.hist-item:hover {
+  border-color: var(--c-accent-light);
+}
+
+.hist-item-info {
+  cursor: pointer;
+  flex: 1;
+}
+
+.hist-item-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hist-item-badge {
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  font-size: 10px;
+  font-weight: var(--fw-bold);
+}
+
+.hist-item-name {
+  font-weight: var(--fw-semibold);
+  font-size: 15px;
+}
+
+.hist-item-meta {
+  font-size: 12px;
+  color: var(--c-text-muted);
+  margin-top: 2px;
+}
+
+.hist-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.hist-item-score {
+  padding: 3px 10px;
+  border-radius: 14px;
+  font-size: 12px;
+  font-weight: var(--fw-semibold);
+}
+
+.hist-del-confirm {
+  display: flex;
+  gap: 4px;
+}
+
+.hist-del-yes {
+  background: var(--c-error);
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 5px;
+  font-size: var(--fs-sm);
+  cursor: pointer;
+  font-weight: var(--fw-semibold);
+  font-family: var(--font-family);
+}
+
+.hist-del-no {
+  background: var(--c-surface-hover);
+  border: none;
+  padding: 5px 10px;
+  border-radius: 5px;
+  font-size: var(--fs-sm);
+  cursor: pointer;
+  font-family: var(--font-family);
+}
+
+.hist-del-btn {
+  background: var(--c-error-light);
+  color: var(--c-error);
+  border: 1px solid var(--c-error-border);
+  padding: 5px 12px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  font-family: var(--font-family);
+}
+
+.hist-item-arrow {
+  color: var(--c-text-faint);
+  cursor: pointer;
+}

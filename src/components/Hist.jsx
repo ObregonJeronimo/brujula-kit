@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { isVisibleType, typeBadge, HIST_TABS } from "../config/evalTypes.js";
 import { K, ageLabel } from "../lib/fb.js";
+import "../styles/Hist.css";
 
 export default function Hist({ TC, allEvals, onView, isA, onD, enabledTools, pacientes }) {
   var _q = useState(""), q = _q[0], sQ = _q[1];
@@ -12,7 +13,7 @@ export default function Hist({ TC, allEvals, onView, isA, onD, enabledTools, pac
   var all = (allEvals || []).filter(function(e){ return isVisibleType(e.tipo); })
     .sort(function(a, b){ return (b.fechaGuardado || "").localeCompare(a.fechaGuardado || ""); });
 
-  // Contar evaluaciones por paciente (por DNI si existe, sino por nombre)
+  // Contar evaluaciones por paciente
   var evalsByPatient = {};
   all.forEach(function(e){
     var key = e.pacienteDni || e.paciente || "";
@@ -20,8 +21,7 @@ export default function Hist({ TC, allEvals, onView, isA, onD, enabledTools, pac
     evalsByPatient[key] = (evalsByPatient[key] || 0) + 1;
   });
 
-  // Lista de pacientes REGISTRADOS (no de historial)
-  // Si no hay pacientes registrados como prop, fallback a los del historial
+  // Lista de pacientes REGISTRADOS
   var patientsList = [];
   if(pacientes && pacientes.length > 0){
     patientsList = pacientes.map(function(p){
@@ -29,7 +29,6 @@ export default function Hist({ TC, allEvals, onView, isA, onD, enabledTools, pac
       return { nombre: p.nombre, dni: p.dni || "", count: count };
     }).sort(function(a,b){ return a.nombre.localeCompare(b.nombre); });
   } else {
-    // Fallback: usar pacientes del historial
     var patientsMap = {};
     all.forEach(function(e){ if(e.paciente && !patientsMap[e.paciente]) patientsMap[e.paciente] = { nombre: e.paciente, count: 0 }; if(e.paciente) patientsMap[e.paciente].count++; });
     patientsList = Object.values(patientsMap).sort(function(a,b){ return a.nombre.localeCompare(b.nombre); });
@@ -43,60 +42,59 @@ export default function Hist({ TC, allEvals, onView, isA, onD, enabledTools, pac
   });
 
   return (
-    <div style={{width:"100%",animation:"fi .3s ease"}}>
-      <h1 style={{fontSize:22,fontWeight:700,marginBottom:6}}>Historial</h1>
-      <p style={{color:K.mt,fontSize:14,marginBottom:14}}>{all.length+" evaluaciones"}</p>
-      <div style={{display:"flex",gap:8,marginBottom:14,overflowX:"auto",WebkitOverflowScrolling:"touch",paddingBottom:4}}>
+    <div className="hist-page">
+      <h1 className="hist-title">Historial</h1>
+      <p className="hist-count">{all.length+" evaluaciones"}</p>
+      <div className="hist-tabs">
         {HIST_TABS.filter(function(x){ return x[0]==="all" || !enabledTools || enabledTools[x[0]]!==false; }).map(function(x){
           var id=x[0], lb=x[1];
-          return <button key={id} onClick={function(){sTab(id)}} style={{padding:"6px 14px",borderRadius:6,border:tab===id?"2px solid #0d9488":"1px solid #e2e8f0",background:tab===id?"#ccfbf1":"#fff",color:tab===id?(TC&&TC.ac||"#0d9488"):"#64748b",fontSize:13,fontWeight:600,cursor:"pointer"}}>{lb}</button>;
+          return <button key={id} onClick={function(){sTab(id)}} className={"hist-tab"+(tab===id?" hist-tab--active":"")}>{lb}</button>;
         })}
       </div>
-      {/* Search/List toggle */}
-      <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:18}}>
-        <div style={{display:"flex",borderRadius:8,overflow:"hidden",border:"1px solid #e2e8f0"}}>
-          <button onClick={function(){setSearchMode("search");setSelPatient(null);}} style={{padding:"8px 14px",border:"none",background:searchMode==="search"?(TC&&TC.ac||"#0d9488"):"#fff",color:searchMode==="search"?"#fff":"#64748b",fontSize:12,fontWeight:600,cursor:"pointer"}}>{"Buscar"}</button>
-          <button onClick={function(){setSearchMode("list");sQ("");}} style={{padding:"8px 14px",border:"none",background:searchMode==="list"?(TC&&TC.ac||"#0d9488"):"#fff",color:searchMode==="list"?"#fff":"#64748b",fontSize:12,fontWeight:600,cursor:"pointer"}}>{"Pacientes"}</button>
+      <div className="hist-mode-row">
+        <div className="hist-mode-switch">
+          <button onClick={function(){setSearchMode("search");setSelPatient(null);}} className={"hist-mode-btn"+(searchMode==="search"?" hist-mode-btn--active":"")}>{"Buscar"}</button>
+          <button onClick={function(){setSearchMode("list");sQ("");}} className={"hist-mode-btn"+(searchMode==="list"?" hist-mode-btn--active":"")}>{"Pacientes"}</button>
         </div>
-        {searchMode==="search" && <input value={q} onChange={function(e){sQ(e.target.value)}} placeholder="Buscar paciente..." style={{flex:1,maxWidth:350,padding:"10px 14px",border:"1px solid #e2e8f0",borderRadius:8,fontSize:14,background:"#fff"}} />}
-        {searchMode==="list" && <div style={{flex:1,maxWidth:350,position:"relative"}}>
-          <div style={{background:"#fff",border:"1px solid #e2e8f0",borderRadius:8,maxHeight:180,overflowY:"auto"}}>
-            {selPatient && <button onClick={function(){setSelPatient(null)}} style={{width:"100%",padding:"8px 14px",border:"none",borderBottom:"1px solid #f1f5f9",background:"#f0fdf4",color:"#059669",fontSize:13,fontWeight:600,cursor:"pointer",textAlign:"left"}}>{"✕ Mostrar todos"}</button>}
+        {searchMode==="search" && <input value={q} onChange={function(e){sQ(e.target.value)}} placeholder="Buscar paciente..." className="hist-search" />}
+        {searchMode==="list" && <div className="hist-patients">
+          <div className="hist-patients-box">
+            {selPatient && <button onClick={function(){setSelPatient(null)}} className="hist-patients-clear">{"\u2715 Mostrar todos"}</button>}
             {patientsList.map(function(p){
               var active = selPatient === p.nombre;
-              return <button key={p.dni||p.nombre} onClick={function(){setSelPatient(active?null:p.nombre)}} style={{width:"100%",padding:"8px 14px",border:"none",borderBottom:"1px solid #f1f5f9",background:active?"#ccfbf1":"#fff",color:active?(TC&&TC.ac||"#0d9488"):"#1e293b",fontSize:13,fontWeight:active?600:400,cursor:"pointer",textAlign:"left",display:"flex",justifyContent:"space-between"}}>
+              return <button key={p.dni||p.nombre} onClick={function(){setSelPatient(active?null:p.nombre)}} className={"hist-patient-item"+(active?" hist-patient-item--active":"")}>
                 <span>{p.nombre}</span>
-                <span style={{fontSize:11,color:K.mt}}>{p.count+(p.count===1?" eval":" evals")}</span>
+                <span className="hist-patient-count">{p.count+(p.count===1?" eval":" evals")}</span>
               </button>;
             })}
-            {patientsList.length===0 && <div style={{padding:"12px 14px",color:K.mt,fontSize:13}}>Sin pacientes</div>}
+            {patientsList.length===0 && <div className="hist-patients-empty">Sin pacientes</div>}
           </div>
         </div>}
       </div>
-      {f.length === 0 ? <div style={{background:"#fff",borderRadius:12,padding:40,textAlign:"center",border:"1px solid #e2e8f0",color:K.mt}}>Sin resultados.</div> :
-        <div style={{display:"flex",flexDirection:"column",gap:6}}>
+      {f.length === 0 ? <div className="hist-empty">Sin resultados.</div> :
+        <div className="hist-list">
           {f.map(function(ev){
             var bg = typeBadge(ev.tipo);
             return (
-              <div key={ev._fbId||ev.id} style={{background:"#fff",borderRadius:10,padding:"14px 20px",border:"1px solid #e2e8f0",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-                <div onClick={function(){if(onView)onView(ev)}} style={{cursor:"pointer",flex:1}}>
-                  <div style={{display:"flex",alignItems:"center",gap:8}}>
-                    <span style={{padding:"2px 8px",borderRadius:4,background:bg.b,color:bg.c,fontSize:10,fontWeight:700}}>{bg.l}</span>
-                    <span style={{fontWeight:600,fontSize:15}}>{ev.paciente}</span>
+              <div key={ev._fbId||ev.id} className="hist-item">
+                <div onClick={function(){if(onView)onView(ev)}} className="hist-item-info">
+                  <div className="hist-item-title-row">
+                    <span className="hist-item-badge" style={{background:bg.b,color:bg.c}}>{bg.l}</span>
+                    <span className="hist-item-name">{ev.paciente}</span>
                   </div>
-                  <div style={{fontSize:12,color:K.mt,marginTop:2}}>
-                    {new Date(ev.fechaGuardado).toLocaleDateString("es-CL")+" · "+ageLabel(ev.edadMeses)}{ev.evaluador?(" · "+ev.evaluador):""}
+                  <div className="hist-item-meta">
+                    {new Date(ev.fechaGuardado).toLocaleDateString("es-CL")+" \u00b7 "+ageLabel(ev.edadMeses)}{ev.evaluador?(" \u00b7 "+ev.evaluador):""}
                   </div>
                 </div>
-                <div style={{display:"flex",alignItems:"center",gap:10}}>
-                  {ev.resultados && (ev.resultados.severity || ev.resultados.pct != null) && <span style={{padding:"3px 10px",borderRadius:14,background:bg.b,color:bg.c,fontSize:12,fontWeight:600}}>{ev.resultados.severity||(ev.resultados.pct+"%")}</span>}
+                <div className="hist-item-actions">
+                  {ev.resultados && (ev.resultados.severity || ev.resultados.pct != null) && <span className="hist-item-score" style={{background:bg.b,color:bg.c}}>{ev.resultados.severity||(ev.resultados.pct+"%")}</span>}
                   {isA && (cf === (ev._fbId||ev.id) ?
-                    <div style={{display:"flex",gap:4}}>
-                      <button onClick={function(){onD(ev._fbId); sC(null);}} style={{background:"#dc2626",color:"#fff",border:"none",padding:"5px 10px",borderRadius:5,fontSize:11,cursor:"pointer",fontWeight:600}}>¿Sí?</button>
-                      <button onClick={function(){sC(null)}} style={{background:"#f1f5f9",border:"none",padding:"5px 10px",borderRadius:5,fontSize:11,cursor:"pointer"}}>No</button>
+                    <div className="hist-del-confirm">
+                      <button onClick={function(){onD(ev._fbId); sC(null);}} className="hist-del-yes">¿Sí?</button>
+                      <button onClick={function(){sC(null)}} className="hist-del-no">No</button>
                     </div> :
-                    <button onClick={function(){sC(ev._fbId||ev.id)}} style={{background:"#fef2f2",color:"#dc2626",border:"1px solid #fecaca",padding:"5px 12px",borderRadius:6,cursor:"pointer",fontSize:11,fontWeight:600}}>Eliminar</button>)}
-                  <span onClick={function(){if(onView)onView(ev)}} style={{color:"#94a3b8",cursor:"pointer"}}>→</span>
+                    <button onClick={function(){sC(ev._fbId||ev.id)}} className="hist-del-btn">Eliminar</button>)}
+                  <span onClick={function(){if(onView)onView(ev)}} className="hist-item-arrow">→</span>
                 </div>
               </div>);
           })}
