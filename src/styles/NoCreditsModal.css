@@ -1,0 +1,93 @@
+/* NoCreditsModal.css — modal de sin créditos */
+
+.ncm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  animation: fi 0.25s ease;
+}
+
+.ncm-card {
+  background: var(--c-surface);
+  border-radius: 20px;
+  padding: 40px 36px;
+  width: 440px;
+  max-width: 92vw;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.25);
+  text-align: center;
+  position: relative;
+}
+
+.ncm-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: var(--c-text-faint);
+  cursor: pointer;
+  line-height: 1;
+}
+
+.ncm-icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+  font-size: 36px;
+}
+
+.ncm-title {
+  font-size: var(--fs-2xl);
+  font-weight: var(--fw-bold);
+  color: var(--c-primary);
+  margin-bottom: 8px;
+}
+
+.ncm-desc {
+  color: var(--c-text-secondary);
+  font-size: var(--fs-md);
+  line-height: 1.7;
+  margin-bottom: 8px;
+}
+
+.ncm-hint {
+  color: var(--c-text-faint);
+  font-size: var(--fs-base);
+  line-height: 1.6;
+  margin-bottom: 28px;
+}
+
+.ncm-buy-btn {
+  width: 100%;
+  padding: 14px 24px;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-size: var(--fs-lg);
+  font-weight: 800;
+  cursor: pointer;
+  margin-bottom: 12px;
+  box-shadow: 0 4px 16px rgba(245, 158, 11, 0.3);
+  letter-spacing: 0.3px;
+}
+
+.ncm-back-btn {
+  background: none;
+  border: none;
+  color: var(--c-text-faint);
+  font-size: var(--fs-base);
+  cursor: pointer;
+  padding: 8px;
+}
