@@ -1,11 +1,9 @@
+import "../styles/RptELDI.css";
 import { useState } from "react";
 import { REC, EXP } from "../data/eldiItems.js";
 import { calcScoring, fa, noEvalGrouped } from "./NewELDI_scoring.js";
 import { openDetailPdf, openSummaryPdf } from "./RptELDI_pdf.js";
 import AIReportPanel from "./AIReportPanel.jsx";
-import { K } from "../lib/fb.js";
-
-
 
 export default function RptELDI({ev,onD,therapistInfo}){
   var _cd = useState(false), cd = _cd[0], sCD = _cd[1];
@@ -24,22 +22,23 @@ export default function RptELDI({ev,onD,therapistInfo}){
 
   var renderClassification = function(sc,label){
     if(!sc||sc.pctExpected===null||sc.evaluados===0) return null;
-    return <div style={{background:"#fff",border:"1px solid #e2e8f0",borderRadius:10,padding:18,marginBottom:14}}>
-      <div style={{fontWeight:700,fontSize:14,color:"#0a3d2f",marginBottom:12}}>{"\ud83c\udfaf An\u00e1lisis Criterial \u2014 "+label}</div>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
-        <div style={{background:"#f0f9ff",padding:12,borderRadius:8}}>
-          <div style={{fontSize:10,color:K.mt,marginBottom:4}}>{"Rendimiento seg\u00fan edad"}</div>
-          <div style={{fontSize:22,fontWeight:700,color:sc.classColor}}>{sc.pctExpected+"%"}</div>
-          <div style={{fontSize:11,color:K.mt}}>{"("+sc.logradoExpected+"/"+sc.expectedCount+" \u00edtems esperados logrados)"}</div>
+    var classStyle = { "--rpt-eldi-class-color": sc.classColor };
+    return <div className="rpt-eldi-class" style={classStyle}>
+      <div className="rpt-eldi-class-title">{"\ud83c\udfaf An\u00e1lisis Criterial \u2014 "+label}</div>
+      <div className="rpt-eldi-class-grid">
+        <div className="rpt-eldi-class-card">
+          <div className="rpt-eldi-class-lbl">{"Rendimiento seg\u00fan edad"}</div>
+          <div className="rpt-eldi-class-val">{sc.pctExpected+"%"}</div>
+          <div className="rpt-eldi-class-sub">{"("+sc.logradoExpected+"/"+sc.expectedCount+" \u00edtems esperados logrados)"}</div>
         </div>
-        <div style={{background:"#f0f9ff",padding:12,borderRadius:8}}>
-          <div style={{fontSize:10,color:K.mt,marginBottom:4}}>{"Clasificaci\u00f3n"}</div>
-          <div style={{fontSize:16,fontWeight:700,color:sc.classColor}}>{sc.classification}</div>
+        <div className="rpt-eldi-class-card">
+          <div className="rpt-eldi-class-lbl">{"Clasificaci\u00f3n"}</div>
+          <div className="rpt-eldi-class-val--md">{sc.classification}</div>
         </div>
-        {sc.devAgeLabel&&<div style={{background:"#f0f9ff",padding:12,borderRadius:8,gridColumn:"1/-1"}}>
-          <div style={{fontSize:10,color:K.mt,marginBottom:4}}>{"Edad de desarrollo estimada"}</div>
-          <div style={{fontSize:18,fontWeight:700,color:"#0d9488"}}>{sc.devAgeLabel}</div>
-          <div style={{fontSize:11,color:K.mt}}>{"(banda m\u00e1xima con \u226580% de \u00edtems logrados)"}</div>
+        {sc.devAgeLabel&&<div className="rpt-eldi-class-card rpt-eldi-class-card--full">
+          <div className="rpt-eldi-class-lbl">{"Edad de desarrollo estimada"}</div>
+          <div className="rpt-eldi-class-val--dev">{sc.devAgeLabel}</div>
+          <div className="rpt-eldi-class-sub">{"(banda m\u00e1xima con \u226580% de \u00edtems logrados)"}</div>
         </div>}
       </div>
     </div>;
@@ -48,32 +47,43 @@ export default function RptELDI({ev,onD,therapistInfo}){
   var renderNoEval = function(noEvalIds,items){
     if(!noEvalIds||noEvalIds.length===0) return null;
     var groups = noEvalGrouped(noEvalIds,items);
-    return <div style={{marginTop:12,padding:12,background:"#fffbeb",border:"1px solid #fde68a",borderRadius:8}}>
-      <div style={{fontSize:12,fontWeight:600,color:"#92400e",marginBottom:8}}>{"\u00cdtems no evaluados:"}</div>
-      {Object.entries(groups).map(function(e){return <div key={e[0]} style={{marginBottom:6}}>
-        <div style={{fontSize:11,fontWeight:600,color:"#78350f",marginBottom:2}}>{"Edad "+e[0]+":"}</div>
-        {e[1].map(function(it){return <div key={it.id} style={{fontSize:11,color:"#78350f",paddingLeft:8,lineHeight:1.6}}>{"\u2022 "+it.l+" ("+it.id+")"}</div>})}
+    return <div className="rpt-eldi-noeval">
+      <div className="rpt-eldi-noeval-title">{"\u00cdtems no evaluados:"}</div>
+      {Object.entries(groups).map(function(e){return <div key={e[0]} className="rpt-eldi-noeval-group">
+        <div className="rpt-eldi-noeval-group-lbl">{"Edad "+e[0]+":"}</div>
+        {e[1].map(function(it){return <div key={it.id} className="rpt-eldi-noeval-item">{"\u2022 "+it.l+" ("+it.id+")"}</div>})}
       </div>})}
     </div>;
   };
 
   var renderArea = function(area,items,icon){
-    if(!area||!area.evaluated) return <div style={{background:"#f1f5f9",borderRadius:10,padding:20,border:"1px solid #e2e8f0",marginBottom:14}}>
-      <div style={{fontWeight:700,fontSize:15}}>{icon+" "+(area?area.label:"\u2014")}</div>
-      <div style={{fontSize:14,color:K.mt,fontStyle:"italic",marginTop:6}}>{"No evaluado en esta sesi\u00f3n"}</div>
+    if(!area||!area.evaluated) return <div className="rpt-eldi-area rpt-eldi-area--inactive">
+      <div className="rpt-eldi-area-title">{icon+" "+(area?area.label:"\u2014")}</div>
+      <div className="rpt-eldi-area-inactive-msg">{"No evaluado en esta sesi\u00f3n"}</div>
     </div>;
-    return <div style={{background:"#f8faf9",borderRadius:10,padding:20,border:"1px solid #e2e8f0",marginBottom:14}}>
-      <div style={{fontWeight:700,fontSize:15,marginBottom:14}}>{icon+" "+area.label}</div>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12}}>
-        <div><div style={{fontSize:10,color:K.mt,marginBottom:2}}>{"\u00cdtems logrados"}</div><div style={{fontSize:24,fontWeight:700,color:"#059669"}}>{area.logrado}<span style={{fontSize:14,color:K.mt}}>{"/"+area.total}</span></div></div>
-        <div><div style={{fontSize:10,color:K.mt,marginBottom:2}}>{"No logrados"}</div><div style={{fontSize:24,fontWeight:700,color:"#dc2626"}}>{area.noLogrado}</div></div>
-        <div><div style={{fontSize:10,color:K.mt,marginBottom:2}}>{"Sin evaluar"}</div><div style={{fontSize:24,fontWeight:700,color:"#f59e0b"}}>{(area.noEvaluado||[]).length}</div></div>
+    var barColor = area.pctLogrado>=80?"var(--c-success)":area.pctLogrado>=50?"var(--c-warning)":"var(--c-error)";
+    var barStyle = { "--rpt-eldi-bar-pct": area.pctLogrado+"%", "--rpt-eldi-bar-color": barColor };
+    return <div className="rpt-eldi-area">
+      <div className="rpt-eldi-area-title">{icon+" "+area.label}</div>
+      <div className="rpt-eldi-area-stats">
+        <div>
+          <div className="rpt-eldi-area-stat-lbl">{"\u00cdtems logrados"}</div>
+          <div className="rpt-eldi-area-stat-val rpt-eldi-area-stat-val--ok">{area.logrado}<span className="rpt-eldi-area-stat-fraction">{"/"+area.total}</span></div>
+        </div>
+        <div>
+          <div className="rpt-eldi-area-stat-lbl">{"No logrados"}</div>
+          <div className="rpt-eldi-area-stat-val rpt-eldi-area-stat-val--err">{area.noLogrado}</div>
+        </div>
+        <div>
+          <div className="rpt-eldi-area-stat-lbl">{"Sin evaluar"}</div>
+          <div className="rpt-eldi-area-stat-val rpt-eldi-area-stat-val--warn">{(area.noEvaluado||[]).length}</div>
+        </div>
       </div>
-      {area.evaluados>0&&<div style={{marginTop:12}}>
-        <div style={{fontSize:10,color:K.mt,marginBottom:4}}>{"% logro (sobre evaluados)"}</div>
-        <div style={{background:"#e2e8f0",borderRadius:6,height:24,overflow:"hidden",position:"relative"}}>
-          <div style={{background:area.pctLogrado>=80?"#059669":area.pctLogrado>=50?"#f59e0b":"#dc2626",height:"100%",width:area.pctLogrado+"%",borderRadius:6}}/>
-          <span style={{position:"absolute",left:"50%",top:"50%",transform:"translate(-50%,-50%)",fontSize:12,fontWeight:700}}>{area.pctLogrado+"%"}</span>
+      {area.evaluados>0&&<div className="rpt-eldi-area-bar-wrap">
+        <div className="rpt-eldi-area-bar-lbl">{"% logro (sobre evaluados)"}</div>
+        <div className="rpt-eldi-area-bar" style={barStyle}>
+          <div className="rpt-eldi-area-bar-fill"/>
+          <span className="rpt-eldi-area-bar-pct">{area.pctLogrado+"%"}</span>
         </div>
       </div>}
       {renderNoEval(area.noEvaluado,items)}
@@ -82,46 +92,56 @@ export default function RptELDI({ev,onD,therapistInfo}){
 
   var renderDetailView = function(){
     var mkTable = function(items,label,icon,evaluated){
-      if(evaluated===false) return <div style={{marginBottom:20}}><h3 style={{fontSize:15,fontWeight:700,color:"#0a3d2f",marginBottom:8}}>{icon+" "+label}</h3><div style={{color:K.mt,fontStyle:"italic"}}>{"No evaluado"}</div></div>;
-      return <div style={{marginBottom:20}}>
-        <h3 style={{fontSize:15,fontWeight:700,color:"#0a3d2f",marginBottom:8}}>{icon+" "+label}</h3>
-        <div style={{border:"1px solid #e2e8f0",borderRadius:8,overflow:"hidden"}}>
-          <div style={{display:"grid",gridTemplateColumns:"60px 1fr 120px",background:"#0a3d2f",color:"#fff",padding:"8px 12px",fontSize:12,fontWeight:600}}>
+      if(evaluated===false) return <div className="rpt-eldi-detail-section">
+        <h3 className="rpt-eldi-detail-h3">{icon+" "+label}</h3>
+        <div className="rpt-eldi-detail-empty">{"No evaluado"}</div>
+      </div>;
+      return <div className="rpt-eldi-detail-section">
+        <h3 className="rpt-eldi-detail-h3">{icon+" "+label}</h3>
+        <div className="rpt-eldi-detail-table">
+          <div className="rpt-eldi-detail-thead">
             <span>{"ID"}</span><span>{"\u00cdtem"}</span><span>{"Resultado"}</span>
           </div>
-          {items.map(function(item){var v=rsp[item.id];
-            return <div key={item.id} style={{display:"grid",gridTemplateColumns:"60px 1fr 120px",padding:"6px 12px",fontSize:13,borderTop:"1px solid #f1f5f9",background:v===true?"#ecfdf5":v===false?"#fef2f2":"#fffbeb"}}>
-              <span style={{fontWeight:600}}>{item.id}</span>
+          {items.map(function(item){
+            var v=rsp[item.id];
+            var rowClass = v===true?"rpt-eldi-detail-row--ok":v===false?"rpt-eldi-detail-row--err":"rpt-eldi-detail-row--none";
+            var resClass = v===true?"rpt-eldi-detail-result--ok":v===false?"rpt-eldi-detail-result--err":"rpt-eldi-detail-result--none";
+            return <div key={item.id} className={"rpt-eldi-detail-row "+rowClass}>
+              <span className="rpt-eldi-detail-id">{item.id}</span>
               <span>{item.l}</span>
-              <span style={{fontWeight:600,color:v===true?"#059669":v===false?"#dc2626":"#92400e"}}>{v===true?"\u2714 Logrado":v===false?"\u2718 No logrado":"\u2014 Sin evaluar"}</span>
-            </div>})}
+              <span className={"rpt-eldi-detail-result "+resClass}>{v===true?"\u2714 Logrado":v===false?"\u2718 No logrado":"\u2014 Sin evaluar"}</span>
+            </div>;
+          })}
         </div>
       </div>;
     };
-    return <div style={{marginTop:20}}>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
-        <h3 style={{fontSize:16,fontWeight:700,color:"#0a3d2f"}}>{"Detalle de Respuestas"}</h3>
-        <button onClick={function(){openDetailPdf(ev,rsp)}} style={{background:"#059669",color:"#fff",border:"none",padding:"8px 18px",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer"}}>{"\ud83d\udda8 Imprimir detalle"}</button>
+    return <div className="rpt-eldi-detail-wrap">
+      <div className="rpt-eldi-detail-head">
+        <h3 className="rpt-eldi-detail-title">{"Detalle de Respuestas"}</h3>
+        <button onClick={function(){openDetailPdf(ev,rsp)}} className="rpt-eldi-detail-print-btn">{"\ud83d\udda8 Imprimir detalle"}</button>
       </div>
       {mkTable(REC,"Comprensi\u00f3n Auditiva","\ud83d\udd0a",ev.evalRec)}
       {mkTable(EXP,"Comunicaci\u00f3n Expresiva","\ud83d\udde3\ufe0f",ev.evalExp)}
     </div>;
   };
 
-  return <div style={{width:"100%",maxWidth:1200,margin:"0 auto",animation:"fi .3s ease"}}>
-    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:24,flexWrap:"wrap",gap:12}}>
-      <div><h1 style={{fontSize:24,fontWeight:700}}>{"Informe ELDI"}</h1><p style={{color:K.mt,fontSize:15,marginTop:2}}>{ev.paciente+" \u2014 "+fa(ev.edadMeses)}</p></div>
-      <div style={{display:"flex",gap:8}}>
+  return <div className="rpt-eldi">
+    <div className="rpt-eldi-head">
+      <div>
+        <h1 className="rpt-eldi-title">{"Informe ELDI"}</h1>
+        <p className="rpt-eldi-subtitle">{ev.paciente+" \u2014 "+fa(ev.edadMeses)}</p>
+      </div>
+      <div className="rpt-eldi-actions">
         {cd
-          ?<div style={{background:"#fef2f2",border:"1px solid #fecaca",borderRadius:10,padding:"14px 20px",display:"flex",flexDirection:"column",alignItems:"center",gap:10}}>
-            <div style={{fontSize:13,fontWeight:600,color:"#dc2626",textAlign:"center"}}>{"\u00bfEst\u00e1 seguro que desea eliminar?"}</div>
-            <div style={{fontSize:12,color:"#64748b",textAlign:"center"}}>{"Esta acci\u00f3n es irreversible"}</div>
-            <div style={{display:"flex",gap:8}}>
-              <button onClick={function(){onD(ev._fbId,"evaluaciones");sCD(false)}} style={{background:"#dc2626",color:"#fff",border:"none",padding:"8px 20px",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer"}}>{"S\u00ed, eliminar"}</button>
-              <button onClick={function(){sCD(false)}} style={{background:"#f1f5f9",border:"1px solid #e2e8f0",padding:"8px 20px",borderRadius:8,fontSize:13,cursor:"pointer",color:"#64748b"}}>Cancelar</button>
+          ?<div className="rpt-eldi-del-confirm">
+            <div className="rpt-eldi-del-title">{"\u00bfEst\u00e1 seguro que desea eliminar?"}</div>
+            <div className="rpt-eldi-del-sub">{"Esta acci\u00f3n es irreversible"}</div>
+            <div className="rpt-eldi-del-actions">
+              <button onClick={function(){onD(ev._fbId,"evaluaciones");sCD(false)}} className="rpt-eldi-del-confirm-btn">{"S\u00ed, eliminar"}</button>
+              <button onClick={function(){sCD(false)}} className="rpt-eldi-del-cancel-btn">Cancelar</button>
             </div>
           </div>
-          :<button onClick={function(){sCD(true)}} style={{background:"#fef2f2",color:"#dc2626",border:"1px solid #fecaca",padding:"11px 22px",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer"}}>{"Eliminar"}</button>
+          :<button onClick={function(){sCD(true)}} className="rpt-eldi-del-btn">{"Eliminar"}</button>
         }
       </div>
     </div>
@@ -130,42 +150,42 @@ export default function RptELDI({ev,onD,therapistInfo}){
     <AIReportPanel ev={ev} evalType="eldi" collectionName="evaluaciones" evalLabel="Evaluación del Lenguaje (ELDI)" therapistInfo={therapistInfo} />
 
     {/* Technical Data Toggle */}
-    <button onClick={function(){ setShowTech(!showTech); }} style={{width:"100%",padding:"14px",background:showTech?"#f1f5f9":"#0a3d2f",color:showTech?"#1e293b":"#fff",border:"1px solid #e2e8f0",borderRadius:10,fontSize:14,fontWeight:600,cursor:"pointer",marginBottom:showTech?16:20}}>
+    <button onClick={function(){ setShowTech(!showTech); }} className={"rpt-eldi-tech-toggle"+(showTech?" is-open":"")}>
       {showTech ? "\u25b2 Ocultar datos t\u00e9cnicos" : "\u25bc Ver datos t\u00e9cnicos de la evaluaci\u00f3n"}
     </button>
 
-    {showTech && <div style={{background:"#fff",borderRadius:14,padding:32,border:"1px solid #e2e8f0"}}>
-      <div style={{display:"flex",justifyContent:"flex-end",marginBottom:16}}>
-        <button onClick={function(){openSummaryPdf(ev,recScoring,expScoring,recRes,expRes,allNoEval)}} style={{background:"#059669",color:"#fff",border:"none",padding:"9px 18px",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer"}}>{"\ud83d\udcc4 PDF datos t\u00e9cnicos"}</button>
+    {showTech && <div className="rpt-eldi-tech">
+      <div className="rpt-eldi-pdf-row">
+        <button onClick={function(){openSummaryPdf(ev,recScoring,expScoring,recRes,expRes,allNoEval)}} className="rpt-eldi-pdf-btn">{"\ud83d\udcc4 PDF datos t\u00e9cnicos"}</button>
       </div>
-      <h3 style={{fontSize:16,fontWeight:700,color:"#0a3d2f",marginBottom:14,paddingBottom:8,borderBottom:"2px solid #ccfbf1"}}>{"Datos del Paciente"}</h3>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"8px 32px",marginBottom:28}}>{[["Nombre",ev.paciente],["Edad",fa(ev.edadMeses)],["F. nacimiento",ev.fechaNacimiento],["F. evaluaci\u00f3n",ev.fechaEvaluacion],["Establecimiento",ev.establecimiento||"\u2014"],["Derivado por",ev.derivadoPor||"\u2014"],["Evaluador",ev.evaluador||"\u2014"]].map(function(pair,i){return <div key={i} style={{padding:"8px 0",borderBottom:"1px solid #f1f5f9"}}><div style={{fontSize:11,color:K.mt,marginBottom:3,textTransform:"uppercase"}}>{pair[0]}</div><div style={{fontSize:15,fontWeight:600}}>{pair[1]}</div></div>})}</div>
+      <h3 className="rpt-eldi-h2">{"Datos del Paciente"}</h3>
+      <div className="rpt-eldi-patient-grid">{[["Nombre",ev.paciente],["Edad",fa(ev.edadMeses)],["F. nacimiento",ev.fechaNacimiento],["F. evaluaci\u00f3n",ev.fechaEvaluacion],["Establecimiento",ev.establecimiento||"\u2014"],["Derivado por",ev.derivadoPor||"\u2014"],["Evaluador",ev.evaluador||"\u2014"]].map(function(pair,i){return <div key={i} className="rpt-eldi-patient-field"><div className="rpt-eldi-patient-label">{pair[0]}</div><div className="rpt-eldi-patient-value">{pair[1]}</div></div>})}</div>
 
-      <h3 style={{fontSize:16,fontWeight:700,color:"#0a3d2f",marginBottom:14,paddingBottom:8,borderBottom:"2px solid #ccfbf1"}}>{"An\u00e1lisis Criterial"}</h3>
+      <h3 className="rpt-eldi-h2">{"An\u00e1lisis Criterial"}</h3>
       {renderClassification(recScoring,"Comprensi\u00f3n Auditiva")}
       {renderClassification(expScoring,"Comunicaci\u00f3n Expresiva")}
-      <div style={{background:"#f0f9ff",border:"1px solid #bae6fd",borderRadius:10,padding:14,marginBottom:20,fontSize:12,color:"#0369a1"}}>
+      <div className="rpt-eldi-note">
         <strong>{"\u2139\ufe0f Nota:"}</strong>{" La clasificaci\u00f3n se basa en un an\u00e1lisis criterial (comparaci\u00f3n con hitos esperados por edad), no en baremos normativos. Cortes: \u226590% Normal, 75-89% En Riesgo, 50-74% Retraso Moderado, <50% Retraso Significativo."}
       </div>
 
-      <h3 style={{fontSize:16,fontWeight:700,color:"#0a3d2f",marginBottom:14,paddingBottom:8,borderBottom:"2px solid #ccfbf1"}}>{"Resultados \u2014 Puntajes Brutos"}</h3>
+      <h3 className="rpt-eldi-h2">{"Resultados \u2014 Puntajes Brutos"}</h3>
       {renderArea(recRes,REC,"\ud83d\udd0a")}
       {renderArea(expRes,EXP,"\ud83d\udde3\ufe0f")}
 
-      <div style={{background:"linear-gradient(135deg,#0a3d2f,#0d9488)",borderRadius:10,padding:24,color:"#fff",marginBottom:28}}>
-        <div style={{fontSize:13,opacity:.8,marginBottom:8}}>{"Resumen"}</div>
-        <div style={{display:"flex",gap:24,flexWrap:"wrap"}}>
-          {recRes.evaluated&&<div><span style={{fontSize:36,fontWeight:700}}>{recRes.logrado}</span><span style={{fontSize:14,opacity:.7}}>{"/"+(recRes.evaluados||recRes.total)+" Receptivo"}</span></div>}
-          {expRes.evaluated&&<div><span style={{fontSize:36,fontWeight:700}}>{expRes.logrado}</span><span style={{fontSize:14,opacity:.7}}>{"/"+(expRes.evaluados||expRes.total)+" Expresivo"}</span></div>}
+      <div className="rpt-eldi-hero">
+        <div className="rpt-eldi-hero-lbl">{"Resumen"}</div>
+        <div className="rpt-eldi-hero-stats">
+          {recRes.evaluated&&<div><span className="rpt-eldi-hero-big">{recRes.logrado}</span><span className="rpt-eldi-hero-small">{"/"+(recRes.evaluados||recRes.total)+" Receptivo"}</span></div>}
+          {expRes.evaluated&&<div><span className="rpt-eldi-hero-big">{expRes.logrado}</span><span className="rpt-eldi-hero-small">{"/"+(expRes.evaluados||expRes.total)+" Expresivo"}</span></div>}
         </div>
-        {allNoEval.length>0&&<div style={{marginTop:12,padding:"8px 12px",background:"rgba(255,255,255,.12)",borderRadius:8,fontSize:12}}>{"\u26a0 "+allNoEval.length+" \u00edtems sin evaluar \u2014 parcial"}</div>}
+        {allNoEval.length>0&&<div className="rpt-eldi-hero-warn">{"\u26a0 "+allNoEval.length+" \u00edtems sin evaluar \u2014 parcial"}</div>}
       </div>
 
-      <button onClick={function(){ var el=document.getElementById("eldi-detail-toggle"); if(el) el.style.display=el.style.display==="none"?"block":"none"; }} style={{width:"100%",padding:"14px",background:"#0a3d2f",color:"#fff",border:"1px solid #e2e8f0",borderRadius:10,fontSize:14,fontWeight:600,cursor:"pointer",marginBottom:0}}>{"\u25bc Ver detalle de cada respuesta"}</button>
-      <div id="eldi-detail-toggle" style={{display:"none"}}>{renderDetailView()}</div>
+      <button onClick={function(){ var el=document.getElementById("eldi-detail-toggle"); if(el) el.style.display=el.style.display==="none"?"block":"none"; }} className="rpt-eldi-detail-toggle">{"\u25bc Ver detalle de cada respuesta"}</button>
+      <div id="eldi-detail-toggle" className="rpt-eldi-detail-hidden">{renderDetailView()}</div>
 
-      <h3 style={{fontSize:16,fontWeight:700,color:"#0a3d2f",marginBottom:10,paddingBottom:8,borderBottom:"2px solid #ccfbf1",marginTop:20}}>{"Observaciones Cl\u00ednicas"}</h3>
-      <div style={{background:"#f8faf9",padding:18,borderRadius:10,fontSize:14,border:"1px solid #e2e8f0",lineHeight:1.7,minHeight:60}}>{ev.observaciones||"Sin observaciones."}</div>
+      <h3 className="rpt-eldi-h2 rpt-eldi-h2--spaced">{"Observaciones Cl\u00ednicas"}</h3>
+      <div className="rpt-eldi-obs">{ev.observaciones||"Sin observaciones."}</div>
     </div>}
   </div>;
 }

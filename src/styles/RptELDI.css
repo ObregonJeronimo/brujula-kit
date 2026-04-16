@@ -1,0 +1,528 @@
+/* ============================================
+   RptELDI — Reporte de Evaluación del Lenguaje
+   ============================================ */
+
+.rpt-eldi {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  animation: fi 0.3s ease;
+}
+
+/* ── Header ── */
+.rpt-eldi-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--sp-6);
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+}
+
+.rpt-eldi-title {
+  font-size: var(--fs-3xl);
+  font-weight: var(--fw-bold);
+}
+
+.rpt-eldi-subtitle {
+  color: var(--c-text-muted);
+  font-size: 15px;
+  margin-top: 2px;
+}
+
+.rpt-eldi-actions {
+  display: flex;
+  gap: var(--sp-2);
+}
+
+/* ── Eliminar ── */
+.rpt-eldi-del-btn {
+  background: var(--c-error-light);
+  color: var(--c-error);
+  border: 1px solid var(--c-error-border);
+  padding: 11px 22px;
+  border-radius: var(--radius);
+  font-size: var(--fs-md);
+  font-weight: var(--fw-semibold);
+  cursor: pointer;
+}
+
+.rpt-eldi-del-confirm {
+  background: var(--c-error-light);
+  border: 1px solid var(--c-error-border);
+  border-radius: var(--radius-md);
+  padding: 14px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.rpt-eldi-del-title {
+  font-size: var(--fs-base);
+  font-weight: var(--fw-semibold);
+  color: var(--c-error);
+  text-align: center;
+}
+
+.rpt-eldi-del-sub {
+  font-size: var(--fs-sm);
+  color: var(--c-text-muted);
+  text-align: center;
+}
+
+.rpt-eldi-del-actions {
+  display: flex;
+  gap: var(--sp-2);
+}
+
+.rpt-eldi-del-confirm-btn {
+  background: var(--c-error);
+  color: #fff;
+  border: none;
+  padding: 8px 20px;
+  border-radius: var(--radius);
+  font-size: var(--fs-base);
+  font-weight: var(--fw-semibold);
+  cursor: pointer;
+}
+
+.rpt-eldi-del-cancel-btn {
+  background: var(--c-surface-hover);
+  border: 1px solid var(--c-border);
+  padding: 8px 20px;
+  border-radius: var(--radius);
+  font-size: var(--fs-base);
+  cursor: pointer;
+  color: var(--c-text-muted);
+}
+
+/* ── Toggle técnico ── */
+.rpt-eldi-tech-toggle {
+  width: 100%;
+  padding: 14px;
+  background: var(--c-primary);
+  color: #fff;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-md);
+  font-size: var(--fs-md);
+  font-weight: var(--fw-semibold);
+  cursor: pointer;
+  margin-bottom: var(--sp-5);
+}
+
+.rpt-eldi-tech-toggle.is-open {
+  background: var(--c-surface-hover);
+  color: var(--c-text);
+  margin-bottom: var(--sp-4);
+}
+
+/* ── Panel técnico ── */
+.rpt-eldi-tech {
+  background: var(--c-surface);
+  border-radius: 14px;
+  padding: 32px;
+  border: 1px solid var(--c-border);
+}
+
+.rpt-eldi-pdf-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: var(--sp-4);
+}
+
+.rpt-eldi-pdf-btn {
+  background: var(--c-success);
+  color: #fff;
+  border: none;
+  padding: 9px 18px;
+  border-radius: var(--radius);
+  font-size: var(--fs-base);
+  font-weight: var(--fw-semibold);
+  cursor: pointer;
+}
+
+/* ── Section headings ── */
+.rpt-eldi-h2 {
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-bold);
+  color: var(--c-primary);
+  margin-bottom: 14px;
+  padding-bottom: var(--sp-2);
+  border-bottom: 2px solid var(--c-accent-light);
+}
+
+.rpt-eldi-h2--spaced {
+  margin-top: var(--sp-5);
+  margin-bottom: 10px;
+}
+
+/* ── Datos del paciente ── */
+.rpt-eldi-patient-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px 32px;
+  margin-bottom: 28px;
+}
+
+.rpt-eldi-patient-field {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--c-border-light);
+}
+
+.rpt-eldi-patient-label {
+  font-size: var(--fs-sm);
+  color: var(--c-text-muted);
+  margin-bottom: 3px;
+  text-transform: uppercase;
+}
+
+.rpt-eldi-patient-value {
+  font-size: 15px;
+  font-weight: var(--fw-semibold);
+}
+
+/* ── Análisis Criterial ── */
+.rpt-eldi-class {
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-md);
+  padding: 18px;
+  margin-bottom: 14px;
+}
+
+.rpt-eldi-class-title {
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-md);
+  color: var(--c-primary);
+  margin-bottom: var(--sp-3);
+}
+
+.rpt-eldi-class-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-3);
+}
+
+.rpt-eldi-class-card {
+  background: var(--c-info-light);
+  padding: var(--sp-3);
+  border-radius: var(--radius);
+}
+
+.rpt-eldi-class-card--full {
+  grid-column: 1 / -1;
+}
+
+.rpt-eldi-class-lbl {
+  font-size: 10px;
+  color: var(--c-text-muted);
+  margin-bottom: 4px;
+}
+
+.rpt-eldi-class-val {
+  font-size: 22px;
+  font-weight: var(--fw-bold);
+  color: var(--rpt-eldi-class-color, var(--c-accent));
+}
+
+.rpt-eldi-class-sub {
+  font-size: var(--fs-sm);
+  color: var(--c-text-muted);
+}
+
+.rpt-eldi-class-val--md {
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-bold);
+  color: var(--rpt-eldi-class-color, var(--c-accent));
+}
+
+.rpt-eldi-class-val--dev {
+  font-size: var(--fs-xl);
+  font-weight: var(--fw-bold);
+  color: var(--c-accent);
+}
+
+/* ── Nota clínica (info) ── */
+.rpt-eldi-note {
+  background: var(--c-info-light);
+  border: 1px solid #bae6fd;
+  border-radius: var(--radius-md);
+  padding: 14px;
+  margin-bottom: var(--sp-5);
+  font-size: var(--fs-sm);
+  color: #0369a1;
+}
+
+/* ── Area card (receptivo / expresivo) ── */
+.rpt-eldi-area {
+  background: var(--c-surface-alt);
+  border-radius: var(--radius-md);
+  padding: var(--sp-5);
+  border: 1px solid var(--c-border);
+  margin-bottom: 14px;
+}
+
+.rpt-eldi-area--inactive {
+  background: var(--c-surface-hover);
+}
+
+.rpt-eldi-area-title {
+  font-weight: var(--fw-bold);
+  font-size: 15px;
+  margin-bottom: 14px;
+}
+
+.rpt-eldi-area-inactive-msg {
+  font-size: var(--fs-md);
+  color: var(--c-text-muted);
+  font-style: italic;
+  margin-top: 6px;
+}
+
+.rpt-eldi-area-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--sp-3);
+}
+
+.rpt-eldi-area-stat-lbl {
+  font-size: 10px;
+  color: var(--c-text-muted);
+  margin-bottom: 2px;
+}
+
+.rpt-eldi-area-stat-val {
+  font-size: var(--fs-3xl);
+  font-weight: var(--fw-bold);
+}
+
+.rpt-eldi-area-stat-val--ok { color: var(--c-success); }
+.rpt-eldi-area-stat-val--err { color: var(--c-error); }
+.rpt-eldi-area-stat-val--warn { color: var(--c-warning); }
+
+.rpt-eldi-area-stat-fraction {
+  font-size: var(--fs-md);
+  color: var(--c-text-muted);
+}
+
+/* Bar */
+.rpt-eldi-area-bar-wrap {
+  margin-top: var(--sp-3);
+}
+
+.rpt-eldi-area-bar-lbl {
+  font-size: 10px;
+  color: var(--c-text-muted);
+  margin-bottom: 4px;
+}
+
+.rpt-eldi-area-bar {
+  background: var(--c-border);
+  border-radius: 6px;
+  height: 24px;
+  overflow: hidden;
+  position: relative;
+}
+
+.rpt-eldi-area-bar-fill {
+  height: 100%;
+  border-radius: 6px;
+  width: var(--rpt-eldi-bar-pct, 0%);
+  background: var(--rpt-eldi-bar-color, var(--c-success));
+}
+
+.rpt-eldi-area-bar-pct {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-bold);
+}
+
+/* No-eval warning */
+.rpt-eldi-noeval {
+  margin-top: var(--sp-3);
+  padding: var(--sp-3);
+  background: var(--c-warning-light);
+  border: 1px solid #fde68a;
+  border-radius: var(--radius);
+}
+
+.rpt-eldi-noeval-title {
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  color: #92400e;
+  margin-bottom: var(--sp-2);
+}
+
+.rpt-eldi-noeval-group {
+  margin-bottom: 6px;
+}
+
+.rpt-eldi-noeval-group-lbl {
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  color: #78350f;
+  margin-bottom: 2px;
+}
+
+.rpt-eldi-noeval-item {
+  font-size: var(--fs-sm);
+  color: #78350f;
+  padding-left: var(--sp-2);
+  line-height: 1.6;
+}
+
+/* ── Resumen hero ── */
+.rpt-eldi-hero {
+  background: linear-gradient(135deg, var(--c-primary), var(--c-accent));
+  border-radius: var(--radius-md);
+  padding: var(--sp-6);
+  color: #fff;
+  margin-bottom: 28px;
+}
+
+.rpt-eldi-hero-lbl {
+  font-size: var(--fs-base);
+  opacity: 0.8;
+  margin-bottom: var(--sp-2);
+}
+
+.rpt-eldi-hero-stats {
+  display: flex;
+  gap: var(--sp-6);
+  flex-wrap: wrap;
+}
+
+.rpt-eldi-hero-big {
+  font-size: var(--fs-5xl);
+  font-weight: var(--fw-bold);
+}
+
+.rpt-eldi-hero-small {
+  font-size: var(--fs-md);
+  opacity: 0.7;
+}
+
+.rpt-eldi-hero-warn {
+  margin-top: var(--sp-3);
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius);
+  font-size: var(--fs-sm);
+}
+
+/* ── Detail toggle ── */
+.rpt-eldi-detail-toggle {
+  width: 100%;
+  padding: 14px;
+  background: var(--c-primary);
+  color: #fff;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-md);
+  font-size: var(--fs-md);
+  font-weight: var(--fw-semibold);
+  cursor: pointer;
+  margin-bottom: 0;
+}
+
+.rpt-eldi-detail-hidden {
+  display: none;
+}
+
+.rpt-eldi-detail-wrap {
+  margin-top: var(--sp-5);
+}
+
+.rpt-eldi-detail-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--sp-3);
+}
+
+.rpt-eldi-detail-title {
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-bold);
+  color: var(--c-primary);
+}
+
+.rpt-eldi-detail-print-btn {
+  background: var(--c-success);
+  color: #fff;
+  border: none;
+  padding: 8px 18px;
+  border-radius: var(--radius);
+  font-size: var(--fs-base);
+  font-weight: var(--fw-semibold);
+  cursor: pointer;
+}
+
+.rpt-eldi-detail-section {
+  margin-bottom: var(--sp-5);
+}
+
+.rpt-eldi-detail-h3 {
+  font-size: 15px;
+  font-weight: var(--fw-bold);
+  color: var(--c-primary);
+  margin-bottom: var(--sp-2);
+}
+
+.rpt-eldi-detail-empty {
+  color: var(--c-text-muted);
+  font-style: italic;
+}
+
+.rpt-eldi-detail-table {
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.rpt-eldi-detail-thead {
+  display: grid;
+  grid-template-columns: 60px 1fr 120px;
+  background: var(--c-primary);
+  color: #fff;
+  padding: 8px 12px;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+}
+
+.rpt-eldi-detail-row {
+  display: grid;
+  grid-template-columns: 60px 1fr 120px;
+  padding: 6px 12px;
+  font-size: var(--fs-base);
+  border-top: 1px solid var(--c-border-light);
+}
+
+.rpt-eldi-detail-row--ok { background: #ecfdf5; }
+.rpt-eldi-detail-row--err { background: var(--c-error-light); }
+.rpt-eldi-detail-row--none { background: var(--c-warning-light); }
+
+.rpt-eldi-detail-id {
+  font-weight: var(--fw-semibold);
+}
+
+.rpt-eldi-detail-result {
+  font-weight: var(--fw-semibold);
+}
+
+.rpt-eldi-detail-result--ok { color: var(--c-success); }
+.rpt-eldi-detail-result--err { color: var(--c-error); }
+.rpt-eldi-detail-result--none { color: #92400e; }
+
+/* ── Observaciones ── */
+.rpt-eldi-obs {
+  background: var(--c-surface-alt);
+  padding: 18px;
+  border-radius: var(--radius-md);
+  font-size: var(--fs-md);
+  border: 1px solid var(--c-border);
+  line-height: 1.7;
+  min-height: 60px;
+}
