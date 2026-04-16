@@ -3,6 +3,7 @@ import { K, fbAdd } from "../lib/fb.js";
 import { ALL_EVAL_TYPES, EVAL_AREAS, EVAL_TYPES, getEvalType } from "../config/evalTypes.js";
 import { loadDrafts, deleteDraft } from "../lib/drafts.js";
 import { renderReportText } from "../lib/evalUtils.jsx";
+import "../styles/Tools.css";
 
 export default function Tools({ TC, onSel, credits, onBuy, enabledTools, toolsConfig, userId, onResumeDraft, allEvals, nfy, therapistInfo, deductCredit, isAdmin }) {
   var _drafts = useState([]), drafts = _drafts[0], setDrafts = _drafts[1];
@@ -109,30 +110,30 @@ export default function Tools({ TC, onSel, credits, onBuy, enabledTools, toolsCo
   };
 
   return (
-    <div style={{animation:"fi .3s ease",width:"100%"}}>
-      <h1 style={{fontSize:22,fontWeight:700,marginBottom:6}}>{"Herramientas"}</h1>
-      <p style={{color:"#64748b",fontSize:14,marginBottom:16}}>Seleccione un area de evaluacion</p>
+    <div className="tools-page">
+      <h1 className="tools-title">{"Herramientas"}</h1>
+      <p className="tools-subtitle">Seleccione un area de evaluacion</p>
 
       {/* Pending drafts */}
-      {drafts.length > 0 && <div style={{marginBottom:20}}>
-        <div style={{background:"linear-gradient(135deg,#fef3c7,#fde68a)",border:"1px solid #f59e0b",borderRadius:12,padding:"18px 20px"}}>
-          <div style={{fontSize:14,fontWeight:700,color:"#92400e",marginBottom:12}}>{"Evaluaciones en progreso"}</div>
-          <div style={{display:"flex",flexDirection:"column",gap:8}}>
+      {drafts.length > 0 && <div className="tools-drafts-wrap">
+        <div className="tools-drafts">
+          <div className="tools-drafts-title">{"Evaluaciones en progreso"}</div>
+          <div className="tools-drafts-list">
             {drafts.map(function(d){
               var evalConfig = getEvalType(d.evalType);
               var data = d.data || {};
               var patientName = data.patient ? data.patient.nombre : (data.selectedPatient ? data.selectedPatient.nombre : (data.pd ? data.pd.pN : "Sin paciente"));
-              return <div key={d._fbId} style={{background:"#fff",borderRadius:10,padding:"12px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,flexWrap:"wrap"}}>
-                <div style={{display:"flex",alignItems:"center",gap:10}}>
-                  <span style={{fontSize:24}}>{evalConfig ? evalConfig.icon : ""}</span>
+              return <div key={d._fbId} className="tools-draft-item">
+                <div className="tools-draft-info">
+                  <span className="tools-draft-icon">{evalConfig ? evalConfig.icon : ""}</span>
                   <div>
-                    <div style={{fontWeight:600,fontSize:14}}>{evalConfig ? evalConfig.fullName : d.evalType}</div>
-                    <div style={{fontSize:12,color:"#64748b"}}>{patientName}</div>
+                    <div className="tools-draft-name">{evalConfig ? evalConfig.fullName : d.evalType}</div>
+                    <div className="tools-draft-patient">{patientName}</div>
                   </div>
                 </div>
-                <div style={{display:"flex",gap:6}}>
-                  <button onClick={function(){ if(onResumeDraft) onResumeDraft(d); }} style={{padding:"8px 16px",background:"#059669",color:"#fff",border:"none",borderRadius:8,fontSize:12,fontWeight:600,cursor:"pointer"}}>Continuar</button>
-                  <button onClick={function(){ handleDeleteDraft(d._fbId); }} style={{padding:"8px 16px",background:"#fef2f2",color:"#dc2626",border:"1px solid #fecaca",borderRadius:8,fontSize:12,fontWeight:600,cursor:"pointer"}}>Descartar</button>
+                <div className="tools-draft-actions">
+                  <button onClick={function(){ if(onResumeDraft) onResumeDraft(d); }} className="tools-btn-continue">Continuar</button>
+                  <button onClick={function(){ handleDeleteDraft(d._fbId); }} className="tools-btn-discard">Descartar</button>
                 </div>
               </div>;
             })}
@@ -140,46 +141,46 @@ export default function Tools({ TC, onSel, credits, onBuy, enabledTools, toolsCo
         </div>
       </div>}
 
-      {noCredits&&<div style={{background:"linear-gradient(135deg,#fef3c7,#fde68a)",border:"1px solid #f59e0b",borderRadius:12,padding:"18px 20px",marginBottom:16,display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,flexWrap:"wrap"}}>
+      {noCredits && <div className="tools-no-credits">
         <div>
-          <div style={{fontSize:14,fontWeight:700,color:"#92400e"}}>{"Sin creditos restantes"}</div>
-          <div style={{fontSize:12,color:"#a16207",marginTop:2}}>Necesitas creditos para realizar evaluaciones</div>
+          <div className="tools-no-credits-title">{"Sin creditos restantes"}</div>
+          <div className="tools-no-credits-desc">Necesitas creditos para realizar evaluaciones</div>
         </div>
-        <button onClick={onBuy} style={{padding:"10px 24px",background:"linear-gradient(135deg,#f59e0b,#d97706)",color:"#fff",border:"none",borderRadius:10,fontSize:14,fontWeight:700,cursor:"pointer"}}>COMPRAR CREDITOS</button>
+        <button onClick={onBuy} className="tools-btn-buy">COMPRAR CREDITOS</button>
       </div>}
 
       {/* Evaluation Areas */}
-      <div style={{display:"flex",flexDirection:"column",gap:16}}>
+      <div className="tools-areas">
         {EVAL_AREAS.map(function(area){
           var areaTools = area.tools.map(function(tid){ return EVAL_TYPES[tid]; }).filter(function(t){ return t && isEnabled(t.id); });
           if(areaTools.length === 0) return null;
           var isOpen = openArea === area.id;
 
-          return <div key={area.id} style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",overflow:"hidden"}}>
-            <div onClick={function(){ setOpenArea(isOpen ? null : area.id); }} style={{background:"linear-gradient(135deg,"+(TC&&TC.sd||"#0a3d2f")+","+(TC&&TC.ac||"#0d9488")+")",padding:"20px 24px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between",color:"#fff"}}>
-              <div style={{display:"flex",alignItems:"center",gap:14}}>
-                <span style={{fontSize:36}}>{area.icon}</span>
+          return <div key={area.id} className="tools-area">
+            <div onClick={function(){ setOpenArea(isOpen ? null : area.id); }} className="tools-area-header">
+              <div className="tools-area-header-info">
+                <span className="tools-area-icon">{area.icon}</span>
                 <div>
-                  <div style={{fontSize:18,fontWeight:700}}>{area.name}</div>
-                  <div style={{fontSize:13,opacity:.85,marginTop:2}}>{area.desc}</div>
+                  <div className="tools-area-name">{area.name}</div>
+                  <div className="tools-area-desc">{area.desc}</div>
                 </div>
               </div>
-              <div style={{fontSize:24,fontWeight:300,transition:"transform .2s",transform:isOpen?"rotate(180deg)":"rotate(0)"}}>{"v"}</div>
+              <div className={"tools-area-chevron"+(isOpen?" tools-area-chevron--open":"")}>{"v"}</div>
             </div>
 
-            {isOpen && <div style={{padding:20}}>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
+            {isOpen && <div className="tools-area-body">
+              <div className="tools-grid">
                 {areaTools.map(function(t){
                   var infoOpen = showInfo === t.newView;
                   var info = t.info;
-                  return <div key={t.id} style={{background:"#f8faf9",borderRadius:12,border:"1px solid #e2e8f0",overflow:"hidden",opacity:noCredits?0.5:1}}>
-                    <div style={{padding:"16px 20px"}}>
-                      <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
-                        <span style={{fontSize:28}}>{t.icon}</span>
-                        <div style={{fontSize:16,fontWeight:700,color:t.color}}>{t.fullName}</div>
+                  return <div key={t.id} className={"tools-card"+(noCredits?" tools-card--disabled":"")}>
+                    <div className="tools-card-body">
+                      <div className="tools-card-header">
+                        <span className="tools-card-icon">{t.icon}</span>
+                        <div className="tools-card-title" style={{color:t.color}}>{t.fullName}</div>
                       </div>
-                      <p style={{fontSize:13,color:"#475569",lineHeight:1.6,marginBottom:12}}>{t.desc}</p>
-                      <div style={{fontSize:12,color:"#64748b",marginBottom:14}}>
+                      <p className="tools-card-desc">{t.desc}</p>
+                      <div className="tools-card-meta">
                         {(function(){
                           var tc = toolsConfig && toolsConfig[t.id] ? toolsConfig[t.id] : {};
                           var showAge = tc.showAge !== false;
@@ -188,22 +189,21 @@ export default function Tools({ TC, onSel, credits, onBuy, enabledTools, toolsCo
                           var parts = [];
                           if(showAge && ageText) parts.push("Edad: " + ageText);
                           if(timeText) parts.push("Tiempo: " + timeText);
-                          return parts.join(" · ");
+                          return parts.join(" \u00b7 ");
                         })()}
                       </div>
                       {noCredits
-                        ? <button onClick={onBuy} style={{width:"100%",padding:"10px",background:"linear-gradient(135deg,#f59e0b,#d97706)",color:"#fff",border:"none",borderRadius:8,fontSize:13,fontWeight:700,cursor:"pointer"}}>COMPRAR CREDITOS</button>
-                        : <button onClick={function(){onSel(t.newView)}} style={{width:"100%",padding:"10px",background:t.color,color:"#fff",border:"none",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer"}}>{"Iniciar"}</button>}
-                      {info && <button onClick={function(){ setShowInfo(infoOpen ? null : t.newView); }}
-                        style={{marginTop:8,width:"100%",padding:"8px",background:"transparent",border:"1px solid "+t.color+"44",borderRadius:8,fontSize:12,fontWeight:600,cursor:"pointer",color:t.color}}>
+                        ? <button onClick={onBuy} className="tools-card-start" style={{background:"linear-gradient(135deg,#f59e0b,#d97706)"}}>COMPRAR CREDITOS</button>
+                        : <button onClick={function(){onSel(t.newView)}} className="tools-card-start" style={{background:t.color}}>{"Iniciar"}</button>}
+                      {info && <button onClick={function(){ setShowInfo(infoOpen ? null : t.newView); }} className="tools-card-info-btn" style={{border:"1px solid "+t.color+"44",color:t.color}}>
                         {infoOpen ? "Ocultar informacion" : "Ver informacion"}
                       </button>}
-                      {infoOpen && info && <div style={{marginTop:10,background:"linear-gradient(135deg,"+t.color+"08,"+t.color+"12)",border:"1px solid "+t.color+"30",borderRadius:10,padding:"14px 16px",animation:"fi .3s ease"}}>
-                        <div style={{fontSize:13,fontWeight:700,color:t.color,marginBottom:10}}>{info.title}</div>
+                      {infoOpen && info && <div className="tools-card-info-panel" style={{background:"linear-gradient(135deg,"+t.color+"08,"+t.color+"12)",border:"1px solid "+t.color+"30"}}>
+                        <div className="tools-card-info-title" style={{color:t.color}}>{info.title}</div>
                         {info.sections.map(function(sec, i){
-                          return <div key={i} style={{marginBottom:i < info.sections.length-1 ? 10 : 0}}>
-                            <div style={{fontSize:11,fontWeight:700,color:t.color,textTransform:"uppercase",letterSpacing:".5px",marginBottom:3}}>{sec.label}</div>
-                            <div style={{fontSize:12,color:"#475569",lineHeight:1.7}}>{sec.text}</div>
+                          return <div key={i} className="tools-card-info-section">
+                            <div className="tools-card-info-section-label" style={{color:t.color}}>{sec.label}</div>
+                            <div className="tools-card-info-section-text">{sec.text}</div>
                           </div>;
                         })}
                       </div>}
@@ -216,32 +216,32 @@ export default function Tools({ TC, onSel, credits, onBuy, enabledTools, toolsCo
         })}
 
         {/* Consolidated Report Builder */}
-        <div style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",overflow:"hidden"}}>
-          <div onClick={function(){ setShowConsol(!showConsol); setConsolReport(null); setConsolPatient(null); setConsolSelected({}); }} style={{background:"linear-gradient(135deg,"+(TC&&TC.sd||"#0a3d2f")+","+(TC&&TC.ac||"#0d9488")+")",padding:"20px 24px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between",color:"#fff"}}>
-            <div style={{display:"flex",alignItems:"center",gap:14}}>
-              <span style={{fontSize:36}}>{"📋"}</span>
+        <div className="tools-area">
+          <div onClick={function(){ setShowConsol(!showConsol); setConsolReport(null); setConsolPatient(null); setConsolSelected({}); }} className="tools-area-header">
+            <div className="tools-area-header-info">
+              <span className="tools-area-icon">{"📋"}</span>
               <div>
-                <div style={{fontSize:18,fontWeight:700}}>Informe Complementario</div>
-                <div style={{fontSize:13,opacity:.85,marginTop:2}}>{"Gener\u00e1 un informe integrando m\u00faltiples evaluaciones de un mismo paciente"}</div>
+                <div className="tools-area-name">Informe Complementario</div>
+                <div className="tools-area-desc">{"Gener\u00e1 un informe integrando m\u00faltiples evaluaciones de un mismo paciente"}</div>
               </div>
             </div>
-            <div style={{fontSize:24,fontWeight:300,transition:"transform .2s",transform:showConsol?"rotate(180deg)":"rotate(0)"}}>{"v"}</div>
+            <div className={"tools-area-chevron"+(showConsol?" tools-area-chevron--open":"")}>{"v"}</div>
           </div>
 
-          {showConsol && <div style={{padding:20}}>
+          {showConsol && <div className="tools-area-body">
             {/* Step 1: Select patient */}
             {!consolPatient && <div>
-              <div style={{fontSize:14,fontWeight:700,color:(TC&&TC.ac||"#0d9488"),marginBottom:12}}>{"1. Selecciona un paciente"}</div>
-              {patients.length === 0 && <div style={{fontSize:13,color:"#64748b",fontStyle:"italic"}}>No hay evaluaciones realizadas todavia</div>}
-              <div style={{display:"flex",flexDirection:"column",gap:6}}>
+              <div className="tools-consol-step-title">{"1. Selecciona un paciente"}</div>
+              {patients.length === 0 && <div className="tools-consol-empty">No hay evaluaciones realizadas todavia</div>}
+              <div className="tools-consol-list">
                 {patients.map(function(p,i){
                   var evCount = (allEvals||[]).filter(function(ev){ return (ev.pacienteDni||ev.paciente) === (p.dni||p.nombre); }).length;
-                  return <button key={i} onClick={function(){ setConsolPatient(p); setConsolSelected({}); setConsolReport(null); }} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 16px",background:"#f8faf9",border:"1px solid #e2e8f0",borderRadius:10,cursor:"pointer",textAlign:"left"}}>
+                  return <button key={i} onClick={function(){ setConsolPatient(p); setConsolSelected({}); setConsolReport(null); }} className="tools-consol-patient">
                     <div>
-                      <div style={{fontWeight:600,fontSize:14}}>{p.nombre}</div>
-                      <div style={{fontSize:12,color:"#64748b"}}>{"DNI: "+(p.dni||"N/A")}</div>
+                      <div className="tools-consol-patient-name">{p.nombre}</div>
+                      <div className="tools-consol-patient-dni">{"DNI: "+(p.dni||"N/A")}</div>
                     </div>
-                    <span style={{fontSize:12,color:(TC&&TC.ac||"#0d9488"),fontWeight:600}}>{evCount + " eval."}</span>
+                    <span className="tools-consol-patient-count">{evCount + " eval."}</span>
                   </button>;
                 })}
               </div>
@@ -249,48 +249,46 @@ export default function Tools({ TC, onSel, credits, onBuy, enabledTools, toolsCo
 
             {/* Step 2: Select evaluations */}
             {consolPatient && !consolReport && !consolGenerating && <div>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
-                <div style={{fontSize:14,fontWeight:700,color:(TC&&TC.ac||"#0d9488")}}>{"2. Selecciona evaluaciones para " + consolPatient.nombre}</div>
-                <button onClick={function(){ setConsolPatient(null); setConsolSelected({}); }} style={{fontSize:12,color:"#64748b",background:"#f1f5f9",border:"none",borderRadius:6,padding:"6px 12px",cursor:"pointer"}}>{"Cambiar paciente"}</button>
+              <div className="tools-consol-step-header">
+                <div className="tools-consol-step-title" style={{marginBottom:0}}>{"2. Selecciona evaluaciones para " + consolPatient.nombre}</div>
+                <button onClick={function(){ setConsolPatient(null); setConsolSelected({}); }} className="tools-consol-change-btn">{"Cambiar paciente"}</button>
               </div>
-              {patientEvals.length < 2 && <div style={{fontSize:13,color:"#dc2626",background:"#fef2f2",padding:"10px 14px",borderRadius:8,marginBottom:12}}>{"Este paciente tiene menos de 2 evaluaciones. Se necesitan al menos 2 para generar un informe complementario."}</div>}
-              <div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:16}}>
+              {patientEvals.length < 2 && <div className="tools-consol-warn">{"Este paciente tiene menos de 2 evaluaciones. Se necesitan al menos 2 para generar un informe complementario."}</div>}
+              <div className="tools-consol-evals">
                 {patientEvals.map(function(ev){
                   var t = getEvalType(ev.tipo);
                   var checked = !!consolSelected[ev._fbId];
-                  return <label key={ev._fbId} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 16px",background:checked?"#f3e8ff":"#f8faf9",border:"1px solid "+(checked?"#c4b5fd":"#e2e8f0"),borderRadius:10,cursor:"pointer"}}>
-                    <input type="checkbox" checked={checked} onChange={function(){ setConsolSelected(function(prev){ var n = Object.assign({},prev); n[ev._fbId] = !prev[ev._fbId]; return n; }); }} style={{width:18,height:18,accentColor:(TC&&TC.ac||"#0d9488")}} />
-                    <span style={{fontSize:24}}>{t ? t.icon : ""}</span>
+                  return <label key={ev._fbId} className={"tools-consol-eval"+(checked?" tools-consol-eval--checked":"")}>
+                    <input type="checkbox" checked={checked} onChange={function(){ setConsolSelected(function(prev){ var n = Object.assign({},prev); n[ev._fbId] = !prev[ev._fbId]; return n; }); }} className="tools-consol-checkbox" style={{accentColor:"var(--c-accent)"}} />
+                    <span className="tools-consol-eval-icon">{t ? t.icon : ""}</span>
                     <div style={{flex:1}}>
-                      <div style={{fontWeight:600,fontSize:14}}>{t ? t.fullName : ev.tipo}</div>
-                      <div style={{fontSize:12,color:"#64748b"}}>{new Date(ev.fechaGuardado||ev.fechaEvaluacion).toLocaleDateString("es-AR")}</div>
+                      <div className="tools-consol-eval-name">{t ? t.fullName : ev.tipo}</div>
+                      <div className="tools-consol-eval-date">{new Date(ev.fechaGuardado||ev.fechaEvaluacion).toLocaleDateString("es-AR")}</div>
                     </div>
-                    <div style={{fontSize:12,color:t?t.color:"#64748b",fontWeight:600}}>{ev.resultados && ev.resultados.severity ? ev.resultados.severity : ""}</div>
+                    <div className="tools-consol-eval-sev" style={{color:t?t.color:"#64748b"}}>{ev.resultados && ev.resultados.severity ? ev.resultados.severity : ""}</div>
                   </label>;
                 })}
               </div>
-              <button onClick={handleGenerateConsol} disabled={selectedCount < 2} style={{width:"100%",padding:"14px",background:selectedCount<2?"#94a3b8":"linear-gradient(135deg,"+(TC&&TC.sd||"#0a3d2f")+","+(TC&&TC.ac||"#0d9488")+")",color:"#fff",border:"none",borderRadius:10,fontSize:14,fontWeight:700,cursor:selectedCount<2?"not-allowed":"pointer"}}>{"Generar Informe Complementario (" + selectedCount + " seleccionadas)"}</button>
+              <button onClick={handleGenerateConsol} disabled={selectedCount < 2} className="tools-consol-generate-btn" style={{background:selectedCount<2?"#94a3b8":"linear-gradient(135deg, var(--c-primary), var(--c-accent))",cursor:selectedCount<2?"not-allowed":"pointer"}}>{"Generar Informe Complementario (" + selectedCount + " seleccionadas)"}</button>
             </div>}
 
             {/* Generating */}
-            {consolGenerating && <div style={{textAlign:"center",padding:30}}>
-              <div style={{display:"inline-block",width:36,height:36,border:"4px solid #e2e8f0",borderTopColor:(TC&&TC.ac||"#0d9488"),borderRadius:"50%",animation:"spin 1s linear infinite",marginBottom:12}} />
-              <div style={{fontSize:14,fontWeight:600,color:(TC&&TC.sd||"#0a3d2f")}}>Generando informe complementario...</div>
-              <style>{"@keyframes spin{to{transform:rotate(360deg)}}"}</style>
+            {consolGenerating && <div className="tools-consol-generating">
+              <div className="tools-consol-spinner" />
+              <div className="tools-consol-generating-text">Generando informe complementario...</div>
             </div>}
 
             {/* Report result */}
             {consolReport && <div>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
-                <div style={{fontSize:15,fontWeight:700,color:(TC&&TC.ac||"#0d9488")}}>{"Informe Complementario - " + consolPatient.nombre}</div>
-                <div style={{display:"flex",gap:6}}>
-                  {!consolEditing && <button onClick={function(){ setConsolEditText(consolReport); setConsolEditing(true); }} style={{padding:"8px 16px",background:"#f1f5f9",border:"1px solid #e2e8f0",borderRadius:8,fontSize:12,fontWeight:600,cursor:"pointer",color:"#64748b"}}>{"Editar"}</button>}
+              <div className="tools-consol-report-header">
+                <div className="tools-consol-report-title">{"Informe Complementario - " + consolPatient.nombre}</div>
+                <div className="tools-consol-report-actions">
+                  {!consolEditing && <button onClick={function(){ setConsolEditText(consolReport); setConsolEditing(true); }} className="tools-btn-edit">{"Editar"}</button>}
                   <button onClick={function(){
                     var textToUse = consolEditing ? consolEditText : consolReport;
                     import("jspdf").then(function(mod){
                       var jsPDF=mod.jsPDF,pdf=new jsPDF("p","mm","a4"),pW=210,margin=14,maxW=182,y=14;
                       var ti = therapistInfo || {};
-                      // Encabezado del profesional
                       if(ti.therapist || ti.clinic){
                         pdf.setFontSize(11);pdf.setTextColor(10,61,47);pdf.setFont(undefined,"bold");
                         if(ti.clinic){pdf.text(ti.clinic,margin,y);y+=5;}
@@ -311,25 +309,24 @@ export default function Tools({ TC, onSel, credits, onBuy, enabledTools, toolsCo
                       });
                       pdf.save("Complementario_"+consolPatient.nombre.replace(/\s/g,"_")+".pdf");
                     });
-                  }} style={{padding:"8px 16px",background:(TC&&TC.ac||"#0d9488"),color:"#fff",border:"none",borderRadius:8,fontSize:12,fontWeight:600,cursor:"pointer"}}>{"Imprimir"}</button>
-                  <button onClick={function(){ setConsolReport(null); setConsolSelected({}); setConsolEditing(false); }} style={{padding:"8px 16px",background:"#f1f5f9",border:"1px solid #e2e8f0",borderRadius:8,fontSize:12,cursor:"pointer",color:"#64748b"}}>{"Nuevo informe"}</button>
+                  }} className="tools-btn-print">{"Imprimir"}</button>
+                  <button onClick={function(){ setConsolReport(null); setConsolSelected({}); setConsolEditing(false); }} className="tools-btn-new">{"Nuevo informe"}</button>
                 </div>
               </div>
-              <div style={{background:"#fff",borderRadius:12,border:"2px solid "+(TC&&TC.ac||"#0d9488"),padding:24}}>
-                {/* Encabezado del profesional */}
-                {therapistInfo && (therapistInfo.therapist || therapistInfo.clinic) && <div style={{marginBottom:14,paddingBottom:12,borderBottom:"2px solid #0a3d2f"}}>
-                  {therapistInfo.clinic && <div style={{fontSize:13,fontWeight:700,color:(TC&&TC.sd||"#0a3d2f")}}>{therapistInfo.clinic}</div>}
-                  {therapistInfo.address && <div style={{fontSize:11,color:"#64748b",marginTop:2}}>{therapistInfo.address}</div>}
-                  {therapistInfo.therapist && <div style={{fontSize:12,fontWeight:600,color:(TC&&TC.sd||"#0a3d2f"),marginTop:4}}>{therapistInfo.therapist}{therapistInfo.license ? " \u2014 " + therapistInfo.license : ""}</div>}
-                  {(therapistInfo.phone || therapistInfo.email) && <div style={{fontSize:10,color:"#94a3b8",marginTop:2}}>{[therapistInfo.phone, therapistInfo.email].filter(Boolean).join(" \u00b7 ")}</div>}
+              <div className="tools-consol-report">
+                {therapistInfo && (therapistInfo.therapist || therapistInfo.clinic) && <div className="tools-consol-therapist-header">
+                  {therapistInfo.clinic && <div className="tools-consol-therapist-clinic">{therapistInfo.clinic}</div>}
+                  {therapistInfo.address && <div className="tools-consol-therapist-addr">{therapistInfo.address}</div>}
+                  {therapistInfo.therapist && <div className="tools-consol-therapist-name">{therapistInfo.therapist}{therapistInfo.license ? " \u2014 " + therapistInfo.license : ""}</div>}
+                  {(therapistInfo.phone || therapistInfo.email) && <div className="tools-consol-therapist-contact">{[therapistInfo.phone, therapistInfo.email].filter(Boolean).join(" \u00b7 ")}</div>}
                 </div>}
                 {consolEditing ? <div>
-                  <textarea value={consolEditText} onChange={function(e){setConsolEditText(e.target.value)}} rows={18} style={{width:"100%",padding:"12px",border:"1px solid #e2e8f0",borderRadius:8,fontSize:13,lineHeight:1.7,fontFamily:"inherit",resize:"vertical"}} />
-                  <div style={{display:"flex",gap:8,marginTop:10}}>
-                    <button onClick={function(){ setConsolReport(consolEditText); setConsolEditing(false); }} style={{padding:"8px 16px",background:"#059669",color:"#fff",border:"none",borderRadius:6,fontSize:12,fontWeight:600,cursor:"pointer"}}>{"Guardar cambios"}</button>
-                    <button onClick={function(){ setConsolEditing(false); }} style={{padding:"8px 16px",background:"#f1f5f9",border:"1px solid #e2e8f0",borderRadius:6,fontSize:12,cursor:"pointer",color:"#64748b"}}>{"Cancelar"}</button>
+                  <textarea value={consolEditText} onChange={function(e){setConsolEditText(e.target.value)}} rows={18} className="tools-consol-editor" />
+                  <div className="tools-consol-editor-actions">
+                    <button onClick={function(){ setConsolReport(consolEditText); setConsolEditing(false); }} className="tools-btn-save-edit">{"Guardar cambios"}</button>
+                    <button onClick={function(){ setConsolEditing(false); }} className="tools-btn-cancel-edit">{"Cancelar"}</button>
                   </div>
-                </div> : <div style={{fontSize:13,lineHeight:1.7}}>{renderReportText(consolReport)}</div>}
+                </div> : <div className="tools-consol-report-text">{renderReportText(consolReport)}</div>}
               </div>
             </div>}
           </div>}
