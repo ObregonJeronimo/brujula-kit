@@ -4,8 +4,7 @@ import { ALL_EVAL_TYPES } from "../config/evalTypes.js";
 import { K } from "../lib/fb.js";
 import Admin from "./Admin.jsx";
 import ChangelogAdmin from "./ChangelogAdmin.jsx";
-
-var TOOLS_DOC = "config/tools";
+import "../styles/AdminPanel.css";
 
 export default function AdminPanel({ nfy }) {
   var _tab = useState("usuarios"), tab = _tab[0], setTab = _tab[1];
@@ -17,11 +16,9 @@ export default function AdminPanel({ nfy }) {
   var _saving = useState(false), saving = _saving[0], setSaving = _saving[1];
   var _themeColors = useState({primary:"#0a3d2f",secondary:"#0d9488",primaryAlpha:100,secondaryAlpha:100}), themeColors = _themeColors[0], setThemeColors = _themeColors[1];
   var _themeSaving = useState(false), themeSaving = _themeSaving[0], setThemeSaving = _themeSaving[1];
-  // Audios de evaluación fonética
   var _fonAudios = useState(null), fonAudios = _fonAudios[0], setFonAudios = _fonAudios[1];
   var _playingAudio = useState(null), playingAudio = _playingAudio[0], setPlayingAudio = _playingAudio[1];
 
-  // Cargar audios cuando se abre la tab
   useEffect(function(){
     if(tab === "audios" && fonAudios === null){
       getDocs(collection(db,"fon_audios")).then(function(snap){
@@ -78,23 +75,22 @@ export default function AdminPanel({ nfy }) {
   var ADMIN_TABS = [["usuarios","\ud83d\udc65 Usuarios"],["changelog","\ud83d\udcdd Changelog"],["herramientas","\ud83e\uddf0 Herramientas"],["colores","\ud83c\udfa8 Colores"],["audios","\ud83c\udfa4 Audios"],["datos","\ud83d\uddd1\ufe0f Datos"]];
 
   return (
-    <div style={{animation:"fi .3s ease",width:"100%",maxWidth:900}}>
-      <h1 style={{fontSize:22,fontWeight:700,marginBottom:6}}>{"⚙️ Administrar"}</h1>
-      <p style={{color:K.mt,fontSize:14,marginBottom:16}}>Panel de administración del sistema</p>
+    <div className="adm-page">
+      <h1 className="adm-title">{"⚙️ Administrar"}</h1>
+      <p className="adm-subtitle">Panel de administración del sistema</p>
 
-      <div style={{display:"flex",gap:6,marginBottom:20,flexWrap:"wrap"}}>
+      <div className="adm-tabs">
         {ADMIN_TABS.map(function(t){
-          return <button key={t[0]} onClick={function(){setTab(t[0])}} style={{padding:"10px 20px",borderRadius:8,border:tab===t[0]?"2px solid "+K.ac:"1px solid #e2e8f0",background:tab===t[0]?"#ccfbf1":"#fff",color:tab===t[0]?K.ac:"#475569",fontSize:13,fontWeight:600,cursor:"pointer"}}>{t[1]}</button>;
+          return <button key={t[0]} onClick={function(){setTab(t[0])}} className={"adm-tab"+(tab===t[0]?" adm-tab--active":"")}>{t[1]}</button>;
         })}
       </div>
 
       {tab==="usuarios" && <Admin nfy={nfy} />}
-
       {tab==="changelog" && <ChangelogAdmin nfy={nfy} />}
 
       {tab==="herramientas" && <div>
-        <p style={{fontSize:13,color:K.mt,marginBottom:16}}>{"Activá o desactivá herramientas para los usuarios. Podés editar el título y descripción."}</p>
-        <div style={{display:"flex",flexDirection:"column",gap:14}}>
+        <p className="adm-desc">{"Activá o desactivá herramientas para los usuarios. Podés editar el título y descripción."}</p>
+        <div className="adm-tools-list">
           {ALL_EVAL_TYPES.map(function(t){
             var cfg = (toolsConfig && toolsConfig[t.id]) || { enabled: true, title: t.fullName, desc: t.desc };
             var isEnabled = cfg.enabled !== false;
@@ -102,62 +98,62 @@ export default function AdminPanel({ nfy }) {
             var currentTitle = editTitle[t.id] !== undefined ? editTitle[t.id] : (cfg.title || t.fullName);
             var currentDesc = editDesc[t.id] !== undefined ? editDesc[t.id] : (cfg.desc || t.desc);
 
-            return <div key={t.id} style={{background:"#fff",borderRadius:12,border:"1px solid "+(isEnabled?"#e2e8f0":"#fecaca"),overflow:"hidden",opacity:isEnabled?1:0.7}}>
-              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"16px 20px",background:isEnabled?"linear-gradient(135deg,"+t.color+","+t.color+"cc)":"#f8f8f8"}}>
-                <div style={{display:"flex",alignItems:"center",gap:12}}>
-                  <span style={{fontSize:28}}>{t.icon}</span>
+            return <div key={t.id} className={"adm-tool-card"+(isEnabled?"":" adm-tool-card--disabled")}>
+              <div className={"adm-tool-header"+(isEnabled?"":" adm-tool-header--disabled")} style={isEnabled?{background:"linear-gradient(135deg,"+t.color+","+t.color+"cc)"}:undefined}>
+                <div className="adm-tool-header-left">
+                  <span className="adm-tool-icon">{t.icon}</span>
                   <div>
-                    <div style={{fontSize:16,fontWeight:700,color:isEnabled?"#fff":"#94a3b8"}}>{cfg.title || t.fullName}</div>
-                    <div style={{fontSize:11,color:isEnabled?"rgba(255,255,255,.7)":"#cbd5e1"}}>{t.id.toUpperCase()+" · "+(cfg.age||t.age||"")+" · "+(cfg.time||t.time||"")}</div>
+                    <div className={"adm-tool-name"+(isEnabled?"":" adm-tool-name--disabled")}>{cfg.title || t.fullName}</div>
+                    <div className={"adm-tool-meta"+(isEnabled?"":" adm-tool-meta--disabled")}>{t.id.toUpperCase()+" · "+(cfg.age||t.age||"")+" · "+(cfg.time||t.time||"")}</div>
                   </div>
                 </div>
-                <button onClick={function(){toggleTool(t.id)}} style={{width:52,height:28,borderRadius:14,border:"none",background:isEnabled?"#059669":"#dc2626",cursor:"pointer",position:"relative",transition:"background .2s"}}>
-                  <div style={{width:22,height:22,borderRadius:11,background:"#fff",position:"absolute",top:3,left:isEnabled?27:3,transition:"left .2s",boxShadow:"0 1px 3px rgba(0,0,0,.2)"}}></div>
+                <button onClick={function(){toggleTool(t.id)}} className={"adm-toggle "+(isEnabled?"adm-toggle--on":"adm-toggle--off")}>
+                  <div className="adm-toggle-knob"></div>
                 </button>
               </div>
-              <div style={{padding:"14px 20px"}}>
+              <div className="adm-tool-body">
                 {!isEditing ? <div>
-                  <div style={{fontSize:13,color:"#475569",lineHeight:1.6,marginBottom:10}}>{cfg.desc || t.desc}</div>
-                  <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:10}}>
+                  <div className="adm-tool-body-desc">{cfg.desc || t.desc}</div>
+                  <div className="adm-tool-actions">
                     <button onClick={function(){
                       var updated = Object.assign({}, toolsConfig);
                       if(!updated[t.id]) updated[t.id] = { enabled: true };
                       updated[t.id] = Object.assign({}, updated[t.id], { showAge: cfg.showAge === false ? true : false });
                       setToolsConfig(updated);
                       setDoc(doc(db, "config", "tools"), updated).then(function(){ nfy("Edad "+(updated[t.id].showAge?"visible":"oculta"),"ok"); });
-                    }} style={{display:"flex",alignItems:"center",gap:6,background:"none",border:"1px solid #e2e8f0",borderRadius:8,padding:"6px 12px",cursor:"pointer",fontSize:11,fontWeight:600,color:cfg.showAge!==false?"#059669":"#dc2626"}}>
-                      <span style={{width:32,height:16,borderRadius:8,background:cfg.showAge!==false?"#059669":"#dc2626",display:"inline-block",position:"relative"}}><span style={{width:12,height:12,borderRadius:6,background:"#fff",position:"absolute",top:2,left:cfg.showAge!==false?18:2,transition:"left .2s"}}></span></span>
+                    }} className={"adm-age-toggle-btn "+(cfg.showAge!==false?"adm-age-toggle-btn--on":"adm-age-toggle-btn--off")}>
+                      <span className="adm-toggle-mini" style={{background:cfg.showAge!==false?"#059669":"#dc2626"}}><span className="adm-toggle-mini-knob" style={{left:cfg.showAge!==false?"18px":"2px"}}></span></span>
                       {"Edad: "+(cfg.showAge!==false?"visible":"oculta")}
                     </button>
                     <button onClick={function(){
-                    setEditTitle(function(p){ return Object.assign({},p,{[t.id]:cfg.title||t.fullName}); });
-                    setEditDesc(function(p){ return Object.assign({},p,{[t.id]:cfg.desc||t.desc}); });
-                    setEditAge(function(p){ return Object.assign({},p,{[t.id]:cfg.age||t.age||""}); });
-                    setEditTime(function(p){ return Object.assign({},p,{[t.id]:cfg.time||t.time||""}); });
-                  }} style={{padding:"6px 14px",background:"#f1f5f9",border:"1px solid #e2e8f0",borderRadius:6,fontSize:11,fontWeight:600,cursor:"pointer",color:K.mt}}>{"Editar"}</button>
+                      setEditTitle(function(p){ return Object.assign({},p,{[t.id]:cfg.title||t.fullName}); });
+                      setEditDesc(function(p){ return Object.assign({},p,{[t.id]:cfg.desc||t.desc}); });
+                      setEditAge(function(p){ return Object.assign({},p,{[t.id]:cfg.age||t.age||""}); });
+                      setEditTime(function(p){ return Object.assign({},p,{[t.id]:cfg.time||t.time||""}); });
+                    }} className="adm-edit-btn">{"Editar"}</button>
                   </div>
                 </div> : <div>
-                  <div style={{marginBottom:10}}><label style={{fontSize:11,fontWeight:600,color:K.mt,display:"block",marginBottom:3}}>Titulo</label><input value={currentTitle} onChange={function(e){setEditTitle(function(p){return Object.assign({},p,{[t.id]:e.target.value})})}} style={{width:"100%",padding:"8px 12px",border:"1px solid #e2e8f0",borderRadius:6,fontSize:13}} /></div>
-                  <div style={{marginBottom:10}}><label style={{fontSize:11,fontWeight:600,color:K.mt,display:"block",marginBottom:3}}>Descripcion</label><textarea value={currentDesc} onChange={function(e){setEditDesc(function(p){return Object.assign({},p,{[t.id]:e.target.value})})}} rows={3} style={{width:"100%",padding:"8px 12px",border:"1px solid #e2e8f0",borderRadius:6,fontSize:13,resize:"vertical",fontFamily:"inherit"}} /></div>
-                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
+                  <div className="adm-edit-field"><label className="adm-edit-label">Titulo</label><input value={currentTitle} onChange={function(e){setEditTitle(function(p){return Object.assign({},p,{[t.id]:e.target.value})})}} className="adm-edit-input" /></div>
+                  <div className="adm-edit-field"><label className="adm-edit-label">Descripcion</label><textarea value={currentDesc} onChange={function(e){setEditDesc(function(p){return Object.assign({},p,{[t.id]:e.target.value})})}} rows={3} className="adm-edit-input adm-edit-textarea" /></div>
+                  <div className="adm-edit-grid">
                     <div>
-                      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:3}}>
-                        <label style={{fontSize:11,fontWeight:600,color:K.mt}}>Edad recomendada</label>
-                        <button onClick={function(){ var updated = Object.assign({}, toolsConfig); if(!updated[t.id]) updated[t.id] = { enabled: true }; updated[t.id] = Object.assign({}, updated[t.id], { showAge: !cfg.showAge }); setToolsConfig(updated); setDoc(doc(db, "config", "tools"), updated); }} style={{display:"flex",alignItems:"center",gap:4,background:"none",border:"none",cursor:"pointer",fontSize:10,color:cfg.showAge!==false?"#059669":"#dc2626",fontWeight:600}}>
-                          <span style={{width:32,height:16,borderRadius:8,background:cfg.showAge!==false?"#059669":"#dc2626",display:"inline-block",position:"relative"}}><span style={{width:12,height:12,borderRadius:6,background:"#fff",position:"absolute",top:2,left:cfg.showAge!==false?18:2,transition:"left .2s"}}></span></span>
+                      <div className="adm-edit-label-row">
+                        <label className="adm-edit-label" style={{marginBottom:0}}>Edad recomendada</label>
+                        <button onClick={function(){ var updated = Object.assign({}, toolsConfig); if(!updated[t.id]) updated[t.id] = { enabled: true }; updated[t.id] = Object.assign({}, updated[t.id], { showAge: !cfg.showAge }); setToolsConfig(updated); setDoc(doc(db, "config", "tools"), updated); }} className="adm-age-inline-btn" style={{color:cfg.showAge!==false?"#059669":"#dc2626"}}>
+                          <span className="adm-toggle-mini" style={{background:cfg.showAge!==false?"#059669":"#dc2626"}}><span className="adm-toggle-mini-knob" style={{left:cfg.showAge!==false?"18px":"2px"}}></span></span>
                           {cfg.showAge!==false?"Visible":"Oculta"}
                         </button>
                       </div>
-                      <input value={editAge[t.id]||""} onChange={function(e){setEditAge(function(p){return Object.assign({},p,{[t.id]:e.target.value})})}} placeholder="ej: 3-6 anos" style={{width:"100%",padding:"8px 12px",border:"1px solid #e2e8f0",borderRadius:6,fontSize:13}} />
+                      <input value={editAge[t.id]||""} onChange={function(e){setEditAge(function(p){return Object.assign({},p,{[t.id]:e.target.value})})}} placeholder="ej: 3-6 anos" className="adm-edit-input" />
                     </div>
-                    <div><label style={{fontSize:11,fontWeight:600,color:K.mt,display:"block",marginBottom:3}}>Tiempo estimado</label><input value={editTime[t.id]||""} onChange={function(e){setEditTime(function(p){return Object.assign({},p,{[t.id]:e.target.value})})}} placeholder="ej: ~20 min" style={{width:"100%",padding:"8px 12px",border:"1px solid #e2e8f0",borderRadius:6,fontSize:13}} /></div>
+                    <div><label className="adm-edit-label">Tiempo estimado</label><input value={editTime[t.id]||""} onChange={function(e){setEditTime(function(p){return Object.assign({},p,{[t.id]:e.target.value})})}} placeholder="ej: ~20 min" className="adm-edit-input" /></div>
                   </div>
-                  <div style={{display:"flex",gap:8}}>
-                    <button onClick={function(){saveTitleDesc(t.id)}} disabled={saving} style={{padding:"8px 16px",background:K.ac,color:"#fff",border:"none",borderRadius:6,fontSize:12,fontWeight:600,cursor:"pointer"}}>Guardar</button>
-                    <button onClick={function(){ setEditTitle(function(p){ var n=Object.assign({},p); delete n[t.id]; return n; }); setEditDesc(function(p){ var n=Object.assign({},p); delete n[t.id]; return n; }); setEditAge(function(p){ var n=Object.assign({},p); delete n[t.id]; return n; }); setEditTime(function(p){ var n=Object.assign({},p); delete n[t.id]; return n; }); }} style={{padding:"8px 16px",background:"#f1f5f9",border:"1px solid #e2e8f0",borderRadius:6,fontSize:12,cursor:"pointer",color:K.mt}}>Cancelar</button>
+                  <div className="adm-edit-actions">
+                    <button onClick={function(){saveTitleDesc(t.id)}} disabled={saving} className="adm-btn-save">Guardar</button>
+                    <button onClick={function(){ setEditTitle(function(p){ var n=Object.assign({},p); delete n[t.id]; return n; }); setEditDesc(function(p){ var n=Object.assign({},p); delete n[t.id]; return n; }); setEditAge(function(p){ var n=Object.assign({},p); delete n[t.id]; return n; }); setEditTime(function(p){ var n=Object.assign({},p); delete n[t.id]; return n; }); }} className="adm-btn-cancel">Cancelar</button>
                   </div>
                 </div>}
-                {!isEnabled && <div style={{marginTop:10,padding:"8px 12px",background:"#fef2f2",borderRadius:6,fontSize:11,color:"#dc2626",fontWeight:600}}>{"⚠ Desactivada — no visible para usuarios"}</div>}
+                {!isEnabled && <div className="adm-disabled-warn">{"⚠ Desactivada — no visible para usuarios"}</div>}
               </div>
             </div>;
           })}
@@ -165,59 +161,57 @@ export default function AdminPanel({ nfy }) {
       </div>}
 
       {tab==="colores" && <div>
-        <p style={{fontSize:13,color:K.mt,marginBottom:16}}>{"Personalizá los colores de la aplicación. Los cambios se aplican para todos los usuarios."}</p>
-        <div style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",padding:20,marginBottom:16}}>
-          <div style={{fontSize:14,fontWeight:700,color:"#1e293b",marginBottom:4}}>Color Primario</div>
-          <div style={{fontSize:11,color:K.mt,marginBottom:12}}>{"Sidebar, encabezados principales y botones de acción"}</div>
-          <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:14}}>{PALETTE.map(function(p){ var sel = themeColors.primary===p.c; return <button key={p.c} onClick={function(){setThemeColors(function(prev){return Object.assign({},prev,{primary:p.c})})}} title={p.n} style={{width:36,height:36,borderRadius:8,background:p.c,border:sel?"3px solid #000":"2px solid #e2e8f0",cursor:"pointer",transition:"all .15s",transform:sel?"scale(1.15)":"scale(1)",boxShadow:sel?"0 2px 8px rgba(0,0,0,.3)":"none"}} />; })}</div>
-          <div style={{display:"flex",alignItems:"center",gap:12}}><span style={{fontSize:11,fontWeight:600,color:K.mt,minWidth:70}}>Intensidad</span><input type="range" min="30" max="100" value={themeColors.primaryAlpha} onChange={function(e){setThemeColors(function(prev){return Object.assign({},prev,{primaryAlpha:parseInt(e.target.value)})})}} style={{flex:1,accentColor:themeColors.primary}} /><span style={{fontSize:12,fontWeight:700,color:themeColors.primary,minWidth:35}}>{themeColors.primaryAlpha+"%"}</span></div>
-          <div style={{marginTop:12,height:40,borderRadius:8,background:themeColors.primary,opacity:themeColors.primaryAlpha/100,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:12,fontWeight:600}}>Vista previa</div>
+        <p className="adm-desc">{"Personalizá los colores de la aplicación. Los cambios se aplican para todos los usuarios."}</p>
+        <div className="adm-colors-card">
+          <div className="adm-colors-title">Color Primario</div>
+          <div className="adm-colors-desc">{"Sidebar, encabezados principales y botones de acción"}</div>
+          <div className="adm-palette">{PALETTE.map(function(p){ var sel = themeColors.primary===p.c; return <button key={p.c} onClick={function(){setThemeColors(function(prev){return Object.assign({},prev,{primary:p.c})})}} title={p.n} className={"adm-palette-swatch"+(sel?" adm-palette-swatch--sel":"")} style={{background:p.c}} />; })}</div>
+          <div className="adm-alpha-row"><span className="adm-alpha-label">Intensidad</span><input type="range" min="30" max="100" value={themeColors.primaryAlpha} onChange={function(e){setThemeColors(function(prev){return Object.assign({},prev,{primaryAlpha:parseInt(e.target.value)})})}} className="adm-alpha-slider" style={{accentColor:themeColors.primary}} /><span className="adm-alpha-value" style={{color:themeColors.primary}}>{themeColors.primaryAlpha+"%"}</span></div>
+          <div className="adm-preview" style={{background:themeColors.primary,opacity:themeColors.primaryAlpha/100}}>Vista previa</div>
         </div>
-        <div style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",padding:20,marginBottom:16}}>
-          <div style={{fontSize:14,fontWeight:700,color:"#1e293b",marginBottom:4}}>Color Secundario</div>
-          <div style={{fontSize:11,color:K.mt,marginBottom:12}}>Acentos, badges, botones secundarios y enlaces</div>
-          <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:14}}>{PALETTE.map(function(p){ var sel = themeColors.secondary===p.c; return <button key={p.c} onClick={function(){setThemeColors(function(prev){return Object.assign({},prev,{secondary:p.c})})}} title={p.n} style={{width:36,height:36,borderRadius:8,background:p.c,border:sel?"3px solid #000":"2px solid #e2e8f0",cursor:"pointer",transition:"all .15s",transform:sel?"scale(1.15)":"scale(1)",boxShadow:sel?"0 2px 8px rgba(0,0,0,.3)":"none"}} />; })}</div>
-          <div style={{display:"flex",alignItems:"center",gap:12}}><span style={{fontSize:11,fontWeight:600,color:K.mt,minWidth:70}}>Intensidad</span><input type="range" min="30" max="100" value={themeColors.secondaryAlpha} onChange={function(e){setThemeColors(function(prev){return Object.assign({},prev,{secondaryAlpha:parseInt(e.target.value)})})}} style={{flex:1,accentColor:themeColors.secondary}} /><span style={{fontSize:12,fontWeight:700,color:themeColors.secondary,minWidth:35}}>{themeColors.secondaryAlpha+"%"}</span></div>
-          <div style={{marginTop:12,height:40,borderRadius:8,background:themeColors.secondary,opacity:themeColors.secondaryAlpha/100,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:12,fontWeight:600}}>Vista previa</div>
+        <div className="adm-colors-card">
+          <div className="adm-colors-title">Color Secundario</div>
+          <div className="adm-colors-desc">Acentos, badges, botones secundarios y enlaces</div>
+          <div className="adm-palette">{PALETTE.map(function(p){ var sel = themeColors.secondary===p.c; return <button key={p.c} onClick={function(){setThemeColors(function(prev){return Object.assign({},prev,{secondary:p.c})})}} title={p.n} className={"adm-palette-swatch"+(sel?" adm-palette-swatch--sel":"")} style={{background:p.c}} />; })}</div>
+          <div className="adm-alpha-row"><span className="adm-alpha-label">Intensidad</span><input type="range" min="30" max="100" value={themeColors.secondaryAlpha} onChange={function(e){setThemeColors(function(prev){return Object.assign({},prev,{secondaryAlpha:parseInt(e.target.value)})})}} className="adm-alpha-slider" style={{accentColor:themeColors.secondary}} /><span className="adm-alpha-value" style={{color:themeColors.secondary}}>{themeColors.secondaryAlpha+"%"}</span></div>
+          <div className="adm-preview" style={{background:themeColors.secondary,opacity:themeColors.secondaryAlpha/100}}>Vista previa</div>
         </div>
-        <div style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",padding:20,marginBottom:16}}>
-          <div style={{fontSize:14,fontWeight:700,color:"#1e293b",marginBottom:12}}>Vista previa combinada</div>
-          <div style={{display:"flex",gap:0,borderRadius:10,overflow:"hidden",height:60}}>
-            <div style={{flex:1,background:themeColors.primary,opacity:themeColors.primaryAlpha/100,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:11,fontWeight:600}}>Sidebar</div>
-            <div style={{flex:2,background:"#f0f5f3",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-              <div style={{padding:"6px 14px",background:themeColors.secondary,opacity:themeColors.secondaryAlpha/100,color:"#fff",borderRadius:6,fontSize:11,fontWeight:600}}>{"Botón"}</div>
-              <div style={{padding:"6px 14px",border:"1px solid "+themeColors.secondary,color:themeColors.secondary,borderRadius:6,fontSize:11,fontWeight:600}}>Enlace</div>
+        <div className="adm-colors-card">
+          <div className="adm-colors-title" style={{marginBottom:12}}>Vista previa combinada</div>
+          <div className="adm-preview-combo">
+            <div className="adm-preview-sidebar" style={{background:themeColors.primary,opacity:themeColors.primaryAlpha/100}}>Sidebar</div>
+            <div className="adm-preview-content">
+              <div className="adm-preview-btn" style={{background:themeColors.secondary,opacity:themeColors.secondaryAlpha/100}}>{"Botón"}</div>
+              <div className="adm-preview-link" style={{border:"1px solid "+themeColors.secondary,color:themeColors.secondary}}>Enlace</div>
             </div>
           </div>
         </div>
-        <button onClick={saveTheme} disabled={themeSaving} style={{width:"100%",padding:"14px",background:themeColors.primary,color:"#fff",border:"none",borderRadius:10,fontSize:14,fontWeight:700,cursor:themeSaving?"wait":"pointer",opacity:themeSaving?.7:1}}>
+        <button onClick={saveTheme} disabled={themeSaving} className="adm-save-btn" style={{background:themeColors.primary,opacity:themeSaving?.7:1,cursor:themeSaving?"wait":"pointer"}}>
           {themeSaving ? "Guardando..." : "Guardar colores"}
         </button>
       </div>}
 
       {tab==="audios" && <div>
-        <p style={{fontSize:13,color:K.mt,marginBottom:16}}>{"Audios guardados para la Evaluaci\u00f3n Fon\u00e9tica. Se reproducen cuando el usuario toca Escuchar."}</p>
-        {fonAudios === null ? <div style={{textAlign:"center",padding:20,color:K.mt,fontSize:14}}>{"Cargando audios..."}</div> : (function(){
+        <p className="adm-desc">{"Audios guardados para la Evaluación Fonética. Se reproducen cuando el usuario toca Escuchar."}</p>
+        {fonAudios === null ? <div className="adm-audios-loading">{"Cargando audios..."}</div> : (function(){
           var keys = Object.keys(fonAudios).sort();
-          if(keys.length === 0) return <div style={{background:"#f8faf9",borderRadius:10,padding:20,textAlign:"center",color:K.mt,fontSize:14}}>{"No hay audios grabados. And\u00e1 a Herramientas \u2192 Evaluaci\u00f3n Fon\u00e9tica para grabar."}</div>;
+          if(keys.length === 0) return <div className="adm-audios-empty">{"No hay audios grabados. Andá a Herramientas → Evaluación Fonética para grabar."}</div>;
           return <div>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
-              <div style={{fontSize:14,fontWeight:700,color:"#1e293b"}}>{keys.length + " audios grabados"}</div>
-              <button onClick={function(){
-                setFonAudios(null); // triggers reload via useEffect
-              }} style={{padding:"6px 14px",background:"#f1f5f9",border:"1px solid #e2e8f0",borderRadius:6,fontSize:11,fontWeight:600,cursor:"pointer",color:K.mt}}>{"Recargar"}</button>
+            <div className="adm-audios-header">
+              <div className="adm-audios-count">{keys.length + " audios grabados"}</div>
+              <button onClick={function(){ setFonAudios(null); }} className="adm-audios-reload">{"Recargar"}</button>
             </div>
-            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(140px,1fr))",gap:8}}>
+            <div className="adm-audios-grid">
               {keys.map(function(k){
-                return <div key={k} style={{background:"#fff",borderRadius:10,border:"1px solid #e2e8f0",padding:"10px 12px",display:"flex",alignItems:"center",gap:8}}>
+                return <div key={k} className="adm-audio-item">
                   <button onClick={function(){
                     if(playingAudio === k){ setPlayingAudio(null); return; }
                     setPlayingAudio(k);
                     var a = new Audio(fonAudios[k]);
                     a.onended = function(){ setPlayingAudio(null); };
                     a.play().catch(function(){ setPlayingAudio(null); });
-                  }} style={{background:playingAudio===k?"#059669":"#ede9fe",border:"none",borderRadius:6,width:28,height:28,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:12,color:playingAudio===k?"#fff":"#6d28d9",flexShrink:0}}>{playingAudio===k?"\u23f9":"\u25b6"}</button>
-                  <span style={{fontSize:14,fontWeight:700,color:"#1e293b",flex:1}}>{k}</span>
+                  }} className={"adm-audio-play"+(playingAudio===k?" adm-audio-play--playing":"")}>{playingAudio===k?"\u23f9":"\u25b6"}</button>
+                  <span className="adm-audio-name">{k}</span>
                   <button onClick={function(){
                     var ok = window.confirm("\u26a0\ufe0f Eliminar audio de '"+k+"'?\n\nEste audio fue grabado manualmente y no se puede recuperar.\n\u00bfEst\u00e1s seguro?");
                     if(!ok) return;
@@ -227,7 +221,7 @@ export default function AdminPanel({ nfy }) {
                       setFonAudios(next);
                       nfy("Audio '"+k+"' eliminado","ok");
                     }).catch(function(e){ nfy("Error: "+e.message,"er"); });
-                  }} style={{background:"none",border:"none",fontSize:14,color:"#dc2626",cursor:"pointer",padding:2,flexShrink:0}}>{"\u00d7"}</button>
+                  }} className="adm-audio-del">{"\u00d7"}</button>
                 </div>;
               })}
             </div>
@@ -236,11 +230,11 @@ export default function AdminPanel({ nfy }) {
       </div>}
 
       {tab==="datos" && <div>
-        <p style={{fontSize:13,color:K.mt,marginBottom:20}}>{"Herramientas de mantenimiento de datos. Estas acciones son irreversibles."}</p>
+        <p className="adm-desc">{"Herramientas de mantenimiento de datos. Estas acciones son irreversibles."}</p>
 
-        <div style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",padding:20,marginBottom:16}}>
-          <div style={{fontSize:14,fontWeight:700,color:"#dc2626",marginBottom:4}}>{"Borrar todas las evaluaciones"}</div>
-          <div style={{fontSize:12,color:K.mt,marginBottom:14}}>{"Elimina todas las evaluaciones e informes complementarios de la base de datos. Los usuarios y cr\u00e9ditos no se ven afectados."}</div>
+        <div className="adm-danger-card">
+          <div className="adm-danger-title">{"Borrar todas las evaluaciones"}</div>
+          <div className="adm-danger-desc">{"Elimina todas las evaluaciones e informes complementarios de la base de datos. Los usuarios y créditos no se ven afectados."}</div>
           <button onClick={function(){
             var ok = window.confirm("ATENCION: Esto borrar\u00e1 TODAS las evaluaciones de TODOS los usuarios.\n\nEsta acci\u00f3n es IRREVERSIBLE.\n\n\u00bfEst\u00e1s seguro?");
             if(!ok) return;
@@ -250,12 +244,12 @@ export default function AdminPanel({ nfy }) {
               var promises = snap.docs.map(function(d){ return deleteDoc(doc(db,"evaluaciones",d.id)); });
               return Promise.all(promises);
             }).then(function(){ nfy("Todas las evaluaciones fueron borradas","ok"); }).catch(function(e){ nfy("Error: "+e.message,"er"); });
-          }} style={{padding:"10px 20px",background:"#dc2626",color:"#fff",border:"none",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer"}}>{"Borrar evaluaciones"}</button>
+          }} className="adm-danger-btn">{"Borrar evaluaciones"}</button>
         </div>
 
-        <div style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",padding:20,marginBottom:16}}>
-          <div style={{fontSize:14,fontWeight:700,color:"#dc2626",marginBottom:4}}>{"Borrar historial de pagos"}</div>
-          <div style={{fontSize:12,color:K.mt,marginBottom:14}}>{"Elimina todos los registros de pagos. Los cr\u00e9ditos actuales de los usuarios no se modifican."}</div>
+        <div className="adm-danger-card">
+          <div className="adm-danger-title">{"Borrar historial de pagos"}</div>
+          <div className="adm-danger-desc">{"Elimina todos los registros de pagos. Los créditos actuales de los usuarios no se modifican."}</div>
           <button onClick={function(){
             var ok = window.confirm("Esto borrar\u00e1 todos los registros de pagos.\n\nLos cr\u00e9ditos de los usuarios NO se modifican.\n\n\u00bfEst\u00e1s seguro?");
             if(!ok) return;
@@ -263,12 +257,12 @@ export default function AdminPanel({ nfy }) {
               var promises = snap.docs.map(function(d){ return deleteDoc(doc(db,"pagos",d.id)); });
               return Promise.all(promises);
             }).then(function(){ nfy("Historial de pagos borrado","ok"); }).catch(function(e){ nfy("Error: "+e.message,"er"); });
-          }} style={{padding:"10px 20px",background:"#dc2626",color:"#fff",border:"none",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer"}}>{"Borrar pagos"}</button>
+          }} className="adm-danger-btn">{"Borrar pagos"}</button>
         </div>
 
-        <div style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",padding:20}}>
-          <div style={{fontSize:14,fontWeight:700,color:"#dc2626",marginBottom:4}}>{"Resetear TODO (evaluaciones + pagos)"}</div>
-          <div style={{fontSize:12,color:K.mt,marginBottom:14}}>{"Borra todas las evaluaciones y todos los pagos. Las estad\u00edsticas vuelven a 0. Los usuarios y sus cr\u00e9ditos actuales no se tocan."}</div>
+        <div className="adm-danger-card">
+          <div className="adm-danger-title">{"Resetear TODO (evaluaciones + pagos)"}</div>
+          <div className="adm-danger-desc">{"Borra todas las evaluaciones y todos los pagos. Las estadísticas vuelven a 0. Los usuarios y sus créditos actuales no se tocan."}</div>
           <button onClick={function(){
             var ok = window.confirm("RESETEAR TODO:\n\nSe borrar\u00e1n TODAS las evaluaciones y TODOS los pagos.\n\nEsta acci\u00f3n es IRREVERSIBLE.\n\n\u00bfEst\u00e1s completamente seguro?");
             if(!ok) return;
@@ -276,7 +270,7 @@ export default function AdminPanel({ nfy }) {
               getDocs(collection(db,"evaluaciones")).then(function(snap){ return Promise.all(snap.docs.map(function(d){ return deleteDoc(doc(db,"evaluaciones",d.id)); })); }),
               getDocs(collection(db,"pagos")).then(function(snap){ return Promise.all(snap.docs.map(function(d){ return deleteDoc(doc(db,"pagos",d.id)); })); })
             ]).then(function(){ nfy("Todo reseteado a 0","ok"); }).catch(function(e){ nfy("Error: "+e.message,"er"); });
-          }} style={{padding:"10px 20px",background:"#7f1d1d",color:"#fff",border:"none",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer"}}>{"Resetear TODO"}</button>
+          }} className="adm-danger-btn adm-danger-btn--extreme">{"Resetear TODO"}</button>
         </div>
       </div>}
     </div>
