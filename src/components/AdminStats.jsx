@@ -1,9 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { db, collection, getDocs } from "../firebase.js";
 import { VISIBLE_TYPES, TYPE_COLORS, isVisibleType } from "../config/evalTypes.js";
-
-var K={mt:"#64748b",ac:"#0d9488",sd:"#0a3d2f"};
-var PRICE_PER_CREDIT=1650;
+import "../styles/AdminStats.css";
 
 function fmt$(n){return"$"+n.toLocaleString("es-AR")}
 function fmtMo(y,m){return new Date(y,m).toLocaleString("es-AR",{month:"long",year:"numeric"})}
@@ -39,11 +37,9 @@ export default function AdminStats({nfy}){
   var visibleEvals=allEvals.filter(function(e){return isVisibleType(e.tipo)});
   var nonAdminUsers=users.filter(function(u){return u.role!=="admin"});
   var totalUsers=nonAdminUsers.length;
-  var totalCreditsDeducted=allEvals.length;
   var neverPurchased=nonAdminUsers.filter(function(u){
     return !allPagos.some(function(p){ return p.userId===u._fbId; });
   });
-  // Ingresos reales: solo desde pagos completados
   var totalCreditsPurchased=allPagos.reduce(function(sum,p){ return sum+(p.creditosAgregados||0); },0);
   var totalRevenue=allPagos.reduce(function(sum,p){ return sum+(p.amount||0); },0);
 
@@ -53,14 +49,9 @@ export default function AdminStats({nfy}){
   var monthEvals=getMonthEvals(selYear,selMonth);
   var yearEvals=getYearEvals(selYear);
 
-  // Dynamic type counts from registry
   var typeCounts=function(evs){var c={};VISIBLE_TYPES.forEach(function(t){c[t.id]=evs.filter(function(e){return e.tipo===t.id}).length});return c};
   var mc=typeCounts(monthEvals);
   var yc=typeCounts(yearEvals);
-  var globalCounts=typeCounts(visibleEvals);
-
-  // Build sub string dynamically: "PEFF: 5 · REP: 3 · ..."
-  var evalCountsSub=VISIBLE_TYPES.map(function(t){return t.label+": "+globalCounts[t.id]}).join(" · ");
 
   var usersCreatedMonth=nonAdminUsers.filter(function(u){if(!u.createdAt)return false;var d=new Date(u.createdAt);return d.getFullYear()===selYear&&d.getMonth()===selMonth});
   var usersCreatedYear=nonAdminUsers.filter(function(u){if(!u.createdAt)return false;return new Date(u.createdAt).getFullYear()===selYear});
@@ -69,35 +60,43 @@ export default function AdminStats({nfy}){
   var nextMonth=function(){if(selMonth===11){setSelMonth(0);setSelYear(function(y){return y+1})}else setSelMonth(function(m){return m+1})};
 
   var monthNames=["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
-  var monthlyData=monthNames.map(function(_,m){var mEvals=getMonthEvals(selYear,m);return{m:m,count:mEvals.length}});
-  var maxMonthly=Math.max(1,Math.max.apply(null,monthlyData.map(function(d){return d.count})));
 
-  var Stat=function(props){return <div style={{background:"#fff",borderRadius:12,padding:"18px 20px",border:"1px solid #e2e8f0"}}><div style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}><span style={{fontSize:22}}>{props.icon}</span><span style={{fontSize:12,color:K.mt,fontWeight:600}}>{props.label}</span></div><div style={{fontSize:28,fontWeight:700,color:props.color||"#1e293b"}}>{props.value}</div>{props.sub&&<div style={{fontSize:11,color:K.mt,marginTop:2}}>{props.sub}</div>}</div>};
+  var Stat=function(props){return <div className="stats-card">
+    <div className="stats-card-header">
+      <span className="stats-card-icon">{props.icon}</span>
+      <span className="stats-card-label">{props.label}</span>
+    </div>
+    <div className="stats-card-value" style={props.color?{color:props.color}:undefined}>{props.value}</div>
+    {props.sub && <div className="stats-card-sub">{props.sub}</div>}
+  </div>};
 
-  var TabBtn=function(props){return <button onClick={function(){setTab(props.id)}} style={{padding:"10px 20px",background:tab===props.id?"#0d9488":"#fff",color:tab===props.id?"#fff":"#475569",border:tab===props.id?"none":"1px solid #e2e8f0",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",gap:6}}>{props.icon+" "+props.label}</button>};
+  var TabBtn=function(props){return <button onClick={function(){setTab(props.id)}} className={"stats-tab"+(tab===props.id?" stats-tab--active":"")}>{props.icon+" "+props.label}</button>};
 
-  if(ld)return <div style={{animation:"fi .3s ease",textAlign:"center",padding:60}}><div style={{fontSize:36,marginBottom:12}}>{"📊"}</div><div style={{fontSize:16,fontWeight:600,color:K.mt}}>{"Cargando estadísticas..."}</div></div>;
+  if(ld)return <div className="stats-loading">
+    <div className="stats-loading-icon">{"📊"}</div>
+    <div className="stats-loading-text">{"Cargando estadísticas..."}</div>
+  </div>;
 
-  return <div style={{animation:"fi .3s ease",width:"100%",maxWidth:1000}}>
-    <h1 style={{fontSize:22,fontWeight:700,marginBottom:6}}>{"📊 Estadísticas"}</h1>
-    <p style={{color:K.mt,fontSize:14,marginBottom:20}}>{"Panel de análisis y métricas del sistema"}</p>
+  return <div className="stats-page">
+    <h1 className="stats-title">{"📊 Estadísticas"}</h1>
+    <p className="stats-subtitle">{"Panel de análisis y métricas del sistema"}</p>
 
-    <div style={{display:"flex",gap:8,marginBottom:24,flexWrap:"wrap"}}>
+    <div className="stats-tabs">
       <TabBtn id="resumen" label="Resumen Global" icon="🌐"/>
       <TabBtn id="mensual" label="Mensual / Anual" icon="📅"/>
       <TabBtn id="pagos" label="Pagos" icon="💰"/>
     </div>
 
     {tab==="resumen"&&<div>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))",gap:14,marginBottom:24}}>
+      <div className="stats-grid-4">
         <Stat icon="💰" label="Ingresos totales" value={fmt$(totalRevenue)} sub={totalCreditsPurchased+" créditos vendidos"} color="#059669"/>
         <Stat icon={"\ud83d\udcb3"} label={"Evaluaciones realizadas"} value={visibleEvals.length} color="#7c3aed"/>
         <Stat icon={"\ud83d\udc65"} label={"Usuarios registrados"} value={totalUsers} color="#0d9488"/>
         <Stat icon="⚠️" label="Sin comprar" value={neverPurchased.length} sub="terminaron demo sin comprar" color="#f59e0b"/>
       </div>
 
-      <div style={{background:"#fff",borderRadius:12,padding:24,border:"1px solid #e2e8f0",marginBottom:20}}>
-        <div style={{fontSize:15,fontWeight:700,marginBottom:16}}>{"Ingresos por mes ("+selYear+")"}</div>
+      <div className="stats-chart-card">
+        <div className="stats-chart-title">{"Ingresos por mes ("+selYear+")"}</div>
         {(function(){
           var monthlyIncome = monthNames.map(function(_,m){
             var mPagos = allPagos.filter(function(p){ if(!p.processedAt) return false; var d = new Date(p.processedAt); return d.getFullYear()===selYear && d.getMonth()===m; });
@@ -107,77 +106,76 @@ export default function AdminStats({nfy}){
           });
           var maxIncome = Math.max(1, Math.max.apply(null, monthlyIncome.map(function(d){return d.amount})));
           return <div>
-            <div style={{display:"flex",alignItems:"flex-end",gap:6,height:140,padding:"0 4px"}}>
-              {monthlyIncome.map(function(d){ return <div key={d.m} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
-                <div style={{fontSize:9,fontWeight:600,color:K.mt}}>{d.amount > 0 ? fmt$(d.amount) : ""}</div>
-                <div style={{width:"100%",borderRadius:3,height:Math.max(2, d.amount/maxIncome*100),transition:"height .3s",background:d.amount>0?"linear-gradient(to top,#059669,#0d9488)":"#e2e8f0"}}/>
-                <div style={{fontSize:9,color:K.mt}}>{monthNames[d.m]}</div>
+            <div className="stats-chart-bars">
+              {monthlyIncome.map(function(d){ return <div key={d.m} className="stats-chart-bar">
+                <div className="stats-chart-amount">{d.amount > 0 ? fmt$(d.amount) : ""}</div>
+                <div className={"stats-chart-bar-fill"+(d.amount>0?" stats-chart-bar-fill--has":" stats-chart-bar-fill--empty")} style={{height:Math.max(2, d.amount/maxIncome*100)+"px"}}/>
+                <div className="stats-chart-month-label">{monthNames[d.m]}</div>
               </div>; })}
             </div>
           </div>;
         })()}
-        <div style={{display:"flex",justifyContent:"center",gap:12,marginTop:12}}>
-          <button onClick={function(){setSelYear(function(y){return y-1})}} style={{background:"#f1f5f9",border:"none",borderRadius:6,padding:"6px 14px",fontSize:12,cursor:"pointer"}}>{"← "+(selYear-1)}</button>
-          <span style={{fontWeight:700,fontSize:14,padding:"6px 0"}}>{selYear}</span>
-          <button onClick={function(){setSelYear(function(y){return y+1})}} style={{background:"#f1f5f9",border:"none",borderRadius:6,padding:"6px 14px",fontSize:12,cursor:"pointer"}}>{(selYear+1)+" →"}</button>
+        <div className="stats-chart-nav">
+          <button onClick={function(){setSelYear(function(y){return y-1})}} className="stats-year-btn">{"← "+(selYear-1)}</button>
+          <span className="stats-year-label">{selYear}</span>
+          <button onClick={function(){setSelYear(function(y){return y+1})}} className="stats-year-btn">{(selYear+1)+" →"}</button>
         </div>
       </div>
 
-      {neverPurchased.length>0&&<div style={{background:"#fffbeb",border:"1px solid #fde68a",borderRadius:12,padding:20}}>
-        <div style={{fontSize:14,fontWeight:700,color:"#92400e",marginBottom:12}}>{"⚠ Usuarios que no compraron ("+ neverPurchased.length+")"}</div>
-        <div style={{maxHeight:200,overflowY:"auto"}}>
-          {neverPurchased.map(function(u){return <div key={u._fbId} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 0",borderBottom:"1px solid #fde68a",fontSize:13}}>
-            <div><span style={{fontWeight:600}}>{u.nombre} {u.apellido}</span><span style={{color:K.mt,marginLeft:8}}>@{u.username}</span></div>
-            <div style={{fontSize:11,color:K.mt}}>{(u.creditos||0)+" créd."}{u.createdAt?" · "+fmtDate(u.createdAt):""}</div>
+      {neverPurchased.length>0 && <div className="stats-alert">
+        <div className="stats-alert-title">{"⚠ Usuarios que no compraron ("+ neverPurchased.length+")"}</div>
+        <div className="stats-alert-list">
+          {neverPurchased.map(function(u){return <div key={u._fbId} className="stats-alert-row">
+            <div><span className="stats-alert-user-name">{u.nombre} {u.apellido}</span><span className="stats-alert-user-username">@{u.username}</span></div>
+            <div className="stats-alert-meta">{(u.creditos||0)+" créd."}{u.createdAt?" · "+fmtDate(u.createdAt):""}</div>
           </div>})}
         </div>
       </div>}
     </div>}
 
     {tab==="mensual"&&<div>
-      <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:16,marginBottom:24,background:"#fff",borderRadius:10,padding:"14px 20px",border:"1px solid #e2e8f0"}}>
-        <button onClick={prevMonth} style={{background:"#f1f5f9",border:"none",borderRadius:6,padding:"8px 16px",fontSize:14,cursor:"pointer",fontWeight:600}}>{"←"}</button>
-        <div style={{textAlign:"center",minWidth:200}}><div style={{fontSize:18,fontWeight:700,color:K.sd,textTransform:"capitalize"}}>{fmtMo(selYear,selMonth)}</div></div>
-        <button onClick={nextMonth} style={{background:"#f1f5f9",border:"none",borderRadius:6,padding:"8px 16px",fontSize:14,cursor:"pointer",fontWeight:600}}>{"→"}</button>
+      <div className="stats-month-nav">
+        <button onClick={prevMonth} className="stats-month-btn">{"←"}</button>
+        <div className="stats-month-label-wrap"><div className="stats-month-label">{fmtMo(selYear,selMonth)}</div></div>
+        <button onClick={nextMonth} className="stats-month-btn">{"→"}</button>
       </div>
 
-      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",gap:12,marginBottom:20}}>
+      <div className="stats-grid-types">
         {VISIBLE_TYPES.map(function(t){return <Stat key={t.id} icon={t.icon} label={t.label} value={mc[t.id]} color={t.color}/>})}
         <Stat icon="💳" label="Total" value={monthEvals.length} sub="evaluaciones" color="#1e293b"/>
         <Stat icon="👤" label="Nuevos usuarios" value={usersCreatedMonth.length}/>
       </div>
 
-      <div style={{background:"linear-gradient(135deg,#0a3d2f,#0d9488)",borderRadius:14,padding:24,color:"#fff",marginBottom:20}}>
-        <div style={{fontSize:14,opacity:.8,marginBottom:12}}>{"Resumen anual "+selYear}</div>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(100px,1fr))",gap:16}}>
-          <div><div style={{fontSize:32,fontWeight:700}}>{yearEvals.length}</div><div style={{fontSize:12,opacity:.7}}>total</div></div>
-          {VISIBLE_TYPES.map(function(t){return <div key={t.id}><div style={{fontSize:24,fontWeight:700}}>{yc[t.id]}</div><div style={{fontSize:11,opacity:.7}}>{t.label}</div></div>})}
-          <div><div style={{fontSize:24,fontWeight:700}}>{usersCreatedYear.length}</div><div style={{fontSize:11,opacity:.7}}>nuevos</div></div>
+      <div className="stats-annual">
+        <div className="stats-annual-label">{"Resumen anual "+selYear}</div>
+        <div className="stats-annual-grid">
+          <div><div className="stats-annual-big">{yearEvals.length}</div><div className="stats-annual-sub">total</div></div>
+          {VISIBLE_TYPES.map(function(t){return <div key={t.id}><div className="stats-annual-mid">{yc[t.id]}</div><div className="stats-annual-sub-sm">{t.label}</div></div>})}
+          <div><div className="stats-annual-mid">{usersCreatedYear.length}</div><div className="stats-annual-sub-sm">nuevos</div></div>
         </div>
       </div>
 
-      {monthEvals.length>0?<div style={{background:"#fff",borderRadius:12,padding:20,border:"1px solid #e2e8f0"}}>
-        <div style={{fontSize:14,fontWeight:700,marginBottom:12}}>{"Evaluaciones del mes ("+monthEvals.length+")"}</div>
-        <div style={{maxHeight:300,overflowY:"auto"}}>
-          {monthEvals.sort(function(a,b){return(b.fechaGuardado||"").localeCompare(a.fechaGuardado||"")}).map(function(ev,i){return <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 0",borderBottom:"1px solid #f1f5f9",fontSize:13}}>
-            <div style={{display:"flex",alignItems:"center",gap:10}}>
-              <span style={{background:TYPE_COLORS[(ev.tipo||"").toUpperCase()]||"#94a3b8",color:"#fff",padding:"3px 8px",borderRadius:4,fontSize:10,fontWeight:700}}>{(ev.tipo||"").toUpperCase()}</span>
-              <span style={{fontWeight:600}}>{ev.paciente}</span>
+      {monthEvals.length>0 ? <div className="stats-list-card">
+        <div className="stats-list-title">{"Evaluaciones del mes ("+monthEvals.length+")"}</div>
+        <div className="stats-list-scroll">
+          {monthEvals.sort(function(a,b){return(b.fechaGuardado||"").localeCompare(a.fechaGuardado||"")}).map(function(ev,i){return <div key={i} className="stats-list-row">
+            <div className="stats-list-row-left">
+              <span className="stats-list-badge" style={{background:TYPE_COLORS[(ev.tipo||"").toUpperCase()]||"#94a3b8"}}>{(ev.tipo||"").toUpperCase()}</span>
+              <span className="stats-list-name">{ev.paciente}</span>
             </div>
-            <div style={{fontSize:11,color:K.mt}}>{(ev.evaluador||"?") + " · " + (ev.fechaGuardado?fmtDate(ev.fechaGuardado):"")}</div>
+            <div className="stats-list-meta">{(ev.evaluador||"?") + " · " + (ev.fechaGuardado?fmtDate(ev.fechaGuardado):"")}</div>
           </div>})}
         </div>
-      </div>:<div style={{background:"#f8faf9",borderRadius:10,padding:20,textAlign:"center",color:K.mt,fontSize:14}}>Sin evaluaciones este mes</div>}
+      </div> : <div className="stats-empty">Sin evaluaciones este mes</div>}
     </div>}
 
     {tab==="pagos"&&(function(){
-      // Filter pagos by selected period
       var filteredPagos = allPagos.filter(function(p){
         if(!p.processedAt) return false;
         var d = new Date(p.processedAt);
         if(payFilter === "month") return d.getFullYear() === payYear && d.getMonth() === payMonth;
         if(payFilter === "year") return d.getFullYear() === payYear;
-        return true; // "all"
+        return true;
       });
       var totalFiltered = filteredPagos.reduce(function(s,p){ return s + (p.amount || 0); }, 0);
       var totalCredits = filteredPagos.reduce(function(s,p){ return s + (p.creditosAgregados || 0); }, 0);
@@ -186,48 +184,49 @@ export default function AdminStats({nfy}){
       var monthNames2 = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 
       return <div>
-        {/* Filter controls */}
-        <div style={{display:"flex",gap:8,marginBottom:16,flexWrap:"wrap",alignItems:"center"}}>
+        <div className="stats-pay-filters">
           {[["month","Este mes"],["year","Este año"],["all","Todos"]].map(function(f){
-            return <button key={f[0]} onClick={function(){setPayFilter(f[0]);if(f[0]==="month"){setPayYear(new Date().getFullYear());setPayMonth(new Date().getMonth())}else if(f[0]==="year"){setPayYear(new Date().getFullYear())}}} style={{padding:"6px 14px",borderRadius:6,border:payFilter===f[0]?"2px solid "+K.ac:"1px solid #e2e8f0",background:payFilter===f[0]?"#ccfbf1":"#fff",color:payFilter===f[0]?K.ac:K.mt,fontSize:12,fontWeight:600,cursor:"pointer"}}>{f[1]}</button>;
+            return <button key={f[0]} onClick={function(){setPayFilter(f[0]);if(f[0]==="month"){setPayYear(new Date().getFullYear());setPayMonth(new Date().getMonth())}else if(f[0]==="year"){setPayYear(new Date().getFullYear())}}} className={"stats-pay-filter"+(payFilter===f[0]?" stats-pay-filter--active":"")}>{f[1]}</button>;
           })}
-          {payFilter==="month" && <div style={{display:"flex",alignItems:"center",gap:6}}>
-            <button onClick={function(){if(payMonth===0){setPayMonth(11);setPayYear(function(y){return y-1})}else setPayMonth(function(m){return m-1})}} style={{background:"#f1f5f9",border:"none",borderRadius:6,padding:"6px 10px",cursor:"pointer",fontSize:12}}>{"←"}</button>
-            <span style={{fontSize:13,fontWeight:600,minWidth:130,textAlign:"center"}}>{monthNames2[payMonth]+" "+payYear}</span>
-            <button onClick={function(){if(payMonth===11){setPayMonth(0);setPayYear(function(y){return y+1})}else setPayMonth(function(m){return m+1})}} style={{background:"#f1f5f9",border:"none",borderRadius:6,padding:"6px 10px",cursor:"pointer",fontSize:12}}>{"→"}</button>
+          {payFilter==="month" && <div className="stats-pay-nav">
+            <button onClick={function(){if(payMonth===0){setPayMonth(11);setPayYear(function(y){return y-1})}else setPayMonth(function(m){return m-1})}} className="stats-pay-nav-btn">{"←"}</button>
+            <span className="stats-pay-nav-label">{monthNames2[payMonth]+" "+payYear}</span>
+            <button onClick={function(){if(payMonth===11){setPayMonth(0);setPayYear(function(y){return y+1})}else setPayMonth(function(m){return m+1})}} className="stats-pay-nav-btn">{"→"}</button>
           </div>}
-          {payFilter==="year" && <div style={{display:"flex",alignItems:"center",gap:6}}>
-            <button onClick={function(){setPayYear(function(y){return y-1})}} style={{background:"#f1f5f9",border:"none",borderRadius:6,padding:"6px 10px",cursor:"pointer",fontSize:12}}>{"←"}</button>
-            <span style={{fontSize:13,fontWeight:600}}>{payYear}</span>
-            <button onClick={function(){setPayYear(function(y){return y+1})}} style={{background:"#f1f5f9",border:"none",borderRadius:6,padding:"6px 10px",cursor:"pointer",fontSize:12}}>{"→"}</button>
+          {payFilter==="year" && <div className="stats-pay-nav">
+            <button onClick={function(){setPayYear(function(y){return y-1})}} className="stats-pay-nav-btn">{"←"}</button>
+            <span className="stats-pay-nav-label" style={{minWidth:60}}>{payYear}</span>
+            <button onClick={function(){setPayYear(function(y){return y+1})}} className="stats-pay-nav-btn">{"→"}</button>
           </div>}
         </div>
 
-        {/* Summary cards */}
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12,marginBottom:20}}>
+        <div className="stats-grid-3">
           <Stat icon="💰" label="Ingresos" value={fmt$(totalFiltered)} color="#059669"/>
           <Stat icon="💳" label="Créditos vendidos" value={totalCredits} color="#7c3aed"/>
-          <Stat icon="📋" label="Transacciones" value={filteredPagos.length} color={K.sd}/>
+          <Stat icon="📋" label="Transacciones" value={filteredPagos.length} color="#0a3d2f"/>
         </div>
 
-        {/* Payments table */}
-        {filteredPagos.length > 0 ? <div style={{background:"#fff",borderRadius:12,border:"1px solid #e2e8f0",overflow:"hidden"}}>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 80px 100px 120px",gap:8,padding:"10px 16px",background:K.sd,color:"#fff",fontSize:11,fontWeight:700}}>
-            <span>Usuario</span><span>Email</span><span style={{textAlign:"center"}}>Créditos</span><span style={{textAlign:"right"}}>Monto</span><span style={{textAlign:"right"}}>Fecha</span>
+        {filteredPagos.length > 0 ? <div className="stats-pay-table">
+          <div className="stats-pay-table-header">
+            <span>Usuario</span>
+            <span>Email</span>
+            <span className="stats-pay-th-center">Créditos</span>
+            <span className="stats-pay-th-right">Monto</span>
+            <span className="stats-pay-th-right">Fecha</span>
           </div>
-          <div style={{maxHeight:400,overflowY:"auto"}}>
+          <div className="stats-pay-table-body">
             {filteredPagos.map(function(p,i){
               var u = userMap[p.uid] || {};
-              return <div key={p._fbId||i} style={{display:"grid",gridTemplateColumns:"1fr 1fr 80px 100px 120px",gap:8,padding:"10px 16px",borderBottom:"1px solid #f1f5f9",alignItems:"center",fontSize:13}}>
-                <div style={{fontWeight:600,color:K.sd}}>{u.nombre ? u.nombre+" "+(u.apellido||"") : p.uid ? p.uid.substring(0,8)+"..." : "?"}</div>
-                <div style={{fontSize:11,color:K.mt,overflow:"hidden",textOverflow:"ellipsis"}}>{p.email || u.email || "—"}</div>
-                <div style={{textAlign:"center",fontWeight:700,color:"#7c3aed"}}>{p.creditosAgregados || "?"}</div>
-                <div style={{textAlign:"right",fontWeight:600,color:"#059669"}}>{fmt$(p.amount || 0)}</div>
-                <div style={{textAlign:"right",fontSize:11,color:K.mt}}>{p.processedAt ? fmtDate(p.processedAt) : "—"}</div>
+              return <div key={p._fbId||i} className="stats-pay-row">
+                <div className="stats-pay-user">{u.nombre ? u.nombre+" "+(u.apellido||"") : p.uid ? p.uid.substring(0,8)+"..." : "?"}</div>
+                <div className="stats-pay-email">{p.email || u.email || "—"}</div>
+                <div className="stats-pay-credits">{p.creditosAgregados || "?"}</div>
+                <div className="stats-pay-amount">{fmt$(p.amount || 0)}</div>
+                <div className="stats-pay-date">{p.processedAt ? fmtDate(p.processedAt) : "—"}</div>
               </div>;
             })}
           </div>
-        </div> : <div style={{background:"#f8faf9",borderRadius:10,padding:20,textAlign:"center",color:K.mt,fontSize:14}}>{"Sin pagos en este período"}</div>}
+        </div> : <div className="stats-empty">{"Sin pagos en este período"}</div>}
       </div>;
     })()}
   </div>;

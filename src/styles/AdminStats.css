@@ -1,0 +1,508 @@
+/* ============================================
+   AdminStats
+   ============================================ */
+
+.stats-page {
+  animation: fi 0.3s ease;
+  width: 100%;
+  max-width: 1000px;
+}
+
+.stats-title {
+  font-size: 22px;
+  font-weight: var(--fw-bold);
+  margin-bottom: 6px;
+}
+
+.stats-subtitle {
+  color: var(--c-text-muted);
+  font-size: var(--fs-md);
+  margin-bottom: 20px;
+}
+
+/* Loading */
+.stats-loading {
+  animation: fi 0.3s ease;
+  text-align: center;
+  padding: 60px;
+}
+
+.stats-loading-icon {
+  font-size: 36px;
+  margin-bottom: 12px;
+}
+
+.stats-loading-text {
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-semibold);
+  color: var(--c-text-muted);
+}
+
+/* Tabs */
+.stats-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.stats-tab {
+  padding: 10px 20px;
+  background: var(--c-surface);
+  color: var(--c-text-secondary);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-md);
+  font-size: var(--fs-base);
+  font-weight: var(--fw-semibold);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-family);
+}
+
+.stats-tab--active {
+  background: var(--c-accent);
+  color: white;
+  border: none;
+}
+
+/* Stat card */
+.stats-card {
+  background: var(--c-surface);
+  border-radius: var(--radius-xl);
+  padding: 18px 20px;
+  border: 1px solid var(--c-border);
+}
+
+.stats-card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.stats-card-icon {
+  font-size: 22px;
+}
+
+.stats-card-label {
+  font-size: var(--fs-sm);
+  color: var(--c-text-muted);
+  font-weight: var(--fw-semibold);
+}
+
+.stats-card-value {
+  font-size: 28px;
+  font-weight: var(--fw-bold);
+  color: var(--c-text);
+}
+
+.stats-card-sub {
+  font-size: var(--fs-sm);
+  color: var(--c-text-muted);
+  margin-top: 2px;
+}
+
+/* Resumen grids */
+.stats-grid-4 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.stats-grid-types {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.stats-grid-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+/* Chart card */
+.stats-chart-card {
+  background: var(--c-surface);
+  border-radius: var(--radius-xl);
+  padding: 24px;
+  border: 1px solid var(--c-border);
+  margin-bottom: 20px;
+}
+
+.stats-chart-title {
+  font-size: 15px;
+  font-weight: var(--fw-bold);
+  margin-bottom: 16px;
+}
+
+.stats-chart-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  height: 140px;
+  padding: 0 4px;
+}
+
+.stats-chart-bar {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.stats-chart-amount {
+  font-size: 9px;
+  font-weight: var(--fw-semibold);
+  color: var(--c-text-muted);
+}
+
+.stats-chart-bar-fill {
+  width: 100%;
+  border-radius: 3px;
+  transition: height 0.3s;
+}
+
+.stats-chart-bar-fill--has {
+  background: linear-gradient(to top, var(--c-success), var(--c-accent));
+}
+
+.stats-chart-bar-fill--empty {
+  background: var(--c-border);
+}
+
+.stats-chart-month-label {
+  font-size: 9px;
+  color: var(--c-text-muted);
+}
+
+.stats-chart-nav {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.stats-year-btn {
+  background: var(--c-surface-hover);
+  border: none;
+  border-radius: var(--radius);
+  padding: 6px 14px;
+  font-size: var(--fs-sm);
+  cursor: pointer;
+  font-family: var(--font-family);
+}
+
+.stats-year-label {
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-md);
+  padding: 6px 0;
+}
+
+/* Alert card (never purchased) */
+.stats-alert {
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: var(--radius-xl);
+  padding: 20px;
+}
+
+.stats-alert-title {
+  font-size: var(--fs-md);
+  font-weight: var(--fw-bold);
+  color: #92400e;
+  margin-bottom: 12px;
+}
+
+.stats-alert-list {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.stats-alert-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #fde68a;
+  font-size: var(--fs-base);
+}
+
+.stats-alert-user-name {
+  font-weight: var(--fw-semibold);
+}
+
+.stats-alert-user-username {
+  color: var(--c-text-muted);
+  margin-left: 8px;
+}
+
+.stats-alert-meta {
+  font-size: var(--fs-sm);
+  color: var(--c-text-muted);
+}
+
+/* Month nav */
+.stats-month-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 24px;
+  background: var(--c-surface);
+  border-radius: var(--radius-lg);
+  padding: 14px 20px;
+  border: 1px solid var(--c-border);
+}
+
+.stats-month-btn {
+  background: var(--c-surface-hover);
+  border: none;
+  border-radius: var(--radius);
+  padding: 8px 16px;
+  font-size: var(--fs-md);
+  cursor: pointer;
+  font-weight: var(--fw-semibold);
+  font-family: var(--font-family);
+}
+
+.stats-month-label-wrap {
+  text-align: center;
+  min-width: 200px;
+}
+
+.stats-month-label {
+  font-size: 18px;
+  font-weight: var(--fw-bold);
+  color: var(--c-primary);
+  text-transform: capitalize;
+}
+
+/* Annual summary card */
+.stats-annual {
+  background: linear-gradient(135deg, var(--c-primary), var(--c-accent));
+  border-radius: 14px;
+  padding: 24px;
+  color: white;
+  margin-bottom: 20px;
+}
+
+.stats-annual-label {
+  font-size: var(--fs-md);
+  opacity: 0.8;
+  margin-bottom: 12px;
+}
+
+.stats-annual-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 16px;
+}
+
+.stats-annual-big {
+  font-size: 32px;
+  font-weight: var(--fw-bold);
+}
+
+.stats-annual-mid {
+  font-size: var(--fs-3xl);
+  font-weight: var(--fw-bold);
+}
+
+.stats-annual-sub {
+  font-size: var(--fs-base);
+  opacity: 0.7;
+}
+
+.stats-annual-sub-sm {
+  font-size: var(--fs-sm);
+  opacity: 0.7;
+}
+
+/* Evaluations list */
+.stats-list-card {
+  background: var(--c-surface);
+  border-radius: var(--radius-xl);
+  padding: 20px;
+  border: 1px solid var(--c-border);
+}
+
+.stats-list-title {
+  font-size: var(--fs-md);
+  font-weight: var(--fw-bold);
+  margin-bottom: 12px;
+}
+
+.stats-list-scroll {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.stats-list-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--c-border-light);
+  font-size: var(--fs-base);
+}
+
+.stats-list-row-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.stats-list-badge {
+  color: white;
+  padding: 3px 8px;
+  border-radius: var(--radius-sm);
+  font-size: 10px;
+  font-weight: var(--fw-bold);
+}
+
+.stats-list-name {
+  font-weight: var(--fw-semibold);
+}
+
+.stats-list-meta {
+  font-size: var(--fs-sm);
+  color: var(--c-text-muted);
+}
+
+.stats-empty {
+  background: var(--c-surface-alt);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  text-align: center;
+  color: var(--c-text-muted);
+  font-size: var(--fs-md);
+}
+
+/* Pagos tab */
+.stats-pay-filters {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.stats-pay-filter {
+  padding: 6px 14px;
+  border-radius: var(--radius);
+  border: 1px solid var(--c-border);
+  background: var(--c-surface);
+  color: var(--c-text-muted);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  cursor: pointer;
+  font-family: var(--font-family);
+}
+
+.stats-pay-filter--active {
+  border: 2px solid var(--c-accent);
+  background: var(--c-accent-light);
+  color: var(--c-accent);
+}
+
+.stats-pay-nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.stats-pay-nav-btn {
+  background: var(--c-surface-hover);
+  border: none;
+  border-radius: var(--radius);
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: var(--fs-sm);
+  font-family: var(--font-family);
+}
+
+.stats-pay-nav-label {
+  font-size: var(--fs-base);
+  font-weight: var(--fw-semibold);
+  min-width: 130px;
+  text-align: center;
+}
+
+/* Payments table */
+.stats-pay-table {
+  background: var(--c-surface);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--c-border);
+  overflow: hidden;
+}
+
+.stats-pay-table-header {
+  display: grid;
+  grid-template-columns: 1fr 1fr 80px 100px 120px;
+  gap: 8px;
+  padding: 10px 16px;
+  background: var(--c-primary);
+  color: white;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-bold);
+}
+
+.stats-pay-table-body {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.stats-pay-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 80px 100px 120px;
+  gap: 8px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--c-border-light);
+  align-items: center;
+  font-size: var(--fs-base);
+}
+
+.stats-pay-user {
+  font-weight: var(--fw-semibold);
+  color: var(--c-primary);
+}
+
+.stats-pay-email {
+  font-size: var(--fs-sm);
+  color: var(--c-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stats-pay-credits {
+  text-align: center;
+  font-weight: var(--fw-bold);
+  color: var(--c-purple);
+}
+
+.stats-pay-amount {
+  text-align: right;
+  font-weight: var(--fw-semibold);
+  color: var(--c-success);
+}
+
+.stats-pay-date {
+  text-align: right;
+  font-size: var(--fs-sm);
+  color: var(--c-text-muted);
+}
+
+.stats-pay-th-center {
+  text-align: center;
+}
+
+.stats-pay-th-right {
+  text-align: right;
+}
