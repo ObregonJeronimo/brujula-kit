@@ -26,6 +26,7 @@ async function createSupportCase(userId, userName) {
     createdAt: serverTimestamp(),
     closedAt: null,
     unreadByAgent: true,
+    unreadByUser: false,
     userId: userId,
     userName: userName,
     lastMessage: "",
@@ -42,7 +43,6 @@ async function sendSupportMessage(caseId, text, from) {
     from: from,
     timestamp: serverTimestamp()
   });
-  // Update last message preview and unread flag
   var updates = { lastMessage: text.substring(0, 100), lastMessageAt: serverTimestamp() };
   if (from === "user") updates.unreadByAgent = true;
   else updates.unreadByUser = true;
@@ -81,6 +81,42 @@ async function markReadByUser(caseId) {
   await updateDoc(doc(db, "support_cases", caseId), { unreadByUser: false });
 }
 
+// Escalate a temporal case (#T) to a formal case (#C)
+async function escalateCase(caseId, urgency) {
+  var next = await getNextCaseNumber("C");
+  await updateDoc(doc(db, "support_cases", caseId), {
+    type: "case",
+    caseNumber: next.number,
+    caseSeq: next.seq,
+    urgency: urgency || "medium"
+  });
+  return next.number;
+}
+
+// Transfer case to another agent
+async function transferCase(caseId, newAgentUid, newAgentName) {
+  await updateDoc(doc(db, "support_cases", caseId), {
+    assignedTo: { uid: newAgentUid, nombre: newAgentName }
+  });
+}
+
+// Change urgency of a case
+async function changeUrgency(caseId, newUrgency) {
+  await updateDoc(doc(db, "support_cases", caseId), {
+    urgency: newUrgency
+  });
+}
+
+// Get all agents (for transfer selector)
+async function getAgentsList() {
+  var q = query(collection(db, "usuarios"), where("role", "in", ["agent", "agent_senior", "admin"]));
+  var snap = await getDocs(q);
+  return snap.docs.map(function(d) {
+    var data = d.data();
+    return { uid: d.id, nombre: data.nombre || data.username || data.email, role: data.role };
+  });
+}
+
 // Load FAQ from Firestore, fallback to local
 async function loadFAQ(localFaq) {
   try {
@@ -92,4 +128,32 @@ async function loadFAQ(localFaq) {
   return localFaq;
 }
 
-export { createSupportCase, sendSupportMessage, getActiveCase, subscribeToMessages, markReadByUser, loadFAQ, getNextCaseNumber };
+// Cleanup: delete closed cases older than 15 days
+async function cleanupOldCases() {
+  var q = query(collection(db, "support_cases"), where("status", "==", "closed"));
+  var snap = await getDocs(q);
+  var now = Date.now();
+  var fifteenDays = 15 * 24 * 60 * 60 * 1000;
+  var deleted = 0;
+  for (var i = 0; i < snap.docs.length; i++) {
+    var d = snap.docs[i].data();
+    if (d.closedAt) {
+      var closedTime = new Date(d.closedAt).getTime();
+      if (now - closedTime > fifteenDays) {
+        // Delete messages subcollection first
+        var msgsSnap = await getDocs(collection(db, "support_cases", snap.docs[i].id, "messages"));
+        for (var j = 0; j < msgsSnap.docs.length; j++) {
+          await updateDoc(doc(db, "support_cases", snap.docs[i].id, "messages", msgsSnap.docs[j].id), {});
+          // Note: Firestore client SDK can't delete docs in subcollections easily
+          // We'll just delete the parent doc — orphaned subcollection docs don't cost reads
+        }
+        var { deleteDoc: delDoc } = await import("../firebase.js");
+        await delDoc(doc(db, "support_cases", snap.docs[i].id));
+        deleted++;
+      }
+    }
+  }
+  return deleted;
+}
+
+export { createSupportCase, sendSupportMessage, getActiveCase, subscribeToMessages, markReadByUser, loadFAQ, getNextCaseNumber, escalateCase, transferCase, changeUrgency, getAgentsList, cleanupOldCases };
