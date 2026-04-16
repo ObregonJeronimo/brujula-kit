@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { db, doc, updateDoc } from "../firebase.js";
 import { K as _K, ageLabel } from "../lib/fb.js";
 import { renderReportText } from "../lib/evalUtils.jsx";
+import "../styles/AIReportPanel.css";
 var K = Object.assign({}, _K, { ac: "#9333ea" });
 
 function textPDF(title, evalLabel, ev, reportText, filename, therapistInfo){
@@ -25,7 +26,7 @@ function textPDF(title, evalLabel, ev, reportText, filename, therapistInfo){
     }
 
     pdf.setFontSize(8); pdf.setTextColor(120);
-    pdf.text(title+" \u2014 "+(evalLabel||""), margin, y); 
+    pdf.text(title+" \u2014 "+(evalLabel||""), margin, y);
     pdf.text("Fecha: "+(ev.fechaEvaluacion||""), pW-margin, y, {align:"right"});
     y+=lineH+2;
     pdf.setDrawColor(200); pdf.line(margin, y, pW-margin, y); y+=8;
@@ -82,38 +83,43 @@ function ReportCard({ title, titleColor, borderColor, report, ev, evalLabel, onP
   var ti = therapistInfo || {};
   var hasHeader = ti.therapist || ti.clinic;
 
-  return <div style={{flex:1,minWidth:0}}>
-    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8,flexWrap:"wrap",gap:6}}>
-      <div style={{fontSize:14,fontWeight:700,color:titleColor||K.sd}}>{title}</div>
-      <div style={{display:"flex",gap:6}}>
-        {!editing && <button onClick={startEdit} style={{padding:"6px 12px",background:"#f1f5f9",border:"1px solid #e2e8f0",borderRadius:6,fontSize:11,fontWeight:600,cursor:"pointer",color:K.mt}}>{"Editar"}</button>}
-        <button onClick={function(){onPDF(editing?editText:report)}} style={{padding:"6px 12px",background:titleColor||K.ac,color:"#fff",border:"none",borderRadius:6,fontSize:11,fontWeight:600,cursor:"pointer"}}>{"Imprimir"}</button>
+  // Inyectamos los colores dinámicos como CSS variables al wrapper de la card.
+  var cardVars = {};
+  if(titleColor) cardVars["--aip-title-color"] = titleColor;
+  if(borderColor) cardVars["--aip-border-color"] = borderColor;
+
+  return <div className="aip-card-wrap" style={cardVars}>
+    <div className="aip-card-toolbar">
+      <div className="aip-card-title">{title}</div>
+      <div className="aip-card-actions">
+        {!editing && <button onClick={startEdit} className="aip-btn-edit">{"Editar"}</button>}
+        <button onClick={function(){onPDF(editing?editText:report)}} className="aip-btn-print">{"Imprimir"}</button>
       </div>
     </div>
-    <div style={{background:"#fff",borderRadius:12,border:"2px solid "+(borderColor||K.bd),padding:24}}>
+    <div className="aip-card">
       {/* Encabezado del profesional */}
-      {hasHeader && <div style={{marginBottom:14,paddingBottom:12,borderBottom:"2px solid #0a3d2f"}}>
-        {ti.clinic && <div style={{fontSize:13,fontWeight:700,color:"#0a3d2f"}}>{ti.clinic}</div>}
-        {ti.address && <div style={{fontSize:11,color:"#64748b",marginTop:2}}>{ti.address}</div>}
-        {ti.therapist && <div style={{fontSize:12,fontWeight:600,color:"#0a3d2f",marginTop:4}}>{ti.therapist}{ti.license ? " \u2014 "+ti.license : ""}</div>}
-        {(ti.phone || ti.email) && <div style={{fontSize:10,color:"#94a3b8",marginTop:2}}>{[ti.phone,ti.email].filter(Boolean).join(" \u00b7 ")}</div>}
+      {hasHeader && <div className="aip-letterhead">
+        {ti.clinic && <div className="aip-letterhead-clinic">{ti.clinic}</div>}
+        {ti.address && <div className="aip-letterhead-address">{ti.address}</div>}
+        {ti.therapist && <div className="aip-letterhead-therapist">{ti.therapist}{ti.license ? " \u2014 "+ti.license : ""}</div>}
+        {(ti.phone || ti.email) && <div className="aip-letterhead-contact">{[ti.phone,ti.email].filter(Boolean).join(" \u00b7 ")}</div>}
       </div>}
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14,paddingBottom:10,borderBottom:"1px solid #e2e8f0"}}>
+      <div className="aip-meta">
         <div>
-          <div style={{fontSize:9,color:titleColor||K.mt,fontWeight:700,textTransform:"uppercase",letterSpacing:1}}>{title+" \u2014 "+(evalLabel||"")}</div>
-          <div style={{fontSize:16,fontWeight:700,marginTop:3}}>{ev.paciente}</div>
-          <div style={{fontSize:12,color:K.mt,marginTop:2}}>{"DNI: "+(ev.pacienteDni||"N/A")+" \u00b7 Edad: "+ageLabel(ev.edadMeses||0)}</div>
+          <div className="aip-meta-kicker">{title+" \u2014 "+(evalLabel||"")}</div>
+          <div className="aip-meta-name">{ev.paciente}</div>
+          <div className="aip-meta-sub">{"DNI: "+(ev.pacienteDni||"N/A")+" \u00b7 Edad: "+ageLabel(ev.edadMeses||0)}</div>
         </div>
-        <div style={{textAlign:"right",fontSize:11,color:K.mt}}>{"Fecha: "+(ev.fechaEvaluacion||"")}</div>
+        <div className="aip-meta-date">{"Fecha: "+(ev.fechaEvaluacion||"")}</div>
       </div>
       {editing ? <div>
-        <textarea value={editText} onChange={function(e){setEditText(e.target.value)}} rows={16} style={{width:"100%",padding:"12px",border:"1px solid #e2e8f0",borderRadius:8,fontSize:13,lineHeight:1.7,fontFamily:"inherit",resize:"vertical"}} />
-        <div style={{display:"flex",gap:8,marginTop:10}}>
-          <button onClick={saveEdit} style={{padding:"8px 16px",background:"#059669",color:"#fff",border:"none",borderRadius:6,fontSize:12,fontWeight:600,cursor:"pointer"}}>{"Guardar cambios"}</button>
-          <button onClick={function(){setEditing(false)}} style={{padding:"8px 16px",background:"#f1f5f9",border:"1px solid #e2e8f0",borderRadius:6,fontSize:12,cursor:"pointer",color:K.mt}}>{"Cancelar"}</button>
+        <textarea value={editText} onChange={function(e){setEditText(e.target.value)}} rows={16} className="aip-textarea" />
+        <div className="aip-edit-actions">
+          <button onClick={saveEdit} className="aip-btn-save">{"Guardar cambios"}</button>
+          <button onClick={function(){setEditing(false)}} className="aip-btn-cancel">{"Cancelar"}</button>
         </div>
-      </div> : <div style={{fontSize:13,lineHeight:1.7}}>{renderReportText(report)}</div>}
-      </div>
+      </div> : <div className="aip-body">{renderReportText(report)}</div>}
+    </div>
   </div>;
 }
 
@@ -188,23 +194,32 @@ export default function AIReportPanel({ ev, evalType, collectionName, evalLabel,
     return function(){ clearTimeout(timer); };
   }, [autoGenerate]);
 
-  if(!report && !generating && !genError) return <div style={{background:"#fffbeb",borderRadius:10,padding:"14px 18px",marginBottom:16,fontSize:13,color:"#92400e",border:"1px solid #fde68a",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:10}}>
+  if(!report && !generating && !genError) return <div className="aip-warning">
     <span>{"No se genero informe IA para esta evaluacion."}</span>
-    <button onClick={handleGenerate} style={{padding:"8px 18px",background:"#9333ea",color:"#fff",border:"none",borderRadius:8,fontSize:12,fontWeight:600,cursor:"pointer"}}>Generar informe ahora</button>
+    <button onClick={handleGenerate} className="aip-btn-purple aip-btn-purple--sm">Generar informe ahora</button>
   </div>;
 
-  if(generating) return <div style={{background:"#fff",borderRadius:14,border:"1px solid "+K.bd,padding:40,textAlign:"center",marginBottom:20}}>
-    <div style={{display:"inline-block",width:40,height:40,border:"4px solid #e2e8f0",borderTopColor:"#9333ea",borderRadius:"50%",animation:"spin 1s linear infinite",marginBottom:16}} />
-    <div style={{fontSize:15,fontWeight:600,color:K.sd}}>Generando informe con IA...</div>
-    <style>{"@keyframes spin { to { transform: rotate(360deg); } }"}</style>
+  if(generating) return <div className="aip-loading">
+    <div className="aip-spinner" />
+    <div className="aip-loading-text">Generando informe con IA...</div>
   </div>;
 
-  if(genError && !report) return <div style={{background:"#fff",borderRadius:14,border:"1px solid "+K.bd,padding:28,textAlign:"center",marginBottom:20}}>
-    <div style={{background:"#fef2f2",border:"1px solid #fecaca",borderRadius:8,padding:"10px 14px",marginBottom:14,fontSize:12,color:"#dc2626"}}>{genError}</div>
-    <button onClick={handleGenerate} style={{padding:"10px 24px",background:"#9333ea",color:"#fff",border:"none",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer"}}>Reintentar</button>
+  if(genError && !report) return <div className="aip-error-box">
+    <div className="aip-error-msg">{genError}</div>
+    <button onClick={handleGenerate} className="aip-btn-purple aip-btn-purple--md">Reintentar</button>
   </div>;
 
-  return <div style={{marginBottom:20}}>
-    <ReportCard title={"Informe Fonoaudiologico"} titleColor={K.sd} borderColor={K.bd} report={report} ev={ev} evalLabel={evalLabel||evalType.toUpperCase()} therapistInfo={therapistInfo} onPDF={function(txt){ textPDF("Informe Fonoaudiologico", evalLabel||evalType.toUpperCase(), ev, txt||report, pdfName("Informe"), therapistInfo); }} onReportChange={function(t){setReport(t)}} />
+  return <div className="aip">
+    <ReportCard
+      title={"Informe Fonoaudiologico"}
+      titleColor={K.sd}
+      borderColor={K.bd}
+      report={report}
+      ev={ev}
+      evalLabel={evalLabel||evalType.toUpperCase()}
+      therapistInfo={therapistInfo}
+      onPDF={function(txt){ textPDF("Informe Fonoaudiologico", evalLabel||evalType.toUpperCase(), ev, txt||report, pdfName("Informe"), therapistInfo); }}
+      onReportChange={function(t){setReport(t)}}
+    />
   </div>;
 }

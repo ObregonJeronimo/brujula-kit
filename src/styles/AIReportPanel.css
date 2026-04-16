@@ -1,0 +1,323 @@
+/* ============================================
+   AIReportPanel (generador / visor de informes IA)
+   ============================================ */
+
+.aip {
+  margin-bottom: 20px;
+}
+
+/* ============================================
+   Warning inicial (sin informe generado)
+   ============================================ */
+.aip-warning {
+  background: var(--c-warning-light);
+  border: 1px solid #fde68a;
+  border-radius: var(--radius-lg);
+  padding: 14px 18px;
+  margin-bottom: 16px;
+  font-size: var(--fs-sm);
+  color: var(--c-warning-dark);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+/* ============================================
+   Loading (generando)
+   ============================================ */
+.aip-loading {
+  background: var(--c-surface);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--c-border);
+  padding: 40px;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.aip-spinner {
+  display: inline-block;
+  width: 40px;
+  height: 40px;
+  border: 4px solid var(--c-border);
+  border-top-color: var(--c-purple);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 16px;
+}
+
+.aip-loading-text {
+  font-size: 15px;
+  font-weight: var(--fw-semibold);
+  color: var(--c-primary);
+}
+
+/* ============================================
+   Error state
+   ============================================ */
+.aip-error-box {
+  background: var(--c-surface);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--c-border);
+  padding: 28px;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.aip-error-msg {
+  background: var(--c-error-light);
+  border: 1px solid var(--c-error-border);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  margin-bottom: 14px;
+  font-size: var(--fs-xs);
+  color: var(--c-error);
+}
+
+/* ============================================
+   Purple action buttons (IA)
+   ============================================ */
+.aip-btn-purple {
+  background: var(--c-purple);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  font-weight: var(--fw-semibold);
+  cursor: pointer;
+  font-family: var(--font-family);
+  transition: opacity 0.15s ease;
+}
+
+.aip-btn-purple:hover {
+  opacity: 0.92;
+}
+
+.aip-btn-purple--sm {
+  padding: 8px 18px;
+  font-size: var(--fs-xs);
+}
+
+.aip-btn-purple--md {
+  padding: 10px 24px;
+  font-size: var(--fs-sm);
+}
+
+/* ============================================
+   ReportCard
+   ============================================ */
+.aip-card-wrap {
+  flex: 1;
+  min-width: 0;
+}
+
+.aip-card-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.aip-card-title {
+  font-size: var(--fs-md);
+  font-weight: var(--fw-bold);
+  color: var(--aip-title-color, var(--c-primary));
+}
+
+.aip-card-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.aip-btn-edit {
+  padding: 6px 12px;
+  background: var(--c-surface-alt);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  cursor: pointer;
+  color: var(--c-text-muted);
+  font-family: var(--font-family);
+  transition: background 0.15s ease;
+}
+
+.aip-btn-edit:hover {
+  background: var(--c-surface-hover);
+}
+
+.aip-btn-print {
+  padding: 6px 12px;
+  background: var(--aip-title-color, var(--c-accent));
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  cursor: pointer;
+  font-family: var(--font-family);
+  transition: opacity 0.15s ease;
+}
+
+.aip-btn-print:hover {
+  opacity: 0.92;
+}
+
+.aip-card {
+  background: var(--c-surface);
+  border-radius: var(--radius-lg);
+  border: 2px solid var(--aip-border-color, var(--c-border));
+  padding: 24px;
+}
+
+/* Encabezado del profesional (letterhead) */
+.aip-letterhead {
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid var(--c-primary);
+}
+
+.aip-letterhead-clinic {
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-bold);
+  color: var(--c-primary);
+}
+
+.aip-letterhead-address {
+  font-size: var(--fs-xs);
+  color: var(--c-text-muted);
+  margin-top: 2px;
+}
+
+.aip-letterhead-therapist {
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  color: var(--c-primary);
+  margin-top: 4px;
+}
+
+.aip-letterhead-contact {
+  font-size: 10px;
+  color: var(--c-text-faint);
+  margin-top: 2px;
+}
+
+/* Meta header del informe (paciente + fecha) */
+.aip-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--c-border);
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.aip-meta-kicker {
+  font-size: 9px;
+  color: var(--aip-title-color, var(--c-text-muted));
+  font-weight: var(--fw-bold);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.aip-meta-name {
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-bold);
+  margin-top: 3px;
+}
+
+.aip-meta-sub {
+  font-size: var(--fs-xs);
+  color: var(--c-text-muted);
+  margin-top: 2px;
+}
+
+.aip-meta-date {
+  text-align: right;
+  font-size: var(--fs-xs);
+  color: var(--c-text-muted);
+}
+
+/* Body del informe */
+.aip-body {
+  font-size: var(--fs-sm);
+  line-height: 1.7;
+}
+
+/* Modo edición */
+.aip-textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius);
+  font-size: var(--fs-sm);
+  line-height: 1.7;
+  font-family: inherit;
+  resize: vertical;
+  background: var(--c-surface);
+  color: var(--c-text);
+}
+
+.aip-textarea:focus {
+  outline: none;
+  border-color: var(--c-accent);
+}
+
+.aip-edit-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.aip-btn-save {
+  padding: 8px 16px;
+  background: var(--c-success);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  cursor: pointer;
+  font-family: var(--font-family);
+  transition: opacity 0.15s ease;
+}
+
+.aip-btn-save:hover {
+  opacity: 0.92;
+}
+
+.aip-btn-cancel {
+  padding: 8px 16px;
+  background: var(--c-surface-alt);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-xs);
+  cursor: pointer;
+  color: var(--c-text-muted);
+  font-family: var(--font-family);
+  transition: background 0.15s ease;
+}
+
+.aip-btn-cancel:hover {
+  background: var(--c-surface-hover);
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .aip-card {
+    padding: 16px;
+  }
+
+  .aip-meta {
+    flex-direction: column;
+  }
+
+  .aip-meta-date {
+    text-align: left;
+  }
+}
