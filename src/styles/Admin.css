@@ -1,0 +1,538 @@
+/* ============================================
+   Admin (gestión de usuarios)
+   ============================================ */
+
+.admin-page {
+  animation: fi 0.3s ease;
+  width: 100%;
+  max-width: 800px;
+}
+
+.admin-title {
+  font-size: 22px;
+  font-weight: var(--fw-bold);
+  margin-bottom: 6px;
+}
+
+.admin-subtitle {
+  color: var(--c-text-muted);
+  font-size: var(--fs-md);
+  margin-bottom: 16px;
+}
+
+/* Loading */
+.admin-loading {
+  animation: fi 0.3s ease;
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.admin-loading-icon {
+  font-size: 36px;
+  margin-bottom: 12px;
+}
+
+.admin-loading-text {
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-semibold);
+  color: var(--c-text-muted);
+}
+
+/* Tabs */
+.admin-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.admin-tab {
+  padding: 8px 16px;
+  border-radius: var(--radius);
+  border: 1px solid var(--c-border);
+  background: var(--c-surface);
+  color: var(--c-text-muted);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  cursor: pointer;
+  font-family: var(--font-family);
+  transition: all 0.15s ease;
+}
+
+.admin-tab:hover {
+  background: var(--c-surface-hover);
+}
+
+.admin-tab--active {
+  border: 2px solid var(--c-accent);
+  background: var(--c-accent-light);
+  color: var(--c-accent);
+}
+
+/* Global actions */
+.admin-actions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.admin-action-card {
+  background: var(--c-surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--c-border);
+  padding: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.admin-action-info-title {
+  font-size: var(--fs-md);
+  font-weight: var(--fw-semibold);
+}
+
+.admin-action-info-desc {
+  font-size: var(--fs-sm);
+  color: var(--c-text-muted);
+}
+
+/* Users list */
+.admin-search {
+  padding: 10px 14px;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius);
+  font-size: var(--fs-md);
+  background: var(--c-surface-alt);
+  width: 100%;
+  margin-bottom: 12px;
+  font-family: var(--font-family);
+  color: var(--c-text);
+}
+
+.admin-search:focus {
+  outline: none;
+  border-color: var(--c-accent);
+}
+
+.admin-list {
+  background: var(--c-surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--c-border);
+  overflow: hidden;
+}
+
+.admin-list-header {
+  display: grid;
+  grid-template-columns: 2fr 1fr 70px 60px;
+  gap: 8px;
+  padding: 10px 16px;
+  background: var(--c-primary);
+  color: #fff;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-bold);
+}
+
+.admin-list-header-center {
+  text-align: center;
+}
+
+.admin-list-body {
+  max-height: 450px;
+  overflow-y: auto;
+}
+
+.admin-list-empty {
+  padding: 20px;
+  text-align: center;
+  color: var(--c-text-muted);
+  font-size: var(--fs-sm);
+}
+
+.admin-list-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 70px 60px;
+  gap: 8px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--c-border-light);
+  cursor: pointer;
+  align-items: center;
+  font-size: var(--fs-sm);
+  transition: background 0.15s ease;
+}
+
+.admin-list-row:hover {
+  background: var(--c-surface-hover);
+}
+
+.admin-list-row:last-child {
+  border-bottom: none;
+}
+
+.admin-list-name {
+  font-weight: var(--fw-semibold);
+  color: var(--c-primary);
+}
+
+.admin-list-username {
+  font-size: var(--fs-xs);
+  color: var(--c-text-muted);
+}
+
+.admin-list-email {
+  font-size: var(--fs-xs);
+  color: var(--c-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.admin-list-credits {
+  text-align: center;
+  font-weight: var(--fw-bold);
+}
+
+.admin-list-credits--positive {
+  color: var(--c-success);
+}
+
+.admin-list-credits--zero {
+  color: var(--c-error);
+}
+
+.admin-list-action {
+  text-align: center;
+  font-size: var(--fs-xs);
+  color: var(--c-accent);
+  font-weight: var(--fw-semibold);
+}
+
+/* Back button */
+.admin-back {
+  background: var(--c-surface-alt);
+  border: none;
+  border-radius: var(--radius);
+  padding: 8px 18px;
+  font-size: var(--fs-sm);
+  cursor: pointer;
+  font-weight: var(--fw-semibold);
+  margin-bottom: 16px;
+  color: var(--c-text);
+  font-family: var(--font-family);
+  transition: background 0.15s ease;
+}
+
+.admin-back:hover {
+  background: var(--c-surface-hover);
+}
+
+/* User detail card */
+.admin-user-card {
+  background: var(--c-success-light);
+  border: 1px solid var(--c-success-border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.admin-user-name {
+  font-size: var(--fs-xl);
+  font-weight: var(--fw-bold);
+  color: var(--c-primary);
+  margin-bottom: 10px;
+}
+
+.admin-user-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  font-size: var(--fs-sm);
+  color: var(--c-text-secondary);
+}
+
+.admin-user-label {
+  color: var(--c-text-muted);
+}
+
+.admin-user-credits-value {
+  font-size: var(--fs-xl);
+}
+
+.admin-user-credits-value--positive {
+  color: var(--c-success);
+}
+
+.admin-user-credits-value--zero {
+  color: var(--c-error);
+}
+
+.admin-edit-btn {
+  margin-top: 12px;
+  padding: 8px 16px;
+  background: var(--c-surface-alt);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  cursor: pointer;
+  color: var(--c-text-muted);
+  font-family: var(--font-family);
+  transition: background 0.15s ease;
+}
+
+.admin-edit-btn:hover {
+  background: var(--c-surface-hover);
+}
+
+/* Edit form */
+.admin-edit-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.admin-edit-label {
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  color: var(--c-text-muted);
+  display: block;
+  margin-bottom: 3px;
+}
+
+.admin-edit-input {
+  padding: 10px 14px;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius);
+  font-size: var(--fs-md);
+  background: var(--c-surface-alt);
+  width: 100%;
+  font-family: var(--font-family);
+  color: var(--c-text);
+}
+
+.admin-edit-input:focus {
+  outline: none;
+  border-color: var(--c-accent);
+}
+
+.admin-edit-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.admin-btn-save {
+  padding: 8px 16px;
+  background: var(--c-accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  cursor: pointer;
+  font-family: var(--font-family);
+}
+
+.admin-btn-save:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.admin-btn-cancel {
+  background: var(--c-surface-alt);
+  border: 1px solid var(--c-border);
+  padding: 10px 18px;
+  border-radius: var(--radius);
+  font-size: var(--fs-sm);
+  cursor: pointer;
+  color: var(--c-text-muted);
+  font-family: var(--font-family);
+  transition: background 0.15s ease;
+}
+
+.admin-btn-cancel:hover {
+  background: var(--c-surface-hover);
+}
+
+/* Credits management */
+.admin-credits-card {
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.admin-credits-title {
+  font-size: var(--fs-md);
+  font-weight: var(--fw-semibold);
+  margin-bottom: 12px;
+}
+
+.admin-credits-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.admin-credits-input {
+  padding: 10px 14px;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius);
+  font-size: var(--fs-md);
+  background: var(--c-surface-alt);
+  width: 80px;
+  text-align: center;
+  font-family: var(--font-family);
+  color: var(--c-text);
+}
+
+.admin-credits-input:focus {
+  outline: none;
+  border-color: var(--c-accent);
+}
+
+.admin-btn-add {
+  background: var(--c-success);
+  color: #fff;
+  border: none;
+  padding: 10px 20px;
+  border-radius: var(--radius);
+  font-size: var(--fs-md);
+  font-weight: var(--fw-semibold);
+  cursor: pointer;
+  font-family: var(--font-family);
+  transition: opacity 0.15s ease;
+}
+
+.admin-btn-add:hover {
+  opacity: 0.9;
+}
+
+.admin-btn-remove {
+  background: var(--c-error);
+  color: #fff;
+  border: none;
+  padding: 10px 20px;
+  border-radius: var(--radius);
+  font-size: var(--fs-md);
+  font-weight: var(--fw-semibold);
+  cursor: pointer;
+  font-family: var(--font-family);
+  transition: opacity 0.15s ease;
+}
+
+.admin-btn-remove:hover {
+  opacity: 0.9;
+}
+
+/* Danger zone */
+.admin-danger-zone {
+  background: var(--c-surface);
+  border: 1px solid var(--c-error-border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+}
+
+.admin-danger-title {
+  font-size: var(--fs-md);
+  font-weight: var(--fw-bold);
+  color: var(--c-error);
+  margin-bottom: 14px;
+}
+
+.admin-danger-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.admin-danger-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  background: var(--c-error-light);
+  border-radius: var(--radius);
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.admin-danger-row-text {
+  font-size: var(--fs-sm);
+}
+
+/* Danger buttons */
+.admin-btn-danger {
+  background: var(--c-error);
+  color: #fff;
+  border: none;
+  padding: 10px 18px;
+  border-radius: var(--radius);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  cursor: pointer;
+  font-family: var(--font-family);
+  transition: opacity 0.15s ease;
+}
+
+.admin-btn-danger:hover {
+  opacity: 0.9;
+}
+
+.admin-btn-danger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.admin-btn-danger--sm {
+  font-size: var(--fs-xs);
+  padding: 8px 14px;
+}
+
+/* Confirm box */
+.admin-confirm {
+  background: var(--c-error-light);
+  border: 1px solid var(--c-error-border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.admin-confirm-title {
+  font-size: var(--fs-md);
+  font-weight: var(--fw-bold);
+  color: var(--c-error);
+  margin-bottom: 8px;
+}
+
+.admin-confirm-desc {
+  font-size: var(--fs-sm);
+  color: var(--c-error);
+  margin-bottom: 14px;
+}
+
+.admin-confirm-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .admin-list-header,
+  .admin-list-row {
+    grid-template-columns: 2fr 60px 50px;
+  }
+
+  .admin-list-header > span:nth-child(2),
+  .admin-list-row > div:nth-child(2) {
+    display: none;
+  }
+
+  .admin-user-grid,
+  .admin-edit-grid {
+    grid-template-columns: 1fr;
+  }
+}
