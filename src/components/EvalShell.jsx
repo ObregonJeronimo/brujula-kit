@@ -3,6 +3,7 @@ import PatientLookup from "./PatientLookup.jsx";
 import AIReportPanel from "./AIReportPanel.jsx";
 import { fbAdd, K, ageLabel } from "../lib/fb.js";
 import { saveDraft, deleteDraft } from "../lib/drafts.js";
+import "../styles/EvalShell.css";
 
 function scrollTop(){ var el=document.getElementById("main-scroll"); if(el) el.scrollTo({top:0,behavior:"smooth"}); }
 
@@ -32,6 +33,9 @@ export default function EvalShell({ onS, nfy, userId, config, renderEval, comput
   var accentColor = config.color || K.ac;
   var steps = config.steps || ["Paciente","Evaluacion","Resultados"];
   var RESULT_STEP = steps.length - 1;
+
+  // Inyectamos el accent dinámico como CSS variable local al wrapper.
+  var wrapperStyle = { "--esh-accent": accentColor };
 
   var setResponse = useCallback(function(id, val){
     setResponses(function(prev){ var n = Object.assign({}, prev); if(n[id] === val) delete n[id]; else n[id] = val; return n; });
@@ -91,39 +95,73 @@ export default function EvalShell({ onS, nfy, userId, config, renderEval, comput
 
   var results = step === RESULT_STEP ? computeResults(responses, obsMap) : null;
 
+  var buildStepClass = function(i){
+    var active = step === i;
+    var done = step > i;
+    var isResult = i === RESULT_STEP;
+    var canClick = !isResult && i > 0 && step > 0;
+    var cls = "esh-step";
+    if(active) cls += " esh-step--active";
+    else if(done) cls += " esh-step--done";
+    if(canClick) cls += " esh-step--clickable";
+    if(isResult && !active) cls += " esh-step--result-inactive";
+    return cls;
+  };
+
   return (
-    <div style={{animation:"fi .3s ease",maxWidth:1200,margin:"0 auto"}}>
+    <div className="esh" style={wrapperStyle}>
       {/* Header */}
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,marginBottom:20}}>
-        <div style={{display:"flex",alignItems:"center",gap:12}}>
-          <span style={{fontSize:32}}>{config.icon}</span>
-          <div><h1 style={{fontSize:20,fontWeight:700,margin:0}}>{config.title}</h1>{config.subtitle && <p style={{fontSize:12,color:K.mt,margin:0}}>{config.subtitle}</p>}</div>
+      <div className="esh-header">
+        <div className="esh-header-title">
+          <span className="esh-icon">{config.icon}</span>
+          <div>
+            <h1 className="esh-title">{config.title}</h1>
+            {config.subtitle && <p className="esh-subtitle">{config.subtitle}</p>}
+          </div>
         </div>
         {/* Pause/Finish buttons — visible during evaluation (not on patient select or results) */}
-        {step >= 1 && step < RESULT_STEP && <div style={{display:"flex",gap:8}}>
-          <button onClick={handleFinishEarly} style={{padding:"8px 16px",background:"#059669",color:"#fff",border:"none",borderRadius:8,fontSize:12,fontWeight:600,cursor:"pointer"}}>{"Finalizar ahora"}</button>
-          <button onClick={handlePause} style={{padding:"8px 16px",background:"#f59e0b",color:"#fff",border:"none",borderRadius:8,fontSize:12,fontWeight:600,cursor:"pointer"}}>{"Pausar"}</button>
+        {step >= 1 && step < RESULT_STEP && <div className="esh-header-actions">
+          <button onClick={handleFinishEarly} className="esh-btn-finish-early">{"Finalizar ahora"}</button>
+          <button onClick={handlePause} className="esh-btn-pause">{"Pausar"}</button>
         </div>}
       </div>
 
       {/* Step indicators */}
-      <div style={{display:"flex",gap:4,marginBottom:24}}>
-        {steps.map(function(lb,i){ var active=step===i,done=step>i,isResult=i===RESULT_STEP,canClick=!isResult&&i>0&&step>0; return <div key={i} onClick={function(){ if(canClick){ setStep(i); scrollTop(); } }} style={{flex:1,textAlign:"center",padding:"8px 0",borderRadius:8,fontSize:13,fontWeight:active?700:500,background:active?accentColor:done?"#059669":"#f1f5f9",color:active||done?"#fff":K.mt,cursor:canClick?"pointer":"default",opacity:isResult&&!active?0.6:1}}>{(i+1)+". "+lb}</div>; })}
+      <div className="esh-steps">
+        {steps.map(function(lb,i){
+          var isResult = i === RESULT_STEP;
+          var canClick = !isResult && i > 0 && step > 0;
+          return <div
+            key={i}
+            onClick={function(){ if(canClick){ setStep(i); scrollTop(); } }}
+            className={buildStepClass(i)}
+          >{(i+1)+". "+lb}</div>;
+        })}
       </div>
 
       {/* Step 0: Patient data */}
       {step===0 && <div>
-        <div style={{background:"#fff",borderRadius:12,border:"1px solid "+K.bd,padding:24,marginBottom:16}}>
-          <h3 style={{fontSize:16,fontWeight:600,marginBottom:16}}>{"Datos del paciente"}</h3>
-          <PatientLookup userId={userId} onSelect={setPatient} selected={patient} />
+        <div className="esh-card">
+          <h3 className="esh-card-title">{"Datos del paciente"}</h3>
+          <PatientLookup userId={userId} onSelect={setPatient} selected={patient} color={accentColor} />
         </div>
-        {patient && <div style={{background:"#fff",borderRadius:12,border:"1px solid "+K.bd,padding:24,marginBottom:16}}>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
-            <div><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>{"Fecha de evaluacion"}</label><input type="date" value={evalDate} onChange={function(e){setEvalDate(e.target.value)}} style={{width:"100%",padding:"10px 12px",border:"1px solid "+K.bd,borderRadius:8,fontSize:14}} /></div>
-            <div><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>{"Derivado por"}</label><input value={derivado} onChange={function(e){setDerivado(e.target.value)}} placeholder="Nombre del derivador" style={{width:"100%",padding:"10px 12px",border:"1px solid "+K.bd,borderRadius:8,fontSize:14}} /></div>
+        {patient && <div className="esh-card">
+          <div className="esh-grid-2">
+            <div>
+              <label className="esh-field-label">{"Fecha de evaluacion"}</label>
+              <input type="date" value={evalDate} onChange={function(e){setEvalDate(e.target.value)}} className="esh-input" />
+            </div>
+            <div>
+              <label className="esh-field-label">{"Derivado por"}</label>
+              <input value={derivado} onChange={function(e){setDerivado(e.target.value)}} placeholder="Nombre del derivador" className="esh-input" />
+            </div>
           </div>
         </div>}
-        <button onClick={function(){ if(!patient){nfy("Selecciona un paciente","er");return;} setStep(1);scrollTop(); }} disabled={!patient} style={{width:"100%",padding:"14px",background:!patient?"#94a3b8":accentColor,color:"#fff",border:"none",borderRadius:10,fontSize:15,fontWeight:700,cursor:!patient?"not-allowed":"pointer"}}>{"Comenzar evaluaci\u00f3n \u2192"}</button>
+        <button
+          onClick={function(){ if(!patient){nfy("Selecciona un paciente","er");return;} setStep(1);scrollTop(); }}
+          disabled={!patient}
+          className="esh-cta"
+        >{"Comenzar evaluaci\u00f3n \u2192"}</button>
       </div>}
 
       {/* Middle steps: evaluation content (provided by each eval) */}
@@ -138,7 +176,10 @@ export default function EvalShell({ onS, nfy, userId, config, renderEval, comput
 
       {/* Result step */}
       {step === RESULT_STEP && <div>
-        <div style={{background:"#dcfce7",borderRadius:10,padding:"12px 18px",marginBottom:16,display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:18}}>{"\u2705"}</span><span style={{fontSize:13,fontWeight:600,color:"#059669"}}>{"Evaluacion guardada correctamente."}</span></div>
+        <div className="esh-result-ok">
+          <span className="esh-result-ok-icon">{"\u2705"}</span>
+          <span className="esh-result-ok-text">{"Evaluacion guardada correctamente."}</span>
+        </div>
 
         <AIReportPanel
           ev={{
@@ -158,11 +199,14 @@ export default function EvalShell({ onS, nfy, userId, config, renderEval, comput
           therapistInfo={therapistInfo}
         />
 
-        <button onClick={function(){ setShowTech(!showTech); }} style={{width:"100%",padding:"14px",background:showTech?"#f1f5f9":"#0a3d2f",color:showTech?"#1e293b":"#fff",border:"1px solid #e2e8f0",borderRadius:10,fontSize:14,fontWeight:600,cursor:"pointer",marginBottom:showTech?16:20}}>{showTech ? "Ocultar datos tecnicos" : "Ver datos tecnicos"}</button>
+        <button
+          onClick={function(){ setShowTech(!showTech); }}
+          className={"esh-tech-toggle" + (showTech ? " esh-tech-toggle--open" : "")}
+        >{showTech ? "Ocultar datos tecnicos" : "Ver datos tecnicos"}</button>
 
         {showTech && results && renderTechDetails(results)}
 
-        <button onClick={function(){onS("tools")}} style={{width:"100%",padding:"14px",background:accentColor,color:"#fff",border:"none",borderRadius:10,fontSize:15,fontWeight:700,cursor:"pointer",marginTop:4}}>{"Finalizar"}</button>
+        <button onClick={function(){onS("tools")}} className="esh-cta esh-cta--mt">{"Finalizar"}</button>
       </div>}
     </div>
   );

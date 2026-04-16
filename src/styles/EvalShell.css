@@ -1,0 +1,283 @@
+/* ============================================
+   EvalShell (shell común de evaluaciones)
+   ============================================ */
+
+.esh {
+  animation: fi 0.3s ease;
+  max-width: 1200px;
+  margin: 0 auto;
+  /* --esh-accent inyectado inline desde el JSX (config.color) */
+  --esh-accent: var(--c-accent);
+}
+
+/* ============================================
+   Header
+   ============================================ */
+.esh-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.esh-header-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.esh-icon {
+  font-size: 32px;
+  flex-shrink: 0;
+}
+
+.esh-title {
+  font-size: var(--fs-xl);
+  font-weight: var(--fw-bold);
+  margin: 0;
+}
+
+.esh-subtitle {
+  font-size: var(--fs-xs);
+  color: var(--c-text-muted);
+  margin: 0;
+}
+
+/* Pause / Finish buttons */
+.esh-header-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.esh-btn-finish-early {
+  padding: 8px 16px;
+  background: var(--c-success);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  cursor: pointer;
+  font-family: var(--font-family);
+  transition: opacity 0.15s ease;
+}
+
+.esh-btn-pause {
+  padding: 8px 16px;
+  background: var(--c-warning);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  cursor: pointer;
+  font-family: var(--font-family);
+  transition: opacity 0.15s ease;
+}
+
+.esh-btn-finish-early:hover,
+.esh-btn-pause:hover {
+  opacity: 0.92;
+}
+
+/* ============================================
+   Step indicators
+   ============================================ */
+.esh-steps {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.esh-step {
+  flex: 1;
+  min-width: 80px;
+  text-align: center;
+  padding: 8px 0;
+  border-radius: var(--radius);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  background: var(--c-surface-hover);
+  color: var(--c-text-muted);
+  cursor: default;
+  transition: background 0.15s ease;
+}
+
+.esh-step--active {
+  background: var(--esh-accent);
+  color: #fff;
+  font-weight: var(--fw-bold);
+}
+
+.esh-step--done {
+  background: var(--c-success);
+  color: #fff;
+}
+
+.esh-step--clickable {
+  cursor: pointer;
+}
+
+.esh-step--clickable:hover {
+  opacity: 0.9;
+}
+
+.esh-step--result-inactive {
+  opacity: 0.6;
+}
+
+/* ============================================
+   Step 0: datos del paciente
+   ============================================ */
+.esh-card {
+  background: var(--c-surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--c-border);
+  padding: 24px;
+  margin-bottom: 16px;
+}
+
+.esh-card-title {
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-semibold);
+  margin: 0 0 16px 0;
+}
+
+.esh-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.esh-field-label {
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  color: var(--c-text-muted);
+  display: block;
+  margin-bottom: 4px;
+}
+
+.esh-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius);
+  font-size: var(--fs-md);
+  background: var(--c-surface);
+  color: var(--c-text);
+  font-family: var(--font-family);
+}
+
+.esh-input:focus {
+  outline: none;
+  border-color: var(--esh-accent);
+}
+
+/* Main CTA (Comenzar / Finalizar) */
+.esh-cta {
+  width: 100%;
+  padding: 14px;
+  background: var(--esh-accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 15px;
+  font-weight: var(--fw-bold);
+  cursor: pointer;
+  font-family: var(--font-family);
+  transition: opacity 0.15s ease;
+}
+
+.esh-cta:hover {
+  opacity: 0.92;
+}
+
+.esh-cta:disabled {
+  background: var(--c-text-faint);
+  cursor: not-allowed;
+  opacity: 1;
+}
+
+.esh-cta--mt {
+  margin-top: 4px;
+}
+
+/* ============================================
+   Result step
+   ============================================ */
+.esh-result-ok {
+  background: #dcfce7;
+  border-radius: var(--radius-md);
+  padding: 12px 18px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.esh-result-ok-icon {
+  font-size: var(--fs-lg);
+}
+
+.esh-result-ok-text {
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  color: var(--c-success);
+}
+
+/* Tech details toggle */
+.esh-tech-toggle {
+  width: 100%;
+  padding: 14px;
+  background: var(--c-primary);
+  color: #fff;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-md);
+  font-size: var(--fs-md);
+  font-weight: var(--fw-semibold);
+  cursor: pointer;
+  margin-bottom: 20px;
+  font-family: var(--font-family);
+  transition: opacity 0.15s ease;
+}
+
+.esh-tech-toggle:hover {
+  opacity: 0.92;
+}
+
+.esh-tech-toggle--open {
+  background: var(--c-surface-hover);
+  color: var(--c-text);
+  margin-bottom: 16px;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .esh-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .esh-header-actions {
+    width: 100%;
+  }
+
+  .esh-btn-finish-early,
+  .esh-btn-pause {
+    flex: 1;
+  }
+
+  .esh-grid-2 {
+    grid-template-columns: 1fr;
+  }
+
+  .esh-step {
+    font-size: var(--fs-xs);
+    min-width: 60px;
+  }
+}
