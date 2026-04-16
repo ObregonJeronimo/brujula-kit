@@ -13,6 +13,7 @@ import Dashboard from "./components/Dashboard.jsx";
 import Tools from "./components/Tools.jsx";
 import NoCreditsModal from "./components/NoCreditsModal.jsx";
 import ChangelogModal from "./components/ChangelogModal.jsx";
+import SupportWidget from "./components/SupportWidget.jsx";
 
 function lazyRetry(fn){
   return lazy(function(){
@@ -131,24 +132,21 @@ export default function App() {
   var _showChangelog = useState(true), showChangelog = _showChangelog[0], setShowChangelog = _showChangelog[1];
   var nfy = useCallback(function(m,t){ sT({m:m,t:t}); setTimeout(function(){sT(null)},4500); },[]);
   var isAdmin = profile?.role === "admin";
+  var isUser = profile?.role === "user";
   useSessionHeartbeat(authUser?.uid, isAdmin);
 
   // Tutorial: check Firestore (persistent) with localStorage as fast cache
   useEffect(function(){
     if(!authUser?.uid || !profile) return;
-    // Fast check: if localStorage says done, skip Firestore read
     var localKey = "bk_onboarding_" + authUser.uid;
     if(localStorage.getItem(localKey)) return;
-    // Check Firestore for persistent flag
     if(profile.onboardingDone) { localStorage.setItem(localKey, "done"); return; }
-    // Neither localStorage nor Firestore has it — show tour
     setTimeout(function(){ setRunTour(true); }, 800);
   },[authUser, profile]);
 
   var handleTourFinish = function(){
     setRunTour(false);
     if(authUser?.uid){
-      // Save to both localStorage (fast cache) and Firestore (persistent)
       localStorage.setItem("bk_onboarding_" + authUser.uid, "done");
       updateDoc(doc(db, "usuarios", authUser.uid), { onboardingDone: true }).catch(function(){});
     }
@@ -183,7 +181,6 @@ export default function App() {
     if(!profile) return; sL(true);
     var p = profile.role==="admin" ? fbGetAll("evaluaciones") : fbGetFiltered("evaluaciones",authUser.uid);
     p.then(function(res){ if(profile.role==="admin") res.sort(function(a,b){return(b.fechaGuardado||"").localeCompare(a.fechaGuardado||"")}); setAllEvals(res); }).catch(function(e){console.error("loadEvals error:",e); setAllEvals([]);}).finally(function(){sL(false)});
-    // También cargar pacientes registrados
     var pp = profile.role==="admin" ? fbGetAll("pacientes") : fbGetFiltered("pacientes",authUser.uid);
     pp.then(function(res){ setAllPacientes(res); }).catch(function(){ setAllPacientes([]); });
   },[profile,authUser]);
@@ -223,17 +220,15 @@ export default function App() {
   var handleUnsavedCancel = function(){ setUnsavedModal(null); };
   var handleUnsavedSave = function(){ if(settingsRef.current && settingsRef.current.save){ setSavingModal(true); settingsRef.current.save().then(function(ok){ setSavingModal(false); configDirtyRef.current = false; var dest = unsavedModal; setUnsavedModal(null); doNav(dest); }); } else { setUnsavedModal(null); } };
 
-  // Verificar si el profesional completó sus datos (obligatorio para informes)
   var rh = profile && profile.reportHeader || {};
   var configIncomplete = profile && !isAdmin && (!rh.therapist || !rh.license || !rh.phone || !rh.clinic);
   var _forceConfig = useState(false), forceConfig = _forceConfig[0], setForceConfig = _forceConfig[1];
   useEffect(function(){
     if(!configIncomplete) return;
-    // Verificar si se cerró hace menos de 24hs
     var dismissed = localStorage.getItem("configDismissed");
     if(dismissed){
       var diff = Date.now() - parseInt(dismissed);
-      if(diff < 24*60*60*1000) return; // Menos de 24hs, no mostrar
+      if(diff < 24*60*60*1000) return;
     }
     setForceConfig(true);
   }, [configIncomplete]);
@@ -248,12 +243,10 @@ export default function App() {
 
   var nav = [["dash","dash","Panel"],["tools","tools","Herramientas"],["hist","hist","Historial"],["pacientes","pacientes","Pacientes"],["calendario","calendario","Calendario"],["premium","premium","Cr\u00e9ditos"],["profile","profile","Perfil"],["config","config","Configuraci\u00f3n"]];
   if(isAdmin){ nav.push(["stats","stats","Estad\u00edsticas"]); nav.push(["adm","adm","Administrar"]); }
-  // En móvil ocultar Herramientas y Configuración
   if(mobile){ nav = nav.filter(function(n){ return n[0] !== "tools" && n[0] !== "config"; }); }
   var tSd = theme && theme.primary ? mixColor(theme.primary, theme.primaryAlpha != null ? theme.primaryAlpha : 100) : K.sd;
   var tAc = theme && theme.secondary ? mixColor(theme.secondary, theme.secondaryAlpha != null ? theme.secondaryAlpha : 100) : K.ac;
   var TC = {sd:tSd, ac:tAc};
-  // Sincronizar colores dinámicos con CSS variables
   applyThemeToCSS(tSd, tAc);
 
   return (
@@ -273,6 +266,8 @@ export default function App() {
           <button onClick={function(){ setForceConfig(false); localStorage.setItem("configDismissed",Date.now().toString()); }} className="ek-force-dismiss">{"Recordarme m\u00e1s tarde"}</button>
         </div>
       </div>}
+      {/* Support Widget — only for role "user" */}
+      {isUser && authUser && <SupportWidget userId={authUser.uid} userName={profile?.username || profile?.nombre || ""} />}
       <aside className={"ek-sidebar"+(mobile?" is-mobile":"")}>
         <div data-tour="sidebar-logo" className="ek-sidebar-logo"><img src="/img/logo_96.png" alt="Logo" className="ek-sidebar-logo-img" />{!mobile&&<div><div className="ek-sidebar-logo-title">{"Brújula KIT"}</div><div className="ek-sidebar-logo-sub">{"FONOAUDIOLOGÍA"}</div></div>}</div>
         <nav className="ek-sidebar-nav">{nav.map(function(n){ var id=n[0],iconKey=n[1],lb=n[2]; var active = view===id; return <button key={id} data-tour={NAV_TOUR_IDS[id]||""} onClick={function(){navTo(id)}} className={"ek-sidebar-btn"+(mobile?" is-mobile":"")+(active?" is-active":"")}><span className="ek-sidebar-btn-ico">{icons[iconKey]}</span>{!mobile&&<span>{lb}</span>}</button>; })}</nav>
