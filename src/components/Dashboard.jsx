@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { K } from "../lib/fb.js";
 import { db, collection, getDocs, query, where, doc, updateDoc } from "../firebase.js";
 import { typeLabel, isVisibleType } from "../config/evalTypes.js";
+import "../styles/Dashboard.css";
 
 var MESES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 var DIAS = ["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"];
@@ -119,151 +120,151 @@ export default function Dashboard({ TC, allEvals, onT, onView, ld, profile, isAd
   var upcoming = citas.filter(function(c){ return c.fecha >= todayStr && c.estado !== "cancelada"; }).sort(function(a,b){ return (a.fecha+(a.hora||"")).localeCompare(b.fecha+(b.hora||"")); }).slice(0, 3);
 
   return (
-    <div style={{animation:"fi .3s ease",width:"100%"}}>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6,flexWrap:"wrap",gap:10}}>
+    <div className="dashboard">
+      <div className="dash-header">
         <div>
-          <h1 style={{fontSize:22,fontWeight:700,marginBottom:6,display:"flex",alignItems:"center",gap:8}}><img src="/img/logo_96.png" style={{width:28,height:28}} alt="logo" /> Panel Principal</h1>
-          <p style={{color:K.mt,fontSize:14,marginBottom:0}}>Bienvenido/a, {profile && profile.nombre ? profile.nombre : (profile && profile.username ? profile.username : "")}{ld ? " — cargando..." : ""}</p>
+          <h1 className="dash-title"><img src="/img/logo_96.png" alt="logo" /> Panel Principal</h1>
+          <p className="dash-greeting">Bienvenido/a, {profile && profile.nombre ? profile.nombre : (profile && profile.username ? profile.username : "")}{ld ? " — cargando..." : ""}</p>
         </div>
-        {!alertsDismissed && alertCount > 0 && <button onClick={function(){ setShowAlerts(!showAlerts); }} style={{display:"flex",alignItems:"center",gap:8,background:"#fff7ed",border:"1px solid #fed7aa",borderRadius:10,padding:"10px 16px",cursor:"pointer",fontSize:13,fontWeight:600,color:"#c2410c"}}>
+        {!alertsDismissed && alertCount > 0 && <button onClick={function(){ setShowAlerts(!showAlerts); }} className="dash-alerts-btn">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
           {"Alertas y recordatorios"}
-          <span style={{background:"#dc2626",color:"#fff",fontSize:11,fontWeight:800,minWidth:20,height:20,borderRadius:"50%",display:"inline-flex",alignItems:"center",justifyContent:"center"}}>{alertCount}</span>
+          <span className="dash-alerts-badge">{alertCount}</span>
         </button>}
       </div>
 
-      {showAlerts && <div style={{background:"#fff",borderRadius:12,border:"1px solid #e2e8f0",padding:20,marginBottom:20,animation:"fi .2s ease"}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
-          <h3 style={{fontSize:15,fontWeight:700,color:(TC&&TC.sd||"#0a3d2f"),margin:0}}>Alertas y recordatorios</h3>
-          <button onClick={dismissAlerts} style={{background:"none",border:"none",fontSize:18,color:"#94a3b8",cursor:"pointer"}}>{"\u00d7"}</button>
+      {showAlerts && <div className="dash-alerts-panel">
+        <div className="dash-alerts-header">
+          <h3 className="dash-alerts-title">Alertas y recordatorios</h3>
+          <button onClick={dismissAlerts} className="dash-alerts-close">{"\u00d7"}</button>
         </div>
-        {alertCount === 0 && <p style={{color:"#94a3b8",fontSize:13,fontStyle:"italic",margin:0}}>No hay alertas activas.</p>}
+        {alertCount === 0 && <p className="dash-alert-empty">No hay alertas activas.</p>}
         {upcomingAlerts.map(function(a, idx){
           var diasTxt = a.dias === 0 ? "Hoy" : a.dias === 1 ? "Mañana" : "En " + a.dias + " días";
-          return <div key={idx} style={{display:"flex",alignItems:"flex-start",gap:10,padding:"12px 14px",background:"#fffbeb",borderRadius:8,border:"1px solid #fef3c7",marginBottom:8}}>
-            <span style={{fontSize:18,flexShrink:0}}>📅</span>
+          return <div key={idx} className="dash-alert-item">
+            <span className="dash-alert-icon">📅</span>
             <div>
-              <div style={{fontSize:13,fontWeight:600,color:"#92400e"}}>{"RECORDATORIO: " + diasTxt + " tiene evaluación con " + (a.cita.paciente || "paciente") + "."}</div>
-              <div style={{fontSize:11,color:"#a16207",marginTop:2}}>{(a.cita.tipo || "") + " · " + (a.cita.hora ? a.cita.hora.substring(0,5) : "") + " · " + a.cita.fecha}</div>
+              <div className="dash-alert-title">{"RECORDATORIO: " + diasTxt + " tiene evaluación con " + (a.cita.paciente || "paciente") + "."}</div>
+              <div className="dash-alert-meta">{(a.cita.tipo || "") + " · " + (a.cita.hora ? a.cita.hora.substring(0,5) : "") + " · " + a.cita.fecha}</div>
             </div>
           </div>;
         })}
-        {lowCredits && <div onClick={function(){ if(onBuyCredits) onBuyCredits(); }} style={{display:"flex",alignItems:"flex-start",gap:10,padding:"12px 14px",background:"#fef2f2",borderRadius:8,border:"1px solid #fecaca",cursor:"pointer"}}>
-          <span style={{fontSize:18,flexShrink:0}}>⚠️</span>
+        {lowCredits && <div onClick={function(){ if(onBuyCredits) onBuyCredits(); }} className="dash-alert-item dash-alert-item--danger">
+          <span className="dash-alert-icon">⚠️</span>
           <div>
-            <div style={{fontSize:13,fontWeight:600,color:"#dc2626"}}>{"Quedan " + credits + " créditos. ¿Adquirir más?"}</div>
-            <div style={{fontSize:11,color:"#b91c1c",marginTop:2}}>Clic para comprar.</div>
+            <div className="dash-alert-title dash-alert-title--danger">{"Quedan " + credits + " créditos. ¿Adquirir más?"}</div>
+            <div className="dash-alert-meta dash-alert-meta--danger">Clic para comprar.</div>
           </div>
         </div>}
       </div>}
 
-      <div style={{marginBottom:28}}>
-        <div style={{display:"grid",gridTemplateColumns:_isMob?"1fr":"repeat(auto-fit,minmax(160px,1fr))",gap:16}}>
-          {cards.map(function(c,i){ return <div key={i} style={{background:"#fff",borderRadius:12,padding:"14px 18px",border:"1px solid #e2e8f0",display:"flex",alignItems:"center",gap:14}}><div style={{fontSize:24}}>{c.ic}</div><div><div style={{fontSize:22,fontWeight:700,lineHeight:1}}>{c.value}</div><div style={{fontSize:12,color:K.mt,marginTop:2}}>{c.label}</div>{c.sublabel && <div style={{fontSize:10,color:"#94a3b8"}}>{c.sublabel}</div>}</div></div>; })}
+      <div className="dash-stats">
+        <div className={"dash-stats-grid"+(_isMob?" dash-stats-grid--mobile":"")}>
+          {cards.map(function(c,i){ return <div key={i} className="dash-stat-card"><div className="dash-stat-icon">{c.ic}</div><div><div className="dash-stat-value">{c.value}</div><div className="dash-stat-label">{c.label}</div>{c.sublabel && <div className="dash-stat-sublabel">{c.sublabel}</div>}</div></div>; })}
         </div>
       </div>
 
       {/* Welcome modal - first login */}
-      {showWelcome && <div style={{position:"fixed",inset:0,zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,.5)",backdropFilter:"blur(4px)",padding:20}}>
-        <div style={{background:"#fff",borderRadius:20,padding:"36px 28px",width:400,maxWidth:"90vw",boxShadow:"0 20px 60px rgba(0,0,0,.25)",textAlign:"center"}}>
-          <div style={{fontSize:48,marginBottom:12}}>{"\ud83c\udf89"}</div>
-          <div style={{fontSize:20,fontWeight:700,color:(TC&&TC.sd||"#0a3d2f"),marginBottom:8}}>{"\u00a1Bienvenido/a a Br\u00fajula KIT!"}</div>
-          <div style={{fontSize:14,color:"#475569",lineHeight:1.7,marginBottom:16}}>{"Te regalamos "}<b style={{color:"#059669"}}>{"5 cr\u00e9ditos gratis"}</b>{" para que puedas probar todas las evaluaciones disponibles."}</div>
-          <div style={{background:"#f0fdf4",border:"1px solid #bbf7d0",borderRadius:12,padding:"14px 18px",marginBottom:20}}>
-            <div style={{fontSize:28,fontWeight:800,color:"#059669"}}>{"5"}</div>
-            <div style={{fontSize:12,color:"#065f46",fontWeight:600}}>{"cr\u00e9ditos disponibles"}</div>
+      {showWelcome && <div className="modal-overlay">
+        <div className="dash-welcome">
+          <div className="dash-welcome-icon">{"\ud83c\udf89"}</div>
+          <div className="dash-welcome-title">{"\u00a1Bienvenido/a a Br\u00fajula KIT!"}</div>
+          <div className="dash-welcome-desc">{"Te regalamos "}<b style={{color:"var(--c-success)"}}>{"5 cr\u00e9ditos gratis"}</b>{" para que puedas probar todas las evaluaciones disponibles."}</div>
+          <div className="dash-welcome-credits">
+            <div className="dash-welcome-credits-big">{"5"}</div>
+            <div className="dash-welcome-credits-label">{"cr\u00e9ditos disponibles"}</div>
           </div>
-          <div style={{fontSize:12,color:"#94a3b8",marginBottom:16}}>{"Cada cr\u00e9dito = 1 evaluaci\u00f3n completa con informe profesional."}</div>
-          <button onClick={dismissWelcome} style={{width:"100%",padding:"14px",background:"linear-gradient(135deg,"+(TC&&TC.ac||"#0d9488")+","+(TC&&TC.sd||"#0a3d2f")+")",color:"#fff",border:"none",borderRadius:12,fontSize:15,fontWeight:700,cursor:"pointer"}}>{"\u00a1Comenzar!"}</button>
+          <div className="dash-welcome-note">{"Cada cr\u00e9dito = 1 evaluaci\u00f3n completa con informe profesional."}</div>
+          <button onClick={dismissWelcome} className="dash-welcome-btn">{"\u00a1Comenzar!"}</button>
         </div>
       </div>}
 
       {/* Mobile: aviso de usar PC */}
-      {_isMob && <div style={{background:"linear-gradient(135deg,#1e3a5f,#2563eb)",borderRadius:16,padding:"24px 20px",marginBottom:20,color:"#fff",textAlign:"center",boxShadow:"0 4px 16px rgba(37,99,235,.3)"}}>
-        <div style={{fontSize:40,marginBottom:10}}>{"\ud83d\udcbb"}</div>
-        <div style={{fontSize:16,fontWeight:700,marginBottom:6}}>{"Modo consulta"}</div>
-        <div style={{fontSize:13,opacity:.9,lineHeight:1.6}}>{"Pod\u00e9s ver el historial, pacientes y calendario desde el celular."}</div>
-        <div style={{marginTop:12,padding:"10px 16px",background:"rgba(255,255,255,.15)",borderRadius:10,fontSize:12,fontWeight:600}}>{"Para realizar evaluaciones, inici\u00e1 sesi\u00f3n desde una PC o notebook."}</div>
+      {_isMob && <div className="dash-mobile-banner">
+        <div className="dash-mobile-icon">{"\ud83d\udcbb"}</div>
+        <div className="dash-mobile-title">{"Modo consulta"}</div>
+        <div className="dash-mobile-desc">{"Pod\u00e9s ver el historial, pacientes y calendario desde el celular."}</div>
+        <div className="dash-mobile-note">{"Para realizar evaluaciones, inici\u00e1 sesi\u00f3n desde una PC o notebook."}</div>
       </div>}
 
-      {!_isMob && <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20,marginBottom:28}}>
-        <button onClick={onT} style={{background:"linear-gradient(135deg,"+(TC&&TC.sd||"#0a3d2f")+","+(TC&&TC.ac||"#0d9488")+")",color:"#fff",border:"none",borderRadius:14,padding:"28px 24px",cursor:"pointer",display:"flex",alignItems:"center",gap:16,textAlign:"left"}}>
-          <div style={{width:52,height:52,borderRadius:12,background:"rgba(255,255,255,.14)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,flexShrink:0}}>{"\ud83e\uddf0"}</div>
-          <div><div style={{fontSize:18,fontWeight:700}}>Herramientas</div><div style={{fontSize:13,opacity:.8,marginTop:4}}>{"Nueva evaluaci\u00f3n"}</div></div>
+      {!_isMob && <div className="dash-grid-2">
+        <button onClick={onT} className="dash-tools-btn">
+          <div className="dash-tools-icon">{"\ud83e\uddf0"}</div>
+          <div><div className="dash-tools-title">Herramientas</div><div className="dash-tools-subtitle">{"Nueva evaluaci\u00f3n"}</div></div>
         </button>
-        <div style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",padding:20}}>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
-            <h3 style={{fontSize:14,fontWeight:700,color:(TC&&TC.sd||"#0a3d2f"),margin:0}}>{"Acceso r\u00e1pido"}</h3>
-            {shortcuts.length > 0 && shortcuts.length < 4 && availableToAdd.length > 0 && <button onClick={function(){ setShowAddSC(!showAddSC); }} style={{background:"none",border:"1px solid #e2e8f0",borderRadius:6,padding:"4px 10px",fontSize:11,fontWeight:600,cursor:"pointer",color:(TC&&TC.ac||"#0d9488")}}>{showAddSC ? "Cancelar" : "+ Agregar"}</button>}
+        <div className="dash-shortcuts">
+          <div className="dash-shortcuts-header">
+            <h3 className="dash-shortcuts-title">{"Acceso r\u00e1pido"}</h3>
+            {shortcuts.length > 0 && shortcuts.length < 4 && availableToAdd.length > 0 && <button onClick={function(){ setShowAddSC(!showAddSC); }} className="dash-shortcuts-add-btn">{showAddSC ? "Cancelar" : "+ Agregar"}</button>}
           </div>
-          {shortcuts.length === 0 && !showAddSC && <div style={{textAlign:"center",padding:"14px 0"}}>
-            <button onClick={function(){ setShowAddSC(true); }} style={{background:"#f0fdfa",border:"1px dashed #99f6e4",borderRadius:10,padding:"14px 20px",cursor:"pointer",color:(TC&&TC.ac||"#0d9488"),fontSize:13,fontWeight:600,display:"inline-flex",alignItems:"center",gap:6}}>{"+ Agregar acceso r\u00e1pido"}</button>
-            <p style={{fontSize:11,color:"#94a3b8",marginTop:6}}>{"Pod\u00e9s agregar hasta 4 evaluaciones"}</p>
+          {shortcuts.length === 0 && !showAddSC && <div className="dash-shortcuts-empty">
+            <button onClick={function(){ setShowAddSC(true); }} className="dash-shortcuts-empty-btn">{"+ Agregar acceso r\u00e1pido"}</button>
+            <p className="dash-shortcuts-empty-hint">{"Pod\u00e9s agregar hasta 4 evaluaciones"}</p>
           </div>}
-          {shortcuts.length > 0 && <div style={{display:"grid",gridTemplateColumns:shortcuts.length > 2 ? "1fr 1fr" : "1fr",gap:8}}>
-            {shortcuts.map(function(scId){ var tool = TOOL_MAP[scId]; if(!tool) return null; return <div key={scId} style={{display:"flex",alignItems:"center",gap:8,padding:"10px 12px",background:"#f8faf9",borderRadius:8,border:"1px solid #e2e8f0",cursor:"pointer"}} onClick={function(){ if(onStartEval) onStartEval(scId); }}><span style={{fontSize:20}}>{tool.icon}</span><span style={{fontSize:12,fontWeight:600,color:"#334155",flex:1}}>{tool.name}</span><button onClick={function(ev){ ev.stopPropagation(); removeShortcut(scId); }} style={{background:"none",border:"none",fontSize:14,color:"#94a3b8",cursor:"pointer",padding:"0 2px"}}>{"\u00d7"}</button></div>; })}
+          {shortcuts.length > 0 && <div className={"dash-shortcuts-grid"+(shortcuts.length > 2 ? " dash-shortcuts-grid--2":"")}>
+            {shortcuts.map(function(scId){ var tool = TOOL_MAP[scId]; if(!tool) return null; return <div key={scId} className="dash-shortcut-item" onClick={function(){ if(onStartEval) onStartEval(scId); }}><span className="dash-shortcut-icon">{tool.icon}</span><span className="dash-shortcut-name">{tool.name}</span><button onClick={function(ev){ ev.stopPropagation(); removeShortcut(scId); }} className="dash-shortcut-remove">{"\u00d7"}</button></div>; })}
           </div>}
-          {showAddSC && <div style={{marginTop:shortcuts.length > 0 ? 10 : 0,background:"#f0fdfa",borderRadius:8,padding:12,border:"1px solid #ccfbf1"}}>
-            <div style={{fontSize:11,fontWeight:600,color:(TC&&TC.ac||"#0d9488"),marginBottom:8}}>{"Seleccionar evaluaci\u00f3n:"}</div>
-            <div style={{display:"flex",flexWrap:"wrap",gap:6}}>{availableToAdd.map(function(toolId){ var tool = TOOL_MAP[toolId]; if(!tool) return null; return <button key={toolId} onClick={function(){ addShortcut(toolId); }} style={{display:"flex",alignItems:"center",gap:6,padding:"8px 12px",background:"#fff",border:"1px solid #e2e8f0",borderRadius:8,cursor:"pointer",fontSize:12,fontWeight:500,color:"#334155"}}><span style={{fontSize:16}}>{tool.icon}</span>{tool.name}</button>; })}</div>
+          {showAddSC && <div className="dash-shortcuts-picker">
+            <div className="dash-shortcuts-picker-title">{"Seleccionar evaluaci\u00f3n:"}</div>
+            <div className="dash-shortcuts-picker-list">{availableToAdd.map(function(toolId){ var tool = TOOL_MAP[toolId]; if(!tool) return null; return <button key={toolId} onClick={function(){ addShortcut(toolId); }} className="dash-shortcut-pick-btn"><span className="dash-shortcut-icon" style={{fontSize:16}}>{tool.icon}</span>{tool.name}</button>; })}</div>
           </div>}
         </div>
       </div>}
 
-      <div style={{background:"#fff",borderRadius:14,padding:22,border:"1px solid #e2e8f0",marginBottom:28}}>
-        <h3 style={{fontSize:15,fontWeight:600,marginBottom:14}}>Recientes</h3>
-        {rc.length===0 ? <p style={{color:K.mt,fontSize:13}}>Sin evaluaciones aún.</p> : rc.map(function(ev){
-          return <div key={ev._fbId||ev.id} onClick={function(){if(onView)onView(ev)}} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 0",borderBottom:"1px solid #e2e8f0",cursor:"pointer"}}>
-            <div><div style={{fontWeight:600,fontSize:14}}>{ev.paciente}</div><div style={{fontSize:11,color:K.mt}}>{typeLabel(ev.tipo)} · {new Date(ev.fechaGuardado).toLocaleDateString("es-CL")}</div></div>
-            <span style={{color:K.mt}}>→</span>
+      <div className="dash-recent">
+        <h3 className="dash-recent-title">Recientes</h3>
+        {rc.length===0 ? <p className="dash-recent-empty">Sin evaluaciones aún.</p> : rc.map(function(ev){
+          return <div key={ev._fbId||ev.id} onClick={function(){if(onView)onView(ev)}} className="dash-recent-row">
+            <div><div className="dash-recent-name">{ev.paciente}</div><div className="dash-recent-meta">{typeLabel(ev.tipo)} · {new Date(ev.fechaGuardado).toLocaleDateString("es-CL")}</div></div>
+            <span className="dash-recent-arrow">→</span>
           </div>;
         })}
       </div>
 
       {/* Consolidated report tip */}
-      {uniquePatients > 0 && visibleEvals.length >= 2 && <div style={{background:"linear-gradient(135deg,#f3e8ff,#ede9fe)",borderRadius:14,border:"1px solid #c4b5fd",padding:"16px 20px",marginBottom:20,display:"flex",alignItems:"center",gap:14}}>
-        <span style={{fontSize:28,flexShrink:0}}>{"📋"}</span>
+      {uniquePatients > 0 && visibleEvals.length >= 2 && <div className="dash-consol-tip">
+        <span className="dash-consol-icon">{"📋"}</span>
         <div style={{flex:1}}>
-          <div style={{fontSize:14,fontWeight:700,color:"#7c3aed"}}>{"Informe Complementario disponible"}</div>
-          <div style={{fontSize:12,color:"#6b21a8",marginTop:2}}>{_isMob ? "Pod\u00e9s generar un informe que integre varias evaluaciones de un mismo paciente. Ingres\u00e1 en modo escritorio para acceder." : "Pod\u00e9s generar un informe que integre varias evaluaciones de un mismo paciente. Encontralo en Herramientas."}</div>
+          <div className="dash-consol-title">{"Informe Complementario disponible"}</div>
+          <div className="dash-consol-desc">{_isMob ? "Pod\u00e9s generar un informe que integre varias evaluaciones de un mismo paciente. Ingres\u00e1 en modo escritorio para acceder." : "Pod\u00e9s generar un informe que integre varias evaluaciones de un mismo paciente. Encontralo en Herramientas."}</div>
         </div>
-        {!_isMob && <button onClick={onT} style={{padding:"8px 16px",background:"#7c3aed",color:"#fff",border:"none",borderRadius:8,fontSize:12,fontWeight:600,cursor:"pointer",flexShrink:0}}>{"Ir"}</button>}
+        {!_isMob && <button onClick={onT} className="dash-consol-btn">{"Ir"}</button>}
       </div>}
 
-      <div style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",padding:24,marginBottom:20}}>
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}}>
-          <h3 style={{fontSize:16,fontWeight:700,color:(TC&&TC.sd||"#0a3d2f"),margin:0}}>📅 Agenda</h3>
-          {onCalendar && <button onClick={onCalendar} style={{background:"none",border:"1px solid #e2e8f0",borderRadius:8,padding:"6px 14px",fontSize:12,fontWeight:600,cursor:"pointer",color:(TC&&TC.ac||"#0d9488")}}>Ver completa →</button>}
+      <div className="dash-agenda">
+        <div className="dash-agenda-header">
+          <h3 className="dash-agenda-title">📅 Agenda</h3>
+          {onCalendar && <button onClick={onCalendar} className="dash-agenda-link">Ver completa →</button>}
         </div>
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
-          <button onClick={prevMonth} style={{background:"#f1f5f9",border:"none",padding:"6px 14px",borderRadius:6,fontSize:13,fontWeight:600,cursor:"pointer",color:"#475569"}}>←</button>
-          <div style={{fontSize:15,fontWeight:700,color:(TC&&TC.sd||"#0a3d2f")}}>{MESES[calMonth]+" "+calYear}</div>
-          <button onClick={nextMonth} style={{background:"#f1f5f9",border:"none",padding:"6px 14px",borderRadius:6,fontSize:13,fontWeight:600,cursor:"pointer",color:"#475569"}}>→</button>
+        <div className="dash-cal-nav">
+          <button onClick={prevMonth} className="dash-cal-arrow">←</button>
+          <div className="dash-cal-month">{MESES[calMonth]+" "+calYear}</div>
+          <button onClick={nextMonth} className="dash-cal-arrow">→</button>
         </div>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:1,marginBottom:16}}>
-          {DIAS.map(function(d){ return <div key={d} style={{textAlign:"center",fontSize:10,fontWeight:600,color:K.mt,padding:"4px 0"}}>{d}</div>; })}
-          {Array.from({length:offset}).map(function(_,i){ return <div key={"e"+i} style={{minHeight:36}} />; })}
+        <div className="dash-cal-grid">
+          {DIAS.map(function(d){ return <div key={d} className="dash-cal-day-label">{d}</div>; })}
+          {Array.from({length:offset}).map(function(_,i){ return <div key={"e"+i} className="dash-cal-empty" />; })}
           {Array.from({length:daysInMonth}).map(function(_,i){
             var d = i+1; var dc = getCitasForDay(d); var isT = isToday(d);
-            return <div key={d} onClick={function(){ if(onCalendar) onCalendar(); }} style={{minHeight:36,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",borderRadius:6,cursor:onCalendar?"pointer":"default",background:isT?"#ccfbf1":"transparent"}}>
-              <div style={{fontSize:12,fontWeight:isT?700:400,color:isT?(TC&&TC.ac||"#0d9488"):"#1e293b"}}>{d}</div>
-              {dc.length>0 && <div style={{display:"flex",gap:2,marginTop:1}}>{dc.slice(0,3).map(function(c,ci){ return <div key={ci} style={{width:5,height:5,borderRadius:"50%",background:getHex(c.color)}} />; })}</div>}
+            return <div key={d} onClick={function(){ if(onCalendar) onCalendar(); }} className={"dash-cal-day"+(isT?" dash-cal-day--today":"")} style={{cursor:onCalendar?"pointer":"default"}}>
+              <div className="dash-cal-day-num">{d}</div>
+              {dc.length>0 && <div className="dash-cal-dots">{dc.slice(0,3).map(function(c,ci){ return <div key={ci} className="dash-cal-dot" style={{background:getHex(c.color)}} />; })}</div>}
             </div>;
           })}
         </div>
         {upcoming.length>0 && <div>
-          <div style={{fontSize:12,fontWeight:600,color:K.mt,marginBottom:8}}>Próximas citas</div>
+          <div className="dash-upcoming-title">Próximas citas</div>
           {upcoming.map(function(c){
             var parts = (c.fecha||"").split("-"); var dayNum = parts[2] ? parseInt(parts[2],10) : ""; var monthNum = parts[1] ? parseInt(parts[1],10)-1 : 0;
-            return <div key={c._fbId} onClick={function(){ if(onCalendar) onCalendar(); }} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",background:"#f8faf9",borderRadius:8,border:"1px solid #e2e8f0",marginBottom:6,cursor:onCalendar?"pointer":"default",borderLeft:"3px solid "+getHex(c.color)}}>
-              <div style={{textAlign:"center",minWidth:40}}><div style={{fontSize:16,fontWeight:700,color:(TC&&TC.sd||"#0a3d2f")}}>{dayNum}</div><div style={{fontSize:9,color:K.mt}}>{MESES[monthNum] ? MESES[monthNum].substring(0,3) : ""}</div></div>
-              <div style={{flex:1}}><div style={{fontWeight:600,fontSize:13}}>{c.paciente}</div><div style={{fontSize:11,color:K.mt}}>{c.hora ? c.hora.substring(0,5) : ""}{c.tipo ? " · "+c.tipo : ""}</div></div>
-              <span style={{background:getHex(c.color)+"22",color:getHex(c.color),padding:"2px 8px",borderRadius:12,fontSize:10,fontWeight:600}}>{c.estado||"pendiente"}</span>
+            return <div key={c._fbId} onClick={function(){ if(onCalendar) onCalendar(); }} className="dash-upcoming-item" style={{cursor:onCalendar?"pointer":"default",borderLeft:"3px solid "+getHex(c.color)}}>
+              <div className="dash-upcoming-date"><div className="dash-upcoming-day">{dayNum}</div><div className="dash-upcoming-mon">{MESES[monthNum] ? MESES[monthNum].substring(0,3) : ""}</div></div>
+              <div className="dash-upcoming-info"><div className="dash-upcoming-name">{c.paciente}</div><div className="dash-upcoming-meta">{c.hora ? c.hora.substring(0,5) : ""}{c.tipo ? " · "+c.tipo : ""}</div></div>
+              <span className="dash-upcoming-badge" style={{background:getHex(c.color)+"22",color:getHex(c.color)}}>{c.estado||"pendiente"}</span>
             </div>;
           })}
         </div>}
-        {upcoming.length===0 && !citasLoading && <div style={{textAlign:"center",padding:"8px 0",color:K.mt,fontSize:12,fontStyle:"italic"}}>No hay citas próximas</div>}
-        {citasLoading && <div style={{textAlign:"center",padding:"8px 0",color:K.mt,fontSize:12}}>Cargando agenda...</div>}
+        {upcoming.length===0 && !citasLoading && <div className="dash-upcoming-empty">No hay citas próximas</div>}
+        {citasLoading && <div className="dash-upcoming-empty" style={{fontStyle:"normal"}}>Cargando agenda...</div>}
       </div>
     </div>
   );
