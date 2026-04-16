@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { db, doc, onSnapshot as onSnapshotDoc } from "../firebase.js";
 import { DEFAULT_FAQ } from "../config/faqData.js";
 import { createSupportCase, sendSupportMessage, getActiveCase, subscribeToMessages, markReadByUser, loadFAQ } from "../lib/support.js";
 
@@ -52,8 +53,9 @@ export default function SupportWidget({ userId, userName }) {
   var _loading = useState(false), loading = _loading[0], setLoading = _loading[1];
   var _unread = useState(0), unread = _unread[0], setUnread = _unread[1];
   var bodyRef = useRef(null);
-  var unsubRef = useRef(null);
-  var prevMsgCount = useRef(0);
+  var unsubMsgsRef = useRef(null);
+  var unsubCaseRef = useRef(null);
+  var prevAgentMsgCount = useRef(0);
 
   // Load FAQ on mount
   useEffect(function() {
@@ -71,21 +73,43 @@ export default function SupportWidget({ userId, userName }) {
     });
   }, [userId]);
 
-  // Subscribe to messages when active case changes
+  // Subscribe to case document changes (real-time status updates)
   useEffect(function() {
-    if (unsubRef.current) { unsubRef.current(); unsubRef.current = null; }
+    if (unsubCaseRef.current) { unsubCaseRef.current(); unsubCaseRef.current = null; }
     if (!activeCase || !activeCase._id) return;
-    unsubRef.current = subscribeToMessages(activeCase._id, function(msgs) {
-      setMessages(msgs);
-      // Count unread from agent when widget is closed
-      if (!open) {
-        var newFromAgent = msgs.filter(function(m) { return m.from === "agent"; }).length;
-        var prev = prevMsgCount.current;
-        if (newFromAgent > prev) setUnread(newFromAgent - prev);
+    unsubCaseRef.current = onSnapshotDoc(doc(db, "support_cases", activeCase._id), function(snap) {
+      if (snap.exists()) {
+        var data = snap.data();
+        setActiveCase(function(prev) {
+          if (!prev) return prev;
+          return Object.assign({}, prev, {
+            status: data.status,
+            caseNumber: data.caseNumber,
+            type: data.type,
+            urgency: data.urgency,
+            assignedTo: data.assignedTo,
+            closedAt: data.closedAt
+          });
+        });
       }
     });
-    return function() { if (unsubRef.current) { unsubRef.current(); unsubRef.current = null; } };
-  }, [activeCase]);
+    return function() { if (unsubCaseRef.current) { unsubCaseRef.current(); unsubCaseRef.current = null; } };
+  }, [activeCase ? activeCase._id : null]);
+
+  // Subscribe to messages when active case changes
+  useEffect(function() {
+    if (unsubMsgsRef.current) { unsubMsgsRef.current(); unsubMsgsRef.current = null; }
+    if (!activeCase || !activeCase._id) return;
+    unsubMsgsRef.current = subscribeToMessages(activeCase._id, function(msgs) {
+      setMessages(msgs);
+      // Count unread from agent when widget is closed
+      var agentCount = msgs.filter(function(m) { return m.from === "agent"; }).length;
+      if (!open && agentCount > prevAgentMsgCount.current) {
+        setUnread(agentCount - prevAgentMsgCount.current);
+      }
+    });
+    return function() { if (unsubMsgsRef.current) { unsubMsgsRef.current(); unsubMsgsRef.current = null; } };
+  }, [activeCase ? activeCase._id : null]);
 
   // Auto-scroll to bottom when messages change
   useEffect(function() {
@@ -97,7 +121,7 @@ export default function SupportWidget({ userId, userName }) {
     if (open && activeCase && activeCase._id) {
       markReadByUser(activeCase._id).catch(function() {});
       setUnread(0);
-      prevMsgCount.current = messages.filter(function(m) { return m.from === "agent"; }).length;
+      prevAgentMsgCount.current = messages.filter(function(m) { return m.from === "agent"; }).length;
     }
   }, [open, messages.length]);
 
@@ -112,12 +136,16 @@ export default function SupportWidget({ userId, userName }) {
   };
 
   var startLiveChat = useCallback(async function() {
-    if (activeCase) { setView("chat"); return; }
+    if (activeCase && activeCase.status !== "closed" && activeCase.status !== "resolved") {
+      setView("chat");
+      return;
+    }
     setLoading(true);
     try {
       var result = await createSupportCase(userId, userName);
       var newCase = { _id: result.id, caseNumber: result.caseNumber, status: "open", type: "temporal" };
       setActiveCase(newCase);
+      setMessages([]);
       await sendSupportMessage(result.id, "Hola, necesito ayuda.", "user");
       setView("chat");
     } catch (e) {
@@ -129,13 +157,15 @@ export default function SupportWidget({ userId, userName }) {
   var handleSend = async function() {
     var text = input.trim();
     if (!text || sending) return;
-    if (!activeCase) {
-      // First message creates the case
+
+    // If case is closed/resolved, or no active case, create a new one
+    if (!activeCase || activeCase.status === "closed" || activeCase.status === "resolved") {
       setSending(true);
       try {
         var result = await createSupportCase(userId, userName);
         var newCase = { _id: result.id, caseNumber: result.caseNumber, status: "open", type: "temporal" };
         setActiveCase(newCase);
+        setMessages([]);
         await sendSupportMessage(result.id, text, "user");
         setView("chat");
         setInput("");
@@ -143,6 +173,7 @@ export default function SupportWidget({ userId, userName }) {
       setSending(false);
       return;
     }
+
     setSending(true);
     setInput("");
     try {
@@ -162,13 +193,41 @@ export default function SupportWidget({ userId, userName }) {
   };
 
   var toggleOpen = function() {
-    setOpen(!open);
-    if (!open) { setUnread(0); }
+    var opening = !open;
+    setOpen(opening);
+    if (opening) {
+      setUnread(0);
+      // If there's an active non-closed case, show it
+      if (activeCase && activeCase.status !== "closed" && activeCase.status !== "resolved") {
+        setView("chat");
+      } else if (view === "chat") {
+        // Case was closed while widget was closed, go back to home
+        setView("home");
+      }
+    }
+  };
+
+  var handleNewChat = function() {
+    // Clear old case and start fresh
+    if (unsubMsgsRef.current) { unsubMsgsRef.current(); unsubMsgsRef.current = null; }
+    if (unsubCaseRef.current) { unsubCaseRef.current(); unsubCaseRef.current = null; }
+    setActiveCase(null);
+    setMessages([]);
+    setView("home");
+    setFaqChat([]);
   };
 
   // --- RENDER ---
   var renderHome = function() {
+    // Show "retomar chat" button if there's an active case
+    var hasActiveChat = activeCase && activeCase.status !== "closed" && activeCase.status !== "resolved";
     return <div>
+      {hasActiveChat && <div style={{marginBottom:14,padding:"12px 16px",background:"#f0fdfa",borderRadius:10,border:"1px solid #99f6e4"}}>
+        <div style={{fontSize:12,fontWeight:600,color:"#059669",marginBottom:6}}>{"Tenes un chat activo"}</div>
+        <button onClick={function(){ setView("chat"); }} style={{width:"100%",padding:"10px",background:"#0d9488",color:"#fff",border:"none",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer"}}>
+          {"Retomar chat " + activeCase.caseNumber}
+        </button>
+      </div>}
       <div style={{marginBottom:16}}>
         <div style={{fontSize:15,fontWeight:700,color:"#0a3d2f",marginBottom:4}}>{"Hola, como podemos ayudarte?"}</div>
         <div style={{fontSize:12,color:"#64748b"}}>{"Selecciona una pregunta frecuente o escribi tu consulta."}</div>
@@ -178,15 +237,16 @@ export default function SupportWidget({ userId, userName }) {
           {item.pregunta}
         </button>;
       })}
-      <div style={{marginTop:12,paddingTop:12,borderTop:"1px solid #e2e8f0"}}>
+      {!hasActiveChat && <div style={{marginTop:12,paddingTop:12,borderTop:"1px solid #e2e8f0"}}>
         <button onClick={startLiveChat} disabled={loading} style={{width:"100%",padding:"12px",background:"linear-gradient(135deg,#0a3d2f,#0d9488)",color:"#fff",border:"none",borderRadius:10,fontSize:13,fontWeight:600,cursor:loading?"wait":"pointer",opacity:loading?.7:1}}>
           {loading ? "Conectando..." : "Hablar con soporte"}
         </button>
-      </div>
+      </div>}
     </div>;
   };
 
   var renderFaqChat = function() {
+    var hasActiveChat = activeCase && activeCase.status !== "closed" && activeCase.status !== "resolved";
     return <div>
       {faqChat.map(function(msg, i) {
         if (msg.type === "user") return <div key={i} style={S.msgUser}>{msg.text}</div>;
@@ -200,8 +260,8 @@ export default function SupportWidget({ userId, userName }) {
             {item.pregunta}
           </button>;
         })}
-        <button onClick={startLiveChat} disabled={loading} style={{width:"100%",padding:"10px",background:"#0a3d2f",color:"#fff",border:"none",borderRadius:8,fontSize:12,fontWeight:600,cursor:loading?"wait":"pointer",marginTop:4}}>
-          {loading ? "Conectando..." : "Necesito mas ayuda"}
+        <button onClick={hasActiveChat ? function(){ setView("chat"); } : startLiveChat} disabled={loading} style={{width:"100%",padding:"10px",background:"#0a3d2f",color:"#fff",border:"none",borderRadius:8,fontSize:12,fontWeight:600,cursor:loading?"wait":"pointer",marginTop:4}}>
+          {loading ? "Conectando..." : hasActiveChat ? "Retomar chat" : "Necesito mas ayuda"}
         </button>
       </div>
     </div>;
@@ -231,8 +291,11 @@ export default function SupportWidget({ userId, userName }) {
           {sending ? "..." : "Enviar"}
         </button>
       </div>}
-      {isClosed && <div style={{padding:"12px 16px",background:"#f0fdf4",borderTop:"1px solid #bbf7d0",textAlign:"center",fontSize:12,color:"#059669",fontWeight:600,flexShrink:0}}>
-        {"Este caso fue cerrado. Si necesitas mas ayuda, inicia una nueva consulta."}
+      {isClosed && <div style={{padding:"12px 16px",background:"#f0fdf4",borderTop:"1px solid #bbf7d0",textAlign:"center",flexShrink:0}}>
+        <div style={{fontSize:12,color:"#059669",fontWeight:600,marginBottom:8}}>{"Este caso fue cerrado."}</div>
+        <button onClick={handleNewChat} style={{padding:"8px 20px",background:"#0d9488",color:"#fff",border:"none",borderRadius:8,fontSize:12,fontWeight:600,cursor:"pointer"}}>
+          {"Iniciar nueva consulta"}
+        </button>
       </div>}
     </div>;
   };
@@ -251,7 +314,6 @@ export default function SupportWidget({ userId, userName }) {
       <div style={S.header}>
         <div style={{display:"flex",alignItems:"center",gap:8}}>
           {view !== "home" && <button onClick={function() {
-            if (view === "chat" && activeCase) { setView("home"); return; }
             if (view === "faq-chat") { setView("home"); setFaqChat([]); return; }
             setView("home");
           }} style={{background:"none",border:"none",color:"#fff",cursor:"pointer",display:"flex",padding:0}}>
