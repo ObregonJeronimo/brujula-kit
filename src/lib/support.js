@@ -1,4 +1,4 @@
-import { db, collection, addDoc, getDocs, getDoc, doc, query, where, orderBy, limit, onSnapshot, serverTimestamp, updateDoc } from "../firebase.js";
+import { db, collection, addDoc, getDocs, getDoc, doc, query, where, orderBy, limit, onSnapshot, serverTimestamp, updateDoc, setDoc, deleteDoc } from "../firebase.js";
 
 // Get next correlative case number for a given type ("T" or "C")
 async function getNextCaseNumber(type) {
@@ -128,6 +128,44 @@ async function loadFAQ(localFaq) {
   return localFaq;
 }
 
+// ===== SCHEDULE / BUSINESS HOURS =====
+
+var DEFAULT_SCHEDULE = {
+  scheduleEnabled: false,
+  days: [1, 2, 3, 4, 5], // Mon-Fri
+  startHour: "09:00",
+  endHour: "18:00",
+  offlineMessage: "Estamos fuera del horario de atencion. Podes dejar tu mensaje y te responderemos cuando volvamos."
+};
+
+// Load support settings from Firestore
+async function loadSupportSettings() {
+  try {
+    var snap = await getDoc(doc(db, "config", "support_settings"));
+    if (snap.exists()) {
+      return Object.assign({}, DEFAULT_SCHEDULE, snap.data());
+    }
+  } catch (e) { /* fallback */ }
+  return DEFAULT_SCHEDULE;
+}
+
+// Save support settings to Firestore
+async function saveSupportSettings(settings) {
+  await setDoc(doc(db, "config", "support_settings"), settings);
+}
+
+// Check if current time is within business hours
+function isWithinSchedule(settings) {
+  if (!settings || !settings.scheduleEnabled) return true; // If disabled, always available
+  var now = new Date();
+  var day = now.getDay(); // 0=Sun, 1=Mon...6=Sat
+  if (!settings.days || settings.days.indexOf(day) === -1) return false;
+  var timeStr = String(now.getHours()).padStart(2, "0") + ":" + String(now.getMinutes()).padStart(2, "0");
+  var start = settings.startHour || "09:00";
+  var end = settings.endHour || "18:00";
+  return timeStr >= start && timeStr < end;
+}
+
 // Cleanup: delete closed cases older than 15 days
 async function cleanupOldCases() {
   var q = query(collection(db, "support_cases"), where("status", "==", "closed"));
@@ -140,15 +178,7 @@ async function cleanupOldCases() {
     if (d.closedAt) {
       var closedTime = new Date(d.closedAt).getTime();
       if (now - closedTime > fifteenDays) {
-        // Delete messages subcollection first
-        var msgsSnap = await getDocs(collection(db, "support_cases", snap.docs[i].id, "messages"));
-        for (var j = 0; j < msgsSnap.docs.length; j++) {
-          await updateDoc(doc(db, "support_cases", snap.docs[i].id, "messages", msgsSnap.docs[j].id), {});
-          // Note: Firestore client SDK can't delete docs in subcollections easily
-          // We'll just delete the parent doc — orphaned subcollection docs don't cost reads
-        }
-        var { deleteDoc: delDoc } = await import("../firebase.js");
-        await delDoc(doc(db, "support_cases", snap.docs[i].id));
+        await deleteDoc(doc(db, "support_cases", snap.docs[i].id));
         deleted++;
       }
     }
@@ -156,4 +186,4 @@ async function cleanupOldCases() {
   return deleted;
 }
 
-export { createSupportCase, sendSupportMessage, getActiveCase, subscribeToMessages, markReadByUser, loadFAQ, getNextCaseNumber, escalateCase, transferCase, changeUrgency, getAgentsList, cleanupOldCases };
+export { createSupportCase, sendSupportMessage, getActiveCase, subscribeToMessages, markReadByUser, loadFAQ, getNextCaseNumber, escalateCase, transferCase, changeUrgency, getAgentsList, cleanupOldCases, loadSupportSettings, saveSupportSettings, isWithinSchedule, DEFAULT_SCHEDULE };
