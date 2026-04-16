@@ -1,5 +1,4 @@
 // NewOFA — Examen Clinico EOF (seccion 1 del PEFF, independiente)
-import { useCallback } from "react";
 import { PEFF_SECTIONS } from "../data/peffSections.js";
 import { HelpTip, OptionHelpTip, TeethButton } from "./NewPEFF_helpers.jsx";
 import EvalShell from "./EvalShell.jsx";
@@ -31,7 +30,7 @@ function buildPayloadExtra(responses){
 }
 
 export default function NewOFA({ onS, nfy, userId, draft, therapistInfo }){
-  var renderEval = useCallback(function(props){
+  var renderEval = function(props){
     var subIdx = props.step - 1;
     if(subIdx < 0 || subIdx >= OFA_SECTION.subsections.length) return null;
     var sub = OFA_SECTION.subsections[subIdx];
@@ -64,7 +63,7 @@ export default function NewOFA({ onS, nfy, userId, draft, therapistInfo }){
         <button onClick={function(){ props.setStep(props.step+1); props.scrollTop(); }} style={{background:"#0891b2",color:"#fff",border:"none",padding:"10px 22px",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer"}}>{props.step < props.RESULT_STEP - 1 ? "Siguiente" : "Ver Resultados"}</button>
       </div>
     </div>;
-  },[]);
+  };
 
   var renderTechDetails = function(results){
     return <div style={{background:"#f8faf9",borderRadius:12,padding:20,border:"1px solid #e2e8f0",marginBottom:16}}>
