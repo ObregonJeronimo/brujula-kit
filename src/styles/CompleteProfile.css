@@ -1,0 +1,135 @@
+/* CompleteProfile.css — pantalla de completar perfil */
+
+.cps-screen {
+  --cps-bg: var(--c-primary);
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--cps-bg);
+  font-family: var(--font-family);
+}
+
+.cps-card {
+  background: rgba(255, 255, 255, 0.97);
+  border-radius: 16px;
+  padding: 44px 36px;
+  width: 420px;
+  max-width: 92vw;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+}
+
+.cps-card--center {
+  text-align: center;
+}
+
+.cps-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.cps-title {
+  font-size: var(--fs-2xl);
+  font-weight: var(--fw-bold);
+  color: var(--c-primary);
+  margin-bottom: 10px;
+}
+
+.cps-success-desc {
+  color: var(--c-text-secondary);
+  font-size: var(--fs-md);
+  margin-bottom: 20px;
+}
+
+.cps-username {
+  background: var(--c-success-light);
+  border-radius: 10px;
+  padding: 16px 24px;
+  font-size: var(--fs-3xl);
+  font-weight: var(--fw-bold);
+  color: var(--c-accent);
+  margin-bottom: 16px;
+}
+
+.cps-success-hint {
+  color: var(--c-text-faint);
+  font-size: 12px;
+}
+
+.cps-header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.cps-header-icon {
+  font-size: 40px;
+  margin-bottom: 8px;
+}
+
+.cps-header-title {
+  font-size: var(--fs-2xl);
+  font-weight: var(--fw-bold);
+  color: var(--c-primary);
+}
+
+.cps-header-email {
+  color: var(--c-text-secondary);
+  font-size: var(--fs-base);
+  margin-top: 4px;
+}
+
+.cps-field {
+  margin-bottom: 14px;
+}
+
+.cps-field--last {
+  margin-bottom: 22px;
+}
+
+.cps-label {
+  font-size: 12px;
+  font-weight: var(--fw-semibold);
+  color: var(--c-text-secondary);
+  display: block;
+  margin-bottom: 5px;
+}
+
+.cps-input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--c-border);
+  border-radius: 8px;
+  font-size: var(--fs-md);
+  background: var(--c-surface-alt);
+  font-family: var(--font-family);
+  color: var(--c-text);
+}
+
+.cps-error {
+  background: var(--c-error-light);
+  border: 1px solid var(--c-error-border);
+  color: var(--c-error);
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  margin-bottom: 14px;
+}
+
+.cps-submit {
+  width: 100%;
+  padding: 13px;
+  background: var(--c-accent);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: var(--fw-semibold);
+  cursor: pointer;
+  font-family: var(--font-family);
+}
+
+.cps-submit:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
