@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from "react";
-import { db, collection, getDocs, doc, updateDoc, query, where, orderBy, onSnapshot } from "../firebase.js";
-import { sendSupportMessage, subscribeToMessages, escalateCase, transferCase, changeUrgency, getAgentsList, cleanupOldCases } from "../lib/support.js";
+import { db, collection, getDocs, doc, updateDoc, query, where, orderBy, onSnapshot, getDoc } from "../firebase.js";
+import { sendSupportMessage, subscribeToMessages, escalateCase, transferCase, changeUrgency, getAgentsList, cleanupOldCases, loadSupportSettings, saveSupportSettings, DEFAULT_SCHEDULE } from "../lib/support.js";
 
 var K = { sd:"#0a3d2f", ac:"#0d9488", mt:"#64748b" };
+var DAY_NAMES = ["Dom", "Lun", "Mar", "Mie", "Jue", "Vie", "Sab"];
 
 function timeAgo(ts) {
   if (!ts) return "";
@@ -45,6 +46,9 @@ export default function SupportPanel({ nfy, agentUid, agentName, agentRole }) {
   var _showTransfer = useState(false), showTransfer = _showTransfer[0], setShowTransfer = _showTransfer[1];
   var _agents = useState([]), agents = _agents[0], setAgents = _agents[1];
   var _showUrgency = useState(false), showUrgency = _showUrgency[0], setShowUrgency = _showUrgency[1];
+  var _showConfig = useState(false), showConfig = _showConfig[0], setShowConfig = _showConfig[1];
+  var _scheduleConfig = useState(null), scheduleConfig = _scheduleConfig[0], setScheduleConfig = _scheduleConfig[1];
+  var _savingConfig = useState(false), savingConfig = _savingConfig[0], setSavingConfig = _savingConfig[1];
   var bodyRef = useRef(null);
   var unsubCasesRef = useRef(null);
   var unsubMsgsRef = useRef(null);
@@ -61,6 +65,13 @@ export default function SupportPanel({ nfy, agentUid, agentName, agentRole }) {
       cleanupOldCases().then(function(n) {
         if (n > 0) nfy(n + " caso(s) cerrados hace +15 dias eliminados", "ok");
       }).catch(function() {});
+    }
+  }, [isSuperAdmin]);
+
+  // Load schedule config for Super Admin
+  useEffect(function() {
+    if (isSuperAdmin) {
+      loadSupportSettings().then(function(s) { setScheduleConfig(s); });
     }
   }, [isSuperAdmin]);
 
@@ -189,7 +200,94 @@ export default function SupportPanel({ nfy, agentUid, agentName, agentRole }) {
 
   var handleKeyDown = function(e) { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } };
 
+  // Schedule config handlers
+  var toggleDay = function(day) {
+    setScheduleConfig(function(prev) {
+      var days = (prev.days || []).slice();
+      var idx = days.indexOf(day);
+      if (idx >= 0) days.splice(idx, 1);
+      else days.push(day);
+      days.sort();
+      return Object.assign({}, prev, { days: days });
+    });
+  };
+
+  var handleSaveSchedule = async function() {
+    setSavingConfig(true);
+    try {
+      await saveSupportSettings(scheduleConfig);
+      nfy("Horario de atencion guardado", "ok");
+    } catch (e) { nfy("Error: " + e.message, "er"); }
+    setSavingConfig(false);
+  };
+
   // ========== RENDER ==========
+
+  // Schedule config panel (Super Admin only)
+  var renderConfigPanel = function() {
+    if (!scheduleConfig) return <div style={{ textAlign: "center", padding: 40, color: K.mt, fontSize: 13 }}>Cargando configuracion...</div>;
+    return <div>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+        <div>
+          <div style={{ fontSize: 16, fontWeight: 700, color: K.sd }}>Horario de atencion</div>
+          <div style={{ fontSize: 12, color: K.mt }}>Configura cuando el soporte esta disponible</div>
+        </div>
+        <button onClick={function() { setShowConfig(false); }} style={{ padding: "8px 16px", background: "#f1f5f9", border: "none", borderRadius: 8, fontSize: 13, cursor: "pointer", color: K.mt }}>Volver</button>
+      </div>
+
+      {/* Toggle enabled */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 18px", background: scheduleConfig.scheduleEnabled ? "#f0fdfa" : "#f8fafc", borderRadius: 10, border: "1px solid " + (scheduleConfig.scheduleEnabled ? "#99f6e4" : "#e2e8f0"), marginBottom: 16 }}>
+        <div>
+          <div style={{ fontSize: 14, fontWeight: 600, color: scheduleConfig.scheduleEnabled ? K.sd : "#475569" }}>Horario de atencion activado</div>
+          <div style={{ fontSize: 11, color: K.mt, marginTop: 2 }}>Si esta desactivado, el soporte aparece siempre como disponible</div>
+        </div>
+        <button onClick={function() { setScheduleConfig(function(p) { return Object.assign({}, p, { scheduleEnabled: !p.scheduleEnabled }); }); }} style={{ width: 44, height: 24, borderRadius: 12, border: "none", background: scheduleConfig.scheduleEnabled ? "#0d9488" : "#cbd5e1", cursor: "pointer", position: "relative" }}>
+          <div style={{ width: 18, height: 18, borderRadius: "50%", background: "#fff", position: "absolute", top: 3, left: scheduleConfig.scheduleEnabled ? 23 : 3, transition: "left .2s", boxShadow: "0 1px 3px rgba(0,0,0,.2)" }} />
+        </button>
+      </div>
+
+      {scheduleConfig.scheduleEnabled && <div>
+        {/* Days */}
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: K.sd, marginBottom: 8 }}>Dias de atencion</div>
+          <div style={{ display: "flex", gap: 6 }}>
+            {DAY_NAMES.map(function(name, idx) {
+              var selected = (scheduleConfig.days || []).indexOf(idx) >= 0;
+              return <button key={idx} onClick={function() { toggleDay(idx); }} style={{
+                flex: 1, padding: "10px 0", borderRadius: 8,
+                border: selected ? "2px solid #0d9488" : "1px solid #e2e8f0",
+                background: selected ? "#f0fdfa" : "#fff",
+                color: selected ? K.sd : "#94a3b8",
+                fontSize: 12, fontWeight: selected ? 700 : 500, cursor: "pointer"
+              }}>{name}</button>;
+            })}
+          </div>
+        </div>
+
+        {/* Hours */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
+          <div>
+            <label style={{ fontSize: 12, fontWeight: 600, color: K.mt, display: "block", marginBottom: 4 }}>Hora de inicio</label>
+            <input type="time" value={scheduleConfig.startHour || "09:00"} onChange={function(e) { setScheduleConfig(function(p) { return Object.assign({}, p, { startHour: e.target.value }); }); }} style={I} />
+          </div>
+          <div>
+            <label style={{ fontSize: 12, fontWeight: 600, color: K.mt, display: "block", marginBottom: 4 }}>Hora de fin</label>
+            <input type="time" value={scheduleConfig.endHour || "18:00"} onChange={function(e) { setScheduleConfig(function(p) { return Object.assign({}, p, { endHour: e.target.value }); }); }} style={I} />
+          </div>
+        </div>
+
+        {/* Offline message */}
+        <div style={{ marginBottom: 16 }}>
+          <label style={{ fontSize: 12, fontWeight: 600, color: K.mt, display: "block", marginBottom: 4 }}>Mensaje fuera de horario</label>
+          <textarea value={scheduleConfig.offlineMessage || ""} onChange={function(e) { setScheduleConfig(function(p) { return Object.assign({}, p, { offlineMessage: e.target.value }); }); }} rows={3} style={Object.assign({}, I, { resize: "vertical", fontFamily: "inherit" })} placeholder="Mensaje que ven los usuarios fuera del horario..." />
+        </div>
+      </div>}
+
+      <button onClick={handleSaveSchedule} disabled={savingConfig} style={{ width: "100%", padding: "14px", background: K.ac, color: "#fff", border: "none", borderRadius: 10, fontSize: 15, fontWeight: 700, cursor: savingConfig ? "wait" : "pointer", opacity: savingConfig ? .7 : 1 }}>
+        {savingConfig ? "Guardando..." : "Guardar horario"}
+      </button>
+    </div>;
+  };
 
   var renderCaseList = function() {
     return <div>
@@ -217,8 +315,12 @@ export default function SupportPanel({ nfy, agentUid, agentName, agentRole }) {
         })}
       </div>
 
-      <div style={{ marginBottom: 16 }}>
-        <input value={search} onChange={function(e) { setSearch(e.target.value); }} style={Object.assign({}, I, { background: "#fff" })} placeholder="Buscar por numero de caso o nombre..." />
+      <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+        <input value={search} onChange={function(e) { setSearch(e.target.value); }} style={Object.assign({}, I, { background: "#fff", flex: 1 })} placeholder="Buscar por numero de caso o nombre..." />
+        {isSuperAdmin && <button onClick={function() { setShowConfig(true); }} style={{ padding: "10px 16px", background: "#f8faf9", border: "1px solid #e2e8f0", borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: "pointer", color: K.sd, whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: 6 }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          Configurar
+        </button>}
       </div>
 
       {loading ? <div style={{ textAlign: "center", padding: 40, color: K.mt, fontSize: 13 }}>Cargando casos...</div> :
@@ -265,7 +367,6 @@ export default function SupportPanel({ nfy, agentUid, agentName, agentRole }) {
     var isTemporal = openCase.type === "temporal";
 
     return <div style={{ display: "flex", flexDirection: "column", height: "calc(100vh - 180px)", minHeight: 400 }}>
-      {/* Header */}
       <div style={{ padding: "14px 18px", background: "#f8faf9", borderRadius: "12px 12px 0 0", border: "1px solid #e2e8f0", borderBottom: "none", flexShrink: 0 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -287,14 +388,12 @@ export default function SupportPanel({ nfy, agentUid, agentName, agentRole }) {
             {!isClosed && (isAssignedToMe || isSuperAdmin) && <button onClick={function() { closeCase(openCase); }} style={{ padding: "7px 14px", background: "#fef2f2", color: "#dc2626", border: "1px solid #fecaca", borderRadius: 8, fontSize: 11, fontWeight: 600, cursor: "pointer" }}>Cerrar</button>}
           </div>
         </div>
-        {/* Action buttons row */}
         {!isClosed && (isAssignedToMe || isSuperAdmin) && <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
           {isTemporal && canEscalate && <button onClick={function() { setShowEscalate(!showEscalate); setShowTransfer(false); setShowUrgency(false); }} style={{ padding: "6px 12px", background: showEscalate ? "#4f46e5" : "#f0f9ff", color: showEscalate ? "#fff" : "#4f46e5", border: "1px solid " + (showEscalate ? "#4f46e5" : "#c7d2fe"), borderRadius: 6, fontSize: 11, fontWeight: 600, cursor: "pointer" }}>Escalar a caso</button>}
           {!isTemporal && canEscalate && <button onClick={function() { setShowUrgency(!showUrgency); setShowEscalate(false); setShowTransfer(false); }} style={{ padding: "6px 12px", background: showUrgency ? "#d97706" : "#fef9c3", color: showUrgency ? "#fff" : "#92400e", border: "1px solid " + (showUrgency ? "#d97706" : "#fef3c7"), borderRadius: 6, fontSize: 11, fontWeight: 600, cursor: "pointer" }}>Cambiar urgencia</button>}
           <button onClick={function() { openTransferModal(); setShowEscalate(false); setShowUrgency(false); }} style={{ padding: "6px 12px", background: showTransfer ? "#0369a1" : "#f0f9ff", color: showTransfer ? "#fff" : "#0369a1", border: "1px solid " + (showTransfer ? "#0369a1" : "#bae6fd"), borderRadius: 6, fontSize: 11, fontWeight: 600, cursor: "pointer" }}>Transferir</button>
         </div>}
 
-        {/* Escalate panel */}
         {showEscalate && <div style={{ marginTop: 10, padding: "12px 14px", background: "#f5f3ff", borderRadius: 8, border: "1px solid #e0e7ff" }}>
           <div style={{ fontSize: 12, fontWeight: 600, color: "#4f46e5", marginBottom: 8 }}>Escalar #{openCase.caseNumber} a caso formal</div>
           <div style={{ fontSize: 11, color: K.mt, marginBottom: 8 }}>Selecciona el nivel de urgencia:</div>
@@ -310,7 +409,6 @@ export default function SupportPanel({ nfy, agentUid, agentName, agentRole }) {
           </div>
         </div>}
 
-        {/* Transfer panel */}
         {showTransfer && <div style={{ marginTop: 10, padding: "12px 14px", background: "#f0f9ff", borderRadius: 8, border: "1px solid #bae6fd" }}>
           <div style={{ fontSize: 12, fontWeight: 600, color: "#0369a1", marginBottom: 8 }}>Transferir caso a otro agente</div>
           {agents.length === 0 ? <div style={{ fontSize: 11, color: K.mt, fontStyle: "italic" }}>No hay otros agentes disponibles</div> :
@@ -326,7 +424,6 @@ export default function SupportPanel({ nfy, agentUid, agentName, agentRole }) {
           <button onClick={function() { setShowTransfer(false); }} style={{ marginTop: 8, padding: "6px 14px", background: "#f1f5f9", border: "none", borderRadius: 6, fontSize: 11, cursor: "pointer", color: K.mt }}>Cancelar</button>
         </div>}
 
-        {/* Change urgency panel */}
         {showUrgency && <div style={{ marginTop: 10, padding: "12px 14px", background: "#fef9c3", borderRadius: 8, border: "1px solid #fef3c7" }}>
           <div style={{ fontSize: 12, fontWeight: 600, color: "#92400e", marginBottom: 8 }}>Cambiar urgencia del caso</div>
           <div style={{ display: "flex", gap: 6 }}>
@@ -340,7 +437,6 @@ export default function SupportPanel({ nfy, agentUid, agentName, agentRole }) {
         </div>}
       </div>
 
-      {/* Messages */}
       <div ref={bodyRef} style={{ flex: 1, overflowY: "auto", padding: "16px 18px", background: "#fff", borderLeft: "1px solid #e2e8f0", borderRight: "1px solid #e2e8f0" }}>
         {messages.length === 0 && <div style={{ textAlign: "center", fontSize: 12, color: K.mt, fontStyle: "italic", padding: 20 }}>Sin mensajes</div>}
         {messages.map(function(msg, i) {
@@ -357,7 +453,6 @@ export default function SupportPanel({ nfy, agentUid, agentName, agentRole }) {
         })}
       </div>
 
-      {/* Input */}
       {!isClosed && (isAssignedToMe || isSuperAdmin) && <div style={{ display: "flex", gap: 8, padding: "12px 18px", background: "#f8faf9", borderRadius: "0 0 12px 12px", border: "1px solid #e2e8f0", borderTop: "none", flexShrink: 0 }}>
         <input value={input} onChange={function(e) { setInput(e.target.value); }} onKeyDown={handleKeyDown} style={Object.assign({}, I, { flex: 1, background: "#fff" })} placeholder="Escribi tu respuesta..." />
         <button onClick={handleSend} disabled={sending || !input.trim()} style={{ background: K.ac, color: "#fff", border: "none", borderRadius: 8, padding: "10px 18px", fontSize: 13, fontWeight: 600, cursor: sending ? "wait" : "pointer", opacity: sending || !input.trim() ? .5 : 1, flexShrink: 0 }}>
@@ -373,7 +468,7 @@ export default function SupportPanel({ nfy, agentUid, agentName, agentRole }) {
     <div style={{ animation: "fi .3s ease", width: "100%", maxWidth: 900 }}>
       <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 6 }}>{"Soporte"}</h1>
       <p style={{ color: K.mt, fontSize: 14, marginBottom: 20 }}>{"Gestiona las consultas de los profesionales"}</p>
-      {openCase ? renderChatView() : renderCaseList()}
+      {showConfig && isSuperAdmin ? renderConfigPanel() : (openCase ? renderChatView() : renderCaseList())}
     </div>
   );
 }
