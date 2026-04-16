@@ -1,12 +1,14 @@
 import { useState, useEffect, useRef, useImperativeHandle, forwardRef } from "react";
 import { db, doc, getDoc, updateDoc, collection, getDocs, query, orderBy, limit } from "../firebase.js";
+import "../styles/SettingsPage.css";
 
 var K = { sd:"#0a3d2f", ac:"#0d9488", mt:"#64748b", bd:"#e2e8f0" };
 var DEFAULT_VERSION = "1.0.0.0";
 
 function Toggle({ value, onChange, disabled }) {
-  return <button type="button" onClick={function(){ if(!disabled) onChange(!value); }} style={{width:44,height:24,borderRadius:12,border:"none",background:value?"#0d9488":"#cbd5e1",cursor:disabled?"not-allowed":"pointer",position:"relative",transition:"background .2s",opacity:disabled?.5:1}}>
-    <div style={{width:18,height:18,borderRadius:"50%",background:"#fff",position:"absolute",top:3,left:value?23:3,transition:"left .2s",boxShadow:"0 1px 3px rgba(0,0,0,.2)"}} />
+  var cls = "settings-toggle" + (value?" settings-toggle--on":"") + (disabled?" settings-toggle--disabled":"");
+  return <button type="button" onClick={function(){ if(!disabled) onChange(!value); }} className={cls}>
+    <div className="settings-toggle-knob" />
   </button>;
 }
 
@@ -119,62 +121,75 @@ var SettingsPage = forwardRef(function SettingsPageInner({ userId, nfy, profile,
 
   useImperativeHandle(ref, function(){ return { save: doSave }; });
 
-  var I = { width:"100%", padding:"10px 14px", border:"1px solid #e2e8f0", borderRadius:8, fontSize:14, background:"#f8faf9" };
-
-  if(loading) return <div style={{animation:"fi .3s ease",textAlign:"center",padding:60}}><div style={{fontSize:16,fontWeight:600,color:K.mt}}>{"Cargando configuración..."}</div></div>;
+  if(loading) return <div className="settings-loading">{"Cargando configuración..."}</div>;
 
   var renderConsultorio = function(){
-    return <div style={{animation:"fi .2s ease"}}>
-      <div style={{marginBottom:22}}>
-        <h3 style={{fontSize:14,fontWeight:700,color:K.sd,marginBottom:4}}>{"Información del profesional"}</h3>
-        <p style={{fontSize:11,color:K.mt,marginBottom:14}}>{"Estos datos aparecen en el encabezado de cada informe que generes."}</p>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
-          <div style={{gridColumn:"1/-1"}}><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>Nombre completo del profesional</label><input value={profName} onChange={function(e){ setProfName(e.target.value); }} style={I} placeholder="Ej: Lic. María López" /></div>
-          <div><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>{"Matrícula profesional"}</label><input value={profLicense} onChange={function(e){ setProfLicense(e.target.value); }} style={I} placeholder="Ej: MP 12345" /></div>
-          <div><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>{"Teléfono personal"}</label><input value={profPhone} onChange={function(e){ setProfPhone(e.target.value); }} style={I} placeholder="Ej: 351-1234567" /></div>
+    return <div className="settings-section">
+      <div className="settings-block">
+        <h3 className="settings-h3">{"Información del profesional"}</h3>
+        <p className="settings-desc">{"Estos datos aparecen en el encabezado de cada informe que generes."}</p>
+        <div className="settings-grid-2">
+          <div className="settings-field--full"><label className="settings-label">Nombre completo del profesional</label><input value={profName} onChange={function(e){ setProfName(e.target.value); }} className="settings-input" placeholder="Ej: Lic. María López" /></div>
+          <div><label className="settings-label">{"Matrícula profesional"}</label><input value={profLicense} onChange={function(e){ setProfLicense(e.target.value); }} className="settings-input" placeholder="Ej: MP 12345" /></div>
+          <div><label className="settings-label">{"Teléfono personal"}</label><input value={profPhone} onChange={function(e){ setProfPhone(e.target.value); }} className="settings-input" placeholder="Ej: 351-1234567" /></div>
         </div>
       </div>
-      <div style={{borderTop:"1px solid #e2e8f0",paddingTop:20}}>
-        <h3 style={{fontSize:14,fontWeight:700,color:K.sd,marginBottom:4}}>{"Datos del consultorio"}</h3>
-        <p style={{fontSize:11,color:K.mt,marginBottom:14}}>{"Esta información se incluye en los informes de pacientes y en los emails automáticos de recordatorio de citas."}</p>
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 16px",background:showInReport?"#f0fdfa":"#f8fafc",borderRadius:10,border:showInReport?"1px solid #99f6e4":"1px solid #e2e8f0",marginBottom:18}}>
-          <div><div style={{fontSize:13,fontWeight:600,color:showInReport?K.sd:"#475569"}}>Mostrar en informe de paciente</div>{!allFieldsFilled && <div style={{fontSize:11,color:"#f59e0b",marginTop:2}}>{"Completá todos los campos del consultorio para activar"}</div>}</div>
+      <div className="settings-block-separator">
+        <h3 className="settings-h3">{"Datos del consultorio"}</h3>
+        <p className="settings-desc">{"Esta información se incluye en los informes de pacientes y en los emails automáticos de recordatorio de citas."}</p>
+        <div className={"settings-toggle-row"+(showInReport?" settings-toggle-row--active":"")} style={{marginBottom:18}}>
+          <div>
+            <div className="settings-toggle-row-title">Mostrar en informe de paciente</div>
+            {!allFieldsFilled && <div className="settings-toggle-row-warn">{"Completá todos los campos del consultorio para activar"}</div>}
+          </div>
           <Toggle value={showInReport} onChange={function(v){ if(v && !allFieldsFilled){ nfy("Completá todos los campos del consultorio primero","er"); return; } setShowInReport(v); }} />
         </div>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:14}}>
-          <div><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>Nombre del consultorio</label><input value={cName} onChange={function(e){ setCName(e.target.value); }} style={I} placeholder="Ej: Consultorio Fonos" /></div>
-          <div><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>{"Teléfono del consultorio"}</label><input value={cTel} onChange={function(e){ setCTel(e.target.value); }} style={I} placeholder="Ej: +54 351 1234567" /></div>
+        <div className="settings-grid-2" style={{marginBottom:14}}>
+          <div><label className="settings-label">Nombre del consultorio</label><input value={cName} onChange={function(e){ setCName(e.target.value); }} className="settings-input" placeholder="Ej: Consultorio Fonos" /></div>
+          <div><label className="settings-label">{"Teléfono del consultorio"}</label><input value={cTel} onChange={function(e){ setCTel(e.target.value); }} className="settings-input" placeholder="Ej: +54 351 1234567" /></div>
         </div>
-        <div style={{marginBottom:14}}><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>{"Dirección"}</label><input value={cDir} onChange={function(e){ setCDir(e.target.value); }} style={I} placeholder="Ej: Av. Colón 1234, Córdoba" /></div>
-        <div><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>Email de contacto</label><input value={cEmail} onChange={function(e){ setCEmail(e.target.value); }} style={I} placeholder="Ej: contacto@consultorio.com" /></div>
+        <div className="settings-field"><label className="settings-label">{"Dirección"}</label><input value={cDir} onChange={function(e){ setCDir(e.target.value); }} className="settings-input" placeholder="Ej: Av. Colón 1234, Córdoba" /></div>
+        <div><label className="settings-label">Email de contacto</label><input value={cEmail} onChange={function(e){ setCEmail(e.target.value); }} className="settings-input" placeholder="Ej: contacto@consultorio.com" /></div>
       </div>
     </div>;
   };
 
   var renderGeneral = function(){
-    return <div style={{animation:"fi .2s ease"}}>
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 16px",background:creditWarning?"#f0fdfa":"#f8fafc",borderRadius:10,border:creditWarning?"1px solid #99f6e4":"1px solid #e2e8f0",marginBottom:14}}>
-        <div><div style={{fontSize:13,fontWeight:600,color:creditWarning?K.sd:"#475569"}}>{"Aviso de uso de crédito al iniciar evaluación"}</div><div style={{fontSize:11,color:K.mt,marginTop:2}}>{"Muestra una confirmación antes de descontar un crédito"}</div></div>
+    return <div className="settings-section">
+      <div className={"settings-toggle-row"+(creditWarning?" settings-toggle-row--active":"")}>
+        <div>
+          <div className="settings-toggle-row-title">{"Aviso de uso de crédito al iniciar evaluación"}</div>
+          <div className="settings-toggle-row-desc">{"Muestra una confirmación antes de descontar un crédito"}</div>
+        </div>
         <Toggle value={creditWarning} onChange={setCreditWarning} />
       </div>
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 16px",background:autoEmail?"#f0fdfa":"#f8fafc",borderRadius:10,border:autoEmail?"1px solid #99f6e4":"1px solid #e2e8f0",marginBottom:14}}>
-        <div><div style={{fontSize:13,fontWeight:600,color:autoEmail?K.sd:"#475569"}}>{"Enviar mail automático al agendar cita"}</div><div style={{fontSize:11,color:K.mt,marginTop:2}}>{"Envía un email de recordatorio al responsable del paciente al guardar una cita"}</div></div>
+      <div className={"settings-toggle-row"+(autoEmail?" settings-toggle-row--active":"")}>
+        <div>
+          <div className="settings-toggle-row-title">{"Enviar mail automático al agendar cita"}</div>
+          <div className="settings-toggle-row-desc">{"Envía un email de recordatorio al responsable del paciente al guardar una cita"}</div>
+        </div>
         <Toggle value={autoEmail} onChange={setAutoEmail} />
       </div>
-      <div style={{padding:"12px 16px",background:citaReminder?"#f0fdfa":"#f8fafc",borderRadius:10,border:citaReminder?"1px solid #99f6e4":"1px solid #e2e8f0",marginBottom:20}}>
+      <div className={"settings-toggle-row"+(citaReminder?" settings-toggle-row--active":"")} style={{display:"block",marginBottom:20}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-          <div><div style={{fontSize:13,fontWeight:600,color:citaReminder?K.sd:"#475569"}}>{"Avisar cuando una cita es próxima"}</div><div style={{fontSize:11,color:K.mt,marginTop:2}}>{"Recibí recordatorios de citas en el panel principal"}</div></div>
+          <div>
+            <div className="settings-toggle-row-title">{"Avisar cuando una cita es próxima"}</div>
+            <div className="settings-toggle-row-desc">{"Recibí recordatorios de citas en el panel principal"}</div>
+          </div>
           <Toggle value={citaReminder} onChange={setCitaReminder} />
         </div>
-        {citaReminder && <div style={{marginTop:12,padding:"10px 14px",background:"#f0f9ff",borderRadius:8,border:"1px solid #bae6fd"}}>
-          <div style={{fontSize:12,fontWeight:600,color:"#0369a1",marginBottom:8}}>{"Seleccionar cuándo recibir recordatorio"}</div>
-          <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>{REMINDER_OPTIONS.map(function(opt){ var selected = reminderDays === opt.value; return <button key={opt.value} onClick={function(){ setReminderDays(opt.value); }} style={{padding:"6px 14px",borderRadius:8,border:selected?"2px solid #0d9488":"1px solid #e2e8f0",background:selected?"#ccfbf1":"#fff",color:selected?K.sd:"#475569",fontSize:12,fontWeight:selected?700:500,cursor:"pointer"}}>{opt.label}</button>; })}</div>
+        {citaReminder && <div className="settings-reminder-box">
+          <div className="settings-reminder-title">{"Seleccionar cuándo recibir recordatorio"}</div>
+          <div className="settings-reminder-options">{REMINDER_OPTIONS.map(function(opt){ var selected = reminderDays === opt.value; return <button key={opt.value} onClick={function(){ setReminderDays(opt.value); }} className={"settings-reminder-opt"+(selected?" settings-reminder-opt--sel":"")}>{opt.label}</button>; })}</div>
         </div>}
       </div>
-      <div style={{padding:"16px",background:"#f8fafc",borderRadius:10,border:"1px solid #e2e8f0"}}>
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-          <div><div style={{fontSize:13,fontWeight:600,color:K.sd}}>{"Iniciar tutorial"}</div><div style={{fontSize:11,color:K.mt,marginTop:2}}>{"Volvé a ver el recorrido guiado por las secciones principales"}</div></div>
-          <button onClick={function(){ if(onStartTour) onStartTour(); }} style={{padding:"8px 18px",background:"linear-gradient(135deg,#0a3d2f,#0d9488)",color:"#fff",border:"none",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer",whiteSpace:"nowrap",display:"flex",alignItems:"center",gap:6}}>
+      <div className="settings-tutorial-box">
+        <div className="settings-tutorial-row">
+          <div>
+            <div className="settings-toggle-row-title">{"Iniciar tutorial"}</div>
+            <div className="settings-toggle-row-desc">{"Volvé a ver el recorrido guiado por las secciones principales"}</div>
+          </div>
+          <button onClick={function(){ if(onStartTour) onStartTour(); }} className="settings-tutorial-btn">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
             Ver tutorial
           </button>
@@ -185,40 +200,34 @@ var SettingsPage = forwardRef(function SettingsPageInner({ userId, nfy, profile,
 
   var renderAcerca = function(){
     var versionLabel = "Brújula KIT v" + appVersion;
-    return <div style={{animation:"fi .2s ease"}}>
-      <div style={{fontSize:14,color:"#475569",lineHeight:1.8}}>
-        <div style={{marginBottom:16}}>{"Versión actual del sistema:"}</div>
-        <div style={{display:"inline-block",padding:"10px 20px",background:"linear-gradient(135deg,#0a3d2f,#0d9488)",borderRadius:10,color:"#fff",fontSize:16,fontWeight:700,letterSpacing:"0.5px"}}>{versionLabel}</div>
-        {appVersionTitle && <div style={{marginTop:12,fontSize:13,color:"#1e293b",fontWeight:600}}>{appVersionTitle}</div>}
-        {appVersionDate && <div style={{marginTop:4,fontSize:11,color:"#94a3b8"}}>{"Publicada el " + appVersionDate}</div>}
-        <div style={{marginTop:24,paddingTop:20,borderTop:"1px solid #e2e8f0"}}>
-          <div style={{fontSize:14,fontWeight:700,color:K.sd,marginBottom:12}}>{"Legal"}</div>
-          <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
-            <a href="/politicas.html" target="_blank" rel="noopener noreferrer" style={{display:"inline-flex",alignItems:"center",gap:6,padding:"10px 18px",background:"#f8faf9",border:"1px solid #e2e8f0",borderRadius:8,fontSize:13,fontWeight:600,color:K.sd,textDecoration:"none",cursor:"pointer"}}>
-              {"Términos y Condiciones"}
-            </a>
-            <a href="/politicas.html#privacidad" target="_blank" rel="noopener noreferrer" style={{display:"inline-flex",alignItems:"center",gap:6,padding:"10px 18px",background:"#f8faf9",border:"1px solid #e2e8f0",borderRadius:8,fontSize:13,fontWeight:600,color:K.sd,textDecoration:"none",cursor:"pointer"}}>
-              {"Política de Privacidad"}
-            </a>
-          </div>
+    return <div className="settings-about">
+      <div className="settings-version-label">{"Versión actual del sistema:"}</div>
+      <div className="settings-version-badge">{versionLabel}</div>
+      {appVersionTitle && <div className="settings-version-title">{appVersionTitle}</div>}
+      {appVersionDate && <div className="settings-version-date">{"Publicada el " + appVersionDate}</div>}
+      <div className="settings-legal-section">
+        <div className="settings-legal-title">{"Legal"}</div>
+        <div className="settings-legal-links">
+          <a href="/politicas.html" target="_blank" rel="noopener noreferrer" className="settings-legal-link">{"Términos y Condiciones"}</a>
+          <a href="/politicas.html#privacidad" target="_blank" rel="noopener noreferrer" className="settings-legal-link">{"Política de Privacidad"}</a>
         </div>
-        <div style={{marginTop:20,fontSize:12,color:"#94a3b8",lineHeight:1.6}}>{"Desarrollado para profesionales de fonoaudiología."}</div>
       </div>
+      <div className="settings-about-footer">{"Desarrollado para profesionales de fonoaudiología."}</div>
     </div>;
   };
 
-  return <div style={{animation:"fi .3s ease",width:"100%",maxWidth:700}}>
-    <h1 style={{fontSize:22,fontWeight:700,marginBottom:6}}>{"⚙️ Configuración"}</h1>
-    <p style={{color:K.mt,fontSize:14,marginBottom:20}}>{"Personalizá tu experiencia en Brújula KIT"}</p>
-    <div style={{display:"flex",gap:0,marginBottom:0,borderBottom:"2px solid #e2e8f0"}}>
-      {TABS.map(function(t){ var active = activeTab === t.id; return <button key={t.id} onClick={function(){ setActiveTab(t.id); }} style={{display:"flex",alignItems:"center",gap:6,padding:"12px 20px",background:"transparent",border:"none",borderBottom:active?"2px solid #0d9488":"2px solid transparent",marginBottom:"-2px",color:active?K.sd:"#94a3b8",fontSize:14,fontWeight:active?700:500,cursor:"pointer",transition:"all .15s ease"}}><span style={{fontSize:15}}>{t.icon}</span><span>{t.label}</span></button>; })}
+  return <div className="settings-page">
+    <h1 className="settings-title">{"⚙️ Configuración"}</h1>
+    <p className="settings-subtitle">{"Personalizá tu experiencia en Brújula KIT"}</p>
+    <div className="settings-tabs">
+      {TABS.map(function(t){ var active = activeTab === t.id; return <button key={t.id} onClick={function(){ setActiveTab(t.id); }} className={"settings-tab"+(active?" settings-tab--active":"")}><span className="settings-tab-icon">{t.icon}</span><span>{t.label}</span></button>; })}
     </div>
-    <div style={{background:"#fff",borderRadius:"0 0 12px 12px",border:"1px solid #e2e8f0",borderTop:"none",padding:24,marginBottom:20,minHeight:200}}>
+    <div className="settings-content">
       {activeTab === "consultorio" && renderConsultorio()}
       {activeTab === "general" && renderGeneral()}
       {activeTab === "acerca" && renderAcerca()}
     </div>
-    {activeTab !== "acerca" && <button onClick={function(){ doSave(); }} disabled={saving} style={{width:"100%",padding:"14px",background:K.ac,color:"#fff",border:"none",borderRadius:10,fontSize:15,fontWeight:700,cursor:saving?"wait":"pointer",opacity:saving?.7:1,marginBottom:40}}>
+    {activeTab !== "acerca" && <button onClick={function(){ doSave(); }} disabled={saving} className="settings-save-btn">
       {saving ? "Guardando..." : "Guardar configuración"}
     </button>}
   </div>;
