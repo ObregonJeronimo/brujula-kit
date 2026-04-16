@@ -3,6 +3,7 @@ import { auth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendE
 import { getUserProfile } from "../lib/fb.js";
 import { acquireSessionLock } from "../lib/sessionLock.js";
 import { db, doc, setDoc, getDoc, getDocs, query, where, collection, orderBy, limit } from "../firebase.js";
+import "../styles/AuthScreen.css";
 
 var googleProvider = new GoogleAuthProvider();
 var DEFAULT_VERSION = "1.0.0.0";
@@ -40,7 +41,6 @@ export default function AuthScreen({ onDone, themeColor }) {
   var _resetEmail = useState(""), resetEmail = _resetEmail[0], setResetEmail = _resetEmail[1];
   var _appVersion = useState(DEFAULT_VERSION), appVersion = _appVersion[0], setAppVersion = _appVersion[1];
 
-  // Load latest version from changelogs
   useEffect(function(){
     var q2 = query(collection(db, "changelogs"), orderBy("createdAt", "desc"), limit(1));
     getDocs(q2).then(function(snap){
@@ -48,7 +48,6 @@ export default function AuthScreen({ onDone, themeColor }) {
     }).catch(function(){});
   },[]);
 
-  var I = { width: "100%", padding: "12px 14px", border: "1px solid #e2e8f0", borderRadius: 8, fontSize: 14, background: "#f8faf9" };
   var strength = mode === "register" ? getPasswordStrength(pass) : null;
 
   var handleGoogleResult = async function(user, isRegisterMode) {
@@ -83,38 +82,31 @@ export default function AuthScreen({ onDone, themeColor }) {
       if (prof && prof.profileComplete) { var canLogin = await acquireSessionLock(u.uid, prof.role === "admin"); if (!canLogin) { setErr("Sesión ocupada. Intentá en unos minutos."); setLd(false); return; } onDone(u, prof); }
     } catch (e) {
       if (e.code === "auth/user-not-found" || e.code === "auth/invalid-credential" || e.code === "auth/wrong-password") {
-        // Check if this email belongs to a Google auth account
         try {
           var snap = await getDocs(query(collection(db, "usuarios"), where("email", "==", email.trim())));
           if (!snap.empty) {
             var userData = snap.docs[0].data();
-            if (userData.authProvider === "google") {
-              setErr("google-hint");
-              setLd(false);
-              return;
-            }
+            if (userData.authProvider === "google") { setErr("google-hint"); setLd(false); return; }
           }
-        } catch(qe){}
-        setErr("Email o contrase\u00f1a incorrectos.");
-      }
-      else if (e.code === "auth/too-many-requests") setErr("Demasiados intentos. Esper\u00e1 unos minutos.");
-      else setErr("Error: " + e.message);
+        } catch(e2){}
+        setErr("Email o contraseña incorrectos.");
+      } else { setErr("Error: " + e.message); }
+      setLd(false);
     }
-    setLd(false);
   };
 
   var handleRegister = async function(ev) {
     ev.preventDefault(); setLd(true); setErr(""); setInfo("");
-    if (pass.length < 6) { setErr("La contraseña debe tener al menos 6 caracteres."); setLd(false); return; }
     if (pass !== pass2) { setErr("Las contraseñas no coinciden."); setLd(false); return; }
+    if (pass.length < 6) { setErr("La contraseña debe tener al menos 6 caracteres."); setLd(false); return; }
     try {
       var cred = await createUserWithEmailAndPassword(auth, email.trim(), pass);
-      await setDoc(doc(db, "usuarios", cred.user.uid), { email: email.trim(), authProvider: "email", creditos: 5, role: "user", profileComplete: false, createdAt: new Date().toISOString() });
       await sendEmailVerification(cred.user);
-      setInfo("Se envió un email de verificación a " + email.trim() + ". Revisá tu bandeja (y spam).");
+      await setDoc(doc(db, "usuarios", cred.user.uid), { email: email.trim(), nombre: "", apellido: "", username: "", dni: "", creditos: 5, role: "user", profileComplete: false, authProvider: "email", createdAt: new Date().toISOString() });
+      setInfo("Cuenta creada. Revisá tu email para verificar.");
     } catch (e) {
-      if (e.code === "auth/email-already-in-use") setErr("Ya existe una cuenta con ese email.");
-      else if (e.code === "auth/invalid-email") setErr("Email inválido.");
+      if (e.code === "auth/email-already-in-use") setErr("Ya existe una cuenta con este email.");
+      else if (e.code === "auth/weak-password") setErr("La contraseña es muy débil.");
       else setErr("Error: " + e.message);
     }
     setLd(false);
@@ -129,87 +121,86 @@ export default function AuthScreen({ onDone, themeColor }) {
     setLd(false);
   };
 
-  var eyeBtn = function(isVisible, toggle) {
-    return <button type="button" onClick={function(){ toggle(!isVisible); }} style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",cursor:"pointer",color:"#94a3b8",display:"flex",alignItems:"center",padding:2}}><EyeIcon open={isVisible} /></button>;
-  };
-
-  var versionText = "Brújula KIT v" + appVersion;
-
   return (
-    <div style={{width:"100vw",height:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:themeColor||"#0a3d2f",fontFamily:"'DM Sans',system-ui,sans-serif"}}>
-      <div style={{background:"rgba(255,255,255,.97)",borderRadius:16,padding:"40px 36px",width:420,maxWidth:"92vw",boxShadow:"0 20px 50px rgba(0,0,0,.3)"}}>
-        <div style={{textAlign:"center",marginBottom:24}}>
-          <div style={{display:"inline-flex",alignItems:"center",gap:9,marginBottom:6}}><img src="/img/logo_96.png" style={{width:36,height:36}} alt="logo" /><span style={{fontSize:26,fontWeight:700,color:"#0a3d2f"}}>{"Brújula KIT"}</span></div>
-          <p style={{color:"#64748b",fontSize:13}}>{"Sistema Integral de Evaluación Fonoaudiológica"}</p>
+    <div className="auth-wrapper" style={themeColor ? {background:themeColor} : undefined}>
+      <div className="auth-card">
+        <div className="auth-header">
+          <div className="auth-logo"><img src="/img/logo_96.png" alt="logo" /><span className="auth-logo-text">{"Brújula KIT"}</span></div>
+          <p className="auth-subtitle">{"Sistema Integral de Evaluación Fonoaudiológica"}</p>
         </div>
 
-        <div style={{display:"flex",marginBottom:18,borderRadius:8,overflow:"hidden",border:"1px solid #e2e8f0"}}>
+        <div className="auth-tabs">
           {[["login","Iniciar sesión"],["register","Crear cuenta"]].map(function(x){
-            return <button key={x[0]} onClick={function(){setMode(x[0]);setErr("");setInfo("");setShowReset(false);setPass("");setPass2("");setShowPass(false);setShowPass2(false);}} style={{flex:1,padding:"10px",border:"none",background:mode===x[0]?"#0d9488":"#f8faf9",color:mode===x[0]?"#fff":"#64748b",fontSize:13,fontWeight:600,cursor:"pointer"}}>{x[1]}</button>;
+            return <button key={x[0]} onClick={function(){setMode(x[0]);setErr("");setInfo("");setShowReset(false);setPass("");setPass2("");setShowPass(false);setShowPass2(false);}} className={"auth-tab "+(mode===x[0]?"auth-tab--active":"auth-tab--inactive")}>{x[1]}</button>;
           })}
         </div>
 
-        <button onClick={handleGoogleSignIn} disabled={ld} style={{width:"100%",padding:"12px",background:"#fff",border:"1px solid #e2e8f0",borderRadius:8,fontSize:14,fontWeight:600,cursor:ld?"wait":"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:10,marginBottom:16,color:"#334155"}}>
+        <button onClick={handleGoogleSignIn} disabled={ld} className="auth-google-btn">
           <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
           {mode === "login" ? "Continuar con Google" : "Registrarse con Google"}
         </button>
 
-        <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:16}}>
-          <div style={{flex:1,height:1,background:"#e2e8f0"}}></div>
-          <span style={{fontSize:11,color:"#94a3b8"}}>o con email</span>
-          <div style={{flex:1,height:1,background:"#e2e8f0"}}></div>
+        <div className="auth-divider">
+          <div className="auth-divider-line"></div>
+          <span className="auth-divider-text">o con email</span>
+          <div className="auth-divider-line"></div>
         </div>
 
         {showReset ? <div>
-          <div style={{fontSize:14,fontWeight:600,marginBottom:10,color:"#0a3d2f"}}>{"Recuperar contraseña"}</div>
+          <div className="auth-reset-title">{"Recuperar contraseña"}</div>
           <form onSubmit={handleResetPassword}>
-            <div style={{marginBottom:14}}><input type="email" value={resetEmail} onChange={function(e){setResetEmail(e.target.value)}} style={I} placeholder="Tu email de registro" required/></div>
-            {err&&<div style={{background:"#fef2f2",border:"1px solid #fecaca",color:"#dc2626",padding:"10px 12px",borderRadius:8,fontSize:12,marginBottom:14}}>{err}</div>}
-            {info&&<div style={{background:"#f0fdf4",border:"1px solid #bbf7d0",color:"#059669",padding:"10px 12px",borderRadius:8,fontSize:12,marginBottom:14}}>{info}</div>}
-            <button type="submit" disabled={ld} style={{width:"100%",padding:"12px",background:"#0d9488",color:"#fff",border:"none",borderRadius:8,fontSize:14,fontWeight:600,cursor:ld?"wait":"pointer",marginBottom:10}}>Enviar enlace de recuperación</button>
-            <button type="button" onClick={function(){setShowReset(false);setErr("");setInfo("")}} style={{width:"100%",padding:"10px",background:"#f1f5f9",border:"none",borderRadius:8,fontSize:13,cursor:"pointer",color:"#64748b"}}>Volver</button>
+            <div className="auth-field"><input type="email" value={resetEmail} onChange={function(e){setResetEmail(e.target.value)}} className="auth-input" placeholder="Tu email de registro" required/></div>
+            {err && <div className="auth-error">{err}</div>}
+            {info && <div className="auth-success">{info}</div>}
+            <button type="submit" disabled={ld} className="auth-submit" style={{marginBottom:10}}>Enviar enlace de recuperación</button>
+            <button type="button" onClick={function(){setShowReset(false);setErr("");setInfo("")}} className="auth-reset-back">Volver</button>
           </form>
         </div> : <form onSubmit={mode==="login"?handleLogin:handleRegister}>
-          <div style={{marginBottom:14}}><label style={{fontSize:12,fontWeight:600,color:"#64748b",display:"block",marginBottom:5}}>Email</label><input type="email" value={email} onChange={function(e){setEmail(e.target.value)}} style={I} placeholder="correo@ejemplo.com" required/></div>
-          <div style={{marginBottom:mode==="register"?8:8}}><label style={{fontSize:12,fontWeight:600,color:"#64748b",display:"block",marginBottom:5}}>{"Contraseña"}</label>
-            <div style={{position:"relative"}}>
-              <input type={showPass?"text":"password"} value={pass} onChange={function(e){setPass(e.target.value)}} style={Object.assign({},I,{paddingRight:42})} placeholder={mode==="register"?"Mínimo 6 caracteres":"Tu contraseña"} required/>
-              {eyeBtn(showPass, setShowPass)}
+          <div className="auth-field">
+            <label className="auth-label">Email</label>
+            <input type="email" value={email} onChange={function(e){setEmail(e.target.value)}} className="auth-input" placeholder="correo@ejemplo.com" required/>
+          </div>
+          <div className="auth-field">
+            <label className="auth-label">{"Contraseña"}</label>
+            <div className="auth-pass-wrapper">
+              <input type={showPass?"text":"password"} value={pass} onChange={function(e){setPass(e.target.value)}} className="auth-input" placeholder={mode==="register"?"Mínimo 6 caracteres":"Tu contraseña"} required/>
+              <button type="button" onClick={function(){ setShowPass(!showPass); }} className="auth-eye-btn"><EyeIcon open={showPass} /></button>
             </div>
           </div>
-          {mode==="register" && pass.length > 0 && <div style={{marginBottom:8}}>
-            <div style={{display:"flex",gap:3,marginBottom:4}}>
-              {[1,2,3,4].map(function(i){ return <div key={i} style={{flex:1,height:4,borderRadius:2,background:strength.level>=i?strength.color:"#e2e8f0",transition:"background .2s"}}></div>; })}
+          {mode==="register" && pass.length > 0 && <div className="auth-strength">
+            <div className="auth-strength-bars">
+              {[1,2,3,4].map(function(i){ return <div key={i} className="auth-strength-bar" style={{background:strength.level>=i?strength.color:undefined}}></div>; })}
             </div>
-            {strength.label && <div style={{fontSize:11,fontWeight:600,color:strength.color}}>{strength.label}</div>}
+            {strength.label && <div className="auth-strength-label" style={{color:strength.color}}>{strength.label}</div>}
           </div>}
-          {mode==="register" && <div style={{marginBottom:14}}><label style={{fontSize:12,fontWeight:600,color:"#64748b",display:"block",marginBottom:5}}>{"Confirmar contraseña"}</label>
-            <div style={{position:"relative"}}>
-              <input type={showPass2?"text":"password"} value={pass2} onChange={function(e){setPass2(e.target.value)}} style={Object.assign({},I,{paddingRight:42,borderColor:pass2.length>0&&pass!==pass2?"#dc2626":"#e2e8f0"})} placeholder="Repetí tu contraseña" required/>
-              {eyeBtn(showPass2, setShowPass2)}
+          {mode==="register" && <div className="auth-field">
+            <label className="auth-label">{"Confirmar contraseña"}</label>
+            <div className="auth-pass-wrapper">
+              <input type={showPass2?"text":"password"} value={pass2} onChange={function(e){setPass2(e.target.value)}} className={"auth-input"+(pass2.length>0&&pass!==pass2?" auth-input--error":"")} placeholder="Repetí tu contraseña" required/>
+              <button type="button" onClick={function(){ setShowPass2(!showPass2); }} className="auth-eye-btn"><EyeIcon open={showPass2} /></button>
             </div>
-            {pass2.length > 0 && pass !== pass2 && <div style={{fontSize:11,color:"#dc2626",marginTop:4,fontWeight:600}}>{"Las contraseñas no coinciden"}</div>}
-            {pass2.length > 0 && pass === pass2 && <div style={{fontSize:11,color:"#059669",marginTop:4,fontWeight:600}}>{"Las contraseñas coinciden ✓"}</div>}
+            {pass2.length > 0 && pass !== pass2 && <div className="auth-match auth-match--err">{"Las contraseñas no coinciden"}</div>}
+            {pass2.length > 0 && pass === pass2 && <div className="auth-match auth-match--ok">{"Las contraseñas coinciden \u2713"}</div>}
           </div>}
-          {mode==="login" && <div style={{marginBottom:14}}><button type="button" onClick={function(){setShowReset(true);setResetEmail(email);setErr("");setInfo("")}} style={{background:"none",border:"none",color:"#0d9488",fontSize:12,fontWeight:600,cursor:"pointer",padding:0}}>{"¿Olvidaste tu contrase\u00f1a?"}</button></div>}
-          {err && err === "google-hint" ? <div style={{background:"#eff6ff",border:"1px solid #bfdbfe",borderRadius:12,padding:"14px 16px",marginBottom:14,textAlign:"center"}}>
-            <div style={{fontSize:24,marginBottom:4}}>{"\u2b06\ufe0f"}</div>
-            <div style={{fontSize:13,fontWeight:700,color:"#1e40af",marginBottom:4}}>{"Debe iniciar sesi\u00f3n con Google"}</div>
-            <div style={{fontSize:12,color:"#3b82f6"}}>{"Esta cuenta fue creada con Google. Us\u00e1 el bot\u00f3n de arriba."}</div>
-          </div> : err && <div style={{background:"#fef2f2",border:"1px solid #fecaca",color:"#dc2626",padding:"10px 12px",borderRadius:8,fontSize:12,marginBottom:14}}>{err}</div>}
-          {info&&<div style={{background:"#f0fdf4",border:"1px solid #bbf7d0",color:"#059669",padding:"10px 12px",borderRadius:8,fontSize:12,marginBottom:14}}>{info}</div>}
-          <button type="submit" disabled={ld || (mode==="register" && pass !== pass2)} style={{width:"100%",padding:"13px",background:"#0d9488",color:"#fff",border:"none",borderRadius:8,fontSize:15,fontWeight:600,cursor:ld?"wait":"pointer",opacity:(ld || (mode==="register" && pass2.length>0 && pass!==pass2))?.7:1}}>
+          {mode==="login" && <div className="auth-field"><button type="button" onClick={function(){setShowReset(true);setResetEmail(email);setErr("");setInfo("")}} className="auth-forgot">{"\u00bfOlvidaste tu contrase\u00f1a?"}</button></div>}
+          {err && err === "google-hint" ? <div className="auth-google-hint">
+            <div className="auth-google-hint-icon">{"\u2b06\ufe0f"}</div>
+            <div className="auth-google-hint-title">{"Debe iniciar sesi\u00f3n con Google"}</div>
+            <div className="auth-google-hint-text">{"Esta cuenta fue creada con Google. Us\u00e1 el bot\u00f3n de arriba."}</div>
+          </div> : err && <div className="auth-error">{err}</div>}
+          {info && <div className="auth-success">{info}</div>}
+          <button type="submit" disabled={ld || (mode==="register" && pass !== pass2)} className="auth-submit" style={{opacity:(ld || (mode==="register" && pass2.length>0 && pass!==pass2))?.7:1}}>
             {ld?"Procesando...":mode==="login"?"Iniciar sesión":"Crear cuenta"}
           </button>
         </form>}
 
-        <p style={{textAlign:"center",marginTop:14,fontSize:10,color:"#94a3b8",lineHeight:1.6}}>
+        <p className="auth-footer">
           {"Al registrarte, aceptás los "}
-          <a href="/politicas.html" target="_blank" rel="noopener noreferrer" style={{color:"#0d9488",textDecoration:"none",fontWeight:600}}>{"Términos y Condiciones"}</a>
+          <a href="/politicas.html" target="_blank" rel="noopener noreferrer">{"Términos y Condiciones"}</a>
           {" y la "}
-          <a href="/politicas.html#privacidad" target="_blank" rel="noopener noreferrer" style={{color:"#0d9488",textDecoration:"none",fontWeight:600}}>{"Política de Privacidad"}</a>
+          <a href="/politicas.html#privacidad" target="_blank" rel="noopener noreferrer">{"Política de Privacidad"}</a>
         </p>
-        <p style={{textAlign:"center",marginTop:4,fontSize:10,color:"#cbd5e1"}}>{versionText}</p>
+        <p className="auth-version">{"Brújula KIT v" + appVersion}</p>
       </div>
     </div>
   );
