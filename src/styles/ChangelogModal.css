@@ -1,0 +1,141 @@
+/* ChangelogModal.css — modal de changelog al usuario */
+
+.clm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(6px);
+  animation: fi 0.2s ease;
+}
+
+.clm-card {
+  background: var(--c-surface);
+  border-radius: 20px;
+  width: 560px;
+  max-width: 92vw;
+  max-height: 85vh;
+  overflow: hidden;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+}
+
+.clm-header {
+  background: linear-gradient(135deg, #f0fdfa, #ccfbf1);
+  padding: 32px 32px 24px;
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.clm-compass {
+  position: absolute;
+  right: -20px;
+  top: -10px;
+  width: 180px;
+  height: 180px;
+  transform: rotate(-20deg);
+  opacity: 1;
+}
+
+.clm-header-content {
+  position: relative;
+  z-index: 1;
+}
+
+.clm-kicker {
+  font-size: 11px;
+  font-weight: var(--fw-bold);
+  color: var(--c-accent);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  margin-bottom: 6px;
+}
+
+.clm-title {
+  font-size: var(--fs-2xl);
+  font-weight: 800;
+  color: var(--c-primary);
+  line-height: 1.3;
+}
+
+.clm-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 32px 8px;
+}
+
+.clm-item {
+  margin-bottom: 20px;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.clm-item--with-divider {
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--c-border-light);
+}
+
+.clm-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.clm-version {
+  background: var(--c-accent);
+  color: #fff;
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: var(--fw-bold);
+}
+
+.clm-date {
+  font-size: 11px;
+  color: var(--c-text-faint);
+}
+
+.clm-item-title {
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-bold);
+  color: var(--c-primary);
+  margin-bottom: 2px;
+}
+
+.clm-item-subtitle {
+  font-size: var(--fs-base);
+  color: var(--c-text-secondary);
+  margin-bottom: 6px;
+  font-style: italic;
+}
+
+.clm-item-desc {
+  font-size: var(--fs-base);
+  color: var(--c-text);
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
+.clm-footer {
+  padding: 16px 32px 24px;
+  flex-shrink: 0;
+}
+
+.clm-accept-btn {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, var(--c-primary), var(--c-accent));
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: var(--fw-bold);
+  cursor: pointer;
+  transition: all 0.15s;
+}
