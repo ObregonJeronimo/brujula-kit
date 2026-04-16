@@ -1,0 +1,430 @@
+/* ============================================
+   BRÚJULA KIT — NewREP_results
+   ============================================
+   Pantalla de resultados post-evaluación REP.
+   Subcomponente al que delega NewREP.jsx
+   (step 2: resultados ya calculados).
+   ============================================ */
+
+/* ── Banner de guardado OK ── */
+.new-rep-res-saved {
+  background: #dcfce7;
+  border-radius: var(--radius-lg);
+  padding: 12px 18px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.new-rep-res-saved-icon {
+  font-size: var(--fs-xl);
+}
+
+.new-rep-res-saved-text {
+  font-size: var(--fs-base);
+  font-weight: var(--fw-semibold);
+  color: var(--c-success);
+}
+
+/* ── Toggle datos técnicos ── */
+.new-rep-res-tech-toggle {
+  width: 100%;
+  padding: 14px;
+  background: var(--c-primary);
+  color: #fff;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-lg);
+  font-size: var(--fs-md);
+  font-weight: var(--fw-semibold);
+  cursor: pointer;
+  margin-bottom: 20px;
+}
+
+.new-rep-res-tech-toggle.is-open {
+  background: var(--c-surface-hover);
+  color: var(--c-text);
+  margin-bottom: 16px;
+}
+
+/* ── Grid de 3 stat cards ── */
+.new-rep-res-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.new-rep-res-stat {
+  background: var(--c-surface);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--c-border);
+  padding: 20px;
+  text-align: center;
+}
+
+.new-rep-res-stat-pcc {
+  font-size: var(--fs-5xl);
+  font-weight: 800;
+  color: var(--c-accent);
+}
+
+/* Usa --new-rep-res-sev como CSS var local inyectada desde JSX */
+.new-rep-res-stat-sev {
+  --new-rep-res-sev: var(--c-success);
+  font-size: var(--fs-3xl);
+  font-weight: var(--fw-bold);
+  color: var(--new-rep-res-sev);
+}
+
+.new-rep-res-stat-correct {
+  font-size: var(--fs-3xl);
+  font-weight: var(--fw-bold);
+  color: var(--c-primary);
+}
+
+.new-rep-res-stat-label {
+  font-size: var(--fs-sm);
+  color: var(--c-text-muted);
+  font-weight: var(--fw-semibold);
+}
+
+.new-rep-res-stat-sub {
+  font-size: var(--fs-sm);
+  color: var(--c-text-muted);
+}
+
+/* ── Card genérica de sección ── */
+.new-rep-res-card {
+  background: var(--c-surface);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--c-border);
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.new-rep-res-card-title {
+  font-size: var(--fs-md);
+  font-weight: var(--fw-bold);
+  margin-bottom: 12px;
+}
+
+/* ── Distribución por posición (grid 4 cols) ── */
+.new-rep-res-pos-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 10px;
+}
+
+.new-rep-res-pos {
+  background: var(--c-surface-alt);
+  border-radius: var(--radius-lg);
+  padding: 14px;
+  text-align: center;
+  border: 1px solid var(--c-border);
+}
+
+.new-rep-res-pos-label {
+  font-size: var(--fs-base);
+  font-weight: var(--fw-bold);
+  color: var(--c-accent);
+  margin-bottom: 4px;
+}
+
+.new-rep-res-pos-full {
+  font-size: var(--fs-xs);
+  color: var(--c-text-muted);
+  margin-bottom: 8px;
+}
+
+/* Usa --new-rep-res-pos-clr como CSS var local inyectada desde JSX */
+.new-rep-res-pos-pct {
+  --new-rep-res-pos-clr: var(--c-success);
+  font-size: 22px;
+  font-weight: var(--fw-bold);
+  color: var(--new-rep-res-pos-clr);
+}
+
+.new-rep-res-pos-count {
+  font-size: var(--fs-sm);
+  color: var(--c-text-muted);
+}
+
+.new-rep-res-pos-empty {
+  font-size: var(--fs-sm);
+  color: #cbd5e1;
+}
+
+/* ── Tablas genéricas ── */
+.new-rep-res-tbl {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-base);
+}
+
+.new-rep-res-tbl--sm {
+  font-size: var(--fs-sm);
+}
+
+.new-rep-res-tbl thead tr {
+  border-bottom: 2px solid var(--c-border);
+}
+
+.new-rep-res-tbl thead tr.has-err-bg {
+  background: var(--c-error-light);
+}
+
+.new-rep-res-tbl th {
+  padding: 8px;
+  color: var(--c-text-muted);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+}
+
+.new-rep-res-tbl th.is-left {
+  text-align: left;
+}
+
+.new-rep-res-tbl th.is-center {
+  text-align: center;
+}
+
+.new-rep-res-tbl th.is-sm-pad {
+  padding: 6px 8px;
+}
+
+.new-rep-res-tbl th.is-xs-pad {
+  padding: 6px;
+}
+
+.new-rep-res-tbl th.is-ok-color {
+  color: var(--c-success);
+}
+
+.new-rep-res-tbl th.is-err-color {
+  color: var(--c-error);
+}
+
+.new-rep-res-tbl tbody tr {
+  border-bottom: 1px solid var(--c-border-light);
+}
+
+.new-rep-res-tbl tbody tr.is-err-row {
+  background: var(--c-error-light);
+}
+
+.new-rep-res-tbl tbody tr.is-warn-row {
+  background: #fffbeb;
+}
+
+.new-rep-res-tbl td {
+  padding: 8px;
+}
+
+.new-rep-res-tbl td.is-sm-pad {
+  padding: 6px 8px;
+}
+
+.new-rep-res-tbl td.is-xs-pad {
+  padding: 6px;
+}
+
+.new-rep-res-tbl td.is-center {
+  text-align: center;
+}
+
+.new-rep-res-tbl td.is-bold {
+  font-weight: var(--fw-semibold);
+}
+
+.new-rep-res-tbl td.is-bold-strong {
+  font-weight: var(--fw-bold);
+}
+
+.new-rep-res-tbl td.is-ok {
+  color: var(--c-success);
+  font-weight: var(--fw-semibold);
+}
+
+.new-rep-res-tbl td.is-err {
+  color: var(--c-error);
+  font-weight: var(--fw-semibold);
+}
+
+.new-rep-res-tbl td.is-neutral {
+  color: #d1d5db;
+  font-weight: var(--fw-semibold);
+}
+
+.new-rep-res-tbl td.is-accent {
+  color: var(--c-accent);
+  font-weight: var(--fw-bold);
+}
+
+.new-rep-res-tbl td.is-muted-sm {
+  font-size: var(--fs-sm);
+  color: var(--c-text-muted);
+  font-weight: var(--fw-semibold);
+}
+
+/* ── Badge de porcentaje en tabla de categoría ── */
+.new-rep-res-pct-badge {
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: var(--fs-base);
+  font-weight: var(--fw-semibold);
+}
+
+.new-rep-res-pct-badge.is-good {
+  background: #dcfce7;
+  color: var(--c-success);
+}
+
+.new-rep-res-pct-badge.is-warn {
+  background: #fef3c7;
+  color: var(--c-warning-dark);
+}
+
+.new-rep-res-pct-badge.is-bad {
+  background: var(--c-error-light);
+  color: var(--c-error);
+}
+
+/* ── Badges de estado por fonema ── */
+.new-rep-res-phon-badge {
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: var(--fw-bold);
+}
+
+.new-rep-res-phon-badge.is-altered {
+  background: var(--c-error-light);
+  color: var(--c-error);
+}
+
+.new-rep-res-phon-badge.is-developing {
+  background: #fef3c7;
+  color: var(--c-warning-dark);
+}
+
+.new-rep-res-phon-badge.is-adequate {
+  background: #dcfce7;
+  color: var(--c-success);
+}
+
+/* ── Lista de errores ── */
+.new-rep-res-err-card {
+  background: var(--c-surface);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--c-error-border);
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.new-rep-res-err-title {
+  font-size: var(--fs-md);
+  font-weight: var(--fw-bold);
+  color: var(--c-error);
+  margin-bottom: 12px;
+}
+
+/* ── Fonemas alterados ── */
+.new-rep-res-alt-card {
+  background: var(--c-error-light);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--c-error-border);
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.new-rep-res-alt-title {
+  font-size: var(--fs-md);
+  font-weight: var(--fw-bold);
+  color: var(--c-error);
+  margin-bottom: 8px;
+}
+
+.new-rep-res-alt-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.new-rep-res-alt-chip {
+  background: var(--c-surface);
+  border-radius: var(--radius-md);
+  padding: 8px 14px;
+  border: 1px solid var(--c-error-border);
+}
+
+.new-rep-res-alt-phoneme {
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-lg);
+}
+
+.new-rep-res-alt-count {
+  font-size: var(--fs-sm);
+  color: var(--c-error);
+  margin-left: 6px;
+}
+
+.new-rep-res-alt-words {
+  font-size: 10px;
+  color: var(--c-text-muted);
+  margin-top: 2px;
+}
+
+/* ── Todo adecuado ── */
+.new-rep-res-ok-card {
+  background: #dcfce7;
+  border-radius: var(--radius-xl);
+  padding: 20px;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.new-rep-res-ok-icon {
+  font-size: var(--fs-3xl);
+}
+
+.new-rep-res-ok-text {
+  font-size: var(--fs-md);
+  font-weight: var(--fw-semibold);
+  color: var(--c-success);
+  margin-top: 8px;
+}
+
+/* ── Observaciones ── */
+.new-rep-res-obs-card {
+  background: var(--c-surface);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--c-border);
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.new-rep-res-obs-title {
+  font-size: var(--fs-md);
+  font-weight: var(--fw-semibold);
+  margin-bottom: 6px;
+}
+
+.new-rep-res-obs-text {
+  font-size: var(--fs-base);
+  color: var(--c-text-muted);
+}
+
+/* ── Botón Finalizar ── */
+.new-rep-res-finish {
+  width: 100%;
+  padding: 14px;
+  background: var(--c-accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-lg);
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-bold);
+  cursor: pointer;
+  margin-top: 4px;
+}
