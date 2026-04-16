@@ -3,6 +3,7 @@ import { db, collection, addDoc, getDocs, updateDoc, deleteDoc, doc, query, wher
 import { K, ageLabel } from "../lib/fb.js";
 import { renderReportText } from "../lib/evalUtils.jsx";
 import { getEvalType } from "../config/evalTypes.js";
+import "../styles/PacientesPage.css";
 
 var pad = function(n){ return String(n).padStart(2,"0"); };
 
@@ -19,7 +20,6 @@ function calcAge(birthStr){
   return parts;
 }
 
-var IS = {width:"100%",padding:"10px 14px",border:"1px solid #e2e8f0",borderRadius:8,fontSize:14,background:"#f8faf9"};
 var RESP_TYPES = ["Madre","Padre","Tutor/a","Cuidador/a","Hermano/a","Otro"];
 
 export default function PacientesPage({ TC, userId, nfy, allEvals, therapistInfo }){
@@ -32,19 +32,6 @@ export default function PacientesPage({ TC, userId, nfy, allEvals, therapistInfo
   var _ef = useState({dni:"",nombre:"",colegio:"",fechaNac:"",respNombre:"",respDni:"",respTel:"",respEmail:"",respTipo:"Madre",respTipoOtro:""}), editForm = _ef[0], setEditForm = _ef[1];
   var _sf = useState(false), showForm = _sf[0], setShowForm = _sf[1];
   var _cd = useState(false), confirmDelPac = _cd[0], setConfirmDelPac = _cd[1];
-  var _consolReport = useState(null), consolReport = _consolReport[0], setConsolReport = _consolReport[1];
-  var _consolGen = useState(false), consolGenerating = _consolGen[0], setConsolGenerating = _consolGen[1];
-
-  var generateConsolidated = function(pac){
-    var pacDni = pac.dni || "";
-    var patientEvals = allEvals.filter(function(ev){ return (ev.pacienteDni||ev.dni||"") === pacDni; });
-    if(patientEvals.length === 0){ nfy("No hay evaluaciones para este paciente","er"); return; }
-    setConsolGenerating(true); setConsolReport(null);
-    var summary = patientEvals.map(function(ev){ var t = getEvalType(ev.tipo); return (t?t.fullName:ev.tipo) + " (" + new Date(ev.fechaGuardado||ev.fechaEvaluacion).toLocaleDateString("es-AR") + "): " + JSON.stringify(ev.resultados||{}).substring(0,300); }).join("\n");
-    var evalData = { paciente: pac.nombre, pacienteDni: pac.dni, edadMeses: 0, fechaEvaluacion: new Date().toISOString().split("T")[0], observaciones: "Informe consolidado de " + patientEvals.length + " evaluaciones", resultados: { resumen: summary, cantEvals: patientEvals.length } };
-    if(pac.fechaNac){ var b=new Date(pac.fechaNac),n=new Date(); evalData.edadMeses = (n.getFullYear()-b.getFullYear())*12+(n.getMonth()-b.getMonth()); }
-    fetch("/api/generate-report", { method: "POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ evalData: evalData, evalType: "consolidado", reportMode: "consolidado" }) }).then(function(r){ return r.json(); }).then(function(data){ if(data.success && data.report) setConsolReport(data.report); else nfy("Error al generar: " + (data.error||""),"er"); setConsolGenerating(false); }).catch(function(e){ nfy("Error: " + e.message,"er"); setConsolGenerating(false); });
-  };
 
   var loadPacientes = useCallback(function(){
     if(!userId) return; setLoading(true);
@@ -86,7 +73,7 @@ export default function PacientesPage({ TC, userId, nfy, allEvals, therapistInfo
     setEditForm({ dni: pac.dni||"", nombre: pac.nombre||"", colegio: pac.colegio||"", fechaNac: pac.fechaNac||"", respNombre: r.nombre||"", respDni: r.dni||"", respTel: r.telefono||"", respEmail: r.email||"", respTipo: tipoResp, respTipoOtro: tipoOtro });
     setEditing(true); setConfirmDelPac(false);
   };
-  var openView = function(pac){ setSelected(pac); setEditing(false); setConfirmDelPac(false); setConsolReport(null); };
+  var openView = function(pac){ setSelected(pac); setEditing(false); setConfirmDelPac(false); };
 
   var getLastEval = function(pacDni){ if(!pacDni || !allEvals) return null; var matching = allEvals.filter(function(ev){ return (ev.pacienteDni||ev.dni||"") === pacDni && ev.tipo !== "eldi"; }); if(matching.length === 0) return null; matching.sort(function(a,b){ return (b.fechaGuardado||"").localeCompare(a.fechaGuardado||""); }); return { tipo: (matching[0].tipo||"").toUpperCase(), fecha: matching[0].fechaGuardado || matching[0].fechaEvaluacion || "" }; };
 
@@ -94,117 +81,128 @@ export default function PacientesPage({ TC, userId, nfy, allEvals, therapistInfo
   if(busqueda.trim()){ var q = busqueda.trim().toLowerCase(); var dniQ = q.replace(/\D/g,""); filtered = pacientes.filter(function(p){ if(dniQ && p.dni && p.dni.indexOf(dniQ) === 0) return true; if(p.nombre && p.nombre.toLowerCase().indexOf(q) >= 0) return true; return false; }); }
 
   return (
-    <div style={{animation:"fi .3s ease",width:"100%",maxWidth:900}}>
-      <h1 style={{fontSize:22,fontWeight:700,marginBottom:6}}>{"👧👦 Pacientes"}</h1>
-      <p style={{color:K.mt,fontSize:14,marginBottom:20}}>Gestiona los datos de tus pacientes</p>
+    <div className="pac-page">
+      <h1 className="pac-title">{"👧👦 Pacientes"}</h1>
+      <p className="pac-subtitle">Gestiona los datos de tus pacientes</p>
 
-      {!showForm && !editing && <button onClick={function(){ setShowForm(true); setSelected(null); setConfirmDelPac(false); }} style={{background:(TC&&TC.ac||"#0d9488"),color:"#fff",border:"none",padding:"10px 20px",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer",marginBottom:20}}>+ Nuevo paciente</button>}
+      {!showForm && !editing && <button onClick={function(){ setShowForm(true); setSelected(null); setConfirmDelPac(false); }} className="pac-new-btn">+ Nuevo paciente</button>}
 
-      {showForm && !editing && <div style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",padding:24,marginBottom:20}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}><h3 style={{fontSize:16,fontWeight:700,color:(TC&&TC.sd||"#0a3d2f"),margin:0}}>Nuevo paciente</h3><button onClick={function(){ setShowForm(false); }} style={{background:"none",border:"none",fontSize:18,color:K.mt,cursor:"pointer"}}>×</button></div>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
-          <div><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>DNI (sin puntos)</label><input value={form.dni} onChange={function(e){ setForm(function(p){ return Object.assign({},p,{dni:e.target.value.replace(/\D/g,"").slice(0,8)}); }); }} style={IS} placeholder="Introducir DNI" maxLength={8} inputMode="numeric" /></div>
-          <div><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>Fecha de nacimiento</label><input type="date" value={form.fechaNac} onChange={function(e){ setForm(function(p){ return Object.assign({},p,{fechaNac:e.target.value}); }); }} style={IS} /></div>
-          <div style={{gridColumn:"1/-1"}}><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>Nombre completo</label><input value={form.nombre} onChange={function(e){ setForm(function(p){ return Object.assign({},p,{nombre:e.target.value}); }); }} style={IS} placeholder="Apellido Nombre" /></div>
-          <div style={{gridColumn:"1/-1"}}><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>{"Jard\u00edn / Colegio *"}</label><input value={form.colegio} onChange={function(e){ setForm(function(p){ return Object.assign({},p,{colegio:e.target.value}); }); }} style={IS} placeholder="Establecimiento" /></div>
+      {showForm && !editing && <div className="pac-card">
+        <div className="pac-card-header">
+          <h3 className="pac-card-title">Nuevo paciente</h3>
+          <button onClick={function(){ setShowForm(false); }} className="pac-card-close">×</button>
         </div>
-        <div style={{marginTop:20,paddingTop:18,borderTop:"1px solid #e2e8f0"}}>
-          <h4 style={{fontSize:14,fontWeight:700,color:(TC&&TC.sd||"#0a3d2f"),marginBottom:4}}>{"Información del responsable"}</h4>
-          <p style={{fontSize:11,color:K.mt,marginBottom:14}}>Datos de contacto del adulto responsable del paciente</p>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
-            <div style={{gridColumn:"1/-1"}}><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>{"Nombre y Apellido *"}</label><input value={form.respNombre} onChange={function(e){ setForm(function(p){ return Object.assign({},p,{respNombre:e.target.value}); }); }} style={IS} placeholder="Nombre del responsable" /></div>
-            <div><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>DNI <span style={{fontWeight:400,color:"#94a3b8"}}>(opcional)</span></label><input value={form.respDni} onChange={function(e){ setForm(function(p){ return Object.assign({},p,{respDni:e.target.value.replace(/\D/g,"").slice(0,8)}); }); }} style={IS} placeholder="DNI del responsable" maxLength={8} inputMode="numeric" /></div>
-            <div><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>{"Teléfono"} <span style={{color:"#dc2626"}}>*</span></label><input value={form.respTel} onChange={function(e){ setForm(function(p){ return Object.assign({},p,{respTel:e.target.value}); }); }} style={IS} placeholder="Ej: +54 351 1234567" /></div>
-            <div><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>Email <span style={{fontWeight:400,color:"#94a3b8"}}>(recomendado)</span></label><input type="email" value={form.respEmail} onChange={function(e){ setForm(function(p){ return Object.assign({},p,{respEmail:e.target.value}); }); }} style={IS} placeholder="correo@ejemplo.com" /></div>
-            <div><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>Tipo de responsable</label><select value={form.respTipo} onChange={function(e){ setForm(function(p){ return Object.assign({},p,{respTipo:e.target.value}); }); }} style={Object.assign({},IS,{cursor:"pointer"})}>{RESP_TYPES.map(function(t){ return <option key={t} value={t}>{t}</option>; })}</select></div>
-            {form.respTipo==="Otro"&&<div><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>Especificar</label><input value={form.respTipoOtro} onChange={function(e){ setForm(function(p){ return Object.assign({},p,{respTipoOtro:e.target.value}); }); }} style={IS} placeholder="Tipo de vínculo" /></div>}
+        <div className="pac-grid-2">
+          <div><label className="pac-label">DNI (sin puntos)</label><input value={form.dni} onChange={function(e){ setForm(function(p){ return Object.assign({},p,{dni:e.target.value.replace(/\D/g,"").slice(0,8)}); }); }} className="pac-input" placeholder="Introducir DNI" maxLength={8} inputMode="numeric" /></div>
+          <div><label className="pac-label">Fecha de nacimiento</label><input type="date" value={form.fechaNac} onChange={function(e){ setForm(function(p){ return Object.assign({},p,{fechaNac:e.target.value}); }); }} className="pac-input" /></div>
+          <div className="pac-field-full"><label className="pac-label">Nombre completo</label><input value={form.nombre} onChange={function(e){ setForm(function(p){ return Object.assign({},p,{nombre:e.target.value}); }); }} className="pac-input" placeholder="Apellido Nombre" /></div>
+          <div className="pac-field-full"><label className="pac-label">{"Jard\u00edn / Colegio *"}</label><input value={form.colegio} onChange={function(e){ setForm(function(p){ return Object.assign({},p,{colegio:e.target.value}); }); }} className="pac-input" placeholder="Establecimiento" /></div>
+        </div>
+        <div className="pac-section-divider">
+          <h4 className="pac-section-title">{"Información del responsable"}</h4>
+          <p className="pac-section-desc">Datos de contacto del adulto responsable del paciente</p>
+          <div className="pac-grid-2">
+            <div className="pac-field-full"><label className="pac-label">{"Nombre y Apellido *"}</label><input value={form.respNombre} onChange={function(e){ setForm(function(p){ return Object.assign({},p,{respNombre:e.target.value}); }); }} className="pac-input" placeholder="Nombre del responsable" /></div>
+            <div><label className="pac-label">DNI <span className="pac-label-optional">(opcional)</span></label><input value={form.respDni} onChange={function(e){ setForm(function(p){ return Object.assign({},p,{respDni:e.target.value.replace(/\D/g,"").slice(0,8)}); }); }} className="pac-input" placeholder="DNI del responsable" maxLength={8} inputMode="numeric" /></div>
+            <div><label className="pac-label">{"Teléfono"} <span className="pac-label-required">*</span></label><input value={form.respTel} onChange={function(e){ setForm(function(p){ return Object.assign({},p,{respTel:e.target.value}); }); }} className="pac-input" placeholder="Ej: +54 351 1234567" /></div>
+            <div><label className="pac-label">Email <span className="pac-label-optional">(recomendado)</span></label><input type="email" value={form.respEmail} onChange={function(e){ setForm(function(p){ return Object.assign({},p,{respEmail:e.target.value}); }); }} className="pac-input" placeholder="correo@ejemplo.com" /></div>
+            <div><label className="pac-label">Tipo de responsable</label><select value={form.respTipo} onChange={function(e){ setForm(function(p){ return Object.assign({},p,{respTipo:e.target.value}); }); }} className="pac-input pac-select">{RESP_TYPES.map(function(t){ return <option key={t} value={t}>{t}</option>; })}</select></div>
+            {form.respTipo==="Otro"&&<div><label className="pac-label">Especificar</label><input value={form.respTipoOtro} onChange={function(e){ setForm(function(p){ return Object.assign({},p,{respTipoOtro:e.target.value}); }); }} className="pac-input" placeholder="Tipo de vínculo" /></div>}
           </div>
         </div>
-        <div style={{display:"flex",justifyContent:"flex-end",gap:10,marginTop:18}}>
-          <button onClick={function(){ setShowForm(false); }} style={{background:"#f1f5f9",border:"none",padding:"10px 20px",borderRadius:8,fontSize:14,cursor:"pointer",color:K.mt}}>Cancelar</button>
-          <button onClick={savePaciente} style={{background:(TC&&TC.ac||"#0d9488"),color:"#fff",border:"none",padding:"10px 24px",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer"}}>Guardar</button>
+        <div className="pac-form-actions">
+          <button onClick={function(){ setShowForm(false); }} className="pac-btn-cancel">Cancelar</button>
+          <button onClick={savePaciente} className="pac-btn-primary">Guardar</button>
         </div>
       </div>}
 
-      {editing && selected && <div style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",padding:24,marginBottom:20}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}><h3 style={{fontSize:16,fontWeight:700,color:(TC&&TC.sd||"#0a3d2f"),margin:0}}>Editar paciente</h3><button onClick={function(){ setEditing(false); setSelected(null); }} style={{background:"none",border:"none",fontSize:18,color:K.mt,cursor:"pointer"}}>×</button></div>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
-          <div><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>DNI</label><input value={editForm.dni} onChange={function(e){ setEditForm(function(p){ return Object.assign({},p,{dni:e.target.value.replace(/\D/g,"").slice(0,8)}); }); }} style={IS} maxLength={8} inputMode="numeric" /></div>
-          <div><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>Fecha de nacimiento</label><input type="date" value={editForm.fechaNac} onChange={function(e){ setEditForm(function(p){ return Object.assign({},p,{fechaNac:e.target.value}); }); }} style={IS} /></div>
-          <div style={{gridColumn:"1/-1"}}><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>Nombre completo</label><input value={editForm.nombre} onChange={function(e){ setEditForm(function(p){ return Object.assign({},p,{nombre:e.target.value}); }); }} style={IS} /></div>
-          <div style={{gridColumn:"1/-1"}}><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>{"Jardín / Colegio"}</label><input value={editForm.colegio} onChange={function(e){ setEditForm(function(p){ return Object.assign({},p,{colegio:e.target.value}); }); }} style={IS} /></div>
+      {editing && selected && <div className="pac-card">
+        <div className="pac-card-header">
+          <h3 className="pac-card-title">Editar paciente</h3>
+          <button onClick={function(){ setEditing(false); setSelected(null); }} className="pac-card-close">×</button>
         </div>
-        <div style={{marginTop:20,paddingTop:18,borderTop:"1px solid #e2e8f0"}}>
-          <h4 style={{fontSize:14,fontWeight:700,color:(TC&&TC.sd||"#0a3d2f"),marginBottom:4}}>{"Información del responsable"}</h4>
-          <p style={{fontSize:11,color:K.mt,marginBottom:14}}>Datos de contacto del adulto responsable del paciente</p>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
-            <div style={{gridColumn:"1/-1"}}><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>Nombre y Apellido</label><input value={editForm.respNombre} onChange={function(e){ setEditForm(function(p){ return Object.assign({},p,{respNombre:e.target.value}); }); }} style={IS} placeholder="Nombre del responsable" /></div>
-            <div><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>DNI <span style={{fontWeight:400,color:"#94a3b8"}}>(opcional)</span></label><input value={editForm.respDni} onChange={function(e){ setEditForm(function(p){ return Object.assign({},p,{respDni:e.target.value.replace(/\D/g,"").slice(0,8)}); }); }} style={IS} placeholder="DNI del responsable" maxLength={8} inputMode="numeric" /></div>
-            <div><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>{"Teléfono"}</label><input value={editForm.respTel} onChange={function(e){ setEditForm(function(p){ return Object.assign({},p,{respTel:e.target.value}); }); }} style={IS} placeholder="Ej: +54 351 1234567" /></div>
-            <div><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>Email</label><input type="email" value={editForm.respEmail} onChange={function(e){ setEditForm(function(p){ return Object.assign({},p,{respEmail:e.target.value}); }); }} style={IS} placeholder="correo@ejemplo.com" /></div>
-            <div><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>Tipo de responsable</label><select value={editForm.respTipo} onChange={function(e){ setEditForm(function(p){ return Object.assign({},p,{respTipo:e.target.value}); }); }} style={Object.assign({},IS,{cursor:"pointer"})}>{RESP_TYPES.map(function(t){ return <option key={t} value={t}>{t}</option>; })}</select></div>
-            {editForm.respTipo==="Otro"&&<div><label style={{fontSize:12,fontWeight:600,color:K.mt,display:"block",marginBottom:4}}>Especificar</label><input value={editForm.respTipoOtro} onChange={function(e){ setEditForm(function(p){ return Object.assign({},p,{respTipoOtro:e.target.value}); }); }} style={IS} placeholder="Tipo de vínculo" /></div>}
+        <div className="pac-grid-2">
+          <div><label className="pac-label">DNI</label><input value={editForm.dni} onChange={function(e){ setEditForm(function(p){ return Object.assign({},p,{dni:e.target.value.replace(/\D/g,"").slice(0,8)}); }); }} className="pac-input" maxLength={8} inputMode="numeric" /></div>
+          <div><label className="pac-label">Fecha de nacimiento</label><input type="date" value={editForm.fechaNac} onChange={function(e){ setEditForm(function(p){ return Object.assign({},p,{fechaNac:e.target.value}); }); }} className="pac-input" /></div>
+          <div className="pac-field-full"><label className="pac-label">Nombre completo</label><input value={editForm.nombre} onChange={function(e){ setEditForm(function(p){ return Object.assign({},p,{nombre:e.target.value}); }); }} className="pac-input" /></div>
+          <div className="pac-field-full"><label className="pac-label">{"Jardín / Colegio"}</label><input value={editForm.colegio} onChange={function(e){ setEditForm(function(p){ return Object.assign({},p,{colegio:e.target.value}); }); }} className="pac-input" /></div>
+        </div>
+        <div className="pac-section-divider">
+          <h4 className="pac-section-title">{"Información del responsable"}</h4>
+          <p className="pac-section-desc">Datos de contacto del adulto responsable del paciente</p>
+          <div className="pac-grid-2">
+            <div className="pac-field-full"><label className="pac-label">Nombre y Apellido</label><input value={editForm.respNombre} onChange={function(e){ setEditForm(function(p){ return Object.assign({},p,{respNombre:e.target.value}); }); }} className="pac-input" placeholder="Nombre del responsable" /></div>
+            <div><label className="pac-label">DNI <span className="pac-label-optional">(opcional)</span></label><input value={editForm.respDni} onChange={function(e){ setEditForm(function(p){ return Object.assign({},p,{respDni:e.target.value.replace(/\D/g,"").slice(0,8)}); }); }} className="pac-input" placeholder="DNI del responsable" maxLength={8} inputMode="numeric" /></div>
+            <div><label className="pac-label">{"Teléfono"}</label><input value={editForm.respTel} onChange={function(e){ setEditForm(function(p){ return Object.assign({},p,{respTel:e.target.value}); }); }} className="pac-input" placeholder="Ej: +54 351 1234567" /></div>
+            <div><label className="pac-label">Email</label><input type="email" value={editForm.respEmail} onChange={function(e){ setEditForm(function(p){ return Object.assign({},p,{respEmail:e.target.value}); }); }} className="pac-input" placeholder="correo@ejemplo.com" /></div>
+            <div><label className="pac-label">Tipo de responsable</label><select value={editForm.respTipo} onChange={function(e){ setEditForm(function(p){ return Object.assign({},p,{respTipo:e.target.value}); }); }} className="pac-input pac-select">{RESP_TYPES.map(function(t){ return <option key={t} value={t}>{t}</option>; })}</select></div>
+            {editForm.respTipo==="Otro"&&<div><label className="pac-label">Especificar</label><input value={editForm.respTipoOtro} onChange={function(e){ setEditForm(function(p){ return Object.assign({},p,{respTipoOtro:e.target.value}); }); }} className="pac-input" placeholder="Tipo de vínculo" /></div>}
           </div>
         </div>
-        <div style={{display:"flex",justifyContent:"flex-end",gap:10,marginTop:18}}>
-          <button onClick={function(){ setEditing(false); setSelected(null); }} style={{background:"#f1f5f9",border:"none",padding:"10px 20px",borderRadius:8,fontSize:14,cursor:"pointer",color:K.mt}}>Cancelar</button>
-          <button onClick={updatePaciente} style={{background:(TC&&TC.ac||"#0d9488"),color:"#fff",border:"none",padding:"10px 24px",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer"}}>Actualizar</button>
+        <div className="pac-form-actions">
+          <button onClick={function(){ setEditing(false); setSelected(null); }} className="pac-btn-cancel">Cancelar</button>
+          <button onClick={updatePaciente} className="pac-btn-primary">Actualizar</button>
         </div>
       </div>}
 
-      {selected && !editing && <div style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",padding:24,marginBottom:20}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
-          <h3 style={{fontSize:16,fontWeight:700,color:(TC&&TC.sd||"#0a3d2f"),margin:0}}>Ficha del paciente</h3>
-          <div style={{display:"flex",gap:8}}>
-            <button onClick={function(){ openEdit(selected); }} style={{background:"#f0f9ff",border:"1px solid #bae6fd",borderRadius:6,padding:"6px 14px",fontSize:12,fontWeight:600,cursor:"pointer",color:"#0369a1"}}>Editar</button>
-            <button onClick={function(){ setConfirmDelPac(true); }} style={{background:"#fef2f2",border:"1px solid #fecaca",borderRadius:6,padding:"6px 14px",fontSize:12,fontWeight:600,cursor:"pointer",color:"#dc2626"}}>Eliminar</button>
-            <button onClick={function(){ setSelected(null); setConfirmDelPac(false); }} style={{background:"#f1f5f9",border:"none",padding:"6px 14px",borderRadius:6,fontSize:12,cursor:"pointer",color:K.mt}}>×</button>
+      {selected && !editing && <div className="pac-card">
+        <div className="pac-card-header">
+          <h3 className="pac-card-title">Ficha del paciente</h3>
+          <div className="pac-actions">
+            <button onClick={function(){ openEdit(selected); }} className="pac-btn-edit">Editar</button>
+            <button onClick={function(){ setConfirmDelPac(true); }} className="pac-btn-delete">Eliminar</button>
+            <button onClick={function(){ setSelected(null); setConfirmDelPac(false); }} className="pac-btn-close">×</button>
           </div>
         </div>
-        {confirmDelPac && <div style={{background:"#fef2f2",border:"1px solid #fecaca",borderRadius:10,padding:"14px 20px",marginBottom:16,display:"flex",flexDirection:"column",alignItems:"center",gap:10}}>
-          <div style={{fontSize:13,fontWeight:600,color:"#dc2626",textAlign:"center"}}>{"¿Eliminar este paciente?"}</div>
-          <div style={{display:"flex",gap:8}}><button onClick={deletePaciente} style={{background:"#dc2626",color:"#fff",border:"none",padding:"8px 20px",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer"}}>{"Sí, eliminar"}</button><button onClick={function(){ setConfirmDelPac(false); }} style={{background:"#f1f5f9",border:"1px solid #e2e8f0",padding:"8px 20px",borderRadius:8,fontSize:13,cursor:"pointer",color:"#64748b"}}>Cancelar</button></div>
-        </div>}
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
-          <div><div style={{fontSize:11,fontWeight:600,color:K.mt}}>DNI</div><div style={{fontSize:15,fontWeight:600}}>{selected.dni}</div></div>
-          <div><div style={{fontSize:11,fontWeight:600,color:K.mt}}>Edad</div><div style={{fontSize:15,fontWeight:600}}>{calcAge(selected.fechaNac)}</div></div>
-          <div style={{gridColumn:"1/-1"}}><div style={{fontSize:11,fontWeight:600,color:K.mt}}>Nombre</div><div style={{fontSize:15,fontWeight:600}}>{selected.nombre}</div></div>
-          <div><div style={{fontSize:11,fontWeight:600,color:K.mt}}>Fecha nac.</div><div style={{fontSize:15}}>{selected.fechaNac ? new Date(selected.fechaNac+"T12:00:00").toLocaleDateString("es-AR") : "-"}</div></div>
-          <div><div style={{fontSize:11,fontWeight:600,color:K.mt}}>Colegio</div><div style={{fontSize:15}}>{selected.colegio || "-"}</div></div>
-        </div>
-        {selected.responsable && <div style={{marginTop:16,padding:"14px 16px",background:"#f0f9ff",borderRadius:10,border:"1px solid #bae6fd"}}>
-          <div style={{fontSize:12,fontWeight:700,color:"#0369a1",marginBottom:8}}>Responsable</div>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,fontSize:13}}>
-            <div><span style={{color:K.mt}}>Nombre: </span><b>{selected.responsable.nombre || "-"}</b></div>
-            <div><span style={{color:K.mt}}>Tipo: </span><b>{selected.responsable.tipo || "-"}</b></div>
-            <div><span style={{color:K.mt}}>Tel: </span><b>{selected.responsable.telefono || "-"}</b></div>
-            <div><span style={{color:K.mt}}>Email: </span><b>{selected.responsable.email || "-"}</b></div>
-            {selected.responsable.dni && <div><span style={{color:K.mt}}>DNI: </span><b>{selected.responsable.dni}</b></div>}
+        {confirmDelPac && <div className="pac-confirm-delete">
+          <div className="pac-confirm-msg">{"¿Eliminar este paciente?"}</div>
+          <div className="pac-confirm-actions">
+            <button onClick={deletePaciente} className="pac-btn-confirm-delete">{"Sí, eliminar"}</button>
+            <button onClick={function(){ setConfirmDelPac(false); }} className="pac-btn-confirm-cancel">Cancelar</button>
           </div>
         </div>}
-        {(function(){ var last = getLastEval(selected.dni); if(!last) return <div style={{marginTop:16,padding:"10px 14px",background:"#f8faf9",borderRadius:8,border:"1px solid #e2e8f0",fontSize:12,color:K.mt,fontStyle:"italic"}}>Sin evaluaciones registradas</div>; return <div style={{marginTop:16,padding:"12px 14px",background:"#f0fdf4",borderRadius:8,border:"1px solid #bbf7d0"}}><div style={{fontSize:11,fontWeight:600,color:K.mt,marginBottom:4}}>{"Última evaluación"}</div><div style={{fontSize:14}}><span style={{fontWeight:700,color:(TC&&TC.ac||"#0d9488")}}>{last.tipo}</span>{" - "}{last.fecha ? new Date(last.fecha).toLocaleDateString("es-AR") : "-"}</div></div>; })()}
+        <div className="pac-grid-2">
+          <div><div className="pac-info-label">DNI</div><div className="pac-info-value">{selected.dni}</div></div>
+          <div><div className="pac-info-label">Edad</div><div className="pac-info-value">{calcAge(selected.fechaNac)}</div></div>
+          <div className="pac-field-full"><div className="pac-info-label">Nombre</div><div className="pac-info-value">{selected.nombre}</div></div>
+          <div><div className="pac-info-label">Fecha nac.</div><div className="pac-info-value pac-info-value--normal">{selected.fechaNac ? new Date(selected.fechaNac+"T12:00:00").toLocaleDateString("es-AR") : "-"}</div></div>
+          <div><div className="pac-info-label">Colegio</div><div className="pac-info-value pac-info-value--normal">{selected.colegio || "-"}</div></div>
+        </div>
+        {selected.responsable && <div className="pac-responsable">
+          <div className="pac-responsable-title">Responsable</div>
+          <div className="pac-responsable-grid">
+            <div><span className="pac-responsable-key">Nombre: </span><b>{selected.responsable.nombre || "-"}</b></div>
+            <div><span className="pac-responsable-key">Tipo: </span><b>{selected.responsable.tipo || "-"}</b></div>
+            <div><span className="pac-responsable-key">Tel: </span><b>{selected.responsable.telefono || "-"}</b></div>
+            <div><span className="pac-responsable-key">Email: </span><b>{selected.responsable.email || "-"}</b></div>
+            {selected.responsable.dni && <div><span className="pac-responsable-key">DNI: </span><b>{selected.responsable.dni}</b></div>}
+          </div>
+        </div>}
         {(function(){
-          var pacEvals = allEvals.filter(function(ev){ return (ev.pacienteDni||ev.dni||"") === (selected.dni||""); });
-          if(pacEvals.length < 1) return null;
-          return null;
+          var last = getLastEval(selected.dni);
+          if(!last) return <div className="pac-last-none">Sin evaluaciones registradas</div>;
+          return <div className="pac-last-box">
+            <div className="pac-last-label">{"Última evaluación"}</div>
+            <div style={{fontSize:14}}><span className="pac-last-type">{last.tipo}</span>{" - "}{last.fecha ? new Date(last.fecha).toLocaleDateString("es-AR") : "-"}</div>
+          </div>;
         })()}
       </div>}
 
-      <div style={{marginBottom:16}}><input value={busqueda} onChange={function(e){ setBusqueda(e.target.value); setSelected(null); setEditing(false); setConfirmDelPac(false); }} style={Object.assign({},IS,{background:"#fff",fontSize:15})} placeholder="Buscar por DNI o nombre..." /></div>
+      <div className="pac-search"><input value={busqueda} onChange={function(e){ setBusqueda(e.target.value); setSelected(null); setEditing(false); setConfirmDelPac(false); }} className="pac-input pac-search-input" placeholder="Buscar por DNI o nombre..." /></div>
 
-      {loading ? <div style={{textAlign:"center",padding:20,color:K.mt,fontSize:13}}>Cargando pacientes...</div> : filtered.length === 0 ? <div style={{textAlign:"center",padding:20,color:K.mt,fontSize:13,fontStyle:"italic"}}>{busqueda.trim() ? "No se encontraron pacientes" : "No hay pacientes cargados"}</div> :
-        <div style={{display:"flex",flexDirection:"column",gap:6}}>
+      {loading ? <div className="pac-empty">Cargando pacientes...</div> : filtered.length === 0 ? <div className="pac-empty pac-empty--italic">{busqueda.trim() ? "No se encontraron pacientes" : "No hay pacientes cargados"}</div> :
+        <div className="pac-list">
           {filtered.map(function(pac){
             var isSelected = selected && selected._fbId === pac._fbId && !editing;
             var lastEv = getLastEval(pac.dni);
-            return <div key={pac._fbId} onClick={function(){ openView(pac); }} style={{display:"flex",alignItems:"center",gap:12,padding:"14px 16px",background:isSelected?"#ccfbf1":"#fff",borderRadius:10,border:"1px solid "+(isSelected?"#5eead4":"#e2e8f0"),cursor:"pointer"}}>
-              <div style={{width:40,height:40,borderRadius:10,background:"#f0f9ff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>{"👤"}</div>
-              <div style={{flex:1,minWidth:0}}><div style={{fontWeight:600,fontSize:14}}>{pac.nombre}</div><div style={{fontSize:11,color:K.mt}}>{"DNI: " + pac.dni + " · " + calcAge(pac.fechaNac) + (pac.colegio ? " · " + pac.colegio : "")}</div></div>
-              <div style={{textAlign:"right",flexShrink:0}}>{lastEv ? <div><div style={{fontSize:11,fontWeight:600,color:(TC&&TC.ac||"#0d9488")}}>{lastEv.tipo}</div><div style={{fontSize:10,color:K.mt}}>{lastEv.fecha ? new Date(lastEv.fecha).toLocaleDateString("es-AR") : ""}</div></div> : <div style={{fontSize:10,color:"#cbd5e1",fontStyle:"italic"}}>Sin eval.</div>}</div>
-              <button onClick={function(e){ e.stopPropagation(); openEdit(pac); }} style={{background:"#f0f9ff",border:"1px solid #bae6fd",borderRadius:6,padding:"6px 10px",fontSize:11,fontWeight:600,cursor:"pointer",color:"#0369a1",flexShrink:0}}>Editar</button>
+            return <div key={pac._fbId} onClick={function(){ openView(pac); }} className={"pac-item"+(isSelected?" pac-item--selected":"")}>
+              <div className="pac-item-avatar">{"👤"}</div>
+              <div className="pac-item-info"><div className="pac-item-name">{pac.nombre}</div><div className="pac-item-meta">{"DNI: " + pac.dni + " · " + calcAge(pac.fechaNac) + (pac.colegio ? " · " + pac.colegio : "")}</div></div>
+              <div className="pac-item-right">{lastEv ? <div><div className="pac-item-last-type">{lastEv.tipo}</div><div className="pac-item-last-date">{lastEv.fecha ? new Date(lastEv.fecha).toLocaleDateString("es-AR") : ""}</div></div> : <div className="pac-item-no-eval">Sin eval.</div>}</div>
+              <button onClick={function(e){ e.stopPropagation(); openEdit(pac); }} className="pac-item-edit-btn">Editar</button>
             </div>;
           })}
-          <div style={{textAlign:"center",fontSize:11,color:K.mt,padding:"8px 0"}}>{filtered.length + " paciente" + (filtered.length!==1?"s":"")}</div>
+          <div className="pac-list-count">{filtered.length + " paciente" + (filtered.length!==1?"s":"")}</div>
         </div>}
     </div>
   );
