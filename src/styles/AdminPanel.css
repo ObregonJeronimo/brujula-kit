@@ -153,6 +153,11 @@
   border-radius: 8px;
   display: inline-block;
   position: relative;
+  background: var(--c-error);
+}
+
+.adm-toggle-mini.is-on {
+  background: #059669;
 }
 
 .adm-toggle-mini-knob {
@@ -162,7 +167,12 @@
   background: white;
   position: absolute;
   top: 2px;
+  left: 2px;
   transition: left 0.2s;
+}
+
+.adm-toggle-mini.is-on .adm-toggle-mini-knob {
+  left: 18px;
 }
 
 /* Tool body */
@@ -287,6 +297,11 @@
   cursor: pointer;
   font-size: 10px;
   font-weight: var(--fw-semibold);
+  color: var(--c-error);
+}
+
+.adm-age-inline-btn.is-on {
+  color: #059669;
 }
 
 .adm-edit-actions {
@@ -385,12 +400,22 @@
 
 .adm-alpha-slider {
   flex: 1;
+  accent-color: var(--adm-primary, var(--c-primary));
+}
+
+.adm-alpha-slider--secondary {
+  accent-color: var(--adm-secondary, var(--c-accent));
 }
 
 .adm-alpha-value {
   font-size: 12px;
   font-weight: var(--fw-bold);
   min-width: 35px;
+  color: var(--adm-primary, var(--c-primary));
+}
+
+.adm-alpha-value--secondary {
+  color: var(--adm-secondary, var(--c-accent));
 }
 
 .adm-preview {
@@ -403,6 +428,13 @@
   color: white;
   font-size: 12px;
   font-weight: var(--fw-semibold);
+  background: var(--adm-primary, var(--c-primary));
+  opacity: var(--adm-primary-alpha, 1);
+}
+
+.adm-preview--secondary {
+  background: var(--adm-secondary, var(--c-accent));
+  opacity: var(--adm-secondary-alpha, 1);
 }
 
 .adm-preview-combo {
@@ -421,6 +453,8 @@
   color: white;
   font-size: var(--fs-sm);
   font-weight: var(--fw-semibold);
+  background: var(--adm-primary, var(--c-primary));
+  opacity: var(--adm-primary-alpha, 1);
 }
 
 .adm-preview-content {
@@ -438,6 +472,8 @@
   border-radius: var(--radius);
   font-size: var(--fs-sm);
   font-weight: var(--fw-semibold);
+  background: var(--adm-secondary, var(--c-accent));
+  opacity: var(--adm-secondary-alpha, 1);
 }
 
 .adm-preview-link {
@@ -445,6 +481,8 @@
   border-radius: var(--radius);
   font-size: var(--fs-sm);
   font-weight: var(--fw-semibold);
+  border: 1px solid var(--adm-secondary, var(--c-accent));
+  color: var(--adm-secondary, var(--c-accent));
 }
 
 .adm-save-btn {
@@ -457,6 +495,12 @@
   font-weight: var(--fw-bold);
   cursor: pointer;
   font-family: var(--font-family);
+  background: var(--adm-primary, var(--c-primary));
+}
+
+.adm-save-btn:disabled {
+  opacity: 0.7;
+  cursor: wait;
 }
 
 /* Audios */

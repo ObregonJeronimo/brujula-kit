@@ -122,7 +122,7 @@ export default function AdminPanel({ nfy }) {
                       setToolsConfig(updated);
                       setDoc(doc(db, "config", "tools"), updated).then(function(){ nfy("Edad "+(updated[t.id].showAge?"visible":"oculta"),"ok"); });
                     }} className={"adm-age-toggle-btn "+(cfg.showAge!==false?"adm-age-toggle-btn--on":"adm-age-toggle-btn--off")}>
-                      <span className="adm-toggle-mini" style={{background:cfg.showAge!==false?"#059669":"#dc2626"}}><span className="adm-toggle-mini-knob" style={{left:cfg.showAge!==false?"18px":"2px"}}></span></span>
+                      <span className={"adm-toggle-mini"+(cfg.showAge!==false?" is-on":"")}><span className="adm-toggle-mini-knob"></span></span>
                       {"Edad: "+(cfg.showAge!==false?"visible":"oculta")}
                     </button>
                     <button onClick={function(){
@@ -139,8 +139,8 @@ export default function AdminPanel({ nfy }) {
                     <div>
                       <div className="adm-edit-label-row">
                         <label className="adm-edit-label adm-edit-label--inline">Edad recomendada</label>
-                        <button onClick={function(){ var updated = Object.assign({}, toolsConfig); if(!updated[t.id]) updated[t.id] = { enabled: true }; updated[t.id] = Object.assign({}, updated[t.id], { showAge: !cfg.showAge }); setToolsConfig(updated); setDoc(doc(db, "config", "tools"), updated); }} className="adm-age-inline-btn" style={{color:cfg.showAge!==false?"#059669":"#dc2626"}}>
-                          <span className="adm-toggle-mini" style={{background:cfg.showAge!==false?"#059669":"#dc2626"}}><span className="adm-toggle-mini-knob" style={{left:cfg.showAge!==false?"18px":"2px"}}></span></span>
+                        <button onClick={function(){ var updated = Object.assign({}, toolsConfig); if(!updated[t.id]) updated[t.id] = { enabled: true }; updated[t.id] = Object.assign({}, updated[t.id], { showAge: !cfg.showAge }); setToolsConfig(updated); setDoc(doc(db, "config", "tools"), updated); }} className={"adm-age-inline-btn"+(cfg.showAge!==false?" is-on":"")}>
+                          <span className={"adm-toggle-mini"+(cfg.showAge!==false?" is-on":"")}><span className="adm-toggle-mini-knob"></span></span>
                           {cfg.showAge!==false?"Visible":"Oculta"}
                         </button>
                       </div>
@@ -160,33 +160,38 @@ export default function AdminPanel({ nfy }) {
         </div>
       </div>}
 
-      {tab==="colores" && <div>
+      {tab==="colores" && <div style={{
+        "--adm-primary": themeColors.primary,
+        "--adm-primary-alpha": themeColors.primaryAlpha/100,
+        "--adm-secondary": themeColors.secondary,
+        "--adm-secondary-alpha": themeColors.secondaryAlpha/100
+      }}>
         <p className="adm-desc">{"Personalizá los colores de la aplicación. Los cambios se aplican para todos los usuarios."}</p>
         <div className="adm-colors-card">
           <div className="adm-colors-title">Color Primario</div>
           <div className="adm-colors-desc">{"Sidebar, encabezados principales y botones de acción"}</div>
           <div className="adm-palette">{PALETTE.map(function(p){ var sel = themeColors.primary===p.c; return <button key={p.c} onClick={function(){setThemeColors(function(prev){return Object.assign({},prev,{primary:p.c})})}} title={p.n} className={"adm-palette-swatch"+(sel?" adm-palette-swatch--sel":"")} style={{background:p.c}} />; })}</div>
-          <div className="adm-alpha-row"><span className="adm-alpha-label">Intensidad</span><input type="range" min="30" max="100" value={themeColors.primaryAlpha} onChange={function(e){setThemeColors(function(prev){return Object.assign({},prev,{primaryAlpha:parseInt(e.target.value)})})}} className="adm-alpha-slider" style={{accentColor:themeColors.primary}} /><span className="adm-alpha-value" style={{color:themeColors.primary}}>{themeColors.primaryAlpha+"%"}</span></div>
-          <div className="adm-preview" style={{background:themeColors.primary,opacity:themeColors.primaryAlpha/100}}>Vista previa</div>
+          <div className="adm-alpha-row"><span className="adm-alpha-label">Intensidad</span><input type="range" min="30" max="100" value={themeColors.primaryAlpha} onChange={function(e){setThemeColors(function(prev){return Object.assign({},prev,{primaryAlpha:parseInt(e.target.value)})})}} className="adm-alpha-slider" /><span className="adm-alpha-value">{themeColors.primaryAlpha+"%"}</span></div>
+          <div className="adm-preview">Vista previa</div>
         </div>
         <div className="adm-colors-card">
           <div className="adm-colors-title">Color Secundario</div>
           <div className="adm-colors-desc">Acentos, badges, botones secundarios y enlaces</div>
           <div className="adm-palette">{PALETTE.map(function(p){ var sel = themeColors.secondary===p.c; return <button key={p.c} onClick={function(){setThemeColors(function(prev){return Object.assign({},prev,{secondary:p.c})})}} title={p.n} className={"adm-palette-swatch"+(sel?" adm-palette-swatch--sel":"")} style={{background:p.c}} />; })}</div>
-          <div className="adm-alpha-row"><span className="adm-alpha-label">Intensidad</span><input type="range" min="30" max="100" value={themeColors.secondaryAlpha} onChange={function(e){setThemeColors(function(prev){return Object.assign({},prev,{secondaryAlpha:parseInt(e.target.value)})})}} className="adm-alpha-slider" style={{accentColor:themeColors.secondary}} /><span className="adm-alpha-value" style={{color:themeColors.secondary}}>{themeColors.secondaryAlpha+"%"}</span></div>
-          <div className="adm-preview" style={{background:themeColors.secondary,opacity:themeColors.secondaryAlpha/100}}>Vista previa</div>
+          <div className="adm-alpha-row"><span className="adm-alpha-label">Intensidad</span><input type="range" min="30" max="100" value={themeColors.secondaryAlpha} onChange={function(e){setThemeColors(function(prev){return Object.assign({},prev,{secondaryAlpha:parseInt(e.target.value)})})}} className="adm-alpha-slider adm-alpha-slider--secondary" /><span className="adm-alpha-value adm-alpha-value--secondary">{themeColors.secondaryAlpha+"%"}</span></div>
+          <div className="adm-preview adm-preview--secondary">Vista previa</div>
         </div>
         <div className="adm-colors-card">
           <div className="adm-colors-title adm-colors-title--spaced">Vista previa combinada</div>
           <div className="adm-preview-combo">
-            <div className="adm-preview-sidebar" style={{background:themeColors.primary,opacity:themeColors.primaryAlpha/100}}>Sidebar</div>
+            <div className="adm-preview-sidebar">Sidebar</div>
             <div className="adm-preview-content">
-              <div className="adm-preview-btn" style={{background:themeColors.secondary,opacity:themeColors.secondaryAlpha/100}}>{"Botón"}</div>
-              <div className="adm-preview-link" style={{border:"1px solid "+themeColors.secondary,color:themeColors.secondary}}>Enlace</div>
+              <div className="adm-preview-btn">{"Botón"}</div>
+              <div className="adm-preview-link">Enlace</div>
             </div>
           </div>
         </div>
-        <button onClick={saveTheme} disabled={themeSaving} className="adm-save-btn" style={{background:themeColors.primary,opacity:themeSaving?.7:1,cursor:themeSaving?"wait":"pointer"}}>
+        <button onClick={saveTheme} disabled={themeSaving} className="adm-save-btn">
           {themeSaving ? "Guardando..." : "Guardar colores"}
         </button>
       </div>}
