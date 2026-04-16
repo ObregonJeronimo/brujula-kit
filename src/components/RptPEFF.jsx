@@ -1,9 +1,10 @@
+import "../styles/RptPEFF.css";
 import { useState } from "react";
 import { ALL_PROCESSES } from "../data/peffProcesos.js";
 import { PEFF_SECTIONS } from "../data/peffSections.js";
 import { openDetailPdf, openSummaryPdf } from "./RptPEFF_pdf.js";
 import AIReportPanel from "./AIReportPanel.jsx";
-import { K, ageLabel } from "../lib/fb.js";
+import { ageLabel } from "../lib/fb.js";
 
 var sevDesc = {
   "Adecuado":"El ni\u00f1o/a produce correctamente todos o casi todos los fonemas esperados para su edad.",
@@ -26,76 +27,82 @@ export default function RptPEFF({ev,onD,therapistInfo}){
   var sc = sevColor[sev]||"#7c3aed";
 
   var renderProcSection = function(){
-    if(!pa||pa.total===0) return <div style={{background:"#f0fdf4",border:"1px solid #bbf7d0",borderRadius:10,padding:20,marginBottom:20}}>
-      <div style={{fontSize:14,fontWeight:600,color:"#059669"}}>{"\u2713 Sin procesos fonol\u00f3gicos registrados"}</div>
+    if(!pa||pa.total===0) return <div className="rpt-peff-proc-empty">
+      <div className="rpt-peff-proc-empty-text">{"\u2713 Sin procesos fonol\u00f3gicos registrados"}</div>
     </div>;
     var ageExpected = pa.errors ? pa.errors.filter(function(e){return ev.edadMeses>0 && e.expectedAge<ev.edadMeses}) : [];
-    return <div style={{marginTop:28}}>
-      <h3 style={{fontSize:16,fontWeight:700,color:"#5b21b6",marginBottom:12}}>{"Procesos Fonol\u00f3gicos ("+pa.total+")"}</h3>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10,marginBottom:16}}>
+    return <div className="rpt-peff-proc">
+      <h3 className="rpt-peff-proc-h3">{"Procesos Fonol\u00f3gicos ("+pa.total+")"}</h3>
+      <div className="rpt-peff-cat-grid">
         {Object.entries(catNames).map(function(entry){
           var id=entry[0],name=entry[1]; var c=(pa.byCategory&&pa.byCategory[id])||0;
-          return <div key={id} style={{background:"#f8faf9",borderRadius:10,padding:16,border:"2px solid "+(c>0?catColors[id]:"#e2e8f0"),textAlign:"center"}}>
-            <div style={{fontSize:28,fontWeight:700,color:c>0?catColors[id]:"#cbd5e1"}}>{c}</div>
-            <div style={{fontSize:11,color:K.mt,marginTop:2}}>{name}</div>
+          var catStyle = c>0 ? { "--rpt-peff-cat-color": catColors[id] } : undefined;
+          return <div key={id} className={"rpt-peff-cat"+(c>0?" is-active":"")} style={catStyle}>
+            <div className="rpt-peff-cat-val">{c}</div>
+            <div className="rpt-peff-cat-name">{name}</div>
           </div>;
         })}
       </div>
-      {pa.errors&&pa.errors.length>0&&<div style={{background:"#fff",border:"1px solid #e2e8f0",borderRadius:10,overflow:"hidden",marginBottom:16}}>
-        <div style={{background:"#f8faf9",padding:"10px 16px",fontSize:12,fontWeight:700,color:K.mt,display:"grid",gridTemplateColumns:"60px 80px 1fr 1fr",gap:8}}>
+      {pa.errors&&pa.errors.length>0&&<div className="rpt-peff-proc-table">
+        <div className="rpt-peff-proc-thead">
           <span>{"S\u00edlaba"}</span><span>{"Producc."}</span><span>{"Proceso"}</span><span>{"Cat."}</span>
         </div>
         {pa.errors.map(function(e,i){
-          return <div key={i} style={{padding:"8px 16px",fontSize:13,display:"grid",gridTemplateColumns:"60px 80px 1fr 1fr",gap:8,borderTop:"1px solid #f1f5f9",background:ev.edadMeses>0&&e.expectedAge<ev.edadMeses?"#fef2f2":"#fff"}}>
-            <span style={{fontWeight:700,color:"#7c3aed"}}>{e.word}</span>
-            <span style={{color:"#dc2626",fontWeight:600}}>{e.produccion||"\u2014"}</span>
-            <span style={{fontSize:12}}>{e.procesoName}</span>
-            <span style={{fontSize:11,color:catColors[e.category],fontWeight:600}}>{e.categoryTitle}</span>
+          var isUnexpected = ev.edadMeses>0 && e.expectedAge<ev.edadMeses;
+          var catStyle = { "--rpt-peff-proc-cat-color": catColors[e.category] };
+          return <div key={i} className={"rpt-peff-proc-row"+(isUnexpected?" is-unexpected":"")}>
+            <span className="rpt-peff-proc-sil">{e.word}</span>
+            <span className="rpt-peff-proc-prod">{e.produccion||"\u2014"}</span>
+            <span className="rpt-peff-proc-name">{e.procesoName}</span>
+            <span className="rpt-peff-proc-cat" style={catStyle}>{e.categoryTitle}</span>
           </div>;
         })}
       </div>}
-      {ageExpected.length>0&&<div style={{background:"#fef3c7",border:"1px solid #fde68a",borderRadius:10,padding:16,marginBottom:16}}>
-        <div style={{fontSize:13,fontWeight:700,color:"#92400e",marginBottom:6}}>{"\u26a0 No esperados ("+ageLabel(ev.edadMeses)+")"}</div>
-        <div style={{fontSize:12,color:"#78350f"}}>{ageExpected.map(function(e){return e.procesoName+" (esperable hasta "+ageLabel(e.expectedAge)+")"}).filter(function(v,i,a){return a.indexOf(v)===i}).join("; ")}</div>
+      {ageExpected.length>0&&<div className="rpt-peff-unexp">
+        <div className="rpt-peff-unexp-title">{"\u26a0 No esperados ("+ageLabel(ev.edadMeses)+")"}</div>
+        <div className="rpt-peff-unexp-text">{ageExpected.map(function(e){return e.procesoName+" (esperable hasta "+ageLabel(e.expectedAge)+")"}).filter(function(v,i,a){return a.indexOf(v)===i}).join("; ")}</div>
       </div>}
       {pa.byProcess&&(function(){
         var sorted = Object.entries(pa.byProcess).sort(function(a,b){return b[1]-a[1]});
         if(sorted.length===0) return null;
         var top = sorted.slice(0,3).map(function(entry){var p=ALL_PROCESSES.find(function(x){return x.id===entry[0]});return(p?p.name:entry[0])+" ("+entry[1]+")"});
-        return <div style={{background:"#ede9fe",borderRadius:10,padding:16}}>
-          <div style={{fontSize:13,fontWeight:700,color:"#5b21b6",marginBottom:4}}>{"Predominantes"}</div>
-          <div style={{fontSize:13,color:"#3b0764"}}>{top.join(", ")}</div>
+        return <div className="rpt-peff-predom">
+          <div className="rpt-peff-predom-title">{"Predominantes"}</div>
+          <div className="rpt-peff-predom-text">{top.join(", ")}</div>
         </div>;
       })()}
     </div>;
   };
 
   var RC = function(props){
-    return <div style={{background:"#f8faf9",borderRadius:12,padding:20,border:"1px solid #e2e8f0"}}>
-      <div style={{fontSize:13,fontWeight:700,color:"#1e293b",marginBottom:4}}>{props.title}</div>
-      <div style={{fontSize:11,color:K.mt,marginBottom:10,lineHeight:1.5}}>{props.desc}</div>
-      <div style={{fontSize:30,fontWeight:700,color:props.color||"#7c3aed",textAlign:"center"}}>{props.ok}<span style={{fontSize:15,color:K.mt}}>{"/"+props.total}</span></div>
-      {props.pct!==undefined&&props.pct>0&&<div style={{textAlign:"center",fontSize:12,color:K.mt,marginTop:4}}>{props.pct+"% correcto"}</div>}
+    var rcStyle = props.color ? { "--rpt-peff-rc-color": props.color } : undefined;
+    return <div className="rpt-peff-rc" style={rcStyle}>
+      <div className="rpt-peff-rc-title">{props.title}</div>
+      <div className="rpt-peff-rc-desc">{props.desc}</div>
+      <div className="rpt-peff-rc-val">{props.ok}<span className="rpt-peff-rc-frac">{"/"+props.total}</span></div>
+      {props.pct!==undefined&&props.pct>0&&<div className="rpt-peff-rc-pct">{props.pct+"% correcto"}</div>}
     </div>;
   };
 
-  return <div style={{width:"100%",maxWidth:1200,margin:"0 auto",animation:"fi .3s ease"}}>
-    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:24,flexWrap:"wrap",gap:12}}>
+  var sevStyle = { "--rpt-peff-sev-color": sc, "--rpt-peff-sev-color-dd": sc+"dd" };
+
+  return <div className="rpt-peff">
+    <div className="rpt-peff-head">
       <div>
-        <h1 style={{fontSize:24,fontWeight:700,color:"#7c3aed"}}>{"Informe PEFF"}</h1>
-        <p style={{color:K.mt,fontSize:15,marginTop:2}}>{ev.paciente+" \u2014 "+ageLabel(ev.edadMeses)}</p>
+        <h1 className="rpt-peff-title">{"Informe PEFF"}</h1>
+        <p className="rpt-peff-subtitle">{ev.paciente+" \u2014 "+ageLabel(ev.edadMeses)}</p>
       </div>
-      <div style={{display:"flex",gap:8}}>
+      <div className="rpt-peff-actions">
         {cd
-          ?<div style={{background:"#fef2f2",border:"1px solid #fecaca",borderRadius:10,padding:"14px 20px",display:"flex",flexDirection:"column",alignItems:"center",gap:10}}>
-            <div style={{fontSize:13,fontWeight:600,color:"#dc2626",textAlign:"center"}}>{"\u00bfEst\u00e1 seguro que desea eliminar?"}</div>
-            <div style={{fontSize:12,color:"#64748b",textAlign:"center"}}>{"Esta acci\u00f3n es irreversible"}</div>
-            <div style={{display:"flex",gap:8}}>
-              <button onClick={function(){onD(ev._fbId);sCD(false)}} style={{background:"#dc2626",color:"#fff",border:"none",padding:"8px 20px",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer"}}>{"S\u00ed, eliminar"}</button>
-              <button onClick={function(){sCD(false)}} style={{background:"#f1f5f9",border:"1px solid #e2e8f0",padding:"8px 20px",borderRadius:8,fontSize:13,cursor:"pointer",color:"#64748b"}}>Cancelar</button>
+          ?<div className="rpt-peff-del-confirm">
+            <div className="rpt-peff-del-title">{"\u00bfEst\u00e1 seguro que desea eliminar?"}</div>
+            <div className="rpt-peff-del-sub">{"Esta acci\u00f3n es irreversible"}</div>
+            <div className="rpt-peff-del-actions">
+              <button onClick={function(){onD(ev._fbId);sCD(false)}} className="rpt-peff-del-confirm-btn">{"S\u00ed, eliminar"}</button>
+              <button onClick={function(){sCD(false)}} className="rpt-peff-del-cancel-btn">Cancelar</button>
             </div>
           </div>
-          :<button onClick={function(){sCD(true)}} style={{background:"#fef2f2",color:"#dc2626",border:"1px solid #fecaca",padding:"11px 22px",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer"}}>{"Eliminar"}</button>
+          :<button onClick={function(){sCD(true)}} className="rpt-peff-del-btn">{"Eliminar"}</button>
         }
       </div>
     </div>
@@ -104,16 +111,16 @@ export default function RptPEFF({ev,onD,therapistInfo}){
     <AIReportPanel ev={ev} evalType="peff" collectionName="evaluaciones" evalLabel="Protocolo Fonético-Fonológico" therapistInfo={therapistInfo} />
 
     {/* Technical Data Toggle */}
-    <button onClick={function(){ setShowTech(!showTech); }} style={{width:"100%",padding:"14px",background:showTech?"#f1f5f9":"#0a3d2f",color:showTech?"#1e293b":"#fff",border:"1px solid #e2e8f0",borderRadius:10,fontSize:14,fontWeight:600,cursor:"pointer",marginBottom:showTech?16:20}}>
+    <button onClick={function(){ setShowTech(!showTech); }} className={"rpt-peff-tech-toggle"+(showTech?" is-open":"")}>
       {showTech ? "\u25b2 Ocultar datos t\u00e9cnicos" : "\u25bc Ver datos t\u00e9cnicos de la evaluaci\u00f3n"}
     </button>
 
-    {showTech && <div style={{background:"#fff",borderRadius:14,padding:32,border:"1px solid #e2e8f0"}}>
-      <div style={{display:"flex",justifyContent:"flex-end",marginBottom:16}}>
-        <button onClick={function(){openSummaryPdf(ev)}} style={{background:"#7c3aed",color:"#fff",border:"none",padding:"9px 18px",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer"}}>{"\ud83d\udcc4 PDF datos t\u00e9cnicos"}</button>
+    {showTech && <div className="rpt-peff-tech">
+      <div className="rpt-peff-pdf-row">
+        <button onClick={function(){openSummaryPdf(ev)}} className="rpt-peff-pdf-btn">{"\ud83d\udcc4 PDF datos t\u00e9cnicos"}</button>
       </div>
 
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:14,marginBottom:20}}>
+      <div className="rpt-peff-scores">
         <RC title="Producci\u00f3n de S\u00edlabas" desc="S\u00edlabas producidas correctamente al repetir est\u00edmulos fon\u00e9ticos."
           ok={r.silOk||0} total={r.silTotal||0} pct={r.silPct||0}
           color={(r.silPct||0)>=85?"#059669":(r.silPct||0)>=50?"#f59e0b":"#dc2626"}/>
@@ -125,20 +132,20 @@ export default function RptPEFF({ev,onD,therapistInfo}){
           color={(r.recOk||0)>=(r.recTotal||1)*0.85?"#059669":(r.recOk||0)>=(r.recTotal||1)*0.5?"#f59e0b":"#dc2626"}/>
       </div>
 
-      <div style={{background:"linear-gradient(135deg,"+sc+"dd,"+sc+")",borderRadius:12,padding:24,color:"#fff",marginBottom:20}}>
-        <div style={{fontSize:13,opacity:.8,marginBottom:4}}>{"Severidad del trastorno fon\u00e9tico-fonol\u00f3gico"}</div>
-        <div style={{fontSize:36,fontWeight:700,marginBottom:8}}>{sev}</div>
-        <div style={{fontSize:13,opacity:.9,lineHeight:1.6}}>{sevDesc[sev]||""}</div>
+      <div className="rpt-peff-sev" style={sevStyle}>
+        <div className="rpt-peff-sev-lbl">{"Severidad del trastorno fon\u00e9tico-fonol\u00f3gico"}</div>
+        <div className="rpt-peff-sev-val">{sev}</div>
+        <div className="rpt-peff-sev-desc">{sevDesc[sev]||""}</div>
       </div>
 
-      <div style={{background:"#f0f9ff",border:"1px solid #bae6fd",borderRadius:10,padding:14,marginBottom:20,fontSize:12,color:"#0369a1",lineHeight:1.6}}>
+      <div className="rpt-peff-note">
         <strong>{"\u2139\ufe0f Criterios de clasificaci\u00f3n:"}</strong><br/>
         {"Adecuado: \u226598% \u00b7 Leve: 85-97% \u00b7 Moderado: 65-84% \u00b7 Moderado-Severo: 50-64% \u00b7 Severo: <50%"}
       </div>
 
-      {r.unevalTotal>0&&<div style={{background:"#fffbeb",border:"1px solid #fde68a",borderRadius:10,padding:16,marginBottom:20}}>
-        <div style={{fontSize:13,fontWeight:700,color:"#92400e",marginBottom:8}}>{"\u26a0 \u00cdtems sin evaluar ("+r.unevalTotal+")"}</div>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,fontSize:12,color:"#78350f"}}>
+      {r.unevalTotal>0&&<div className="rpt-peff-uneval">
+        <div className="rpt-peff-uneval-title">{"\u26a0 \u00cdtems sin evaluar ("+r.unevalTotal+")"}</div>
+        <div className="rpt-peff-uneval-grid">
           {r.unevalSelects>0&&<div>{"Examen Cl\u00ednico OFA: "}<b>{r.unevalSelects}</b></div>}
           {r.unevalPhon>0&&<div>{"Producci\u00f3n de S\u00edlabas: "}<b>{r.unevalPhon}</b></div>}
           {r.unevalDisc>0&&<div>{"Discriminaci\u00f3n Auditiva: "}<b>{r.unevalDisc}</b></div>}
@@ -148,16 +155,16 @@ export default function RptPEFF({ev,onD,therapistInfo}){
 
       {renderProcSection()}
 
-      <button onClick={function(){ var el=document.getElementById("peff-detail-toggle"); if(el) el.style.display=el.style.display==="none"?"block":"none"; }} style={{width:"100%",padding:"14px",background:"#5b21b6",color:"#fff",border:"1px solid #e2e8f0",borderRadius:10,fontSize:14,fontWeight:600,cursor:"pointer",marginTop:20,marginBottom:0}}>
+      <button onClick={function(){ var el=document.getElementById("peff-detail-toggle"); if(el) el.style.display=el.style.display==="none"?"block":"none"; }} className="rpt-peff-detail-toggle">
         {"\u25bc Ver detalle de cada respuesta"}
       </button>
 
-      <div id="peff-detail-toggle" style={{display:"none",marginTop:12}}>
-        <div style={{display:"flex",justifyContent:"flex-end",marginBottom:12}}>
-          <button onClick={function(){openDetailPdf(ev,sd)}} style={{background:"#059669",color:"#fff",border:"none",padding:"8px 18px",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer"}}>{"\ud83d\udda8 Imprimir detalle"}</button>
+      <div id="peff-detail-toggle" className="rpt-peff-detail-hidden">
+        <div className="rpt-peff-detail-print-row">
+          <button onClick={function(){openDetailPdf(ev,sd)}} className="rpt-peff-detail-print-btn">{"\ud83d\udda8 Imprimir detalle"}</button>
         </div>
-        <div style={{border:"1px solid #e2e8f0",borderRadius:8,overflow:"hidden",maxHeight:500,overflowY:"auto"}}>
-          <div style={{display:"grid",gridTemplateColumns:"120px 1fr 140px",background:"#5b21b6",color:"#fff",padding:"8px 12px",fontSize:12,fontWeight:600,position:"sticky",top:0}}>
+        <div className="rpt-peff-detail-box">
+          <div className="rpt-peff-detail-thead">
             <span>{"Secci\u00f3n"}</span><span>{"\u00cdtem"}</span><span>{"Resultado"}</span>
           </div>
           {PEFF_SECTIONS.flatMap(function(sec){return sec.subsections.flatMap(function(sub){
@@ -168,17 +175,20 @@ export default function RptPEFF({ev,onD,therapistInfo}){
             if(sub.recItems) sub.recItems.forEach(function(item){var v=sd[item.id]||"";rows.push({sec:"Reconocimiento",item:item.target,val:v==="reconoce"?"\u2714":v==="no"?"\u2718":"\u2014 Sin evaluar",ok:v==="reconoce"})});
             return rows;
           })}).map(function(row,i){
-            return <div key={i} style={{display:"grid",gridTemplateColumns:"120px 1fr 140px",padding:"6px 12px",fontSize:12,borderTop:"1px solid #f1f5f9",background:row.ok?"#ecfdf5":row.val.indexOf("Sin")>=0?"#fffbeb":"#fef2f2"}}>
-              <span style={{color:K.mt,fontSize:11}}>{row.sec}</span>
+            var isNone = row.val.indexOf("Sin")>=0;
+            var rowClass = row.ok ? "rpt-peff-detail-row--ok" : isNone ? "rpt-peff-detail-row--none" : "rpt-peff-detail-row--err";
+            var resClass = row.ok ? "rpt-peff-detail-result--ok" : isNone ? "rpt-peff-detail-result--none" : "rpt-peff-detail-result--err";
+            return <div key={i} className={"rpt-peff-detail-row "+rowClass}>
+              <span className="rpt-peff-detail-sec">{row.sec}</span>
               <span>{row.item}</span>
-              <span style={{fontWeight:600,color:row.ok?"#059669":row.val.indexOf("Sin")>=0?"#92400e":"#dc2626"}}>{row.val}</span>
+              <span className={"rpt-peff-detail-result "+resClass}>{row.val}</span>
             </div>;
           })}
         </div>
       </div>
 
-      <h3 style={{fontSize:16,fontWeight:700,color:"#5b21b6",marginBottom:10,marginTop:28}}>{"Observaciones Cl\u00ednicas"}</h3>
-      <div style={{background:"#f8faf9",padding:18,borderRadius:10,fontSize:14,border:"1px solid #e2e8f0",lineHeight:1.7,minHeight:60}}>{ev.observaciones||"Sin observaciones."}</div>
+      <h3 className="rpt-peff-obs-h3">{"Observaciones Cl\u00ednicas"}</h3>
+      <div className="rpt-peff-obs">{ev.observaciones||"Sin observaciones."}</div>
     </div>}
   </div>;
 }
