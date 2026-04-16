@@ -2,9 +2,9 @@
 import { PEFF_SECTIONS } from "../data/peffSections.js";
 import { HelpTip, OptionHelpTip, TeethButton } from "./NewPEFF_helpers.jsx";
 import EvalShell from "./EvalShell.jsx";
+import "../styles/NewOFA.css";
 
 var OFA_SECTION = PEFF_SECTIONS.find(function(s){ return s.id === "ec"; });
-var I = {width:"100%",padding:"10px 14px",border:"1px solid #e2e8f0",borderRadius:8,fontSize:14,background:"#f8faf9"};
 
 var config = {
   evalType: "ofa",
@@ -30,24 +30,45 @@ function buildPayloadExtra(responses){
 }
 
 export default function NewOFA({ onS, nfy, userId, draft, therapistInfo }){
+  // IMPORTANTE: NO usar useCallback aquí — commit 69d58c9 arreglo que los
+  // botones EOF no respondían al click porque las props quedaban congeladas
+  // al momento del mount. renderEval como función normal SI funciona.
   var renderEval = function(props){
     var subIdx = props.step - 1;
     if(subIdx < 0 || subIdx >= OFA_SECTION.subsections.length) return null;
     var sub = OFA_SECTION.subsections[subIdx];
 
     var rField = function(f){
-      if(f.type === "text") return <div key={f.id} style={{marginBottom:14}}>
-        <label style={{fontSize:12,fontWeight:600,color:"#64748b",display:"block",marginBottom:4}}>{f.label}<HelpTip text={f.help} searchTerm={f.label}/>{f.showTeethImg && <TeethButton arch={f.showTeethImg} ageMo={props.patientAge}/>}</label>
-        <input value={props.responses[f.id]||""} onChange={function(e){props.setResponse(f.id,null);props.setResponse(f.id,e.target.value)}} style={I}/>
+      if(f.type === "text") return <div key={f.id} className="ofa-field">
+        <label className="ofa-label">
+          {f.label}
+          <HelpTip text={f.help} searchTerm={f.label}/>
+          {f.showTeethImg && <TeethButton arch={f.showTeethImg} ageMo={props.patientAge}/>}
+        </label>
+        <input
+          value={props.responses[f.id] || ""}
+          onChange={function(e){ props.setResponse(f.id, null); props.setResponse(f.id, e.target.value); }}
+          className="ofa-input"
+        />
       </div>;
+
       var cur = props.responses[f.id] || "";
-      return <div key={f.id} style={{marginBottom:14}}>
-        <label style={{fontSize:12,fontWeight:600,color:"#64748b",display:"block",marginBottom:6}}>{f.label}<HelpTip text={f.help} searchTerm={f.label}/></label>
-        {f.desc && <div style={{fontSize:11,color:"#0891b2",marginBottom:6,fontStyle:"italic"}}>{f.desc}</div>}
-        <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+      return <div key={f.id} className="ofa-field">
+        <label className="ofa-label ofa-label--options">
+          {f.label}
+          <HelpTip text={f.help} searchTerm={f.label}/>
+        </label>
+        {f.desc && <div className="ofa-desc">{f.desc}</div>}
+        <div className="ofa-opts">
           {f.options.map(function(o){
-            return <span key={o} style={{display:"inline-flex",alignItems:"center"}}>
-              <button onClick={function(){props.setResponse(f.id, cur===o ? null : o); props.setResponse(f.id, cur===o ? "" : o);}} style={{padding:"8px 14px",borderRadius:8,border:cur===o?"2px solid #0891b2":"1px solid #e2e8f0",background:cur===o?"#e0f2fe":"#fff",color:cur===o?"#0e7490":"#475569",fontSize:13,fontWeight:cur===o?700:400,cursor:"pointer",textAlign:"left"}}>{cur===o && "\u2713 "}{o}</button>
+            return <span key={o} className="ofa-opt-wrap">
+              <button
+                onClick={function(){
+                  props.setResponse(f.id, cur===o ? null : o);
+                  props.setResponse(f.id, cur===o ? "" : o);
+                }}
+                className={"ofa-opt" + (cur === o ? " ofa-opt--active" : "")}
+              >{cur === o && "\u2713 "}{o}</button>
               {f.optionHelp && f.optionHelp[o] && <OptionHelpTip text={f.optionHelp[o]} label={o}/>}
             </span>;
           })}
@@ -55,20 +76,20 @@ export default function NewOFA({ onS, nfy, userId, draft, therapistInfo }){
       </div>;
     };
 
-    return <div>
-      <h3 style={{fontSize:16,fontWeight:700,color:"#0891b2",marginBottom:4}}>{sub.title}</h3>
-      <div style={{marginTop:16}}>{sub.fields.map(rField)}</div>
-      <div style={{display:"flex",justifyContent:"space-between",marginTop:20,paddingTop:14,borderTop:"1px solid #e2e8f0"}}>
-        <button onClick={function(){ props.setStep(props.step-1); props.scrollTop(); }} style={{background:"#f1f5f9",border:"none",padding:"10px 22px",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer"}}>{"Atras"}</button>
-        <button onClick={function(){ props.setStep(props.step+1); props.scrollTop(); }} style={{background:"#0891b2",color:"#fff",border:"none",padding:"10px 22px",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer"}}>{props.step < props.RESULT_STEP - 1 ? "Siguiente" : "Ver Resultados"}</button>
+    return <div className="ofa">
+      <h3 className="ofa-title">{sub.title}</h3>
+      <div className="ofa-body">{sub.fields.map(rField)}</div>
+      <div className="ofa-nav">
+        <button onClick={function(){ props.setStep(props.step-1); props.scrollTop(); }} className="ofa-btn-back">{"Atras"}</button>
+        <button onClick={function(){ props.setStep(props.step+1); props.scrollTop(); }} className="ofa-btn-next">{props.step < props.RESULT_STEP - 1 ? "Siguiente" : "Ver Resultados"}</button>
       </div>
     </div>;
   };
 
   var renderTechDetails = function(results){
-    return <div style={{background:"#f8faf9",borderRadius:12,padding:20,border:"1px solid #e2e8f0",marginBottom:16}}>
-      <div style={{fontSize:14,fontWeight:700,marginBottom:8}}>Resumen OFA</div>
-      <div style={{fontSize:13,color:"#475569"}}>{"Campos completados: " + results.answered + "/" + results.total + " (" + results.pct + "%)"}</div>
+    return <div className="ofa-tech">
+      <div className="ofa-tech-title">Resumen OFA</div>
+      <div className="ofa-tech-body">{"Campos completados: " + results.answered + "/" + results.total + " (" + results.pct + "%)"}</div>
     </div>;
   };
 

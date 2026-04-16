@@ -1,0 +1,175 @@
+/* ============================================
+   NewOFA — Examen Clínico EOF (órganos fonoarticulatorios)
+   ============================================ */
+
+.ofa {
+  --ofa-accent: #0891b2;
+  --ofa-accent-dark: #0e7490;
+  --ofa-accent-light: #e0f2fe;
+}
+
+.ofa-title {
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-bold);
+  color: var(--ofa-accent);
+  margin: 0 0 4px 0;
+}
+
+.ofa-body {
+  margin-top: 16px;
+}
+
+/* Field */
+.ofa-field {
+  margin-bottom: 14px;
+}
+
+.ofa-label {
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  color: var(--c-text-muted);
+  display: block;
+  margin-bottom: 4px;
+}
+
+.ofa-label--options {
+  margin-bottom: 6px;
+}
+
+.ofa-desc {
+  font-size: 11px;
+  color: var(--ofa-accent);
+  margin-bottom: 6px;
+  font-style: italic;
+}
+
+/* Input text */
+.ofa-input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius);
+  font-size: var(--fs-md);
+  background: var(--c-surface-alt);
+  color: var(--c-text);
+  font-family: var(--font-family);
+}
+
+.ofa-input:focus {
+  outline: none;
+  border-color: var(--ofa-accent);
+}
+
+/* Options */
+.ofa-opts {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ofa-opt-wrap {
+  display: inline-flex;
+  align-items: center;
+}
+
+.ofa-opt {
+  padding: 8px 14px;
+  border-radius: var(--radius);
+  border: 1px solid var(--c-border);
+  background: var(--c-surface);
+  color: var(--c-text-secondary);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-normal);
+  cursor: pointer;
+  text-align: left;
+  font-family: var(--font-family);
+  transition: all 0.15s ease;
+}
+
+.ofa-opt:hover {
+  border-color: var(--ofa-accent);
+}
+
+.ofa-opt--active {
+  border: 2px solid var(--ofa-accent);
+  background: var(--ofa-accent-light);
+  color: var(--ofa-accent-dark);
+  font-weight: var(--fw-bold);
+}
+
+/* Navigation */
+.ofa-nav {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+  padding-top: 14px;
+  border-top: 1px solid var(--c-border);
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ofa-btn-back {
+  background: var(--c-surface-hover);
+  border: none;
+  padding: 10px 22px;
+  border-radius: var(--radius);
+  font-size: var(--fs-md);
+  font-weight: var(--fw-semibold);
+  cursor: pointer;
+  color: var(--c-text);
+  font-family: var(--font-family);
+  transition: background 0.15s ease;
+}
+
+.ofa-btn-back:hover {
+  background: var(--c-border);
+}
+
+.ofa-btn-next {
+  background: var(--ofa-accent);
+  color: #fff;
+  border: none;
+  padding: 10px 22px;
+  border-radius: var(--radius);
+  font-size: var(--fs-md);
+  font-weight: var(--fw-semibold);
+  cursor: pointer;
+  font-family: var(--font-family);
+  transition: opacity 0.15s ease;
+}
+
+.ofa-btn-next:hover {
+  opacity: 0.92;
+}
+
+/* Tech details */
+.ofa-tech {
+  background: var(--c-surface-alt);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  border: 1px solid var(--c-border);
+  margin-bottom: 16px;
+}
+
+.ofa-tech-title {
+  font-size: var(--fs-md);
+  font-weight: var(--fw-bold);
+  margin-bottom: 8px;
+}
+
+.ofa-tech-body {
+  font-size: var(--fs-sm);
+  color: var(--c-text-secondary);
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .ofa-nav {
+    flex-direction: column;
+  }
+
+  .ofa-btn-back,
+  .ofa-btn-next {
+    width: 100%;
+  }
+}
