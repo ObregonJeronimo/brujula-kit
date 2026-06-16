@@ -1057,7 +1057,13 @@
   .lp-container { padding: 0 18px; }
   .lp-hero { padding: 52px 0 40px; }
   .lp-section { padding: 64px 0; }
-  .lp-float-card { left: 0; bottom: -20px; max-width: 220px; }
+  .lp-float-card {
+    position: static;
+    left: auto;
+    bottom: auto;
+    max-width: 100%;
+    margin-top: 14px;
+  }
   .lp-tool-detail { padding: 28px 24px; min-height: auto; }
   .lp-tool-detail-bg { font-size: 120px; }
   .lp-feature-text { padding: 36px 28px; }
