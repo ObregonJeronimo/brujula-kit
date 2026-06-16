@@ -84,7 +84,6 @@ export default function LandingPage() {
       <header className="lp-hero">
         <div className="lp-container lp-hero-grid">
           <div className="lp-hero-text">
-            <div className="lp-eyebrow"><span className="lp-eyebrow-dot" />Para profesionales de la fonoaudiología</div>
             <h1>El habla, evaluada con <em>claridad</em> de principio a fin.</h1>
             <p className="lp-hero-sub">
               Brújula KIT reúne siete evaluaciones fonoaudiológicas, informes redactados con inteligencia artificial y la gestión de tus pacientes en una sola plataforma web. Sin instalaciones, sin papeles.
@@ -103,7 +102,7 @@ export default function LandingPage() {
           <div className="lp-hero-visual">
             <div className="lp-wave-card">
               <div className="lp-wave-card-head">
-                <div className="lp-wave-card-title"><span />Evaluación fonética</div>
+                <div className="lp-wave-card-title">Evaluación fonética</div>
                 <div className="lp-wave-card-tag">EN ANÁLISIS</div>
               </div>
               <div className="lp-wave" aria-hidden="true">
@@ -212,7 +211,7 @@ export default function LandingPage() {
         <div className="lp-container">
           <div className="lp-section-head">
             <div className="lp-section-eyebrow">De la evaluación al informe</div>
-            <h2>Tres pasos, sin vueltas</h2>
+            <h2>Tres pasos</h2>
             <p className="lp-section-sub">Así es el camino desde que abrís una evaluación hasta que entregás el informe.</p>
           </div>
           <div className="lp-steps">
