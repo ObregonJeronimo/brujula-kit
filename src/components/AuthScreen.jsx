@@ -48,6 +48,11 @@ export default function AuthScreen({ onDone, themeColor }) {
     }).catch(function(){});
   },[]);
 
+  var goToLanding = function() {
+    window.history.pushState({}, "", "/");
+    window.dispatchEvent(new PopStateEvent("popstate"));
+  };
+
   var strength = mode === "register" ? getPasswordStrength(pass) : null;
 
   var handleGoogleResult = async function(user, isRegisterMode) {
@@ -124,6 +129,10 @@ export default function AuthScreen({ onDone, themeColor }) {
   return (
     <div className="auth-wrapper" style={themeColor ? {background:themeColor} : undefined}>
       <div className="auth-card">
+        <button type="button" onClick={goToLanding} className="auth-back-home" style={{background:"none",border:"none",color:"#0d9488",fontSize:13,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",gap:6,marginBottom:14,padding:0}}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          {"Volver al inicio"}
+        </button>
         <div className="auth-header">
           <div className="auth-logo"><img src="/img/logo_96.png" alt="logo" /><span className="auth-logo-text">{"Brújula KIT"}</span></div>
           <p className="auth-subtitle">{"Sistema Integral de Evaluación Fonoaudiológica"}</p>
