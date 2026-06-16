@@ -221,6 +221,9 @@ export default function App() {
   useEffect(function(){ if(profile && !sessionBlocked) loadEvals(); },[profile,loadEvals,sessionBlocked]);
   useEffect(function(){ if(!profile || isAgent) return; getDoc(doc(db,"config","tools")).then(function(snap){ if(snap.exists()){ var cfg = snap.data(); setToolsConfig(cfg); var enabled = {}; Object.keys(cfg).forEach(function(k){ enabled[k] = cfg[k].enabled !== false; }); setEnabledTools(enabled); } }).catch(function(){}); getDoc(doc(db,"config","theme")).then(function(snap){ if(snap.exists()){ var td = snap.data(); setTheme(td); try { localStorage.setItem("bk_theme", JSON.stringify(td)); } catch(e){} } }).catch(function(){}); },[profile]);
 
+  // Meta Pixel — track PageView on every SPA view change
+  useEffect(function(){ if(window.fbq) window.fbq('track', 'PageView'); }, [view]);
+
   var goToPremium = function(){ sV("premium"); sS(null); window.scrollTo({top:0,behavior:"smooth"}); };
   var prevViewRef = useRef("dash");
   var doNav = function(v){ prevViewRef.current = view; window.history.pushState({view:v}, "", ""); sV(v); sS(null); window.scrollTo({top:0,behavior:"smooth"}); };

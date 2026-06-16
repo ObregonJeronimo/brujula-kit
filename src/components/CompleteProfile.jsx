@@ -34,6 +34,7 @@ export default function CompleteProfileScreen({ uid, email, onDone, themeColor }
       const profileData = { uid, email, nombre: nombre.trim(), apellido: apellido.trim(), dni: dni.trim(), username, creditos: 5, plan: "Plan Demo", role: isAdminUser ? "admin" : "user", profileComplete: true, authProvider: existingProvider || "email", createdAt: new Date().toISOString() };
       await setDoc(doc(db, "usuarios", uid), profileData);
       setGenUser(username);
+      if (window.fbq) window.fbq('track', 'CompleteRegistration');
       setTimeout(() => onDone(profileData), 2500);
     } catch (e) { setErr("Error: " + e.message); }
     setLd(false);
