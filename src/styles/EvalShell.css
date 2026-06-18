@@ -8,16 +8,18 @@
   margin: 0 auto;
   /* --esh-accent inyectado inline desde el JSX (config.color) */
   --esh-accent: var(--c-accent);
-  /* Fondo sólido propio: evita que el contenido se transparente
-     sobre el patrón de fondo del main en ciertos niveles de zoom
-     o densidades de pantalla (artefacto de compositing del navegador). */
-  background: var(--c-bg);
-  border-radius: var(--radius-lg);
-  padding: 20px;
-  /* Aísla el repintado para que la animación con transform no deje
-     residuos ("fantasmas") sobre el background repetido del main. */
+  /* Tarjeta sólida opaca: el contenido de la evaluación nunca queda
+     sobre el patrón de fondo del main, garantizando legibilidad nítida
+     en cualquier resolución, densidad de pantalla o nivel de zoom
+     (evita el artefacto de renderizado "lavado/fantasma" en notebooks
+     con GPU integrada). */
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-2xl);
+  padding: 24px;
+  box-shadow: var(--shadow-sm);
   position: relative;
-  isolation: isolate;
+  z-index: 1;
 }
 
 /* ============================================
@@ -145,7 +147,7 @@
    Step 0: datos del paciente
    ============================================ */
 .esh-card {
-  background: var(--c-surface);
+  background: var(--c-surface-alt);
   border-radius: var(--radius-lg);
   border: 1px solid var(--c-border);
   padding: 24px;
@@ -269,7 +271,8 @@
 /* Responsive */
 @media (max-width: 600px) {
   .esh {
-    padding: 14px;
+    padding: 16px;
+    border-radius: var(--radius-lg);
   }
 
   .esh-header {
