@@ -2,7 +2,7 @@ export const PEFF_SECTIONS=[
 {id:"ec",title:"1. Examen Clínico — OFA",subsections:[
 {id:"labios",title:"1.1 Labios",fields:[
 {id:"lab_postura",label:"Postura labial habitual",type:"select",options:["Ocluidos","Abiertos / Entreabiertos","Ocluidos con contacto labio-diente"],help:"Observar la posición natural de los labios en reposo, sin que el paciente lo note."},
-{id:"lab_aspecto",label:"Aspecto",type:"select",options:["Adecuados","Asimétricos","Cicatriz","Fisura"],help:"Evaluar si los labios son simétricos, si hay cicatrices quirúrgicas o fisuras (labio leporino)."},
+{id:"lab_aspecto",label:"Aspecto de labios (adecuados, asimétrico, cicatriz, fisura)",type:"select",options:["Adecuados","Asimétricos","Cicatriz","Fisura"],help:"Evaluar si los labios son simétricos, si hay cicatrices quirúrgicas o fisuras (labio leporino)."},
 {id:"lab_obs",label:"Observaciones",type:"text"}]},
 {id:"atm",title:"1.2 ATM / Mandíbula",fields:[
 {id:"atm_postura",label:"Postura mandibular habitual",type:"select",options:["Elevada (ocluyendo la boca)","Deprimida (boca abierta)","Desviada derecha","Desviada izquierda"],help:"Posición de la mandíbula en reposo. Deprimida = boca abierta habitualmente (puede indicar respiración oral)."},
