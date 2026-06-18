@@ -1,11 +1,23 @@
 import { useState, useCallback, useRef } from "react";
 import { REP_CATEGORIES, POSITIONS } from "../data/repWordsData.js";
 import PatientLookup from "./PatientLookup.jsx";
+import { HelpTip } from "./NewPEFF_helpers.jsx";
 import { ageMo, ageLabel, ALL_ITEMS, buildCatGroups, wordKey, catProgress, computeResults, scrollTop } from "./NewREP_logic.js";
 import NewREPResults from "./NewREP_results.jsx";
 import { saveDraft, deleteDraft } from "../lib/drafts.js";
 import "../styles/NewREP.css";
 var catGroups = buildCatGroups();
+
+// Explicación de los símbolos del Alfabeto Fonético Internacional (AFI)
+// que no son obvios para quien no está familiarizado con la notación.
+// La clave debe coincidir EXACTAMENTE con el string `phoneme` del dato.
+var PHONEME_HELP = {
+  "/x/": "En el Alfabeto Fonético Internacional, el símbolo /x/ representa el sonido de nuestra \"j\" (o de la \"g\" antes de e o i), como en jugo o gente.",
+  "/\u028d/": "Este símbolo representa el sonido de la \"ll\" (consonante lateral palatal sonora) en el Alfabeto Fonético Internacional (AFI), distinguiéndolo tradicionalmente del sonido de la \"y\" (/\u029d/).",
+  "/t\u0283/": "Representa el sonido \"ch\", como en chico o lucha.",
+  "/\u027e/": "Vibrante simple: el sonido suave de la \"r\" con una sola vibración, como en cero o cara.",
+  "/r/": "Vibrante múltiple: el sonido fuerte de la \"rr\" con varias vibraciones, como en rosa o zorro."
+};
 
 export default function NewREP({ onS, nfy, userId, draft, therapistInfo }){
   var init = draft ? draft.data : null;
@@ -153,6 +165,7 @@ export default function NewREP({ onS, nfy, userId, draft, therapistInfo }){
                 <div className={"rep-phon-head " + (isExp ? "rep-phon-head--expected" : "rep-phon-head--pending")}>
                   <div className="rep-phon-label">
                     <span className="rep-phon-name">{pr.phoneme}</span>
+                    <HelpTip text={PHONEME_HELP[pr.phoneme]} />
                   </div>
                   <button onClick={function(){markPhonOk(pr.phonId, pr.posWords)}} className="rep-btn-phon-all">{"\u2713 Todo"}</button>
                 </div>
