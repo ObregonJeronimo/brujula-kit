@@ -37,15 +37,22 @@ export default function NewOFA({ onS, nfy, userId, draft, therapistInfo }){
     var subIdx = props.step - 1;
     if(subIdx < 0 || subIdx >= OFA_SECTION.subsections.length) return null;
     var sub = OFA_SECTION.subsections[subIdx];
-    // Contexto anatómico de la sección (ej: "Lengua", "Labios") para mejorar
-    // las búsquedas de Google de cada campo y evitar términos ambiguos.
+    // Contexto anatómico de la sección (ej: "Lengua", "Paladar Duro") para
+    // mejorar las búsquedas de Google y evitar términos ambiguos como "Tamaño".
     var regionCtx = sub.title.replace(/^\d+\.\d*\s*/, "");
+    // Arma el término de búsqueda agregando la región SOLO si la etiqueta no
+    // la menciona ya (evita repeticiones tipo "Aspecto de labios ... Labios").
+    var mkSearch = function(label){
+      var firstWord = regionCtx.toLowerCase().split(/[\s\/]+/)[0];
+      if(firstWord && label.toLowerCase().indexOf(firstWord) >= 0) return label;
+      return label + " " + regionCtx;
+    };
 
     var rField = function(f){
       if(f.type === "text") return <div key={f.id} className="ofa-field">
         <label className="ofa-label">
           {f.label}
-          <HelpTip text={f.help} searchTerm={f.label + " " + regionCtx}/>
+          <HelpTip text={f.help} searchTerm={mkSearch(f.label)}/>
           {f.showTeethImg && <TeethButton arch={f.showTeethImg} ageMo={props.patientAge}/>}
         </label>
         <input
@@ -59,7 +66,7 @@ export default function NewOFA({ onS, nfy, userId, draft, therapistInfo }){
       return <div key={f.id} className="ofa-field">
         <label className="ofa-label ofa-label--options">
           {f.label}
-          <HelpTip text={f.help} searchTerm={f.label + " " + regionCtx}/>
+          <HelpTip text={f.help} searchTerm={mkSearch(f.label)}/>
         </label>
         {f.desc && <div className="ofa-desc">{f.desc}</div>}
         <div className="ofa-opts">
