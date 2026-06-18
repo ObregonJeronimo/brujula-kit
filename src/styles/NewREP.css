@@ -242,7 +242,9 @@
   border-radius: var(--radius-lg);
   border: 1px solid var(--c-border);
   margin-bottom: 14px;
-  overflow: hidden;
+  /* overflow: hidden eliminado — recortaba el tooltip de ayuda (?) del
+     fonema. El redondeo de esquinas se mantiene aplicando border-radius
+     a la cabecera (rep-phon-head) por separado. */
 }
 
 .rep-phon-head {
@@ -251,8 +253,11 @@
   justify-content: space-between;
   padding: 10px 16px;
   border-bottom: 1px solid var(--c-border);
+  border-top-left-radius: var(--radius-lg);
+  border-top-right-radius: var(--radius-lg);
   flex-wrap: wrap;
   gap: 8px;
+  position: relative;
 }
 
 .rep-phon-head--expected {
