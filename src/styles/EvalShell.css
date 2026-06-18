@@ -8,6 +8,16 @@
   margin: 0 auto;
   /* --esh-accent inyectado inline desde el JSX (config.color) */
   --esh-accent: var(--c-accent);
+  /* Fondo sólido propio: evita que el contenido se transparente
+     sobre el patrón de fondo del main en ciertos niveles de zoom
+     o densidades de pantalla (artefacto de compositing del navegador). */
+  background: var(--c-bg);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  /* Aísla el repintado para que la animación con transform no deje
+     residuos ("fantasmas") sobre el background repetido del main. */
+  position: relative;
+  isolation: isolate;
 }
 
 /* ============================================
@@ -258,6 +268,10 @@
 
 /* Responsive */
 @media (max-width: 600px) {
+  .esh {
+    padding: 14px;
+  }
+
   .esh-header {
     flex-direction: column;
     align-items: flex-start;
