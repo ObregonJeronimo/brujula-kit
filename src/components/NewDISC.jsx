@@ -34,7 +34,7 @@ function discRenderEval(props) {
     <div className="disc-instructions">
       <div className="disc-instructions-title">{"Como aplicar esta prueba"}</div>
       <div className="disc-instructions-body">
-        {"Tapese la boca con la mano o una hoja para que el paciente no pueda leer sus labios. Diga cada par de palabras en voz alta y pregunte: \"Estas dos palabras son iguales o distintas?\". Registre la respuesta del paciente."}
+        {"Para asegurar una evaluación puramente auditiva, anule las pistas visuales (lectura labial) cubriendo la zona peribucal del examinador con una pantalla opaca o manteniendo una distancia adecuada. Emita cada par de palabras en voz alta y nítida, sin exagerar la articulación, y consigne la respuesta del paciente."}
       </div>
     </div>
 
