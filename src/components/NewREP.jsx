@@ -14,7 +14,7 @@ var catGroups = buildCatGroups();
 var PHONEME_HELP = {
   "/x/": "En el Alfabeto Fonético Internacional, el símbolo /x/ representa el sonido de nuestra \"j\" (o de la \"g\" antes de e o i), como en jugo o gente.",
   "/\u028d/": "Este símbolo representa el sonido de la \"ll\" (consonante lateral palatal sonora) en el Alfabeto Fonético Internacional (AFI), distinguiéndolo tradicionalmente del sonido de la \"y\" (/\u029d/).",
-  "/t\u0283/": "Representa el sonido \"ch\", como en chico o lucha.",
+  "/t\u0283/": "En el alfabeto fonético, /t\u0283/ representa el sonido de la \"ch\" española, como en chico, noche o mucho.",
   "/\u027e/": "Vibrante simple: el sonido suave de la \"r\" con una sola vibración, como en cero o cara.",
   "/r/": "Vibrante múltiple: el sonido fuerte de la \"rr\" con varias vibraciones, como en rosa o zorro."
 };
