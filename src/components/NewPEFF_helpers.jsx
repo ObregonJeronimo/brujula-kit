@@ -1,19 +1,82 @@
 /* HelpTip tooltip component and grouped coordination renderer */
-import { useState } from "react";
+import { useState, useRef, useLayoutEffect } from "react";
+
+/* ============================================================
+   Tooltip flotante con position:fixed.
+   SOLUCIÓN DEFINITIVA al recorte de carteles: el cartel se
+   posiciona respecto al viewport (no al contenedor), calculando
+   la posición real del botón con getBoundingClientRect(). Así
+   NINGÚN contenedor padre con overflow/stacking lo recorta,
+   en cualquier resolución. Se reubica solo si no entra arriba
+   (lo muestra abajo) y se clampea a los bordes de la pantalla.
+   ============================================================ */
+function FloatingTip({ anchorRef, open, width, children }){
+  var _pos = useState(null), pos = _pos[0], setPos = _pos[1];
+
+  useLayoutEffect(function(){
+    if(!open){ setPos(null); return; }
+    function place(){
+      var btn = anchorRef.current;
+      if(!btn) return;
+      var r = btn.getBoundingClientRect();
+      var vw = window.innerWidth, vh = window.innerHeight;
+      var margin = 8;          // separación cartel/botón
+      var edge = 8;            // margen mínimo a los bordes
+      var w = Math.min(width, vw - edge * 2);
+      var cx = r.left + r.width / 2;
+      // clamp horizontal: el cartel se centra en el botón pero
+      // nunca se sale de la pantalla
+      var left = cx - w / 2;
+      if(left < edge) left = edge;
+      if(left + w > vw - edge) left = vw - edge - w;
+      // vertical: por defecto arriba; si no entra, abajo
+      var below = r.top < 170; // poco espacio arriba -> mostrar abajo
+      setPos({ left: left, top: below ? r.bottom + margin : r.top - margin, w: w, below: below, cx: cx });
+    }
+    place();
+    window.addEventListener("scroll", place, true);
+    window.addEventListener("resize", place);
+    return function(){
+      window.removeEventListener("scroll", place, true);
+      window.removeEventListener("resize", place);
+    };
+  },[open, width, anchorRef]);
+
+  if(!open || !pos) return null;
+  var arrowLeft = Math.max(12, Math.min(pos.w - 12, pos.cx - pos.left));
+  return <div style={{
+    position:"fixed",
+    left: pos.left,
+    top: pos.top,
+    transform: pos.below ? "none" : "translateY(-100%)",
+    width: pos.w,
+    background:"#1e1b4b", color:"#e0e7ff",
+    padding:"12px 16px", borderRadius:10, fontSize:12, lineHeight:1.6,
+    zIndex:2147483647, boxShadow:"0 8px 24px rgba(0,0,0,.3)", whiteSpace:"pre-line"
+  }}>
+    {children}
+    <div style={{
+      position:"absolute",
+      left: arrowLeft, transform:"translateX(-50%) rotate(45deg)",
+      width:12, height:12, background:"#1e1b4b",
+      [pos.below ? "top" : "bottom"]: -6
+    }}/>
+  </div>;
+}
 
 export function HelpTip({text, searchTerm}){
   const[open,setOpen]=useState(false);
+  const btnRef = useRef(null);
   if(!text)return null;
   var googleUrl = searchTerm ? "https://www.google.com/search?q=" + encodeURIComponent(searchTerm + " fonoaudiología") : null;
   return<span style={{position:"relative",display:"inline-flex",marginLeft:6,verticalAlign:"middle"}}>
-    <button onClick={function(e){e.preventDefault();e.stopPropagation();setOpen(!open)}} style={{width:20,height:20,borderRadius:"50%",border:"1.5px solid #c4b5fd",background:open?"#7c3aed":"#ede9fe",color:open?"#fff":"#7c3aed",fontSize:11,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",padding:0,lineHeight:1}}>?</button>
+    <button ref={btnRef} onClick={function(e){e.preventDefault();e.stopPropagation();setOpen(!open)}} style={{width:20,height:20,borderRadius:"50%",border:"1.5px solid #c4b5fd",background:open?"#7c3aed":"#ede9fe",color:open?"#fff":"#7c3aed",fontSize:11,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",padding:0,lineHeight:1}}>?</button>
     {open&&<>
-      <div onMouseDown={function(){setOpen(false)}} style={{position:"fixed",top:0,left:0,width:"100vw",height:"100vh",zIndex:98,cursor:"default"}}/>
-      <div style={{position:"absolute",bottom:"calc(100% + 8px)",left:"50%",transform:"translateX(-50%)",background:"#1e1b4b",color:"#e0e7ff",padding:"12px 16px",borderRadius:10,fontSize:12,lineHeight:1.6,width:340,maxWidth:"85vw",zIndex:99,boxShadow:"0 8px 24px rgba(0,0,0,.3)",whiteSpace:"pre-line"}}>
+      <div onMouseDown={function(){setOpen(false)}} style={{position:"fixed",top:0,left:0,width:"100vw",height:"100vh",zIndex:2147483646,cursor:"default"}}/>
+      <FloatingTip anchorRef={btnRef} open={open} width={340}>
         {text}
         {googleUrl && <div style={{marginTop:8,paddingTop:6,borderTop:"1px solid rgba(255,255,255,.15)"}}><a href={googleUrl} target="_blank" rel="noopener noreferrer" style={{color:"#a5b4fc",fontSize:11,textDecoration:"none"}} onClick={function(e){e.stopPropagation()}}>{"Buscar en Google \u2192"}</a></div>}
-        <div style={{position:"absolute",bottom:-6,left:"50%",transform:"translateX(-50%)",width:12,height:12,background:"#1e1b4b",rotate:"45deg"}}/>
-      </div>
+      </FloatingTip>
     </>}
   </span>;
 }
@@ -21,17 +84,17 @@ export function HelpTip({text, searchTerm}){
 // Small inline help for individual options
 export function OptionHelpTip({text, label}){
   const[open,setOpen]=useState(false);
+  const btnRef = useRef(null);
   if(!text)return null;
   var googleUrl = "https://www.google.com/search?q=" + encodeURIComponent(label + " odontología fonoaudiología");
   return<span style={{position:"relative",display:"inline-flex",marginLeft:4,verticalAlign:"middle"}}>
-    <button onClick={function(e){e.preventDefault();e.stopPropagation();setOpen(!open)}} style={{width:16,height:16,borderRadius:"50%",border:"1px solid #d4d4d8",background:open?"#6366f1":"#f4f4f5",color:open?"#fff":"#a1a1aa",fontSize:9,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",padding:0,lineHeight:1}}>?</button>
+    <button ref={btnRef} onClick={function(e){e.preventDefault();e.stopPropagation();setOpen(!open)}} style={{width:16,height:16,borderRadius:"50%",border:"1px solid #d4d4d8",background:open?"#6366f1":"#f4f4f5",color:open?"#fff":"#a1a1aa",fontSize:9,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",padding:0,lineHeight:1}}>?</button>
     {open&&<>
-      <div onMouseDown={function(){setOpen(false)}} style={{position:"fixed",top:0,left:0,width:"100vw",height:"100vh",zIndex:98,cursor:"default"}}/>
-      <div style={{position:"absolute",bottom:"calc(100% + 6px)",left:"50%",transform:"translateX(-50%)",background:"#1e1b4b",color:"#e0e7ff",padding:"10px 14px",borderRadius:8,fontSize:11,lineHeight:1.5,width:280,maxWidth:"80vw",zIndex:99,boxShadow:"0 6px 20px rgba(0,0,0,.3)"}}>
+      <div onMouseDown={function(){setOpen(false)}} style={{position:"fixed",top:0,left:0,width:"100vw",height:"100vh",zIndex:2147483646,cursor:"default"}}/>
+      <FloatingTip anchorRef={btnRef} open={open} width={280}>
         {text}
         <div style={{marginTop:6,paddingTop:4,borderTop:"1px solid rgba(255,255,255,.15)"}}><a href={googleUrl} target="_blank" rel="noopener noreferrer" style={{color:"#a5b4fc",fontSize:10,textDecoration:"none"}} onClick={function(e){e.stopPropagation()}}>{"Buscar en Google \u2192"}</a></div>
-        <div style={{position:"absolute",bottom:-5,left:"50%",transform:"translateX(-50%)",width:10,height:10,background:"#1e1b4b",rotate:"45deg"}}/>
-      </div>
+      </FloatingTip>
     </>}
   </span>;
 }
