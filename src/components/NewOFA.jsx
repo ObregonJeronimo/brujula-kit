@@ -57,7 +57,7 @@ export default function NewOFA({ onS, nfy, userId, draft, therapistInfo }){
         </label>
         <input
           value={props.responses[f.id] || ""}
-          onChange={function(e){ props.setResponse(f.id, null); props.setResponse(f.id, e.target.value); }}
+          onChange={function(e){ props.setResponse(f.id, e.target.value); }}
           className="ofa-input"
         />
       </div>;
@@ -74,8 +74,7 @@ export default function NewOFA({ onS, nfy, userId, draft, therapistInfo }){
             return <span key={o} className="ofa-opt-wrap">
               <button
                 onClick={function(){
-                  props.setResponse(f.id, cur===o ? null : o);
-                  props.setResponse(f.id, cur===o ? "" : o);
+                  props.setResponse(f.id, o);
                 }}
                 className={"ofa-opt" + (cur === o ? " ofa-opt--active" : "")}
               >{cur === o && "\u2713 "}{o}</button>
