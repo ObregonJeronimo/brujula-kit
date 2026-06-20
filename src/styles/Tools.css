@@ -149,8 +149,12 @@
    ============================================ */
 .tools-tabs {
   display: flex;
-  gap: 4px;
+  gap: 6px;
+  padding: 6px 6px 0 6px;
+  background: var(--c-surface-alt);
+  border: 1px solid var(--c-border);
   border-bottom: 2px solid var(--c-border);
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
   overflow-x: auto;
   scrollbar-width: none;
 }
@@ -163,14 +167,14 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 13px 22px;
-  background: transparent;
-  border: none;
+  padding: 12px 22px;
+  background: var(--c-surface-hover);
+  border: 1px solid var(--c-border);
   border-bottom: 3px solid transparent;
   margin-bottom: -2px;
-  color: var(--c-text-faint);
+  color: var(--c-text-secondary);
   font-size: var(--fs-md);
-  font-weight: var(--fw-medium);
+  font-weight: var(--fw-semibold);
   font-family: var(--font-family);
   cursor: pointer;
   transition: var(--transition);
@@ -179,11 +183,12 @@
 }
 
 .tools-tab:hover {
-  color: var(--c-text-secondary);
-  background: var(--c-surface-alt);
+  color: var(--c-primary);
+  background: #eef2f1;
 }
 
 .tools-tab--active {
+  border-color: var(--c-border);
   border-bottom-color: var(--c-accent);
   color: var(--c-primary);
   font-weight: var(--fw-bold);
