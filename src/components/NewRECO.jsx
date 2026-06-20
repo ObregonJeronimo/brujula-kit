@@ -37,13 +37,12 @@ function recoRenderEval(props) {
 
   return <div className="reco">
     <div className="reco-instructions">
-      <div className="reco-instructions-title">{"Protocolo de aplicación"}</div>
+      <div className="reco-instructions-title">{"Protocolo de aplicación — Reconocimiento Fonológico Visual"}</div>
       <div className="reco-instructions-body">
-        {"1. Seleccione la palabra que va a pronunciar (botón \"Decir\")."}<br/>
-        {"2. Presione \"Mostrar ambas imágenes\" para mostrar al paciente."}<br/>
-        {"3. Diga la palabra en voz alta al paciente."}<br/>
-        {"4. Registre qué imagen señaló el paciente."}<br/>
-        {"Si la selecci\u00f3n del paciente coincide con la palabra objetivo, se registra como correcta."}
+        {"1. Selección del estímulo verbal: el evaluador selecciona la palabra objetivo que será presentada al paciente de manera oral."}<br/>
+        {"2. Presentación de estímulos visuales: se muestran simultáneamente dos imágenes, una correspondiente a la palabra objetivo y otra distractora, asegurando que ambas permanezcan visibles durante la tarea."}<br/>
+        {"3. Presentación auditiva: el evaluador pronuncia en voz alta y de manera clara la palabra seleccionada, solicitando al paciente que escuche atentamente."}<br/>
+        {"4. Registro de la respuesta: el paciente señala la imagen que considera correspondiente a la palabra escuchada. La respuesta se registra como correcta cuando la imagen seleccionada coincide con el estímulo verbal presentado."}
       </div>
     </div>
 
