@@ -3,9 +3,10 @@ import { K, fbAdd } from "../lib/fb.js";
 import { ALL_EVAL_TYPES, EVAL_AREAS, EVAL_TYPES, getEvalType } from "../config/evalTypes.js";
 import { loadDrafts, deleteDraft } from "../lib/drafts.js";
 import { renderReportText } from "../lib/evalUtils.jsx";
+import EvalIcon from "./EvalIcon.jsx";
 import "../styles/Tools.css";
 
-export default function Tools({ TC, onSel, credits, onBuy, enabledTools, toolsConfig, userId, onResumeDraft, allEvals, nfy, therapistInfo, deductCredit, isAdmin, onReload }) {
+export default function Tools({ TC, onSel, credits, onBuy, enabledTools, toolsConfig, userId, onResumeDraft, allEvals, nfy, therapistInfo, deductCredit, isAdmin, onReload, onGoHist }) {
   var _drafts = useState([]), drafts = _drafts[0], setDrafts = _drafts[1];
   var _openArea = useState(null), openArea = _openArea[0], setOpenArea = _openArea[1];
   var _info = useState(null), showInfo = _info[0], setShowInfo = _info[1];
@@ -118,6 +119,10 @@ export default function Tools({ TC, onSel, credits, onBuy, enabledTools, toolsCo
     }).catch(function(e){ if(nfy) nfy("Error: " + e.message,"er"); setConsolGenerating(false); });
   };
 
+  // Cuando hay un panel abierto (área de evaluación o informe), esa columna
+  // ocupa el ancho completo para no dejar espacio en blanco al lado.
+  var anyOpen = openArea !== null || showConsol;
+
   return (
     <div className="tools-page">
       <h1 className="tools-title">{"Herramientas"}</h1>
@@ -134,7 +139,7 @@ export default function Tools({ TC, onSel, credits, onBuy, enabledTools, toolsCo
               var patientName = data.patient ? data.patient.nombre : (data.selectedPatient ? data.selectedPatient.nombre : (data.pd ? data.pd.pN : "Sin paciente"));
               return <div key={d._fbId} className="tools-draft-item">
                 <div className="tools-draft-info">
-                  <span className="tools-draft-icon">{evalConfig ? evalConfig.icon : ""}</span>
+                  <span className="tools-draft-icon">{evalConfig ? <EvalIcon name={evalConfig.id} size={24} color={evalConfig.color} /> : null}</span>
                   <div>
                     <div className="tools-draft-name">{evalConfig ? evalConfig.fullName : d.evalType}</div>
                     <div className="tools-draft-patient">{patientName}</div>
@@ -158,188 +163,204 @@ export default function Tools({ TC, onSel, credits, onBuy, enabledTools, toolsCo
         <button onClick={onBuy} className="tools-btn-buy">COMPRAR CREDITOS</button>
       </div>}
 
-      {/* Evaluation Areas */}
-      <div className="tools-areas">
-        {EVAL_AREAS.map(function(area){
-          var areaTools = area.tools.map(function(tid){ return EVAL_TYPES[tid]; }).filter(function(t){ return t && isEnabled(t.id); });
-          if(areaTools.length === 0) return null;
-          var isOpen = openArea === area.id;
+      {/* Evaluation Areas + Consolidated report — two-column layout */}
+      <div className={"tools-areas-grid" + (anyOpen ? " tools-areas-grid--expanded" : "")}>
 
-          return <div key={area.id} className="tools-area">
-            <div onClick={function(){ setOpenArea(isOpen ? null : area.id); }} className="tools-area-header">
-              <div className="tools-area-header-info">
-                <span className="tools-area-icon">{area.icon}</span>
-                <div>
-                  <div className="tools-area-name">{area.name}</div>
-                  <div className="tools-area-desc">{area.desc}</div>
-                </div>
-              </div>
-              <div className={"tools-area-chevron"+(isOpen?" tools-area-chevron--open":"")}>{"v"}</div>
-            </div>
+        {/* LEFT column: evaluation areas */}
+        <div className={"tools-col" + (showConsol && !openArea ? " tools-col--hidden" : "")}>
+          {EVAL_AREAS.map(function(area){
+            var areaTools = area.tools.map(function(tid){ return EVAL_TYPES[tid]; }).filter(function(t){ return t && isEnabled(t.id); });
+            if(areaTools.length === 0) return null;
+            var isOpen = openArea === area.id;
 
-            {isOpen && <div className="tools-area-body">
-              <div className="tools-grid">
-                {areaTools.map(function(t){
-                  var infoOpen = showInfo === t.newView;
-                  var info = t.info;
-                  return <div key={t.id} className={"tools-card"+(noCredits?" tools-card--disabled":"")}>
-                    <div className="tools-card-body">
-                      <div className="tools-card-header">
-                        <span className="tools-card-icon">{t.icon}</span>
-                        <div className="tools-card-title" style={{color:t.color}}>{t.fullName}</div>
-                      </div>
-                      <p className="tools-card-desc">{t.desc}</p>
-                      <div className="tools-card-meta">
-                        {(function(){
-                          var tc = toolsConfig && toolsConfig[t.id] ? toolsConfig[t.id] : {};
-                          var showAge = tc.showAge !== false;
-                          var ageText = tc.age || t.age || "";
-                          var timeText = tc.time || t.time || "";
-                          var parts = [];
-                          if(showAge && ageText) parts.push("Edad: " + ageText);
-                          if(timeText) parts.push("Tiempo: " + timeText);
-                          return parts.join(" \u00b7 ");
-                        })()}
-                      </div>
-                      {noCredits
-                        ? <button onClick={onBuy} className="tools-card-start" style={{background:"linear-gradient(135deg,#f59e0b,#d97706)"}}>COMPRAR CREDITOS</button>
-                        : <button onClick={function(){onSel(t.newView)}} className="tools-card-start" style={{background:t.color}}>{"Iniciar"}</button>}
-                      {info && <button onClick={function(){ setShowInfo(infoOpen ? null : t.newView); }} className="tools-card-info-btn" style={{border:"1px solid "+t.color+"44",color:t.color}}>
-                        {infoOpen ? "Ocultar informacion" : "Ver informacion"}
-                      </button>}
-                      {infoOpen && info && <div className="tools-card-info-panel" style={{background:"linear-gradient(135deg,"+t.color+"08,"+t.color+"12)",border:"1px solid "+t.color+"30"}}>
-                        <div className="tools-card-info-title" style={{color:t.color}}>{info.title}</div>
-                        {info.sections.map(function(sec, i){
-                          return <div key={i} className="tools-card-info-section">
-                            <div className="tools-card-info-section-label" style={{color:t.color}}>{sec.label}</div>
-                            <div className="tools-card-info-section-text">{sec.text}</div>
-                          </div>;
-                        })}
-                      </div>}
-                    </div>
-                  </div>;
-                })}
-              </div>
-            </div>}
-          </div>;
-        })}
-
-        {/* Consolidated Report Builder */}
-        <div className="tools-area">
-          <div onClick={function(){ setShowConsol(!showConsol); setConsolReport(null); setConsolPatient(null); setConsolSelected({}); }} className="tools-area-header">
-            <div className="tools-area-header-info">
-              <span className="tools-area-icon">{"📋"}</span>
-              <div>
-                <div className="tools-area-name">Informe Complementario</div>
-                <div className="tools-area-desc">{"Gener\u00e1 un informe integrando m\u00faltiples evaluaciones de un mismo paciente"}</div>
-              </div>
-            </div>
-            <div className={"tools-area-chevron"+(showConsol?" tools-area-chevron--open":"")}>{"v"}</div>
-          </div>
-
-          {showConsol && <div className="tools-area-body">
-            {/* Step 1: Select patient */}
-            {!consolPatient && <div>
-              <div className="tools-consol-step-title">{"1. Selecciona un paciente"}</div>
-              {patients.length === 0 && <div className="tools-consol-empty">No hay evaluaciones realizadas todavia</div>}
-              <div className="tools-consol-list">
-                {patients.map(function(p,i){
-                  var evCount = (allEvals||[]).filter(function(ev){ return (ev.pacienteDni||ev.paciente) === (p.dni||p.nombre); }).length;
-                  return <button key={i} onClick={function(){ setConsolPatient(p); setConsolSelected({}); setConsolReport(null); }} className="tools-consol-patient">
-                    <div>
-                      <div className="tools-consol-patient-name">{p.nombre}</div>
-                      <div className="tools-consol-patient-dni">{"DNI: "+(p.dni||"N/A")}</div>
-                    </div>
-                    <span className="tools-consol-patient-count">{evCount + " eval."}</span>
-                  </button>;
-                })}
-              </div>
-            </div>}
-
-            {/* Step 2: Select evaluations */}
-            {consolPatient && !consolReport && !consolGenerating && <div>
-              <div className="tools-consol-step-header">
-                <div className="tools-consol-step-title tools-consol-step-title--inline">{"2. Selecciona evaluaciones para " + consolPatient.nombre}</div>
-                <button onClick={function(){ setConsolPatient(null); setConsolSelected({}); }} className="tools-consol-change-btn">{"Cambiar paciente"}</button>
-              </div>
-              {patientEvals.length < 2 && <div className="tools-consol-warn">{"Este paciente tiene menos de 2 evaluaciones. Se necesitan al menos 2 para generar un informe complementario."}</div>}
-              <div className="tools-consol-evals">
-                {patientEvals.map(function(ev){
-                  var t = getEvalType(ev.tipo);
-                  var checked = !!consolSelected[ev._fbId];
-                  return <label key={ev._fbId} className={"tools-consol-eval"+(checked?" tools-consol-eval--checked":"")}>
-                    <input type="checkbox" checked={checked} onChange={function(){ setConsolSelected(function(prev){ var n = Object.assign({},prev); n[ev._fbId] = !prev[ev._fbId]; return n; }); }} className="tools-consol-checkbox" style={{accentColor:"var(--c-accent)"}} />
-                    <span className="tools-consol-eval-icon">{t ? t.icon : ""}</span>
-                    <div className="tools-consol-eval-main">
-                      <div className="tools-consol-eval-name">{t ? t.fullName : ev.tipo}</div>
-                      <div className="tools-consol-eval-date">{new Date(ev.fechaGuardado||ev.fechaEvaluacion).toLocaleDateString("es-AR")}</div>
-                    </div>
-                    <div className="tools-consol-eval-sev" style={{color:t?t.color:"#64748b"}}>{ev.resultados && ev.resultados.severity ? ev.resultados.severity : ""}</div>
-                  </label>;
-                })}
-              </div>
-              <button onClick={handleGenerateConsol} disabled={selectedCount < 2} className="tools-consol-generate-btn" style={{background:selectedCount<2?"#94a3b8":"linear-gradient(135deg, var(--c-primary), var(--c-accent))",cursor:selectedCount<2?"not-allowed":"pointer"}}>{"Generar Informe Complementario (" + selectedCount + " seleccionadas)"}</button>
-            </div>}
-
-            {/* Generating */}
-            {consolGenerating && <div className="tools-consol-generating">
-              <div className="tools-consol-spinner" />
-              <div className="tools-consol-generating-text">Generando informe complementario...</div>
-            </div>}
-
-            {/* Report result */}
-            {consolReport && <div>
-              <div className="tools-consol-report-header">
-                <div className="tools-consol-report-title">{"Informe Complementario - " + consolPatient.nombre}</div>
-                <div className="tools-consol-report-actions">
-                  {!consolEditing && <button onClick={function(){ setConsolEditText(consolReport); setConsolEditing(true); }} className="tools-btn-edit">{"Editar"}</button>}
-                  <button onClick={function(){
-                    var textToUse = consolEditing ? consolEditText : consolReport;
-                    import("jspdf").then(function(mod){
-                      var jsPDF=mod.jsPDF,pdf=new jsPDF("p","mm","a4"),pW=210,margin=14,maxW=182,y=14;
-                      var ti = therapistInfo || {};
-                      if(ti.therapist || ti.clinic){
-                        pdf.setFontSize(11);pdf.setTextColor(10,61,47);pdf.setFont(undefined,"bold");
-                        if(ti.clinic){pdf.text(ti.clinic,margin,y);y+=5;}
-                        if(ti.address){pdf.setFontSize(8);pdf.setTextColor(100);pdf.setFont(undefined,"normal");pdf.text(ti.address,margin,y);y+=4;}
-                        if(ti.therapist){pdf.setFontSize(9);pdf.setTextColor(10,61,47);pdf.setFont(undefined,"bold");pdf.text(ti.therapist+(ti.license?" \u2014 "+ti.license:""),margin,y);y+=4;pdf.setFont(undefined,"normal");}
-                        var cp=[ti.phone,ti.email].filter(Boolean);if(cp.length>0){pdf.setFontSize(7);pdf.setTextColor(140);pdf.text(cp.join(" \u00b7 "),margin,y);y+=4;}
-                        pdf.setDrawColor(10,61,47);pdf.setLineWidth(0.5);pdf.line(margin,y,pW-margin,y);y+=8;
-                      }
-                      pdf.setFontSize(8);pdf.setTextColor(120);pdf.text("Informe Complementario - "+consolPatient.nombre,margin,y);y+=8;
-                      pdf.setDrawColor(200);pdf.line(margin,y,196,y);y+=8;
-                      pdf.setFontSize(14);pdf.setTextColor(10,61,47);pdf.setFont(undefined,"bold");pdf.text(consolPatient.nombre,margin,y);y+=7;
-                      pdf.setFontSize(9);pdf.setTextColor(100);pdf.setFont(undefined,"normal");pdf.text("DNI: "+(consolPatient.dni||"N/A"),margin,y);y+=10;
-                      textToUse.split("\n").forEach(function(line){
-                        var t2=line.trim();if(!t2){y+=3;return;}
-                        var isT=/^[A-Z\u00c0-\u00dc\s\d\.\:\-]{6,}:?\s*$/.test(t2);
-                        if(isT){y+=3;pdf.setFontSize(10);pdf.setTextColor(10,61,47);pdf.setFont(undefined,"bold");if(y+7>283){pdf.addPage();y=14;}pdf.text(t2,margin,y);y+=7;pdf.setFont(undefined,"normal");}
-                        else{pdf.setFontSize(9);pdf.setTextColor(51,65,85);var w=pdf.splitTextToSize(t2,maxW);w.forEach(function(l){if(y+5>283){pdf.addPage();y=14;}pdf.text(l,margin,y);y+=5;});}
-                      });
-                      pdf.save("Complementario_"+consolPatient.nombre.replace(/\s/g,"_")+".pdf");
-                    });
-                  }} className="tools-btn-print">{"Imprimir"}</button>
-                  <button onClick={function(){ setConsolReport(null); setConsolSelected({}); setConsolEditing(false); }} className="tools-btn-new">{"Nuevo informe"}</button>
-                </div>
-              </div>
-              <div className="tools-consol-report">
-                {therapistInfo && (therapistInfo.therapist || therapistInfo.clinic) && <div className="tools-consol-therapist-header">
-                  {therapistInfo.clinic && <div className="tools-consol-therapist-clinic">{therapistInfo.clinic}</div>}
-                  {therapistInfo.address && <div className="tools-consol-therapist-addr">{therapistInfo.address}</div>}
-                  {therapistInfo.therapist && <div className="tools-consol-therapist-name">{therapistInfo.therapist}{therapistInfo.license ? " \u2014 " + therapistInfo.license : ""}</div>}
-                  {(therapistInfo.phone || therapistInfo.email) && <div className="tools-consol-therapist-contact">{[therapistInfo.phone, therapistInfo.email].filter(Boolean).join(" \u00b7 ")}</div>}
-                </div>}
-                {consolEditing ? <div>
-                  <textarea value={consolEditText} onChange={function(e){setConsolEditText(e.target.value)}} rows={18} className="tools-consol-editor" />
-                  <div className="tools-consol-editor-actions">
-                    <button onClick={function(){ setConsolReport(consolEditText); setConsolEditing(false); }} className="tools-btn-save-edit">{"Guardar cambios"}</button>
-                    <button onClick={function(){ setConsolEditing(false); }} className="tools-btn-cancel-edit">{"Cancelar"}</button>
+            return <div key={area.id} className="tools-area">
+              <div onClick={function(){ setOpenArea(isOpen ? null : area.id); }} className="tools-area-header">
+                <div className="tools-area-header-info">
+                  <span className="tools-area-icon"><EvalIcon name={area.id} size={34} color="#ffffff" /></span>
+                  <div>
+                    <div className="tools-area-name">{area.name}</div>
+                    <div className="tools-area-desc">{area.desc}</div>
                   </div>
-                </div> : <div className="tools-consol-report-text">{renderReportText(consolReport)}</div>}
+                </div>
+                <div className={"tools-area-chevron"+(isOpen?" tools-area-chevron--open":"")}>{"v"}</div>
               </div>
-            </div>}
-          </div>}
+
+              {isOpen && <div className="tools-area-body">
+                <div className="tools-grid">
+                  {areaTools.map(function(t){
+                    var infoOpen = showInfo === t.newView;
+                    var info = t.info;
+                    return <div key={t.id} className={"tools-card"+(noCredits?" tools-card--disabled":"")}>
+                      <div className="tools-card-body">
+                        <div className="tools-card-header">
+                          <span className="tools-card-icon"><EvalIcon name={t.id} size={26} color={t.color} /></span>
+                          <div className="tools-card-title" style={{color:t.color}}>{t.fullName}</div>
+                        </div>
+                        <p className="tools-card-desc">{t.desc}</p>
+                        <div className="tools-card-meta">
+                          {(function(){
+                            var tc = toolsConfig && toolsConfig[t.id] ? toolsConfig[t.id] : {};
+                            var showAge = tc.showAge !== false;
+                            var ageText = tc.age || t.age || "";
+                            var timeText = tc.time || t.time || "";
+                            var parts = [];
+                            if(showAge && ageText) parts.push("Edad: " + ageText);
+                            if(timeText) parts.push("Tiempo: " + timeText);
+                            return parts.join(" \u00b7 ");
+                          })()}
+                        </div>
+                        {noCredits
+                          ? <button onClick={onBuy} className="tools-card-start" style={{background:"linear-gradient(135deg,#f59e0b,#d97706)"}}>COMPRAR CREDITOS</button>
+                          : <button onClick={function(){onSel(t.newView)}} className="tools-card-start" style={{background:t.color}}>{"Iniciar"}</button>}
+                        {info && <button onClick={function(){ setShowInfo(infoOpen ? null : t.newView); }} className="tools-card-info-btn" style={{border:"1px solid "+t.color+"44",color:t.color}}>
+                          {infoOpen ? "Ocultar informacion" : "Ver informacion"}
+                        </button>}
+                        {infoOpen && info && <div className="tools-card-info-panel" style={{background:"linear-gradient(135deg,"+t.color+"08,"+t.color+"12)",border:"1px solid "+t.color+"30"}}>
+                          <div className="tools-card-info-title" style={{color:t.color}}>{info.title}</div>
+                          {info.sections.map(function(sec, i){
+                            return <div key={i} className="tools-card-info-section">
+                              <div className="tools-card-info-section-label" style={{color:t.color}}>{sec.label}</div>
+                              <div className="tools-card-info-section-text">{sec.text}</div>
+                            </div>;
+                          })}
+                        </div>}
+                      </div>
+                    </div>;
+                  })}
+                </div>
+              </div>}
+            </div>;
+          })}
         </div>
+
+        {/* RIGHT column: Consolidated Report Builder */}
+        <div className={"tools-col" + (openArea && !showConsol ? " tools-col--hidden" : "")}>
+          <div className="tools-area">
+            <div onClick={function(){ setShowConsol(!showConsol); setConsolReport(null); setConsolPatient(null); setConsolSelected({}); }} className="tools-area-header">
+              <div className="tools-area-header-info">
+                <span className="tools-area-icon"><EvalIcon name="complementario" size={34} color="#ffffff" /></span>
+                <div>
+                  <div className="tools-area-name">Informe Complementario</div>
+                  <div className="tools-area-desc">{"Gener\u00e1 un informe integrando m\u00faltiples evaluaciones de un mismo paciente"}</div>
+                </div>
+              </div>
+              <div className={"tools-area-chevron"+(showConsol?" tools-area-chevron--open":"")}>{"v"}</div>
+            </div>
+
+            {showConsol && <div className="tools-area-body">
+              {/* Step 1: Select patient */}
+              {!consolPatient && <div>
+                <div className="tools-consol-step-title">{"1. Selecciona un paciente"}</div>
+                {patients.length === 0 && <div className="tools-consol-empty">No hay evaluaciones realizadas todavia</div>}
+                <div className="tools-consol-list">
+                  {patients.map(function(p,i){
+                    var evCount = (allEvals||[]).filter(function(ev){ return (ev.pacienteDni||ev.paciente) === (p.dni||p.nombre); }).length;
+                    return <button key={i} onClick={function(){ setConsolPatient(p); setConsolSelected({}); setConsolReport(null); }} className="tools-consol-patient">
+                      <div>
+                        <div className="tools-consol-patient-name">{p.nombre}</div>
+                        <div className="tools-consol-patient-dni">{"DNI: "+(p.dni||"N/A")}</div>
+                      </div>
+                      <span className="tools-consol-patient-count">{evCount + " eval."}</span>
+                    </button>;
+                  })}
+                </div>
+              </div>}
+
+              {/* Step 2: Select evaluations */}
+              {consolPatient && !consolReport && !consolGenerating && <div>
+                <div className="tools-consol-step-header">
+                  <div className="tools-consol-step-title tools-consol-step-title--inline">{"2. Selecciona evaluaciones para " + consolPatient.nombre}</div>
+                  <button onClick={function(){ setConsolPatient(null); setConsolSelected({}); }} className="tools-consol-change-btn">{"Cambiar paciente"}</button>
+                </div>
+                {patientEvals.length < 2 && <div className="tools-consol-warn">{"Este paciente tiene menos de 2 evaluaciones. Se necesitan al menos 2 para generar un informe complementario."}</div>}
+                <div className="tools-consol-evals">
+                  {patientEvals.map(function(ev){
+                    var t = getEvalType(ev.tipo);
+                    var checked = !!consolSelected[ev._fbId];
+                    return <label key={ev._fbId} className={"tools-consol-eval"+(checked?" tools-consol-eval--checked":"")}>
+                      <input type="checkbox" checked={checked} onChange={function(){ setConsolSelected(function(prev){ var n = Object.assign({},prev); n[ev._fbId] = !prev[ev._fbId]; return n; }); }} className="tools-consol-checkbox" style={{accentColor:"var(--c-accent)"}} />
+                      <span className="tools-consol-eval-icon">{t ? <EvalIcon name={t.id} size={22} color={t.color} /> : null}</span>
+                      <div className="tools-consol-eval-main">
+                        <div className="tools-consol-eval-name">{t ? t.fullName : ev.tipo}</div>
+                        <div className="tools-consol-eval-date">{new Date(ev.fechaGuardado||ev.fechaEvaluacion).toLocaleDateString("es-AR")}</div>
+                      </div>
+                      <div className="tools-consol-eval-sev" style={{color:t?t.color:"#64748b"}}>{ev.resultados && ev.resultados.severity ? ev.resultados.severity : ""}</div>
+                    </label>;
+                  })}
+                </div>
+                <button onClick={handleGenerateConsol} disabled={selectedCount < 2} className="tools-consol-generate-btn" style={{background:selectedCount<2?"#94a3b8":"linear-gradient(135deg, var(--c-primary), var(--c-accent))",cursor:selectedCount<2?"not-allowed":"pointer"}}>{"Generar Informe Complementario (" + selectedCount + " seleccionadas)"}</button>
+              </div>}
+
+              {/* Generating */}
+              {consolGenerating && <div className="tools-consol-generating">
+                <div className="tools-consol-spinner" />
+                <div className="tools-consol-generating-text">Generando informe complementario...</div>
+              </div>}
+
+              {/* Report result */}
+              {consolReport && <div>
+                {/* Aviso: guardado en historial + acceso directo */}
+                <div className="tools-consol-saved">
+                  <div className="tools-consol-saved-left">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                    <span>{"El informe se guard\u00f3 en el Historial"}</span>
+                  </div>
+                  {onGoHist && <button onClick={function(){ onGoHist(); }} className="tools-consol-saved-btn">{"Ir al Historial"}</button>}
+                </div>
+
+                <div className="tools-consol-report-header">
+                  <div className="tools-consol-report-title">{"Informe Complementario - " + consolPatient.nombre}</div>
+                  <div className="tools-consol-report-actions">
+                    {!consolEditing && <button onClick={function(){ setConsolEditText(consolReport); setConsolEditing(true); }} className="tools-btn-edit">{"Editar"}</button>}
+                    <button onClick={function(){
+                      var textToUse = consolEditing ? consolEditText : consolReport;
+                      import("jspdf").then(function(mod){
+                        var jsPDF=mod.jsPDF,pdf=new jsPDF("p","mm","a4"),pW=210,margin=14,maxW=182,y=14;
+                        var ti = therapistInfo || {};
+                        if(ti.therapist || ti.clinic){
+                          pdf.setFontSize(11);pdf.setTextColor(10,61,47);pdf.setFont(undefined,"bold");
+                          if(ti.clinic){pdf.text(ti.clinic,margin,y);y+=5;}
+                          if(ti.address){pdf.setFontSize(8);pdf.setTextColor(100);pdf.setFont(undefined,"normal");pdf.text(ti.address,margin,y);y+=4;}
+                          if(ti.therapist){pdf.setFontSize(9);pdf.setTextColor(10,61,47);pdf.setFont(undefined,"bold");pdf.text(ti.therapist+(ti.license?" \u2014 "+ti.license:""),margin,y);y+=4;pdf.setFont(undefined,"normal");}
+                          var cp=[ti.phone,ti.email].filter(Boolean);if(cp.length>0){pdf.setFontSize(7);pdf.setTextColor(140);pdf.text(cp.join(" \u00b7 "),margin,y);y+=4;}
+                          pdf.setDrawColor(10,61,47);pdf.setLineWidth(0.5);pdf.line(margin,y,pW-margin,y);y+=8;
+                        }
+                        pdf.setFontSize(8);pdf.setTextColor(120);pdf.text("Informe Complementario - "+consolPatient.nombre,margin,y);y+=8;
+                        pdf.setDrawColor(200);pdf.line(margin,y,196,y);y+=8;
+                        pdf.setFontSize(14);pdf.setTextColor(10,61,47);pdf.setFont(undefined,"bold");pdf.text(consolPatient.nombre,margin,y);y+=7;
+                        pdf.setFontSize(9);pdf.setTextColor(100);pdf.setFont(undefined,"normal");pdf.text("DNI: "+(consolPatient.dni||"N/A"),margin,y);y+=10;
+                        textToUse.split("\n").forEach(function(line){
+                          var t2=line.trim();if(!t2){y+=3;return;}
+                          var isT=/^[A-Z\u00c0-\u00dc\s\d\.\:\-]{6,}:?\s*$/.test(t2);
+                          if(isT){y+=3;pdf.setFontSize(10);pdf.setTextColor(10,61,47);pdf.setFont(undefined,"bold");if(y+7>283){pdf.addPage();y=14;}pdf.text(t2,margin,y);y+=7;pdf.setFont(undefined,"normal");}
+                          else{pdf.setFontSize(9);pdf.setTextColor(51,65,85);var w=pdf.splitTextToSize(t2,maxW);w.forEach(function(l){if(y+5>283){pdf.addPage();y=14;}pdf.text(l,margin,y);y+=5;});}
+                        });
+                        pdf.save("Complementario_"+consolPatient.nombre.replace(/\s/g,"_")+".pdf");
+                      });
+                    }} className="tools-btn-print">{"Imprimir"}</button>
+                    <button onClick={function(){ setConsolReport(null); setConsolSelected({}); setConsolEditing(false); }} className="tools-btn-new">{"Nuevo informe"}</button>
+                  </div>
+                </div>
+                <div className="tools-consol-report">
+                  {therapistInfo && (therapistInfo.therapist || therapistInfo.clinic) && <div className="tools-consol-therapist-header">
+                    {therapistInfo.clinic && <div className="tools-consol-therapist-clinic">{therapistInfo.clinic}</div>}
+                    {therapistInfo.address && <div className="tools-consol-therapist-addr">{therapistInfo.address}</div>}
+                    {therapistInfo.therapist && <div className="tools-consol-therapist-name">{therapistInfo.therapist}{therapistInfo.license ? " \u2014 " + therapistInfo.license : ""}</div>}
+                    {(therapistInfo.phone || therapistInfo.email) && <div className="tools-consol-therapist-contact">{[therapistInfo.phone, therapistInfo.email].filter(Boolean).join(" \u00b7 ")}</div>}
+                  </div>}
+                  {consolEditing ? <div>
+                    <textarea value={consolEditText} onChange={function(e){setConsolEditText(e.target.value)}} rows={18} className="tools-consol-editor" />
+                    <div className="tools-consol-editor-actions">
+                      <button onClick={function(){ setConsolReport(consolEditText); setConsolEditing(false); }} className="tools-btn-save-edit">{"Guardar cambios"}</button>
+                      <button onClick={function(){ setConsolEditing(false); }} className="tools-btn-cancel-edit">{"Cancelar"}</button>
+                    </div>
+                  </div> : <div className="tools-consol-report-text">{renderReportText(consolReport)}</div>}
+                </div>
+              </div>}
+            </div>}
+          </div>
+        </div>
+
       </div>
     </div>
   );
