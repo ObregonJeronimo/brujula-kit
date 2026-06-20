@@ -63,6 +63,8 @@
 
 .tools-draft-icon {
   font-size: var(--fs-3xl);
+  display: inline-flex;
+  align-items: center;
 }
 
 .tools-draft-name {
@@ -142,11 +144,35 @@
   font-family: var(--font-family);
 }
 
-/* Areas */
-.tools-areas {
+/* Two-column layout: evaluation areas (left) + consolidated report (right).
+   Cuando un panel se abre, su columna ocupa el ancho completo y la otra
+   se oculta — así no queda espacio en blanco al lado. */
+.tools-areas-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+.tools-areas-grid--expanded {
+  grid-template-columns: 1fr;
+}
+
+.tools-col {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  min-width: 0;
+}
+
+.tools-col--hidden {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .tools-areas-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .tools-area {
@@ -174,6 +200,8 @@
 
 .tools-area-icon {
   font-size: 36px;
+  display: inline-flex;
+  align-items: center;
 }
 
 .tools-area-name {
@@ -207,6 +235,13 @@
   gap: 16px;
 }
 
+/* En layout de dos columnas, las cards de un área abierta van apiladas
+   (1 col) porque la columna ya es angosta. Al expandir a ancho completo
+   vuelven a 2 columnas. */
+.tools-areas-grid:not(.tools-areas-grid--expanded) .tools-grid {
+  grid-template-columns: 1fr;
+}
+
 .tools-card {
   background: var(--c-surface-alt);
   border-radius: var(--radius-xl);
@@ -231,6 +266,8 @@
 
 .tools-card-icon {
   font-size: 28px;
+  display: inline-flex;
+  align-items: center;
 }
 
 .tools-card-title {
@@ -308,6 +345,46 @@
   font-size: 12px;
   color: var(--c-text-secondary);
   line-height: 1.7;
+}
+
+/* "Guardado en historial" notice */
+.tools-consol-saved {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  background: #dcfce7;
+  border: 1px solid #86efac;
+  border-radius: var(--radius-lg);
+  padding: 12px 16px;
+  margin-bottom: 14px;
+}
+
+.tools-consol-saved-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--c-success);
+  font-size: var(--fs-md);
+  font-weight: var(--fw-semibold);
+}
+
+.tools-consol-saved-btn {
+  padding: 8px 16px;
+  background: var(--c-success);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 12px;
+  font-weight: var(--fw-bold);
+  cursor: pointer;
+  font-family: var(--font-family);
+  white-space: nowrap;
+}
+
+.tools-consol-saved-btn:hover {
+  opacity: 0.92;
 }
 
 /* Consolidated report builder */
@@ -424,6 +501,8 @@
 
 .tools-consol-eval-icon {
   font-size: var(--fs-3xl);
+  display: inline-flex;
+  align-items: center;
 }
 
 .tools-consol-eval-name {
